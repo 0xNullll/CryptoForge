@@ -46,4 +46,5 @@ tiny-crypto/
 - `src/` contains **all implementation files**; the SHA family is grouped in its own subfolder.  
 - `tests/` keeps your demos and testing separate from production code.  
 - The `crypto_config.h` file centralizes **all feature flags** (enable/disable SHA variants, HMAC, Keccak core).  
-- The structure allows you to **easily extend** with new crypto algorithms or utilities in the future.  
+- The `demo_config.h` file centralizes **all demo/testing flags**, allowing you to enable or disable specific demo files or test modules modifying the source.  
+- The structure allows you to **easily extend** with new crypto algorithms or utilities in the future.
