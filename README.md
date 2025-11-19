@@ -1,6 +1,6 @@
 # tiny-crypto
 
-```c
+```bash
 tiny-crypto/
 ├─ include/             # Public headers
 │   ├─ crypto_config.h  # Config flags for enabling/disabling algorithms
