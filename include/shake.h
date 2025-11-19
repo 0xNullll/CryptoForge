@@ -32,6 +32,7 @@ void concat_bits(const uint8_t *X, size_t x_bits,
 #define SHAKE128Final        TSHASH_FN(SHAKE128Final)
 #define SHAKE128Squeeze      TSHASH_FN(SHAKE128Squeeze)
 #define SHAKE128             TSHASH_FN(SHAKE128)
+#define SHAKE128Compare      TSHASH_FN(SHAKE128Compare)
 
 #define SHAKE128_BLOCK_SIZE 168
 #define SHAKE128_DOMAIN 0x1F
@@ -44,6 +45,14 @@ bool SHAKE128Final(SHAKE128_CTX *ctx);
 bool SHAKE128Squeeze(SHAKE128_CTX *ctx, uint8_t *output, size_t outlen);
 bool SHAKE128(const uint8_t *data, size_t len, uint8_t *digest, size_t outlen);
 
+static FORCE_INLINE int SHAKE128Compare(const uint8_t *a, const uint8_t *b, size_t len) {
+    for (size_t i = 0; i < len; i++) {
+        if (a[i] < b[i]) return -1;
+        if (a[i] > b[i]) return 1;
+    }
+    return 0;
+}
+
 #endif // ENABLE_SHAKE128
 
 // ======================================
@@ -55,6 +64,7 @@ bool SHAKE128(const uint8_t *data, size_t len, uint8_t *digest, size_t outlen);
 #define SHAKE256Final        TSHASH_FN(SHAKE256Final)
 #define SHAKE256Squeeze      TSHASH_FN(SHAKE256Squeeze)
 #define SHAKE256             TSHASH_FN(SHAKE256)
+#define SHAKE256Compare      TSHASH_FN(SHAKE256Compare)
 
 #define SHAKE256_BLOCK_SIZE 136
 #define SHAKE256_DOMAIN 0x1F
@@ -67,6 +77,14 @@ bool SHAKE256Final(SHAKE256_CTX *ctx);
 bool SHAKE256Squeeze(SHAKE256_CTX *ctx, uint8_t *output, size_t outlen);
 bool SHAKE256(const uint8_t *data, size_t len, uint8_t *digest, size_t outlen);
 
+static FORCE_INLINE int SHAKE256Compare(const uint8_t *a, const uint8_t *b, size_t len) {
+    for (size_t i = 0; i < len; i++) {
+        if (a[i] < b[i]) return -1;
+        if (a[i] > b[i]) return 1;
+    }
+    return 0;
+}
+
 #endif // ENABLE_SHAKE256
 
 // ======================================
@@ -78,6 +96,7 @@ bool SHAKE256(const uint8_t *data, size_t len, uint8_t *digest, size_t outlen);
 #define RawSHAKE128Final        TSHASH_FN(RawSHAKE128Final)
 #define RawSHAKE128Squeeze      TSHASH_FN(RawSHAKE128Squeeze)
 #define RawSHAKE128             TSHASH_FN(RawSHAKE128)
+#define RawSHAKE128Compare      TSHASH_FN(RawSHAKE128Compare)
 
 #define RAWSHAKE128_BLOCK_SIZE 168
 #define RAWSHAKE128_DOMAIN 0x00
@@ -90,6 +109,14 @@ bool RawSHAKE128Final(RawSHAKE128_CTX *ctx);
 bool RawSHAKE128Squeeze(RawSHAKE128_CTX *ctx, uint8_t *output, size_t outlen);
 bool RawSHAKE128(const uint8_t *data, size_t len, uint8_t *digest, size_t outlen);
 
+static FORCE_INLINE int RawSHAKE128Compare(const uint8_t *a, const uint8_t *b, size_t len) {
+    for (size_t i = 0; i < len; i++) {
+        if (a[i] < b[i]) return -1;
+        if (a[i] > b[i]) return 1;
+    }
+    return 0;
+}
+
 #endif // ENABLE_RAWSHAKE128
 
 // ======================================
@@ -101,6 +128,7 @@ bool RawSHAKE128(const uint8_t *data, size_t len, uint8_t *digest, size_t outlen
 #define RawSHAKE256Final        TSHASH_FN(RawSHAKE256Final)
 #define RawSHAKE256Squeeze      TSHASH_FN(RawSHAKE256Squeeze)
 #define RawSHAKE256             TSHASH_FN(RawSHAKE256)
+#define RawSHAKE256Compare      TSHASH_FN(RawSHAKE256Compare)
 
 #define RAWSHAKE256_BLOCK_SIZE 136
 #define RAWSHAKE256_DOMAIN 0x00
@@ -112,6 +140,14 @@ bool RawSHAKE256Absorb(RawSHAKE256_CTX *ctx, const uint8_t *data, size_t len);
 bool RawSHAKE256Final(RawSHAKE256_CTX *ctx);
 bool RawSHAKE256Squeeze(RawSHAKE256_CTX *ctx, uint8_t *output, size_t outlen);
 bool RawSHAKE256(const uint8_t *data, size_t len, uint8_t *digest, size_t outlen);
+
+static FORCE_INLINE int RawSHAKE256Compare(const uint8_t *a, const uint8_t *b, size_t len) {
+    for (size_t i = 0; i < len; i++) {
+        if (a[i] < b[i]) return -1;
+        if (a[i] > b[i]) return 1;
+    }
+    return 0;
+}
 
 #endif // ENABLE_RAWSHAKE256
 

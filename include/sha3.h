@@ -18,6 +18,7 @@ extern "C" {
 #define SHA3_224Final        TSHASH_FN(SHA3_224Final)
 #define SHA3_224Squeeze      TSHASH_FN(SHA3_224Squeeze)
 #define SHA3_224             TSHASH_FN(SHA3_224)
+#define SHA3_224Compare      TSHASH_FN(SHA3_224Compare)
 
 #define SHA3_224_BLOCK_SIZE 144
 #define SHA3_224_DIGEST_SIZE 28
@@ -31,6 +32,14 @@ bool SHA3_224Final(SHA3_224_CTX *ctx);
 bool SHA3_224Squeeze(SHA3_224_CTX *ctx, uint8_t *output, size_t outlen);
 bool SHA3_224(const uint8_t *data, size_t len, uint8_t digest[SHA3_224_DIGEST_SIZE]);
 
+static FORCE_INLINE int SHA3_224Compare(const uint8_t *a, const uint8_t *b) {
+    for (size_t i = 0; i < SHA3_224_DIGEST_SIZE; i++) {
+        if (a[i] < b[i]) return -1;
+        if (a[i] > b[i]) return 1;
+    }
+    return 0;
+}
+
 #endif // ENABLE_SHA3_224
 
 // ======================================
@@ -42,6 +51,7 @@ bool SHA3_224(const uint8_t *data, size_t len, uint8_t digest[SHA3_224_DIGEST_SI
 #define SHA3_256Final        TSHASH_FN(SHA3_256Final)
 #define SHA3_256Squeeze      TSHASH_FN(SHA3_256Squeeze)
 #define SHA3_256             TSHASH_FN(SHA3_256)
+#define SHA3_256Compare      TSHASH_FN(SHA3_256Compare)
 
 #define SHA3_256_BLOCK_SIZE 136
 #define SHA3_256_DIGEST_SIZE 32
@@ -55,6 +65,14 @@ bool SHA3_256Final(SHA3_256_CTX *ctx);
 bool SHA3_256Squeeze(SHA3_256_CTX *ctx, uint8_t *output, size_t outlen);
 bool SHA3_256(const uint8_t *data, size_t len, uint8_t digest[SHA3_256_DIGEST_SIZE]);
 
+static FORCE_INLINE int SHA3_256Compare(const uint8_t *a, const uint8_t *b) {
+    for (size_t i = 0; i < SHA3_256_DIGEST_SIZE; i++) {
+        if (a[i] < b[i]) return -1;
+        if (a[i] > b[i]) return 1;
+    }
+    return 0;
+}
+
 #endif // ENABLE_SHA3_256
 
 // ======================================
@@ -66,6 +84,7 @@ bool SHA3_256(const uint8_t *data, size_t len, uint8_t digest[SHA3_256_DIGEST_SI
 #define SHA3_384Final        TSHASH_FN(SHA3_384Final)
 #define SHA3_384Squeeze      TSHASH_FN(SHA3_384Squeeze)
 #define SHA3_384             TSHASH_FN(SHA3_384)
+#define SHA3_384Compare      TSHASH_FN(SHA3_384Compare)
 
 #define SHA3_384_BLOCK_SIZE 104
 #define SHA3_384_DIGEST_SIZE 48
@@ -79,6 +98,14 @@ bool SHA3_384Final(SHA3_384_CTX *ctx);
 bool SHA3_384Squeeze(SHA3_384_CTX *ctx, uint8_t *output, size_t outlen);
 bool SHA3_384(const uint8_t *data, size_t len, uint8_t digest[SHA3_384_DIGEST_SIZE]);
 
+static FORCE_INLINE int SHA3_384Compare(const uint8_t *a, const uint8_t *b) {
+    for (size_t i = 0; i < SHA3_384_DIGEST_SIZE; i++) {
+        if (a[i] < b[i]) return -1;
+        if (a[i] > b[i]) return 1;
+    }
+    return 0;
+}
+
 #endif // ENABLE_SHA3_384
 
 // ======================================
@@ -90,6 +117,7 @@ bool SHA3_384(const uint8_t *data, size_t len, uint8_t digest[SHA3_384_DIGEST_SI
 #define SHA3_512Final        TSHASH_FN(SHA3_512Final)
 #define SHA3_512Squeeze      TSHASH_FN(SHA3_512Squeeze)
 #define SHA3_512             TSHASH_FN(SHA3_512)
+#define SHA3_512Compare      TSHASH_FN(SHA3_512Compare)
 
 #define SHA3_512_BLOCK_SIZE 72
 #define SHA3_512_DIGEST_SIZE 64
@@ -102,6 +130,14 @@ bool SHA3_512Absorb(SHA3_512_CTX *ctx, const uint8_t *data, size_t len);
 bool SHA3_512Final(SHA3_512_CTX *ctx);
 bool SHA3_512Squeeze(SHA3_512_CTX *ctx, uint8_t *output, size_t outlen);
 bool SHA3_512(const uint8_t *data, size_t len, uint8_t digest[SHA3_512_DIGEST_SIZE]);
+
+static FORCE_INLINE int SHA3_512Compare(const uint8_t *a, const uint8_t *b) {
+    for (size_t i = 0; i < SHA3_512_DIGEST_SIZE; i++) {
+        if (a[i] < b[i]) return -1;
+        if (a[i] > b[i]) return 1;
+    }
+    return 0;
+}
 
 #endif // ENABLE_SHA3_512
 
