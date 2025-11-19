@@ -26,7 +26,8 @@ tiny-crypto/
 │     ├─ sha1.c     
 │     ├─ sha2.c
 │     ├─ sha3.c
-│     └─ keccak.c
+│     ├─ keccak.c
+│     └─ README_SHA.md # Overview of SHA implementations
 │  └─ hmac.c
 │
 ├─ tests/ # Demo and test files
