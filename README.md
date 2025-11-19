@@ -5,7 +5,7 @@ tiny-crypto/
 ├─ include/             # Public headers
 │   ├─ crypto_config.h  # Config flags for enabling/disabling algorithms
 │   ├─ demo_config.h
-│   ├─ sha_commons.h    # (shared functions like padding, endian conversion)
+│   ├─ sha_commons.h    # SHA (shared functions like padding, endian conversion)
 │   ├─ sha1.h
 │   ├─ sha2.h
 │   ├─ sha3.h
