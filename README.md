@@ -41,11 +41,13 @@ tiny-crypto/
 
 ---
 
-### Notes
+## Sources
 
-- `include/` contains all **public headers** that your users or other projects would include.  
-- `src/` contains **all implementation files**; the SHA family is grouped in its own subfolder.  
-- `tests/` keeps your demos and testing separate from production code.  
-- The `crypto_config.h` file centralizes **all feature flags** (enable/disable SHA variants, HMAC, Keccak core).  
-- The `demo_config.h` file centralizes **all demo/testing flags**, allowing you to enable or disable specific demo files or test modules modifying the source.  
-- The structure allows you to **easily extend** with new crypto algorithms or utilities in the future.
+- [RFC 6234 – US Secure Hash Algorithms (SHA and SHA‑based HMAC and HKDF), May 2011](https://datatracker.ietf.org/doc/html/rfc6234)
+- [FIPS PUB 202 – SHA‑3 Standard: Permutation-Based Hash and Extendable-Output Functions, August 2015](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf)
+
+---
+
+## License
+
+This project is released under the **MIT License**. See `LICENSE` for full text.
