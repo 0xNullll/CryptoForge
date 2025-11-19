@@ -1,11 +1,5 @@
 #include "../include/demo_config.h"
 
-void print_hex(const uint8_t *digest, size_t size) {
-    for (size_t i = 0; i < size; i++)
-        printf("%02x", digest[i]);
-    printf("\n");
-}
-
 void compute_and_print_hashes(const uint8_t *data, size_t len) {
 
 #if ENABLE_SHA1
