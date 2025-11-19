@@ -11,6 +11,7 @@ Below is the directory layout of the project:
 ```c
 tiny-crypto/
 ├─ include/ # Public headers
+│  ├─ libs.h          # central include for standard C libraries and basic utilities
 │  ├─ crypto_config.h # Configuration flags to enable/disable algorithms
 │  ├─ demo_config.h   # Configuration for demo/testing files
 │  ├─ sha_commons.h   # Shared SHA functions (padding, endian conversions, etc.)
