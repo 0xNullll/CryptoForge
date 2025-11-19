@@ -47,14 +47,15 @@
                 // "-O3",
                 // "-O0",
                 // "-s",
+                "-I${workspaceFolder}\\include",
 
-                "${workspaceFolder}\\tests\\run_all_demos.c",
                 "${workspaceFolder}\\src\\sha\\sha1.c",
                 "${workspaceFolder}\\src\\sha\\sha2.c",
                 "${workspaceFolder}\\src\\sha\\sha3.c",
+                "${workspaceFolder}\\src\\sha\\shake.c",
                 "${workspaceFolder}\\src\\sha\\keccak.c",
                 "${workspaceFolder}\\src\\hmac.c",
-                "-I${workspaceFolder}\\include",
+                "${workspaceFolder}\\tests\\run_all_demos.c",
                 "-o",
                 "${workspaceFolder}\\bin\\run_all_demos.exe"
             ],

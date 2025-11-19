@@ -139,4 +139,14 @@
   #endif
 #endif
 
+// Enable SHAKE XOF helper functions if any SHAKE/RawSHAKE variant is enabled
+#if ENABLE_SHAKE128     || \
+    ENABLE_SHAKE256     || \
+    ENABLE_RAWSHAKE128  || \
+    ENABLE_RAWSHAKE256
+  #ifndef ENABLE_SHAKE_XOF
+    #define ENABLE_SHAKE_XOF 1
+  #endif
+#endif
+
 #endif // CRYPTO_CONFIG_H
