@@ -55,6 +55,8 @@
                 "${workspaceFolder}\\src\\sha\\shake.c",
                 "${workspaceFolder}\\src\\sha\\keccak.c",
                 "${workspaceFolder}\\src\\hmac.c",
+                "${workspaceFolder}\\tests\\demo_hmac.c",
+                "${workspaceFolder}\\tests\\demo_sha.c",
                 "${workspaceFolder}\\tests\\run_all_demos.c",
                 "-o",
                 "${workspaceFolder}\\bin\\run_all_demos.exe"
