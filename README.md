@@ -1,4 +1,4 @@
-# tiny-crypto Repository Layout
+# tiny-crypto Library
 
 A modular, lightweight C crypto library including SHA variants, HMAC, and Keccak.
 
