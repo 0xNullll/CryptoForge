@@ -1,24 +1,44 @@
-## Features
+# SHA Module — Crypto Library
+
+This folder contains all SHA-based cryptographic hash functions implemented in the library, including SHA-1, SHA-2, SHA-3, SHAKE, and Raw Keccak functions.  
+
+The SHA module is designed to be **lightweight, self-contained, and portable**, providing both one-shot and incremental (streaming) APIs for flexibility in hashing data of any size. It also includes utilities for safe hash comparison and bit-level operations when using SHAKE or Raw Keccak.  
+
+## Key Features
 
 - **SHA-1/2 variants**: SHA-1, SHA-224, SHA-256, SHA-384, SHA-512, SHA-512/224, SHA-512/256  
 - **SHA-3 variants**: SHA3-224, SHA3-256, SHA3-384, SHA3-512  
 - **SHAKE / XOF variants**: SHAKE128, SHAKE256  
-- **Raw Keccak / Raw SHAKE** — low-level Keccak permutation is always used internally by SHA-3 and SHAKE functions; can also be used directly for custom or bit-level operations.
-- Separate implementation file (`tiny_sha.c`) and header (`tiny_sha.h`)  
+- **Raw Keccak / Raw SHAKE** — always used internally by SHA-3 and SHAKE functions, but also available for direct use  
 - Incremental (streaming) API: `Init`, `Absorb/Update`, `Final`, `Squeeze` (all return `bool`)  
-- Wrapper functions for one-shot hashing
-- Safe hash comparison via `CompareOrder` inline functions
-- Handles endianness automatically  
-- Lightweight — entire library under 50 KB
+- One-shot wrapper functions for convenience  
+- **Safe hash comparison** with `CompareOrder` inline helpers  
+- Automatic endianness handling  
+- Lightweight and fast — suitable for embedded or performance-sensitive environments  
 
 ---
 
-The header handles internal dependencies automatically:
+## Internal Dependencies
 
-- SHA-224 → uses SHA-256 internally.  
-- SHA-384 → uses SHA-512 internally.  
-- SHA-512/224 and SHA-512/256 → use SHA-512 internally.  
-- SHA-3 and SHAKE variants → all use the internal Keccak permutation functions for processing.
+The headers handle internal dependencies automatically:
+
+- SHA-224 → uses SHA-256 internally  
+- SHA-384 → uses SHA-512 internally  
+- SHA-512/224 and SHA-512/256 → use SHA-512 internally  
+- SHA-3 and SHAKE variants → all use the internal Keccak permutation functions for processing  
+
+---
+
+## Organization
+
+- `sha1.h/c`    — SHA-1 functions and context  
+- `sha2.h/c`     — SHA-2 functions (SHA-224, SHA-256, SHA-384, SHA-512, SHA-512/224, SHA-512/256)  
+- `sha3.h/c`     — SHA-3 functions (224–512)  
+- `shake.h/c`    — SHAKE128, SHAKE256, and Raw Keccak functions  
+- `keccak.h/c`   — low-level Keccak permutation functions used internally by SHA-3, SHAKE, and Raw Keccak  
+- `sha_common.h` — shared definitions and utilities  
+
+This folder provides all building blocks needed for cryptographic hashing, whether for secure message digests, digital signatures, or low-level bitwise operations with Keccak.
 
 ---
 
