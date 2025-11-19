@@ -31,11 +31,11 @@ The headers handle internal dependencies automatically:
 
 ## Organization
 
-- `sha1.h/c`    — SHA-1 functions and context  
-- `sha2.h/c`     — SHA-2 functions (SHA-224, SHA-256, SHA-384, SHA-512, SHA-512/224, SHA-512/256)  
-- `sha3.h/c`     — SHA-3 functions (224–512)  
-- `shake.h/c`    — SHAKE128, SHAKE256, and Raw Keccak functions  
-- `keccak.h/c`   — low-level Keccak permutation functions used internally by SHA-3, SHAKE, and Raw Keccak  
+- `sha1.h/c` — SHA-1 functions and context  
+- `sha2.h/c` — SHA-2 functions (SHA-224, SHA-256, SHA-384, SHA-512, SHA-512/224, SHA-512/256)  
+- `sha3.h/c` — SHA-3 functions (224–512)  
+- `shake.h/c` — SHAKE128, SHAKE256, and Raw Keccak functions  
+- `keccak.h/c` — low-level Keccak permutation functions used internally by SHA-3, SHAKE, and Raw Keccak  
 - `sha_common.h` — shared definitions and utilities  
 
 This folder provides all building blocks needed for cryptographic hashing, whether for secure message digests, digital signatures, or low-level bitwise operations with Keccak.
