@@ -6,7 +6,8 @@
 - **Raw Keccak / Raw SHAKE** — low-level Keccak permutation is always used internally by SHA-3 and SHAKE functions; can also be used directly for custom or bit-level operations.
 - Separate implementation file (`tiny_sha.c`) and header (`tiny_sha.h`)  
 - Incremental (streaming) API: `Init`, `Absorb/Update`, `Final`, `Squeeze` (all return `bool`)  
-- Wrapper functions for one-shot hashing  
+- Wrapper functions for one-shot hashing
+- Safe hash comparison via `CompareOrder` inline functions
 - Handles endianness automatically  
 - Lightweight — entire library under 50 KB
 
@@ -75,6 +76,26 @@ int main() {
 }
 ```
 
+### Comparing Hash Digests
+
+```c
+uint8_t hash1[SHA256_DIGEST_SIZE];
+uint8_t hash2[SHA256_DIGEST_SIZE];
+
+// Compute hash1 and hash2...
+
+int cmp = SHA256CompareOrder(hash1, hash2);
+if (cmp == 0) {
+    printf("Hashes are equal\n");
+} else if (cmp < 0) {
+    printf("hash1 < hash2\n");
+} else {
+    printf("hash1 > hash2\n");
+}
+```
+
+---
+
 ## Output Sizes
 
 | Algorithm      | Digest Size |
@@ -99,9 +120,6 @@ int main() {
 
 ## Notes
 
-- Fully self-contained — no external dependencies.  
-- All functions return `bool` to indicate success or failure.  
-- Designed for simplicity, speed, and easy integration.  
 - SHA-3 functions correspond to SHA-2 operations:
   - `Init` (SHA-2) → `Init` (SHA-3)  
   - `Update` (SHA-2) → `Absorb` (SHA-3)  
