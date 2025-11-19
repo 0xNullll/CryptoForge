@@ -37,6 +37,7 @@ tiny-crypto/
 │
 ├─ LICENSE
 ├─ README.md
+├─ .gitattributes
 └─ .gitignore
 ```
 
