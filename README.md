@@ -44,14 +44,14 @@ Designed with **layered APIs** similar to OpenSSL, but smaller scale, where each
 
 ```text
 /tiny-crypto
-├─ tiny-crypto.h          <-- main DLL / public API header
 ├─ /config
+│   ├─ tiny-crypto.h      <-- main DLL / public API header
 │   ├─ crypto_config.h    <-- library-level flags, DLL macros, PREFIX_T
 │   └─ demo_config.h      <-- demo/test settings
-├─ /crypto                 <-- implementation folder
-│   ├─ /hash               <-- low-level hash algorithms   
-│   │   ├─ hash_commons.h  <-- shared macros (padding, endian conversions)
-│   │   ├─ /sha            <-- SHA family
+├─ /crypto                  <-- implementation folder
+│   ├─ /hash                <-- low-level hash algorithms   
+│   │   ├─ hash_commons.h   <-- shared macros (padding, endian conversions)
+│   │   ├─ /sha             <-- SHA family
 │   │   │   ├─ sha1.c / sha1.h
 │   │   │   ├─ sha256.c / sha256.h
 │   │   │   ├─ sha512.c / sha512.h
