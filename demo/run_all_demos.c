@@ -1,4 +1,4 @@
-#include "../include/demo_config.h"
+#include "../config/demo_config.h"
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {

@@ -1,6 +1,6 @@
-#include "../../include/keccak.h"
+#include "keccak.h"
 
-#if ENABLE_KECCAK_CORE
+#if ENABLE_SHA || ENABLE_SHA3
 
 // Precomputed rotation offsets for the ρ (rho) step of Keccak-f[1600].
 // Each entry rhotates[x][y] specifies the number of bits to rotate the lane A[x][y] left.
@@ -31,10 +31,6 @@ static const uint64_t iotas[24] = {
     U64(0x8000000080008081), U64(0x8000000000008080),
     U64(0x0000000080000001), U64(0x8000000080008008)
 };
-
-#define KECCAK_ROUNDS 24
-
-#define SHA3_KECCAK_F_WIDTH 1600
 
 /*
  * Straightforward implementation of the θ (theta) step of Keccak-f[1600],
@@ -201,15 +197,15 @@ static FORCE_INLINE void Round(uint64_t A[5][5], size_t i, uint64_t lane_mask) {
     Iota(A, i);  // round constant step
 }
 
-// ----------------------
+// ======================
 // Keccak block functions
-//  ----------------------
+// ======================
 static FORCE_INLINE void absorb_block(uint64_t A[5][5], const uint8_t *buf, size_t r) {
     size_t lanes = r / 8;
     for (size_t i = 0; i < lanes; i++) {
         size_t x = i % 5;
         size_t y = i / 5;
-        uint64_t lane = KECCAK_LOAD64(buf + i * 8);
+        uint64_t lane = TWISTED_LOAD64(buf + i * 8);
 
     A[y][x] ^= lane;
     }
@@ -223,11 +219,11 @@ static FORCE_INLINE void squeeze_block(uint64_t A[5][5], uint8_t *buf, size_t r)
         
         uint64_t lane = A[y][x];
         
-        KECCAK_STORE64(buf + i * 8, lane);
+        TWISTED_STORE64(buf + i * 8, lane);
     }
 }
 
-bool keccakP(uint64_t state[5][5], unsigned int w, unsigned int nr) {
+bool ll_keccak_p(uint64_t state[5][5], unsigned int w, unsigned int nr) {
     if (!state || nr > KECCAK_ROUNDS || (w != 64 && w != 32)) return false;
 
     uint64_t mask = (w == 64) ? 0xFFFFFFFFFFFFFFFFULL : 0xFFFFFFFFULL;
@@ -239,10 +235,10 @@ bool keccakP(uint64_t state[5][5], unsigned int w, unsigned int nr) {
     return true;
 }
 
-// -------------------------
-// KECCAK_CTX wrappers
-// -------------------------
-bool KeccakInit(KECCAK_CTX *ctx, size_t rate, uint8_t suffix) {
+// =======================
+// ll_KECCAK_CTX wrappers
+// =======================
+bool ll_keccak_init(ll_KECCAK_CTX *ctx, size_t rate, uint8_t suffix) {
     memset(ctx->state, 0, sizeof(ctx->state));
     memset(ctx->buf, 0, sizeof(ctx->buf));
     ctx->buf_len = 0;
@@ -253,7 +249,7 @@ bool KeccakInit(KECCAK_CTX *ctx, size_t rate, uint8_t suffix) {
 }
 
 // absorb into ctx (buffers partial blocks, processes full blocks)
-bool KeccakAbsorb(KECCAK_CTX *ctx, const uint8_t *input, size_t inlen) {
+bool ll_keccak_absorb(ll_KECCAK_CTX *ctx, const uint8_t *input, size_t inlen) {
     if (ctx->finalized) return false; // Cannot absorb after finalization
 
     size_t offset = 0;
@@ -269,7 +265,7 @@ bool KeccakAbsorb(KECCAK_CTX *ctx, const uint8_t *input, size_t inlen) {
 
         if (ctx->buf_len == ctx->rate) {
             absorb_block(ctx->state, ctx->buf, ctx->rate);
-            keccakP(ctx->state, 64, KECCAK_ROUNDS);
+            ll_keccak_p(ctx->state, 64, KECCAK_ROUNDS);
             ctx->buf_len = 0;
         }
     }
@@ -278,7 +274,7 @@ bool KeccakAbsorb(KECCAK_CTX *ctx, const uint8_t *input, size_t inlen) {
 }
 
 // finalization: multi-rate padding (domain suffix + 10*1), absorb last block
-bool KeccakFinal(KECCAK_CTX *ctx) {
+bool ll_keccak_final(ll_KECCAK_CTX *ctx) {
     if (ctx->finalized) return false;
 
     size_t r = ctx->rate;
@@ -294,7 +290,7 @@ bool KeccakFinal(KECCAK_CTX *ctx) {
     }
 
     absorb_block(ctx->state, ctx->buf, r);
-    keccakP(ctx->state, 64, KECCAK_ROUNDS);
+    ll_keccak_p(ctx->state, 64, KECCAK_ROUNDS);
 
     ctx->buf_len = 0;
     ctx->finalized = 1;
@@ -302,9 +298,9 @@ bool KeccakFinal(KECCAK_CTX *ctx) {
 }
 
 // squeeze: produce outlen bytes. Uses permutation between full-rate blocks
-bool KeccakSqueeze(KECCAK_CTX *ctx, uint8_t *output, size_t outlen) {
+bool ll_keccak_squeeze(ll_KECCAK_CTX *ctx, uint8_t *output, size_t outlen) {
     if (!ctx->finalized) {
-        if (!KeccakFinal(ctx)) return false;
+        if (!ll_keccak_final(ctx)) return false;
     }
 
     size_t offset = 0;
@@ -321,10 +317,10 @@ bool KeccakSqueeze(KECCAK_CTX *ctx, uint8_t *output, size_t outlen) {
         outlen -= block;
 
         if (outlen > 0)
-            keccakP(ctx->state, 64, KECCAK_ROUNDS);
+            ll_keccak_p(ctx->state, 64, KECCAK_ROUNDS);
     }
 
     return true;
 }
 
-#endif // ENABLE_KECCAK_CORE
+#endif // ENABLE_SHA || ENABLE_SHA3

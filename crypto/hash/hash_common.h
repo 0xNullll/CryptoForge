@@ -1,13 +1,13 @@
-#ifndef SHA_COMMON_H
-#define SHA_COMMON_H
+#ifndef HASH_COMMON_H
+#define HASH_COMMON_H
 
-#include "libs.h"
-#include "crypto_config.h"
-#include "utils.h"
+#include "../../config/libs.h"
+#include "../../config/crypto_config.h"
+#include "../../utils/utils.h"
 
-// ----------------------
+// =======================
 // Bit rotation helpers
-// ----------------------
+// =======================
 static FORCE_INLINE uint32_t rotl32(uint32_t x, uint32_t n) {
     n &= 31;
     return (x << n) | (x >> (32 - n));
@@ -15,7 +15,7 @@ static FORCE_INLINE uint32_t rotl32(uint32_t x, uint32_t n) {
 
 static FORCE_INLINE uint64_t rotl64(uint64_t x, uint64_t n) {
     n &= 63;
-    return ((x) << (n)) | ((x) >> (64 - (n)));
+    return (x << n) | (x >> (64 - n));
 }
 
 static FORCE_INLINE uint32_t rotr32(uint32_t x, uint32_t n) {
@@ -33,16 +33,31 @@ static FORCE_INLINE uint64_t rotr64(uint64_t x, uint64_t n) {
 #define ROTR32(x,n) rotr32(x,n)
 #define ROTR64(x,n) rotr64(x,n)
 
-// ----------------------
+
+// =======================
 // Big-endian conversions
-// ----------------------
+// =======================
+#if CPU_BIG_ENDIAN
 
-// ==============================================================
-// SHA-1 / SHA-2 Big-endian helpers (32/64-bit)
-// For use with SHA-1, SHA-224, SHA-256, SHA-384, SHA-512
-// ==============================================================
+// Big-endian CPU: memory already matches the hash format
+static FORCE_INLINE uint32_t BE32(const uint8_t *p) { 
+    return *(const uint32_t*)p; 
+}
 
-// 32-bit (SHA-1 / SHA-256 / SHA-224)
+static FORCE_INLINE uint64_t BE64(const uint8_t *p) { 
+    return *(const uint64_t*)p; 
+}
+
+static FORCE_INLINE void PUT_BE32(uint8_t *p, uint32_t x) { 
+    *(uint32_t*)p = x; 
+}
+
+static FORCE_INLINE void PUT_BE64(uint8_t *p, uint64_t x) { 
+    *(uint64_t*)p = x; 
+}
+#else
+
+// Little-endian CPU: convert manually
 static FORCE_INLINE uint32_t BE32(const uint8_t *p) {
     return ((uint32_t)p[0] << 24) |
            ((uint32_t)p[1] << 16) |
@@ -50,7 +65,6 @@ static FORCE_INLINE uint32_t BE32(const uint8_t *p) {
            ((uint32_t)p[3]);
 }
 
-// 64-bit (SHA-512 / SHA-384)
 static FORCE_INLINE uint64_t BE64(const uint8_t *p) {
     return ((uint64_t)p[0] << 56) |
            ((uint64_t)p[1] << 48) |
@@ -62,7 +76,6 @@ static FORCE_INLINE uint64_t BE64(const uint8_t *p) {
            ((uint64_t)p[7]);
 }
 
-// Write back to memory (big-endian)
 static FORCE_INLINE void PUT_BE32(uint8_t *p, uint32_t x) {
     p[0] = (uint8_t)(x >> 24);
     p[1] = (uint8_t)(x >> 16);
@@ -81,36 +94,35 @@ static FORCE_INLINE void PUT_BE64(uint8_t *p, uint64_t x) {
     p[7] = (uint8_t)x;
 }
 
-// ----------------------
-// SHA-1 / SHA-2 load/store macros (big-endian)
-// ----------------------
-#define SHA_LOAD32(p)    BE32((const uint8_t*)(p))
-#define SHA_STORE32(p,x) PUT_BE32((uint8_t*)(p), x)
-#define SHA_LOAD64(p)    BE64((const uint8_t*)(p))
-#define SHA_STORE64(p,x) PUT_BE64((uint8_t*)(p), x)
+#endif
 
+#define LOAD32(p)    BE32((const uint8_t*)(p))
+#define STORE32(p,x) PUT_BE32((uint8_t*)(p), x)
+#define LOAD64(p)    BE64((const uint8_t*)(p))
+#define STORE64(p,x) PUT_BE64((uint8_t*)(p), x)
 
-// ==============================================================
-// Keccak / SHA-3 Big-endian helpers (32/64-bit)
-// For use with Keccak, SHA3-224, SHA3-256, SHA3-384, SHA3-512
-// ==============================================================
+// =======================
+// Twisted load/store helpers
+// For Keccak / SHA-3 style algorithms
+// Only difference: twisted byte order
+// =======================
 #ifdef CPU_BIG_ENDIAN
-// Big-endian CPU: swap bytes manually for Keccak
-static FORCE_INLINE uint32_t KECCAK_BE32(const uint8_t *p) {
+
+static FORCE_INLINE uint32_t TWISTED32(const uint8_t *p) {
     return  (uint32_t)p[0]       |
            ((uint32_t)p[1] << 8) |
            ((uint32_t)p[2] << 16) |
            ((uint32_t)p[3] << 24);
 }
 
-static FORCE_INLINE void KECCAK_PUT_BE32(uint8_t *p, uint32_t x) {
-    p[0] = (uint8_t)(x      );
-    p[1] = (uint8_t)(x >>  8);
+static FORCE_INLINE void TWISTED_PUT32(uint8_t *p, uint32_t x) {
+    p[0] = (uint8_t)x;
+    p[1] = (uint8_t)(x >> 8);
     p[2] = (uint8_t)(x >> 16);
     p[3] = (uint8_t)(x >> 24);
 }
 
-static FORCE_INLINE uint64_t KECCAK_BE64(const uint8_t *p) {
+static FORCE_INLINE uint64_t TWISTED64(const uint8_t *p) {
     return  (uint64_t)p[0]       |
            ((uint64_t)p[1] << 8) |
            ((uint64_t)p[2] << 16) |
@@ -121,9 +133,9 @@ static FORCE_INLINE uint64_t KECCAK_BE64(const uint8_t *p) {
            ((uint64_t)p[7] << 56);
 }
 
-static FORCE_INLINE void KECCAK_PUT_BE64(uint8_t *p, uint64_t x) {
-    p[0] = (uint8_t)(x      );
-    p[1] = (uint8_t)(x >>  8);
+static FORCE_INLINE void TWISTED_PUT64(uint8_t *p, uint64_t x) {
+    p[0] = (uint8_t)x;
+    p[1] = (uint8_t)(x >> 8);
     p[2] = (uint8_t)(x >> 16);
     p[3] = (uint8_t)(x >> 24);
     p[4] = (uint8_t)(x >> 32);
@@ -133,30 +145,30 @@ static FORCE_INLINE void KECCAK_PUT_BE64(uint8_t *p, uint64_t x) {
 }
 
 #else
-// Little-endian CPU: memory matches Keccak → no operation needed
-static FORCE_INLINE uint32_t KECCAK_BE32(const uint8_t *p) {
+
+// Little-endian CPU: memory matches algorithm → no-op
+static FORCE_INLINE uint32_t TWISTED32(const uint8_t *p) {
     return *(const uint32_t*)p;
 }
 
-static FORCE_INLINE void KECCAK_PUT_BE32(uint8_t *p, uint32_t x) {
-    *(uint32_t*)p = x;
-}
-
-static FORCE_INLINE uint64_t KECCAK_BE64(const uint8_t *p) {
+static FORCE_INLINE uint64_t TWISTED64(const uint8_t *p) {
     return *(const uint64_t*)p;
 }
 
-static FORCE_INLINE void KECCAK_PUT_BE64(uint8_t *p, uint64_t x) {
+static FORCE_INLINE void TWISTED_PUT32(uint8_t *p, uint32_t x) {
+    *(uint32_t*)p = x;
+}
+
+static FORCE_INLINE void TWISTED_PUT64(uint8_t *p, uint64_t x) {
     *(uint64_t*)p = x;
 }
+
 #endif
 
-// ----------------------
-// Keccak / SHA-3 load/store macros (big-endian)
-// ----------------------
-#define KECCAK_LOAD32(p)    KECCAK_BE32((const uint8_t*)(p))
-#define KECCAK_STORE32(p,x) KECCAK_PUT_BE32((uint8_t*)(p), x)
-#define KECCAK_LOAD64(p)    KECCAK_BE64((const uint8_t*)(p))
-#define KECCAK_STORE64(p,x) KECCAK_PUT_BE64((uint8_t*)(p), x)
+#define TWISTED_LOAD32(p)    TWISTED32((const uint8_t*)(p))
+#define TWISTED_STORE32(p,x) TWISTED_PUT32((uint8_t*)(p), x)
+#define TWISTED_LOAD64(p)    TWISTED64((const uint8_t*)(p))
+#define TWISTED_STORE64(p,x) TWISTED_PUT64((uint8_t*)(p), x)
 
-#endif  // SHA_COMMON_H 
+
+#endif // HASH_COMMON_H
