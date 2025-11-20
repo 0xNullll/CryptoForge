@@ -8,10 +8,10 @@ Designed with **layered APIs** similar to OpenSSL, but smaller scale, where each
 ## Project Goals / TODO
 
 ### 1. Hashing
-- [x] SHA-1  
-- [x] SHA-224 / SHA-256 / SHA-512  
-- [x] SHA3-224 / SHA3-256 / SHA3-512  
-- [x] Keccak (optional raw)
+- [xxx] SHA-1  
+- [xxx] SHA-224 / SHA-256 / SHA-512  
+- [xxx] SHA3-224 / SHA3-256 / SHA3-512  
+- [xxx] Keccak (optional raw)
 
 ### 2. HMAC / KMAC
 - [ ] HMAC-SHA1  
