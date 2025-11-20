@@ -42,7 +42,7 @@ Designed with **layered APIs** similar to OpenSSL, but smaller scale, where each
 
 ## Directory Structure
 
-```text
+```c
 /tiny-crypto
 ├─ /config
 │   ├─ tiny-crypto.h      <-- main DLL / public API header
