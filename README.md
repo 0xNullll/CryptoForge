@@ -1,4 +1,4 @@
-# tiny-crypto Library
+# TinyCryptLib
 
 A **modular, lightweight C crypto library** including SHA variants, HMAC, KMAC, and Keccak.  
 Designed with **layered APIs** similar to OpenSSL, but smaller scale, where each API layer has its own prefix.
@@ -43,9 +43,8 @@ Designed with **layered APIs** similar to OpenSSL, but smaller scale, where each
 ## Directory Structure
 
 ```c
-/tiny-crypto
+/TinyCryptLib
 ├─ /config
-│   ├─ tiny-crypto.h      <-- main DLL / public API header
 │   ├─ crypto_config.h    <-- library-level flags, DLL macros, PREFIX_T
 │   └─ demo_config.h      <-- demo/test settings
 ├─ /crypto                  <-- implementation folder
@@ -83,8 +82,7 @@ Designed with **layered APIs** similar to OpenSSL, but smaller scale, where each
 ## Layered API Design
 
 1. **Low-level:** raw hash/HMAC/KMAC implementations → no prefix, internal use  
-2. **EVP layer:** dispatcher by enum/macro, supports streaming/piping → optional prefix  
-3. **Convenience / one-shot:** user-facing APIs → always uses `PREFIX_T`
+2. **EVP layer:** dispatcher by enum/macro, supports streaming/piping and user-facing APIs
 
 ---
 
