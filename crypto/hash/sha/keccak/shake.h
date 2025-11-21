@@ -32,16 +32,6 @@ bool ll_shake128_absorb(ll_SHAKE128_CTX *ctx, const uint8_t *data, size_t len);
 bool ll_shake128_final(ll_SHAKE128_CTX *ctx);
 bool ll_shake128_squeeze(ll_SHAKE128_CTX *ctx, uint8_t *output, size_t outlen);
 
-// High-level one-shot wrapper
-static FORCE_INLINE bool ll_shake128(const uint8_t *data, size_t len,
-                                     uint8_t *digest, size_t outlen) {
-    ll_SHAKE128_CTX ctx;
-    return ll_shake128_init(&ctx)
-        && ll_shake128_absorb(&ctx, data, len)
-        && ll_shake128_final(&ctx)
-        && ll_shake128_squeeze(&ctx, digest, outlen);
-}
-
 // ======================================
 // SHAKE256
 // ======================================
@@ -55,15 +45,6 @@ bool ll_shake256_init(ll_SHAKE256_CTX *ctx);
 bool ll_shake256_absorb(ll_SHAKE256_CTX *ctx, const uint8_t *data, size_t len);
 bool ll_shake256_final(ll_SHAKE256_CTX *ctx);
 bool ll_shake256_squeeze(ll_SHAKE256_CTX *ctx, uint8_t *output, size_t outlen);
-
-static FORCE_INLINE bool ll_shake256(const uint8_t *data, size_t len,
-                                     uint8_t *digest, size_t outlen) {
-    ll_SHAKE256_CTX ctx;
-    return ll_shake256_init(&ctx)
-        && ll_shake256_absorb(&ctx, data, len)
-        && ll_shake256_final(&ctx)
-        && ll_shake256_squeeze(&ctx, digest, outlen);
-}
 
 // ======================================
 // RawSHAKE128
@@ -79,15 +60,6 @@ bool ll_rawshake128_absorb(ll_RawSHAKE128_CTX *ctx, const uint8_t *data, size_t 
 bool ll_rawshake128_final(ll_RawSHAKE128_CTX *ctx);
 bool ll_rawshake128_squeeze(ll_RawSHAKE128_CTX *ctx, uint8_t *output, size_t outlen);
 
-static FORCE_INLINE bool ll_rawshake128(const uint8_t *data, size_t len,
-                                        uint8_t *digest, size_t outlen) {
-    ll_RawSHAKE128_CTX ctx;
-    return ll_rawshake128_init(&ctx)
-        && ll_rawshake128_absorb(&ctx, data, len)
-        && ll_rawshake128_final(&ctx)
-        && ll_rawshake128_squeeze(&ctx, digest, outlen);
-}
-
 // ======================================
 // RawSHAKE256
 // ======================================
@@ -101,15 +73,6 @@ bool ll_rawshake256_init(ll_RawSHAKE256_CTX *ctx);
 bool ll_rawshake256_absorb(ll_RawSHAKE256_CTX *ctx, const uint8_t *data, size_t len);
 bool ll_rawshake256_final(ll_RawSHAKE256_CTX *ctx);
 bool ll_rawshake256_squeeze(ll_RawSHAKE256_CTX *ctx, uint8_t *output, size_t outlen);
-
-static FORCE_INLINE bool ll_rawshake256(const uint8_t *data, size_t len,
-                                        uint8_t *digest, size_t outlen) {
-    ll_RawSHAKE256_CTX ctx;
-    return ll_rawshake256_init(&ctx)
-        && ll_rawshake256_absorb(&ctx, data, len)
-        && ll_rawshake256_final(&ctx)
-        && ll_rawshake256_squeeze(&ctx, digest, outlen);
-}
 
 #ifdef __cplusplus
 }

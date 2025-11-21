@@ -25,11 +25,6 @@ bool ll_sha1_init(ll_SHA1_CTX *ctx);
 bool ll_sha1_update(ll_SHA1_CTX *ctx, const uint8_t *data, size_t len);
 bool ll_sha1_final(ll_SHA1_CTX *ctx, uint8_t digest[SHA1_DIGEST_SIZE]);
 
-static FORCE_INLINE bool ll_sha1(const uint8_t *data, size_t len, uint8_t digest[SHA1_DIGEST_SIZE]) {
-    ll_SHA1_CTX ctx;
-    return ll_sha1_init(&ctx) && ll_sha1_update(&ctx, data, len) && ll_sha1_final(&ctx, digest);
-}
-
 #ifdef __cplusplus
 }
 #endif

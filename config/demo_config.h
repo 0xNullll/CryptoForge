@@ -12,7 +12,11 @@
 #include "../crypto/hash/sha/keccak/sha3.h"
 #include "../crypto/hash/sha/keccak/shake.h"
 
+#include "../crypto/evp/evp_defs.h"
+#include "../crypto/evp/evp_flags.h"
+#include "../crypto/evp/evp_status.h"
 #include "../crypto/evp/evp_hash.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,12 +28,6 @@ FORCE_INLINE void DEMO_print_hex(const uint8_t *digest, size_t size) {
         printf("%02x", digest[i]);
     printf("\n");
 }
-
-TC_API void DEMO_md(const uint8_t *data, size_t len);
-
-TC_API void DEMO_sha(const uint8_t *data, size_t len);
-
-TC_API void DEMO_sha3(const uint8_t *data, size_t len);
 
 // Test helper (for dev)
 TC_API void DEMO_EVP_test_MD(

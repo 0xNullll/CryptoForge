@@ -35,19 +35,6 @@ bool ll_keccak_squeeze(ll_KECCAK_CTX *ctx, uint8_t *output, size_t outlen);
 // Optional low-level permutation function
 bool ll_keccak_p(uint64_t state[5][5], unsigned int w, unsigned int nr);
 
-// High-level convenience function
-static FORCE_INLINE bool ll_keccak(
-    const uint8_t *data, size_t len,
-    uint8_t *digest, size_t outlen,
-    size_t rate, uint8_t suffix) {
-    
-    ll_KECCAK_CTX ctx;
-    return ll_keccak_init(&ctx, rate, suffix)
-        && ll_keccak_absorb(&ctx, data, len)
-        && ll_keccak_final(&ctx)
-        && ll_keccak_squeeze(&ctx, digest, outlen);
-}
-
 #ifdef __cplusplus
 }
 #endif
