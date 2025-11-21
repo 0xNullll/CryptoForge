@@ -9,8 +9,6 @@
 extern "C" {
 #endif
 
-#if ENABLE_SHA
-
 // ======================================
 // SHA-512 Low-level
 // ======================================
@@ -89,5 +87,3 @@ static FORCE_INLINE bool ll_sha512_256(const uint8_t *data, size_t len, uint8_t 
 #ifdef __cplusplus
 }
 #endif
-
-#endif // SHA512_H

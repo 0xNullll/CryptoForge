@@ -9,8 +9,6 @@
 extern "C" {
 #endif
 
-#if ENABLE_SHA
-
 // ======================================
 // SHA-256
 // ======================================
@@ -49,8 +47,6 @@ static FORCE_INLINE bool ll_sha224(const uint8_t *data, size_t len, uint8_t dige
     ll_SHA224_CTX ctx;
     return ll_sha224_init(&ctx) && ll_sha224_update(&ctx, data, len) && ll_sha224_final(&ctx, digest);
 }
-
-#endif // ENABLE_SHA
 
 #ifdef __cplusplus
 }

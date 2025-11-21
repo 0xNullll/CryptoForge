@@ -1,7 +1,5 @@
 #include "shake.h"
 
-#if ENABLE_SHA || ENABLE_SHA3
-
 // ======================================
 // Bit-level helpers
 // ======================================
@@ -118,5 +116,3 @@ bool ll_rawshake256_final(ll_RawSHAKE256_CTX *ctx) {
 bool ll_rawshake256_squeeze(ll_RawSHAKE256_CTX *ctx, uint8_t *output, size_t outlen) {
     return ll_keccak_squeeze(ctx, output, outlen);
 }
-
-#endif // ENABLE_SHA || ENABLE_SHA3

@@ -170,5 +170,39 @@ static FORCE_INLINE void TWISTED_PUT64(uint8_t *p, uint64_t x) {
 #define TWISTED_LOAD64(p)    TWISTED64((const uint8_t*)(p))
 #define TWISTED_STORE64(p,x) TWISTED_PUT64((uint8_t*)(p), x)
 
+// =======================
+// Word <-> Byte conversions
+// =======================
+#if CPU_BIG_ENDIAN
+// On big-endian CPUs, swap bytes to little-endian
+
+static FORCE_INLINE void HASH_PACK32(uint8_t *out, const uint32_t *in, unsigned int len) {
+    for (unsigned int i = 0, j = 0; j < len; i++, j += 4) {
+        out[j]   = (uint8_t)(in[i] & 0xff);
+        out[j+1] = (uint8_t)((in[i] >> 8) & 0xff);
+        out[j+2] = (uint8_t)((in[i] >>16) & 0xff);
+        out[j+3] = (uint8_t)((in[i] >>24) & 0xff);
+    }
+}
+
+static FORCE_INLINE void HASH_UNPACK32(uint32_t *out, const uint8_t *in, unsigned int len) {
+    for (unsigned int i = 0, j = 0; j < len; i++, j += 4) {
+        out[i] = ((uint32_t)in[j]) |
+                 ((uint32_t)in[j+1] << 8) |
+                 ((uint32_t)in[j+2] << 16) |
+                 ((uint32_t)in[j+3] << 24);
+    }
+}
+
+#else
+// On little-endian CPUs, memory matches the format → use direct memcpy
+static FORCE_INLINE void HASH_PACK32(uint8_t *out, const uint32_t *in, unsigned int len) {
+    memcpy(out, in, len);
+}
+
+static FORCE_INLINE void HASH_UNPACK32(uint32_t *out, const uint8_t *in, unsigned int len) {
+    memcpy(out, in, len);
+}
+#endif
 
 #endif // HASH_COMMON_H
