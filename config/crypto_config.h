@@ -1,6 +1,10 @@
 #ifndef CRYPTO_CONFIG_H
 #define CRYPTO_CONFIG_H
 
+#ifndef BUILDING_TC_DLL
+#define BUILDING_TC_DLL 1
+#endif
+
 #ifndef ENABLE_TESTS
 #define ENABLE_TESTS 1       // enable demo/test code
 #endif

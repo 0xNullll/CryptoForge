@@ -1,10 +1,15 @@
 #ifndef EVP_HASH_H
 #define EVP_HASH_H
 
+#include "../../utils/utils.h"
+#include "../../utils/mem_utils.h"
+
 #include "../../config/crypto_config.h"
 #include "../../config/libs.h"
+
 #include "evp_defs.h"
 #include "evp_flags.h"
+#include "evp_status.h"
 
 #include "../hash/md/md5.h"
 #include "../hash/sha/sha1.h"
@@ -22,8 +27,10 @@ extern "C" {
 // ==========================
 // Initialization / Cleanup
 // ==========================
-bool EVP_HashInit(EVP_HASH_CTX *ctx, const EVP_MD *md);
-bool EVP_HashUpdate(EVP_HASH_CTX *ctx, const uint8_t *data, size_t len);
+TC_API EVP_STATUS EVP_HashInit(EVP_HASH_CTX *ctx, const EVP_MD *md, const uint8_t *data, size_t data_len);
+TC_API EVP_HASH_CTX* EVP_HashInitAlloc(const EVP_MD *md, const uint8_t *data, size_t data_len, EVP_STATUS *status);
+
+TC_API EVP_STATUS EVP_HashUpdate(EVP_HASH_CTX *ctx);
 
 /**
  * For FIXED OUTPUT hashes (MD5, SHA1, SHA2, SHA3-256, SHA3-512):
@@ -32,15 +39,15 @@ bool EVP_HashUpdate(EVP_HASH_CTX *ctx, const uint8_t *data, size_t len);
  * For XOF hashes (SHAKE128, SHAKE256):
  *     - out_len REQUIRED, user controls length
  */
-TC_API bool EVP_HashFinal(EVP_HASH_CTX *ctx, uint8_t *digest, size_t out_len);
+TC_API EVP_STATUS EVP_HashFinal(EVP_HASH_CTX *ctx, uint8_t *digest, size_t out_len);
 
-TC_API void EVP_HashFree(EVP_HASH_CTX *ctx);
-TC_API void EVP_HashReset(EVP_HASH_CTX *ctx);
+TC_API EVP_STATUS EVP_HashFree(EVP_HASH_CTX *ctx);
+TC_API EVP_STATUS EVP_HashReset(EVP_HASH_CTX *ctx);
 
 // ==========================
 // One-shot convenience
 // ==========================
-TC_API bool EVP_ComputeHash(
+TC_API EVP_STATUS EVP_ComputeHash(
     const EVP_MD *md,
     uint8_t *digest,
     const uint8_t *data,

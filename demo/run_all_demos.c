@@ -14,14 +14,7 @@ int main(void) {
     const char *input = fake_argv[1];
     size_t input_len = strlen(input);
 
-    DEMO_md((const uint8_t*)input, input_len);
-    putchar('\n');
-
-    DEMO_sha((const uint8_t*)input, input_len);
-    putchar('\n');
-
-    DEMO_sha3((const uint8_t*)input, input_len);
-
+#if ENABLE_TESTS
     printf("\nEVP_MD structure test:\n");
 
     // Test some hashes
@@ -31,5 +24,59 @@ int main(void) {
     DEMO_EVP_test_MD(EVP_MDByFlag(EVP_SHAKE128), (const uint8_t*)input, input_len, 64);   // 64-byte output
     DEMO_EVP_test_MD(EVP_MDByFlag(EVP_SHAKE256), (const uint8_t*)input, input_len, 100);  // 100-byte output
 
+
+    uint8_t digest[64];  // large enough for SHA3-512
+    size_t out_len = 64;
+
+    // Choose your hash algorithm (replace with actual MD)
+    const EVP_MD *md = EVP_MDByFlag(EVP_SHA256);  
+
+    // --- Test 1: Init + Update + Final ---
+    EVP_STATUS status;
+    EVP_HASH_CTX ctx;
+    
+    status = EVP_HashInit(&ctx, md, (const uint8_t*)input, input_len);
+    if (status != EVP_OK) {
+        printf("EVP_HashInit failed\n");
+        return 1;
+    }
+
+    // Update (process stored data)
+    status = EVP_HashUpdate(&ctx);
+    if (status != EVP_OK) {
+        printf("EVP_HashUpdate failed\n");
+        return 1;
+    }
+
+    // Final
+    status = EVP_HashFinal(&ctx, digest, out_len);
+    if (status != EVP_OK) {
+        printf("EVP_HashFinal failed\n");
+        return 1;
+    }
+
+    // Print digest
+    printf("Digest: ");
+    for (size_t i = 0; i < EVP_HashDigestSize(&ctx); i++) {
+        printf("%02x", digest[i]);
+    }
+    printf("\n");
+
+    EVP_HashFree(&ctx);
+
+    // --- Test 2: One-shot hash ---
+    status = EVP_ComputeHash(md, digest, (const uint8_t*)input, input_len, out_len);
+    if (status != EVP_OK) {
+        printf("EVP_ComputeHash failed\n");
+        return 1;
+    }
+
+    printf("One-shot digest: ");
+    for (size_t i = 0; i < md->digest_size; i++) {
+        printf("%02x", digest[i]);
+    }
+    printf("\n");
+
+#endif // ENABLE_TESTS
     return 0;
 }

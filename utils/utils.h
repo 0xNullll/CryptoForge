@@ -1,8 +1,11 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#define BUILDING_TC_DLL
+#include "../config/crypto_config.h"
 
+// ======================
+// 1. Platform / DLL / Compiler Macros
+// ======================
 #ifdef _WIN32
   #ifdef BUILDING_TC_DLL
     #define TC_API __declspec(dllexport)
@@ -14,20 +17,25 @@
 #endif
 
 #ifdef _MSC_VER
-#define FORCE_INLINE __forceinline
+  #define FORCE_INLINE __forceinline
 #else
-#define FORCE_INLINE inline __attribute__((always_inline))
+  #define FORCE_INLINE inline __attribute__((always_inline))
 #endif
 
+// ======================
+// 2. Integer Literal Macros
+// ======================
 #if (defined(_WIN32) || defined(_WIN64)) && !defined(__MINGW32__)
-# define U64(C) C##UI64
+  #define U64(C) C##UI64
 #elif defined(__arch64__)
-# define U64(C) C##UL
+  #define U64(C) C##UL
 #else
-# define U64(C) C##ULL
+  #define U64(C) C##ULL
 #endif
 
-// IN, OUT, INOUT macros for clarity
+// ======================
+// 3. Parameter Annotations
+// ======================
 #ifndef IN
 #define IN
 #endif

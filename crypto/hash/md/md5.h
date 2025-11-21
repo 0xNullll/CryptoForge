@@ -23,12 +23,6 @@ bool ll_md5_init(ll_MD5_CTX *ctx);
 bool ll_md5_update(ll_MD5_CTX *ctx, const uint8_t *data, size_t len);
 bool ll_md5_final(ll_MD5_CTX *ctx, uint8_t digest[MD5_DIGEST_SIZE]);
 
-// Convenience single-call
-static FORCE_INLINE bool ll_md5(const uint8_t *data, size_t len, uint8_t digest[MD5_DIGEST_SIZE]) {
-    ll_MD5_CTX ctx;
-    return ll_md5_init(&ctx) && ll_md5_update(&ctx, data, len) && ll_md5_final(&ctx, digest);
-}
-
 #ifdef __cplusplus
 }
 #endif
