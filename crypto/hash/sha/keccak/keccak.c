@@ -1,7 +1,5 @@
 #include "keccak.h"
 
-#if ENABLE_SHA || ENABLE_SHA3
-
 // Precomputed rotation offsets for the ρ (rho) step of Keccak-f[1600].
 // Each entry rhotates[x][y] specifies the number of bits to rotate the lane A[x][y] left.
 // Derived from Section 3.2.2 of FIPS PUB 202, modulo lane size w=64.
@@ -322,5 +320,3 @@ bool ll_keccak_squeeze(ll_KECCAK_CTX *ctx, uint8_t *output, size_t outlen) {
 
     return true;
 }
-
-#endif // ENABLE_SHA || ENABLE_SHA3

@@ -1,7 +1,5 @@
 #include "sha512.h"
 
-#if ENABLE_SHA
-
 // SHA-512 constants
 static const uint64_t K512[80] = {
     U64(0x428a2f98d728ae22), U64(0x7137449123ef65cd),
@@ -235,5 +233,3 @@ bool ll_sha512_256_final(ll_SHA512_256_CTX *ctx, uint8_t digest[SHA512_256_DIGES
     memcpy(digest, full_digest, SHA512_256_DIGEST_SIZE);
     return true;
 }
-
-#endif // ENABLE_SHA

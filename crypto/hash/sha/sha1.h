@@ -8,8 +8,6 @@
 extern "C" {
 #endif
 
-#if ENABLE_SHA
-
 // ======================================
 // SHA-1
 // ======================================
@@ -31,8 +29,6 @@ static FORCE_INLINE bool ll_sha1(const uint8_t *data, size_t len, uint8_t digest
     ll_SHA1_CTX ctx;
     return ll_sha1_init(&ctx) && ll_sha1_update(&ctx, data, len) && ll_sha1_final(&ctx, digest);
 }
-
-#endif // ENABLE_SHA
 
 #ifdef __cplusplus
 }

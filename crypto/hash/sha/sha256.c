@@ -1,7 +1,5 @@
 #include "sha256.h"
 
-#if ENABLE_SHA
-
 // SHA-256 constants
 static const uint32_t K256[64] = {
     0x428a2f98UL,0x71374491UL,0xb5c0fbcfUL,0xe9b5dba5UL,
@@ -152,5 +150,3 @@ bool ll_sha224_final(ll_SHA224_CTX *ctx, uint8_t digest[SHA224_DIGEST_SIZE]) {
     memcpy(digest, full_digest, SHA224_DIGEST_SIZE);
     return true;
 }
-
-#endif // ENABLE_SHA

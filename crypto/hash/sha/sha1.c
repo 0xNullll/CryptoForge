@@ -1,7 +1,5 @@
 #include "sha1.h"
 
-#if ENABLE_SHA
-
 // SHA-1 constants
 #define K_00_19 0x5a827999UL
 #define K_20_39 0x6ed9eba1UL
@@ -129,5 +127,3 @@ bool ll_sha1_final(ll_SHA1_CTX *ctx, uint8_t digest[SHA1_DIGEST_SIZE]) {
 
     return true;
 }
-
-#endif // ENABLE_SHA

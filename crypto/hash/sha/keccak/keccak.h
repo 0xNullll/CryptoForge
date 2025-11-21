@@ -9,8 +9,6 @@
 extern "C" {
 #endif
 
-#if ENABLE_SHA || ENABLE_SHA3
-
 // ======================================
 // KECCAK (Low-level)
 // ======================================
@@ -49,8 +47,6 @@ static FORCE_INLINE bool ll_keccak(
         && ll_keccak_final(&ctx)
         && ll_keccak_squeeze(&ctx, digest, outlen);
 }
-
-#endif // ENABLE_SHA || ENABLE_SHA3
 
 #ifdef __cplusplus
 }

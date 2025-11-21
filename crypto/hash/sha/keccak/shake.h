@@ -10,8 +10,6 @@
 extern "C" {
 #endif
 
-#if ENABLE_SHA || ENABLE_SHA3
-
 // ======================================
 // SHAKE (Low-level) / RawSHAKE XOF helpers (bit-level)
 // ======================================
@@ -25,6 +23,7 @@ void ll_concat_bits(const uint8_t *X, size_t x_bits,
 // ======================================
 #define SHAKE128_BLOCK_SIZE 168
 #define SHAKE128_DOMAIN 0x1F
+#define SHAKE128_DEFAULT_OUT_LEN 32
 
 typedef ll_KECCAK_CTX ll_SHAKE128_CTX;
 
@@ -48,6 +47,7 @@ static FORCE_INLINE bool ll_shake128(const uint8_t *data, size_t len,
 // ======================================
 #define SHAKE256_BLOCK_SIZE 136
 #define SHAKE256_DOMAIN 0x1F
+#define SHAKE256_DEFAULT_OUT_LEN 64
 
 typedef ll_KECCAK_CTX ll_SHAKE256_CTX;
 
@@ -70,6 +70,7 @@ static FORCE_INLINE bool ll_shake256(const uint8_t *data, size_t len,
 // ======================================
 #define RAWSHAKE128_BLOCK_SIZE 168
 #define RAWSHAKE128_DOMAIN 0x00
+#define RAWSHAKE128_DEFAULT_OUT_LEN 32
 
 typedef ll_KECCAK_CTX ll_RawSHAKE128_CTX;
 
@@ -92,6 +93,7 @@ static FORCE_INLINE bool ll_rawshake128(const uint8_t *data, size_t len,
 // ======================================
 #define RAWSHAKE256_BLOCK_SIZE 136
 #define RAWSHAKE256_DOMAIN 0x00
+#define RAWSHAKE256_DEFAULT_OUT_LEN 64
 
 typedef ll_KECCAK_CTX ll_RawSHAKE256_CTX;
 
@@ -108,8 +110,6 @@ static FORCE_INLINE bool ll_rawshake256(const uint8_t *data, size_t len,
         && ll_rawshake256_final(&ctx)
         && ll_rawshake256_squeeze(&ctx, digest, outlen);
 }
-
-#endif // ENABLE_SHA || ENABLE_SHA3
 
 #ifdef __cplusplus
 }
