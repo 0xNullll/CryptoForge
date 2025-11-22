@@ -18,6 +18,7 @@ Designed with **layered APIs** similar to OpenSSL, but smaller scale, where each
 - [ ] HMAC-SHA2  
 - [ ] HMAC-SHA3  
 
+- [ ] KMAC
 ### 3. RNG / DRBG
 - [ ] Fast PRNG (Xorshift128+, PCG)  
 - [ ] SHA-based DRBG (crypto-secure)  
