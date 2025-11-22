@@ -1,60 +1,5 @@
 #include "hmac.h"
 
-// HMAC Rules / Steps (RFC 2104)
-// Normalize the key
-
-// Let B = block size of the hash (e.g., SHA256 → 64 bytes).
-
-// If key_len > B → hash the key and use the digest as the new key.
-
-// If key_len < B → pad the key with zeros to make it exactly B bytes.
-
-// Call this padded key K'.
-
-// Prepare the inner and outer pads
-
-// ipad = 0x36 repeated B times
-
-// opad = 0x5C repeated B times
-
-// XOR the key with the pads
-
-// K'_inner = K' XOR ipad
-
-// K'_outer = K' XOR opad
-
-// Compute the inner hash
-
-// inner_hash = H(K'_inner || message)
-
-// Concatenate the XORed key with the message
-
-// Hash it using the underlying hash function
-
-// Compute the final HMAC
-
-// HMAC = H(K'_outer || inner_hash)
-
-// Concatenate the XORed key for outer with the inner hash result
-
-// Hash it again → this is the final HMAC
-
-// Optional: Squeeze (for SHAKE / XOF)
-
-// Only for extendable-output functions like SHAKE.
-
-// After final, produce as many bytes as needed.
-
-// typedef struct _ll_HMAC_CTX {
-//     const EVP_MD *md;                         // Low-level hash descriptor
-//     void *ipad_ctx;                           // Inner hash context
-//     void *opad_ctx;                           // Outer hash context
-//     uint8_t key[EVP_MAX_DEFAULT_BLOCK_SIZE];  // Pre-padded key (max block size)
-//     size_t key_len;
-
-//     isHeapAlloc;
-// } ll_HMAC_CTX;
-
 EVP_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const EVP_MD *md, const uint8_t *key, size_t key_len) {
     if (!ctx || !md || !key)
         return EVP_ERR_NULL_PTR;
@@ -82,10 +27,6 @@ EVP_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const EVP_MD *md, const uint8_t *key, 
         return EVP_ERR_ALLOC_FAILED;
     }
 
-    // // Use a local variable for the effective key length after normalization.
-    // // This avoids clobbering the callers key_len or confusing logic.
-    // size_t key_used_len = key_len;
-
     // normalize key
     if (key_len > md->block_size) {
         if (!md->hash_init_fn(ctx->ipad_ctx) ||
@@ -104,11 +45,7 @@ EVP_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const EVP_MD *md, const uint8_t *key, 
 
     if (key_len < md->block_size)
         SECURE_MEMSET(ctx->key + key_len, 0, md->block_size - key_len);
-
-    // store both logical key length (useful later) and padded block size
-    ctx->key_len = md->block_size;           // number of meaningful key bytes
-    // ctx->key_block_size = md->block_size;  // block size used for padding / ipad/opad   
-    
+    ctx->key_len = md->block_size;
 
     // apply XOR pads
     uint8_t ipad[EVP_MAX_DEFAULT_BLOCK_SIZE], opad[EVP_MAX_DEFAULT_BLOCK_SIZE];
