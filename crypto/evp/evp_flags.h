@@ -4,7 +4,7 @@
 #include "../../config/crypto_config.h"
 
 // Maximum default digest length among all hash variants
-#define EVP_MAX_DEFAULT_BLOCK_SIZE 128  // SHA512 / SHA3-512
+#define EVP_MAX_DEFAULT_BLOCK_SIZE 168  // SHAKE
 #define EVP_MAX_DEFAULT_DIGEST_SIZE 64  // SHA512 / SHA3-512
 
 // MD5

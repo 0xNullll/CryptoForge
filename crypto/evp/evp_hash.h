@@ -78,11 +78,17 @@ TC_API EVP_STATUS EVP_ComputeCShake(
 );
 
 // ==========================
+// Hash comparison
+// ==========================
+// Note: Performs a constant time comparison to resist timing attacks.
+TC_API int EVP_HashCompare(const uint8_t *a, const uint8_t *b, size_t len);
+
+// ==========================
 // Utility functions
 // ==========================
 TC_API size_t EVP_HashDigestSize(const EVP_HASH_CTX *ctx);  // for fixed-output hashes
 TC_API size_t EVP_HashBlockSize(const EVP_HASH_CTX *ctx);
-TC_API const char* EVP_HashName(const EVP_HASH_CTX *ctx);
+TC_API const char* EVP_HashName(const EVP_MD *md);
 
 // ==========================
 // Algorithm selection

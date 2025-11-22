@@ -21,6 +21,8 @@ typedef struct _ll_HMAC_CTX {
     void *opad_ctx;                          // Outer hash context
     uint8_t key[EVP_MAX_DEFAULT_BLOCK_SIZE]; // Pre-padded key (max block size)
     size_t key_len;
+    size_t key_block_size;
+    size_t out_len;
 
     int isFinalized;
     int isHeapAlloc; // 1 if allocated by library (heap), 0 if user stack    
