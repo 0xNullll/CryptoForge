@@ -66,9 +66,9 @@ Designed with **layered APIs** similar to OpenSSL, but smaller scale, where each
 │   └─ /evp                <-- dispatcher / high-level wrappers
 │       ├─ evp_defs.h
 │       ├─ evp_flags.h
+│       ├─ evp_status.h
 │       ├─ evp_hash.c / evp_hash.h
-│       ├─ evp_hmac.c / evp_hmac.h
-│       ├─ evp_kmac.c / evp_kmac.h
+│       └─ evp_mac.c / evp_mac.h
 ├─ /utils                  <-- helper functions
 │   ├─ utils.c / utils.h
 └─ /demo                   <-- demo/test programs

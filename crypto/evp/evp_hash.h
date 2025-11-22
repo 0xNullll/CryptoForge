@@ -27,10 +27,19 @@ extern "C" {
 // ==========================
 // Initialization / Cleanup
 // ==========================
-TC_API EVP_STATUS EVP_HashInit(EVP_HASH_CTX *ctx, const EVP_MD *md, const uint8_t *data, size_t data_len);
-TC_API EVP_HASH_CTX* EVP_HashInitAlloc(const EVP_MD *md, const uint8_t *data, size_t data_len, EVP_STATUS *status);
+TC_API EVP_STATUS EVP_HashInit(EVP_HASH_CTX *ctx, const EVP_MD *md);
+TC_API EVP_HASH_CTX* EVP_HashInitAlloc(const EVP_MD *md, EVP_STATUS *status);
 
-TC_API EVP_STATUS EVP_HashUpdate(EVP_HASH_CTX *ctx);
+TC_API EVP_STATUS EVP_CShakeInit(EVP_HASH_CTX *ctx, const EVP_MD *md,
+                                 const uint8_t *N, size_t N_len,
+                                 const uint8_t *S, size_t S_len);
+
+TC_API EVP_HASH_CTX* EVP_CShakeInitAlloc(const EVP_MD *md,
+                                        const uint8_t *N, size_t N_len,
+                                        const uint8_t *S, size_t S_len,
+                                        EVP_STATUS *status);
+
+TC_API EVP_STATUS EVP_HashUpdate(EVP_HASH_CTX *ctx, const uint8_t *data, size_t data_len);
 
 /**
  * For FIXED OUTPUT hashes (MD5, SHA1, SHA2, SHA3-256, SHA3-512):
@@ -39,7 +48,7 @@ TC_API EVP_STATUS EVP_HashUpdate(EVP_HASH_CTX *ctx);
  * For XOF hashes (SHAKE128, SHAKE256):
  *     - out_len REQUIRED, user controls length
  */
-TC_API EVP_STATUS EVP_HashFinal(EVP_HASH_CTX *ctx, uint8_t *digest, size_t out_len);
+TC_API EVP_STATUS EVP_HashFinal(EVP_HASH_CTX *ctx, uint8_t *digest, size_t digest_len);
 
 TC_API EVP_STATUS EVP_HashFree(EVP_HASH_CTX *ctx);
 TC_API EVP_STATUS EVP_HashReset(EVP_HASH_CTX *ctx);
@@ -53,6 +62,19 @@ TC_API EVP_STATUS EVP_ComputeHash(
     const uint8_t *data,
     size_t data_len,
     size_t out_len   // ignored for fixed-output MD; required for XOF
+);
+
+// ==========================
+// One-shot cSHAKE convenience
+// ==========================
+TC_API EVP_STATUS EVP_ComputeCShake(
+    const EVP_MD *md,
+    uint8_t *digest,
+    const uint8_t *data,
+    size_t data_len,
+    size_t out_len,
+    const uint8_t *N, size_t N_len,
+    const uint8_t *S, size_t S_len
 );
 
 // ==========================
