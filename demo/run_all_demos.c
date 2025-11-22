@@ -2,7 +2,7 @@
 
 int main(void) {
     // Fake command-line arguments
-    const char *fake_input = "hello";
+    const char *fake_input = "what do ya want for nothing?";
     int fake_argc = 2;
     char *fake_argv[] = { "program_name", (char *)fake_input };
 
@@ -13,7 +13,6 @@ int main(void) {
     // Use fake argc/argv
     const char *input = fake_argv[1];
     size_t input_len = strlen(input);
-
 
 #if ENABLE_TESTS
     printf("\nEVP_MD structure test:\n");
@@ -49,13 +48,6 @@ int main(void) {
         return 1;
     }
 
-    // Update (process stored data)
-    status = EVP_HashUpdate(&ctx, (const uint8_t*)input, input_len);
-    if (status != EVP_OK) {
-        printf("EVP_HashUpdate failed\n");
-        return 1;
-    }
-
     // Final
     status = EVP_HashFinal(&ctx, digest, out_len);
     if (status != EVP_OK) {
@@ -80,10 +72,12 @@ int main(void) {
     }
 
     printf("One-shot digest: ");
-    for (size_t i = 0; i < md->digest_size; i++) {
-        printf("%02x", digest[i]);
-    }
+    DEMO_print_hex(digest, md->digest_size);
     printf("\n");
+
+    // hmac tests
+    uint8_t key[] = "Jefe";
+    test_all_hmacs(key, strlen((char*)key), input, strlen((char*)input));
 
 #endif // ENABLE_TESTS
     return 0;

@@ -5,12 +5,7 @@
 
 #if ENABLE_TESTS  // only include/demo code if tests are enabled
 
-#include "../crypto/hash/md/md5.h"
-#include "../crypto/hash/sha/sha1.h"
-#include "../crypto/hash/sha/sha256.h"
-#include "../crypto/hash/sha/sha512.h"
-#include "../crypto/hash/sha/keccak/sha3.h"
-#include "../crypto/hash/sha/keccak/shake.h"
+#include "../crypto/mac/hmac.h"
 
 #include "../crypto/evp/evp_defs.h"
 #include "../crypto/evp/evp_flags.h"
@@ -36,6 +31,8 @@ TC_API void DEMO_EVP_test_MD(
     size_t len,
     size_t out_len
 );
+
+void test_all_hmacs(const uint8_t *key, size_t key_len, const uint8_t *input, size_t input_len);
 
 #ifdef __cplusplus
 }

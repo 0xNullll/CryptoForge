@@ -667,7 +667,7 @@ EVP_STATUS EVP_HashInit(EVP_HASH_CTX *ctx, const EVP_MD *md) {
     }
 
     // default output size (for SHAKE/XOF)
-    ctx->out_len = md->digest_size;
+    ctx->out_len = md->digest_size != 0 ? md->digest_size : md->default_out_len;
 
     ctx->isHeapAlloc = 0;
     return EVP_OK;
@@ -819,6 +819,7 @@ EVP_STATUS EVP_HashReset(EVP_HASH_CTX *ctx) {
     return EVP_OK;
 }
 
+
 EVP_STATUS EVP_ComputeHash(
     const EVP_MD *md,
     uint8_t *digest,
@@ -843,7 +844,7 @@ EVP_STATUS EVP_ComputeHash(
         return status;
     }
 
-    // If out_len = 0 → use algorithm's default size
+    // Use out_len if provided, else fallback to default
     size_t final_len = out_len ? out_len : md->digest_size;
 
     status = EVP_HashFinal(ctx, digest, final_len);
@@ -883,7 +884,20 @@ EVP_STATUS EVP_ComputeCShake(
     return status;
 }
 
-size_t EVP_HashDigestSize(const EVP_HASH_CTX *ctx) {
+int EVP_HashCompare(const uint8_t *a, const uint8_t *b, size_t len) {
+    if (!a || !b || len == 0)
+        return 0;
+
+    uint8_t diff = 0;
+    for (size_t i = 0; i < len; i++) {
+        diff |= a[i] ^ b[i];
+    }
+
+    return (diff == 0) ? 1 : 0;
+}
+
+size_t EVP_HashDigestSize(const EVP_HASH_CTX *ctx)
+{
     return ctx ? (ctx->md ? ctx->md->digest_size : 0) : 0;
 }
 
@@ -891,26 +905,26 @@ size_t EVP_HashBlockSize(const EVP_HASH_CTX *ctx) {
     return ctx ? (ctx->md ? ctx->md->block_size : 0) : 0;
 }
 
-const char* EVP_HashName(const EVP_HASH_CTX *ctx) {
-    if (!ctx || !ctx->md) return NULL;
+const char* EVP_HashName(const EVP_MD *md) {
+    if (!md) return NULL;
 
-    switch (ctx->md->id) {
-        case EVP_MD5:          return "md5";
-        case EVP_SHA1:         return "sha1";
-        case EVP_SHA224:       return "sha224";
-        case EVP_SHA256:       return "sha256";
-        case EVP_SHA384:       return "sha384";
-        case EVP_SHA512:       return "sha512";
-        case EVP_SHA512_224:   return "sha512_224";
-        case EVP_SHA512_256:   return "sha512_256";
-        case EVP_SHA3_224:     return "sha3_224";
-        case EVP_SHA3_256:     return "sha3_256";
-        case EVP_SHA3_384:     return "sha3_384";
-        case EVP_SHA3_512:     return "sha3_512";
-        case EVP_SHAKE128:     return "shake128";
-        case EVP_SHAKE256:     return "shake256";
-        case EVP_RAWSHAKE128:  return "shake128_raw";
-        case EVP_RAWSHAKE256:  return "shake256_raw";
+    switch (md->id) {
+        case EVP_MD5:          return "MD5";
+        case EVP_SHA1:         return "SHA1";
+        case EVP_SHA224:       return "SHA224";
+        case EVP_SHA256:       return "SHA256";
+        case EVP_SHA384:       return "SHA384";
+        case EVP_SHA512:       return "SHA512";
+        case EVP_SHA512_224:   return "SHA512_224";
+        case EVP_SHA512_256:   return "SHA512_256";
+        case EVP_SHA3_224:     return "SHA3_224";
+        case EVP_SHA3_256:     return "SHA3_256";
+        case EVP_SHA3_384:     return "SHA3_384";
+        case EVP_SHA3_512:     return "SHA3_512";
+        case EVP_SHAKE128:     return "SHAKE128";
+        case EVP_SHAKE256:     return "SHAKE256";
+        case EVP_RAWSHAKE128:  return "rawSHAKE128";
+        case EVP_RAWSHAKE256:  return "rawSHAKE256";
         case EVP_CSHAKE128:    return "cSHAKE128";
         case EVP_CSHAKE256:    return "cSHAKE256";
         default:               return NULL;

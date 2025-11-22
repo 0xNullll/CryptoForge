@@ -22,12 +22,12 @@ Designed with **layered APIs** similar to OpenSSL, but smaller scale, where each
 ### 3. RNG / DRBG
 - [ ] Fast PRNG (Xorshift128+, PCG)  
 - [ ] SHA-based DRBG (crypto-secure)  
-- [ ] Optional: seed from user/system  
+- [ ] seed from user/system  
 
 ### 4. Encoding / Decoding
 - [ ] Hex encode/decode  
 - [ ] Base64 encode/decode  
-- [ ] Optional: Base32  
+- [ ] Base32 encode/decode
 
 ### 5. Salts / Nonces
 - [ ] Salt generator (RNG)  
@@ -82,7 +82,7 @@ Designed with **layered APIs** similar to OpenSSL, but smaller scale, where each
 
 ## Layered API Design
 
-1. **Low-level:** raw hash/HMAC/KMAC implementations → no prefix, internal use  
+1. **Low-level:** raw hash/HMAC/KMAC implementations → internal use  
 2. **EVP layer:** dispatcher by enum/macro, supports streaming/piping and user-facing APIs
 
 ---
