@@ -74,6 +74,50 @@ bool ll_rawshake256_absorb(ll_RawSHAKE256_CTX *ctx, const uint8_t *data, size_t 
 bool ll_rawshake256_final(ll_RawSHAKE256_CTX *ctx);
 bool ll_rawshake256_squeeze(ll_RawSHAKE256_CTX *ctx, uint8_t *output, size_t outlen);
 
+// ======================================
+// cSHAKE128
+// ======================================
+#define CSHAKE128_BLOCK_SIZE 168
+#define CSHAKE128_DOMAIN 0x00  // domain depends on N/S; 0x00 if empty = SHAKE128
+#define CSHAKE128_DEFAULT_OUT_LEN 32
+
+typedef struct ll_CSHAKE128_CTX {
+    ll_SHAKE128_CTX *internal_ctx;   // pointer to low-level SHAKE128 context
+    size_t out_len;                  // desired output length
+    const uint8_t *N;                // customization string N
+    size_t N_len;
+    const uint8_t *S;                // customization string S
+    size_t S_len;
+    bool finalized;                  // whether final has been called
+} ll_CSHAKE128_CTX;
+
+bool ll_cshake128_init(ll_CSHAKE128_CTX *ctx, const uint8_t *N, size_t N_len, const uint8_t *S, size_t S_len);
+bool ll_cshake128_update(ll_CSHAKE128_CTX *ctx, const uint8_t *data, size_t len);
+bool ll_cshake128_final(ll_CSHAKE128_CTX *ctx);
+bool ll_cshake128_squeeze(ll_CSHAKE128_CTX *ctx, uint8_t *output, size_t outlen);
+
+// ======================================
+// cSHAKE256
+// ======================================
+#define CSHAKE256_BLOCK_SIZE 136
+#define CSHAKE256_DOMAIN 0x00  // domain depends on N/S; 0x00 if empty = SHAKE256
+#define CSHAKE256_DEFAULT_OUT_LEN 64
+
+typedef struct ll_CSHAKE256_CTX {
+    ll_SHAKE256_CTX *internal_ctx;   // pointer to low-level SHAKE256 context
+    size_t out_len;                  // desired output length
+    const uint8_t *N;                // customization string N
+    size_t N_len;
+    const uint8_t *S;                // customization string S
+    size_t S_len;
+    bool finalized;                  // whether final has been called
+} ll_CSHAKE256_CTX;
+
+bool ll_cshake256_init(ll_CSHAKE256_CTX *ctx, const uint8_t *N, size_t N_len, const uint8_t *S, size_t S_len);
+bool ll_cshake256_update(ll_CSHAKE256_CTX *ctx, const uint8_t *data, size_t len);
+bool ll_cshake256_final(ll_CSHAKE256_CTX *ctx);
+bool ll_cshake256_squeeze(ll_CSHAKE256_CTX *ctx, uint8_t *output, size_t outlen);
+
 #ifdef __cplusplus
 }
 #endif

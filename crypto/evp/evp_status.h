@@ -8,7 +8,7 @@ extern "C" {
 #include "../../config/libs.h"
 #include "../../utils/utils.h"
 
-typedef uint8_t EVP_STATUS;
+typedef uint32_t EVP_STATUS;
 
 // ==========================
 // 1. Global EVP return type
@@ -55,7 +55,7 @@ typedef enum {
     EVP_ERR_HASH_BAD_BLOCK_SIZE,                    // block misalignment
 } EVP_HASH_STATUS;
 
-static FORCE_INLINE const char* EVP_status_str(EVP_GLOBAL_STATUS status) {
+static FORCE_INLINE const char* EVP_status_str(EVP_STATUS status) {
     switch (status) {
         case EVP_OK: return "EVP_OK";
         case EVP_ERR_UNKNOWN: return "EVP_ERR_UNKNOWN";
