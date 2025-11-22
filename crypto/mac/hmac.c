@@ -46,10 +46,10 @@
 // After final, produce as many bytes as needed.
 
 // typedef struct _ll_HMAC_CTX {
-//     const EVP_MD *md;          // Low-level hash descriptor
-//     void *ipad_ctx;            // Inner hash context
-//     void *opad_ctx;            // Outer hash context
-//     uint8_t key[128];          // Pre-padded key (max block size)
+//     const EVP_MD *md;                         // Low-level hash descriptor
+//     void *ipad_ctx;                           // Inner hash context
+//     void *opad_ctx;                           // Outer hash context
+//     uint8_t key[EVP_MAX_DEFAULT_BLOCK_SIZE];  // Pre-padded key (max block size)
 //     size_t key_len;
 
 //     isHeapAlloc;
@@ -61,6 +61,9 @@ EVP_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const EVP_MD *md, const uint8_t *key, 
 
     if (key_len == 0)
         return EVP_ERR_INVALID_LEN;
+
+    if (EVP_IS_XOF(md->id))
+        return EVP_ERR_UNSUPPORTED;
 
     // assign algorithm descriptor
     ctx->md = md;
@@ -179,7 +182,11 @@ EVP_STATUS ll_HMAC_Update(ll_HMAC_CTX *ctx, const uint8_t *data, size_t data_len
 }
 
 EVP_STATUS ll_HMAC_Final(ll_HMAC_CTX *ctx, uint8_t *digest, size_t digest_len) {
-    if (!ctx || )
+    if (!ctx || !ctx->md || !ctx->ipad_ctx || !ctx->opad_ctx ) 
+        return EVP_ERR_NULL_PTR;
+        
+
+
 
     return EVP_OK;    
 }

@@ -77,6 +77,10 @@
 // ======================
 // 1. Hash / Digest Flags
 // ======================
+// ======================
+// Hash / Digest Flags
+// ======================
+
 #define EVP_MD5          0x00000000
 
 #define EVP_SHA1         0x00000001
@@ -100,6 +104,21 @@
 
 #define EVP_CSHAKE128    0x00008000
 #define EVP_CSHAKE256    0x00010000
+
+// cSHAKE check
+#define EVP_IS_CSHAKE(id) \
+    ((id) == EVP_CSHAKE128 || (id) == EVP_CSHAKE256)
+
+// pure SHAKE / RawSHAKE check
+#define EVP_IS_PURE_SHAKE(id) \
+    ((id) == EVP_SHAKE128 || (id) == EVP_SHAKE256 || \
+     (id) == EVP_RAWSHAKE128 || (id) == EVP_RAWSHAKE256)
+
+// all XOF algorithms check (SHAKE + cSHAKE + RAWXOF)
+#define EVP_IS_XOF(id) \
+    ((id) == EVP_SHAKE128 || (id) == EVP_SHAKE256 || \
+     (id) == EVP_RAWSHAKE128 || (id) == EVP_RAWSHAKE256 || \
+     (id) == EVP_CSHAKE128 || (id) == EVP_CSHAKE256)
 
 // Mask for all hash flags
 #define EVP_HASH_MASK    0x0001FFFF
