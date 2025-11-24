@@ -65,7 +65,7 @@ Random number generation for keys, nonces, and salts.
 ---
 
 ### 6. Salts / Nonces
-Prevent replay attacks, rainbow tables, and ciphertext reuse.
+Stretch and derive keys securely. Turn passwords or shared secrets into cryptographically strong keys.
 
 - [ ] **Salt generator (RNG)** – for hashing, KDFs, and MACs.
 - [ ] **Nonce generator (RNG)** – for ciphers like AES-GCM or ChaCha20.
@@ -75,6 +75,7 @@ Prevent replay attacks, rainbow tables, and ciphertext reuse.
 ### 7. Key Derivation Functions (KDFs)
 Stretch and derive keys securely.
 
+- [ ] **scrypt** – memory-hard KDF designed to derive strong keys from low-entropy inputs
 - [ ] **PBKDF2** – password-based key derivation using iterative hashing.
 - [ ] **HKDF** – modern extract+expand key derivation using HMAC.
 
