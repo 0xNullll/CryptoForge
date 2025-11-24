@@ -18,16 +18,19 @@ typedef struct _EVP_MD {
     size_t ctx_size;         // size of low-level context
     size_t default_out_len;  // for SHAKE / XOF functions
 
-    bool (*hash_init_fn)(void *ctx);
+    bool (*hash_init_fn)(void *ctx, const void *opts);
     bool (*hash_update_fn)(void *ctx, const uint8_t *data, size_t len);
     bool (*hash_final_fn)(void *ctx, uint8_t *digest, size_t digest_size);
     bool (*hash_squeeze_fn)(void *ctx, uint8_t *output, size_t outlen);
-
-    // Optional cSHAKE init (NULL for regular hashes)
-    bool (*cshake_init_fn)(void *ctx,
-                            const uint8_t *N, size_t N_len,
-                            const uint8_t *S, size_t S_len);
 } EVP_MD;
+
+typedef struct _EVP_XOF_CSHAKE_OPTS{
+    const uint8_t *N;      // function name for cSHAKE
+    size_t N_len;
+    const uint8_t *S;      // customization string
+    size_t S_len;
+    size_t out_len;        // requested output length
+} EVP_XOF_CSHAKE_OPTS;
 
 typedef struct _EVP_MDEntry{
     uint32_t flag;
@@ -39,6 +42,7 @@ typedef struct _EVP_MDEntry{
 // ==========================
 typedef struct _EVP_HASH_CTX {
     const struct _EVP_MD *md; // selected algorithm
+    const void *opts;
     void *digest_ctx;         // pointer to low-level context
     size_t out_len;           // optional output length for XOFs
 
