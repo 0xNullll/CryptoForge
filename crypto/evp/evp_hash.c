@@ -587,7 +587,7 @@ static const EVP_MD *EVP_get_cshake128(void) {
         .block_size = CSHAKE128_BLOCK_SIZE,
         .ctx_size = sizeof(ll_CSHAKE128_CTX),
         .default_out_len = CSHAKE128_DEFAULT_OUT_LEN,
-        .hash_init_fn = NULL,
+        .hash_init_fn = shake128_init_wrapper,
         .hash_update_fn = cshake128_update_wrapper,
         .hash_final_fn = cshake128_final_wrapper,
         .hash_squeeze_fn = cshake128_squeeze_wrapper,
@@ -600,7 +600,7 @@ static const EVP_MD *EVP_get_cshake256(void) {
     static EVP_MD md = {
         .id = EVP_CSHAKE256,
         .domain = CSHAKE256_DOMAIN,
-        .digest_size = 0,
+        .digest_size = shake256_init_wrapper,
         .block_size = CSHAKE256_BLOCK_SIZE,
         .ctx_size = sizeof(ll_CSHAKE256_CTX),
         .default_out_len = CSHAKE256_DEFAULT_OUT_LEN,
@@ -612,32 +612,6 @@ static const EVP_MD *EVP_get_cshake256(void) {
     };
     return &md;
 }
-
-// typedef struct _EVP_MD {
-//     uint32_t id;
-//     uint8_t domain;           // Optional Keccak domain/prefix for cSHAKE
-//     size_t digest_size;      // output size in bytes
-//     size_t block_size;       // internal block size
-//     size_t ctx_size;         // size of low-level context
-//     size_t default_out_len;  // for SHAKE / XOF functions
-
-//     bool (*hash_init_fn)(void *ctx);
-//     bool (*hash_update_fn)(void *ctx, const uint8_t *data, size_t len);
-//     bool (*hash_final_fn)(void *ctx, uint8_t *digest, size_t digest_size);
-//     bool (*hash_squeeze_fn)(void *ctx, uint8_t *output, size_t outlen);
-
-//     bool (*cshake_init_fn)(void *ctx,
-//                         const uint8_t *N, size_t N_len,
-//                         const uint8_t *S, size_t S_len);
-// } EVP_MD;
-
-// typedef struct _EVP_HASH_CTX {
-//     const struct _EVP_MD *md; // selected algorithm
-//     void *digest_ctx;         // pointer to low-level context
-//     size_t out_len;           // optional output length for XOFs
-
-//    int isFinalized;
-// } EVP_HASH_CTX;
 
 TCLIB_STATUS EVP_HashInit(EVP_HASH_CTX *ctx, const EVP_MD *md) {
     if (!ctx || !md) 
@@ -896,7 +870,7 @@ int EVP_HashCompare(const uint8_t *a, const uint8_t *b, size_t len) {
     return (diff == 0) ? 1 : 0;
 }
 
-void* EVP_HashCloneCtx(const void *ctx, const EVP_MD *md, TCLIB_STATUS *status) {
+void* EVP_MDCloneCtx(const void *ctx, const EVP_MD *md, TCLIB_STATUS *status) {
     if (!ctx || !md || md->ctx_size == 0) {
         if (status) *status = TCLIB_ERR_NULL_PTR;
         return NULL;

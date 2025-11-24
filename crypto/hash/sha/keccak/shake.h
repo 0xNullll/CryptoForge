@@ -88,7 +88,7 @@ typedef struct ll_CSHAKE128_CTX {
     size_t N_len;
     const uint8_t *S;                // customization string S
     size_t S_len;
-    bool finalized;                  // whether final has been called
+    int finalized;                  // whether final has been called
 } ll_CSHAKE128_CTX;
 
 bool ll_cshake128_init(ll_CSHAKE128_CTX *ctx, const uint8_t *N, size_t N_len, const uint8_t *S, size_t S_len);
@@ -110,7 +110,7 @@ typedef struct ll_CSHAKE256_CTX {
     size_t N_len;
     const uint8_t *S;                // customization string S
     size_t S_len;
-    bool finalized;                  // whether final has been called
+    int finalized;                  // whether final has been called
 } ll_CSHAKE256_CTX;
 
 bool ll_cshake256_init(ll_CSHAKE256_CTX *ctx, const uint8_t *N, size_t N_len, const uint8_t *S, size_t S_len);

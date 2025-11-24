@@ -14,9 +14,9 @@ Designed with **layered APIs** similar to OpenSSL, but smaller scale, where each
 - [x] SHAKE / rawSHAKE  
 - [ ] cSHAKE    
 ### 2. HMAC / KMAC
-- [ ] HMAC-SHA1  
-- [ ] HMAC-SHA2  
-- [ ] HMAC-SHA3  
+- [x] HMAC-SHA1  
+- [x] HMAC-SHA2  
+- [x] HMAC-SHA3  
 - [ ] KMAC  
 
 ### 3. RNG / DRBG
@@ -46,33 +46,34 @@ Designed with **layered APIs** similar to OpenSSL, but smaller scale, where each
 ```c
 /TinyCryptLib
 ├─ /config
-│   ├─ crypto_config.h    <-- library-level flags, DLL macros, PREFIX_T
-│   └─ demo_config.h      <-- demo/test settings
-├─ /crypto                  <-- implementation folder
-│   ├─ /hash                <-- low-level hash algorithms   
-│   │   ├─ hash_commons.h   <-- shared macros (padding, endian conversions)
-│   │   ├─ /sha             <-- SHA family
-│   │   │   ├─ sha1.c / sha1.h
-│   │   │   ├─ sha256.c / sha256.h
-│   │   │   ├─ sha512.c / sha512.h
+│   ├─ crypto_config.h      <-- DLL/export, PREFIX_T, compile flags
+│   └─ demo_config.h
+├─ /crypto
+│   ├─ /hash
+│   │   ├─ hash_common.h     <-- padding, endian helpers, round macros
+│   │   ├─ /sha
+│   │   │   ├─ sha1.{c,h}
+│   │   │   ├─ sha256.{c,h}
+│   │   │   ├─ sha512.{c,h}
 │   │   │   └─ /keccak
-│   │   │       ├─ sha3.c / sha3.h
-│   │   │       ├─ keccak.c / keccak.h
-│   │   │       └─ shake.c / shake.h
-│   │   ├─ /md             <-- MD family
-│   │   │   └─ md5.c / md5.h
-│   ├─ /mac                <-- HMAC / KMAC implementations
-│   │   ├─ hmac.c / hmac.h
-│   │   └─ kmac.c / kmac.h
-│   └─ /evp                <-- dispatcher / high-level wrappers
+│   │   │       ├─ sha3.{c,h}
+│   │   │       ├─ keccak_core.{c,h}
+│   │   │       └─ shake.{c,h}
+│   │   ├─ /md
+│   │   │   └─ md5.{c,h}
+│   ├─ /mac
+│   │   ├─ hmac.{c,h}
+│   │   └─ kmac.{c,h}
+│   └─ /evp
 │       ├─ evp_defs.h
 │       ├─ evp_flags.h
-│       ├─ evp_status.h
-│       ├─ evp_hash.c / evp_hash.h
-│       └─ evp_mac.c / evp_mac.h
-├─ /utils                  <-- helper functions
-│   ├─ utils.c / utils.h
-└─ /demo                   <-- demo/test programs
+│       ├─ evp_hash.{c,h}
+│       └─ evp_mac.{c,h}
+├─ /utils
+│   ├─ mem.h            <-- secure memory helpers
+│   ├─ misc_utils.h     <-- force_inline, generic macros
+│   └─ tclib_status.h
+└─ /demo
     ├─ demo_hash.c
     ├─ demo_mac.c
     └─ run_all_demos.c

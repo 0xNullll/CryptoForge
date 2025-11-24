@@ -3,7 +3,7 @@
 
 #include "../../config/libs.h"
 #include "../../config/crypto_config.h"
-#include "../../utils/utils.h"
+#include "../../utils/misc_utils.h"
 
 // =======================
 // Bit rotation helpers

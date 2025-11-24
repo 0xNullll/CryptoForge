@@ -1,5 +1,5 @@
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef MISC_UTILS_H
+#define MISC_UTILS_H
 
 #include "../config/crypto_config.h"
 
@@ -8,12 +8,12 @@
 // ======================
 #ifdef _WIN32
   #ifdef BUILDING_TC_DLL
-    #define TC_API __declspec(dllexport)
+    #define TCLIB_API __declspec(dllexport)
   #else
-    #define TC_API __declspec(dllimport)
+    #define TCLIB_API __declspec(dllimport)
   #endif
 #else
-  #define TC_API
+  #define TCLIB_API
 #endif
 
 #ifdef _MSC_VER
@@ -48,4 +48,4 @@
 #define INOUT
 #endif
 
-#endif // UTILS_H
+#endif // MISC_UTILSH

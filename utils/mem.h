@@ -1,8 +1,8 @@
-#ifndef MEM_UTILS_H
-#define MEM_UTILS_H
+#ifndef MEM_H
+#define MEM_H
 
 #include "../config/libs.h"
-#include "utils.h"
+#include "misc_utils.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
@@ -80,4 +80,4 @@ static FORCE_INLINE void destroy_ctx(void *ctx, size_t ctx_size) {
 #define CREATE_CTX(type)        ((type*)create_ctx(sizeof(type)))
 #define DESTROY_CTX(ptr, type)  destroy_ctx((ptr), sizeof(type))
 
-#endif // MEM_UTILS_H
+#endif // MEM_H

@@ -4,6 +4,8 @@
 #include "../evp/evp_hash.h"
 #include "../evp/evp_defs.h"
 #include "../evp/evp_flags.h"
+
+#include "../../utils/mem.h"
 #include "../../utils/tclib_status.h"
 
 #include "../../config/libs.h"
@@ -52,10 +54,10 @@ TCLIB_STATUS ll_HMAC_Free(ll_HMAC_CTX *ctx);
 TCLIB_STATUS ll_HMAC_Reset(ll_HMAC_CTX *ctx);
 
 // Clone HMAC context into an existing destination context
-TCLIB_STATUS ll_HMAC_Clone(ll_HMAC_CTX *ctx_dest, const ll_HMAC_CTX *ctx_src, TCLIB_STATUS *status);
+TCLIB_STATUS ll_HMAC_CloneCtx(ll_HMAC_CTX *ctx_dest, const ll_HMAC_CTX *ctx_src);
 
 // Clone HMAC context and allocate a new heap context
-ll_HMAC_CTX *ll_HMAC_CloneAlloc(const ll_HMAC_CTX *ctx_src, TCLIB_STATUS *status);
+ll_HMAC_CTX *ll_HMAC_CloneCtxAlloc(const ll_HMAC_CTX *ctx_src, TCLIB_STATUS *status);
 
 
 #ifdef __cplusplus
