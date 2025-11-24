@@ -8,37 +8,91 @@ Designed with **layered APIs** similar to OpenSSL, but smaller scale, where each
 ## Project Goals / TODO
 
 ### 1. Hashing
-- [X] SHA-1  
-- [X] SHA-224 / SHA-256 / SHA-512  
-- [X] SHA3-224 / SHA3-256 / SHA3-512  
-- [x] SHAKE / rawSHAKE  
-- [ ] cSHAKE    
+Hash functions provide integrity and form the basis for MACs, KDFs, and RNGs.
+
+- [x] **SHA-1** – legacy hash, good for learning, not recommended for new designs.
+- [x] **SHA-224 / SHA-256 / SHA-512** – widely used, secure SHA-2 family.
+- [x] **SHA3-224 / SHA3-256 / SHA3-512** – sponge-based design, resistant to length-extension attacks.
+- [x] **SHAKE / rawSHAKE** – extendable-output functions (XOF), flexible output length.
+- [ ] **cSHAKE** – customizable SHAKE variant for keyed or domain-specific hashing.
+
+**Notes:** Hashes are required for HMACs, KMACs, and some DRBG constructions.
+
+---
+
 ### 2. HMAC / KMAC
-- [x] HMAC-SHA1  
-- [x] HMAC-SHA2  
-- [x] HMAC-SHA3  
-- [ ] KMAC  
+Message Authentication Codes ensure **data integrity and authenticity**.
 
-### 3. RNG / DRBG
-- [ ] Fast PRNG (Xorshift128+, PCG)  
-- [ ] SHA-based DRBG (crypto-secure)  
-- [ ] seed from user/system  
+- [x] **HMAC-SHA1** – simple MAC using SHA-1 (legacy).
+- [x] **HMAC-SHA2** – widely used, secure.
+- [x] **HMAC-SHA3** – newer design, resistant to length-extension attacks.
+- [ ] **KMAC** – keyed SHA-3 based MAC, supports variable-length keys and output.
 
-### 4. Encoding / Decoding
-- [ ] Hex encode/decode  
-- [ ] Base64 encode/decode  
-- [ ] Base32 encode/decode
+**Notes:** MACs are building blocks for authenticated encryption and secure RNGs.
 
-### 5. Salts / Nonces
-- [ ] Salt generator (RNG)  
-- [ ] Nonce generator (RNG)  
+---
 
-### 6. Optional / Future
-- [ ] AES (CBC / CTR)  
-- [ ] ChaCha20  
-- [ ] PBKDF2 / HKDF  
-- [ ] Padding utils (PKCS#7 / Zero)
+### 3. Pre-Cipher Utilities
+Utilities for encoding and decoding data to facilitate testing and real-world usage.
 
+- [ ] **Hex encode/decode** – common format for test vectors.
+- [ ] **Base64 encode/decode** – widely used in networking and data transfer.
+- [ ] **Base32 encode/decode** – optional, used in protocols like TOTP.
+
+**Notes:** Implement these before ciphers to simplify testing with RFC/NIST vectors.
+
+---
+
+### 4. Symmetric Ciphers
+Provide **confidentiality** via block and stream ciphers.
+
+- [ ] **AES (CBC / CTR / GCM / XTS)** – block cipher with multiple modes.
+- [ ] **ChaCha20 (+ Poly1305)** – stream cipher, software-friendly, AEAD support with Poly1305.
+
+**Notes:** Start with simple modes (CBC/CTR), then implement authenticated encryption (GCM/Poly1305).
+
+---
+
+### 5. RNG / DRBG
+Random number generation for keys, nonces, and salts.
+
+- [ ] **Fast PRNG (Xorshift128+, PCG)** – software-efficient, non-crypto use.
+- [ ] **SHA-based DRBG** – cryptographically secure deterministic RNG.
+- [ ] **Seed from user/system entropy** – ensure unpredictable input.
+
+**Notes:** RNGs feed salts, nonces, and cryptographic keys. Secure seeding is critical.
+
+---
+
+### 6. Salts / Nonces
+Prevent replay attacks, rainbow tables, and ciphertext reuse.
+
+- [ ] **Salt generator (RNG)** – for hashing, KDFs, and MACs.
+- [ ] **Nonce generator (RNG)** – for ciphers like AES-GCM or ChaCha20.
+
+---
+
+### 7. Key Derivation Functions (KDFs)
+Stretch and derive keys securely.
+
+- [ ] **PBKDF2** – password-based key derivation using iterative hashing.
+- [ ] **HKDF** – modern extract+expand key derivation using HMAC.
+
+---
+
+### 8. Padding Utilities
+Required for block ciphers to handle plaintext not aligned to block size.
+
+- [ ] **PKCS#7 padding** – standard padding scheme.
+- [ ] **Zero padding** – simple, less recommended for variable-length messages.
+
+---
+
+### 9. Optional / Future Enhancements
+- Additional AES modes (CFB, OFB, CCM) and ChaCha variants.
+- TRNGs (jitter, thermal noise, hardware-based) for high-quality entropy.
+- Unit tests using RFC/NIST test vectors.
+- Integrated authenticated encryption pipelines combining MACs and ciphers.
 ---
 
 ## Directory Structure
