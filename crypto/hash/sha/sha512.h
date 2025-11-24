@@ -3,7 +3,7 @@
 
 #include "../hash_common.h"
 #include "../../../config/crypto_config.h"
-#include "../../../utils/utils.h"
+#include "../../../utils/misc_utils.h"
 
 #ifdef __cplusplus
 extern "C" {

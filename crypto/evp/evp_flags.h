@@ -3,9 +3,15 @@
 
 #include "../../config/crypto_config.h"
 
-// Maximum default digest length among all hash variants
+// ======================
+// Maximum default sizes
+// ======================
 #define EVP_MAX_DEFAULT_BLOCK_SIZE 168  // SHAKE
 #define EVP_MAX_DEFAULT_DIGEST_SIZE 64  // SHA512 / SHA3-512
+
+// ======================
+// Block / Digest Sizes
+// ======================
 
 // MD5
 #define EVP_MD5_BLOCK_SIZE    MD5_BLOCK_SIZE
@@ -42,101 +48,88 @@
 // SHA3
 #define EVP_SHA3_224_BLOCK_SIZE   SHA3_224_BLOCK_SIZE
 #define EVP_SHA3_224_DIGEST_SIZE  SHA3_224_DIGEST_SIZE
-
 #define EVP_SHA3_256_BLOCK_SIZE   SHA3_256_BLOCK_SIZE
 #define EVP_SHA3_256_DIGEST_SIZE  SHA3_256_DIGEST_SIZE
-
 #define EVP_SHA3_384_BLOCK_SIZE   SHA3_384_BLOCK_SIZE
 #define EVP_SHA3_384_DIGEST_SIZE  SHA3_384_DIGEST_SIZE
-
 #define EVP_SHA3_512_BLOCK_SIZE   SHA3_512_BLOCK_SIZE
 #define EVP_SHA3_512_DIGEST_SIZE  SHA3_512_DIGEST_SIZE
 
 // SHAKE / RawSHAKE
 #define EVP_SHAKE128_BLOCK_SIZE SHAKE128_BLOCK_SIZE
 #define EVP_SHAKE128_DEFAULT_OUT_LEN SHAKE128_DEFAULT_OUT_LEN
-
 #define EVP_SHAKE256_BLOCK_SIZE SHAKE256_BLOCK_SIZE
 #define EVP_SHAKE256_DEFAULT_OUT_LEN SHAKE256_DEFAULT_OUT_LEN
-
 #define EVP_RAWSHAKE128_BLOCK_SIZE RAWSHAKE128_BLOCK_SIZE
 #define EVP_RAWSHAKE128_DEFAULT_OUT_LEN RAWSHAKE128_DEFAULT_OUT_LEN
-
 #define EVP_RAWSHAKE256_BLOCK_SIZE RAWSHAKE256_BLOCK_SIZE
 #define EVP_RAWSHAKE256_DEFAULT_OUT_LEN RAWSHAKE256_DEFAULT_OUT_LEN
 
 // cSHAKE
 #define EVP_CSHAKE128_BLOCK_SIZE CSHAKE128_BLOCK_SIZE
 #define EVP_CSHAKE128_DEFAULT_OUT_LEN CSHAKE128_DEFAULT_OUT_LEN
-
 #define EVP_CSHAKE256_BLOCK_SIZE CSHAKE256_BLOCK_SIZE
 #define EVP_CSHAKE256_DEFAULT_OUT_LEN CSHAKE256_DEFAULT_OUT_LEN
 
-// CSHAKE
-
 // ======================
-// 1. Hash / Digest Flags
-// ======================
-// ======================
-// Hash / Digest Flags
+// 1. Hash / Digest IDs & Flags
 // ======================
 
-#define EVP_MD5          0x00000000
+// Algorithm categories (high bits)
+#define EVP_CAT_DIGEST 0x00000000  // MD5, SHA1, SHA2, SHA3
+#define EVP_CAT_XOF    0x10000000  // SHAKE / cSHAKE / RAWXOF
+#define EVP_CAT_MAC    0x20000000  // HMAC / KMAC
 
-#define EVP_SHA1         0x00000001
-#define EVP_SHA224       0x00000002
-#define EVP_SHA256       0x00000004
-#define EVP_SHA384       0x00000008
-#define EVP_SHA512       0x00000010
-#define EVP_SHA512_224   0x00000020
-#define EVP_SHA512_256   0x00000040
+// Unique algorithm IDs (low bits ORed with category)
+#define EVP_MD5        (EVP_CAT_DIGEST | 0x0001)
+#define EVP_SHA1       (EVP_CAT_DIGEST | 0x0002)
+#define EVP_SHA224     (EVP_CAT_DIGEST | 0x0003)
+#define EVP_SHA256     (EVP_CAT_DIGEST | 0x0004)
+#define EVP_SHA384     (EVP_CAT_DIGEST | 0x0005)
+#define EVP_SHA512     (EVP_CAT_DIGEST | 0x0006)
+#define EVP_SHA512_224 (EVP_CAT_DIGEST | 0x0007)
+#define EVP_SHA512_256 (EVP_CAT_DIGEST | 0x0008)
 
-#define EVP_SHA3_224     0x00000080
-#define EVP_SHA3_256     0x00000100
-#define EVP_SHA3_384     0x00000200
-#define EVP_SHA3_512     0x00000400
+#define EVP_SHA3_224   (EVP_CAT_DIGEST | 0x0010)
+#define EVP_SHA3_256   (EVP_CAT_DIGEST | 0x0011)
+#define EVP_SHA3_384   (EVP_CAT_DIGEST | 0x0012)
+#define EVP_SHA3_512   (EVP_CAT_DIGEST | 0x0013)
 
-#define EVP_SHAKE128     0x00000800
-#define EVP_SHAKE256     0x00001000
+// XOF algorithms
+#define EVP_SHAKE128    (EVP_CAT_XOF | 0x0010)
+#define EVP_SHAKE256    (EVP_CAT_XOF | 0x0011)
+#define EVP_RAWSHAKE128 (EVP_CAT_XOF | 0x0020)
+#define EVP_RAWSHAKE256 (EVP_CAT_XOF | 0x0021)
+#define EVP_CSHAKE128   (EVP_CAT_XOF | 0x0030)
+#define EVP_CSHAKE256   (EVP_CAT_XOF | 0x0031)
 
-#define EVP_RAWSHAKE128  0x00002000
-#define EVP_RAWSHAKE256  0x00004000
-
-#define EVP_CSHAKE128    0x00008000
-#define EVP_CSHAKE256    0x00010000
-
-// cSHAKE check
-#define EVP_IS_CSHAKE(id) \
-    ((id) == EVP_CSHAKE128 || (id) == EVP_CSHAKE256)
-
-// pure SHAKE / RawSHAKE check
+// Category / type check macros
+#define EVP_IS_DIGEST(id)   (((id) & 0xF0000000) == EVP_CAT_DIGEST)
+#define EVP_IS_XOF(id)      (((id) & 0xF0000000) == EVP_CAT_XOF)
+#define EVP_IS_MAC(id)      (((id) & 0xF0000000) == EVP_CAT_MAC)
+#define EVP_IS_CSHAKE(id)   ((id) == EVP_CSHAKE128 || (id) == EVP_CSHAKE256)
 #define EVP_IS_PURE_SHAKE(id) \
     ((id) == EVP_SHAKE128 || (id) == EVP_SHAKE256 || \
      (id) == EVP_RAWSHAKE128 || (id) == EVP_RAWSHAKE256)
 
-// all XOF algorithms check (SHAKE + cSHAKE + RAWXOF)
-#define EVP_IS_XOF(id) \
-    ((id) == EVP_SHAKE128 || (id) == EVP_SHAKE256 || \
-     (id) == EVP_RAWSHAKE128 || (id) == EVP_RAWSHAKE256 || \
-     (id) == EVP_CSHAKE128 || (id) == EVP_CSHAKE256)
-
-// Mask for all hash flags
-#define EVP_HASH_MASK    0x0001FFFF
+// Mask for extracting algorithm ID (without category)
+#define EVP_HASH_ID_MASK 0x0FFFFFFF
 
 // ======================
 // 2. HMAC / KMAC Flags
 // ======================
-#define EVP_HMAC         0x10000000
-#define EVP_KMAC         0x20000000
-#define EVP_MAC_MASK     0xF0000000
+#define EVP_HMAC     (EVP_CAT_MAC | 0x0001)
+#define EVP_KMAC     (EVP_CAT_MAC | 0x0002)
+#define EVP_MAC_MASK 0xF0000000
 
 // ======================
 // 3. RNG / DRBG Flags
 // ======================
-#define EVP_PRNG_XORSHIFT 0x01000000
-#define EVP_PRNG_PCG      0x02000000
-#define EVP_DRBG_SHA      0x04000000
-#define EVP_SEED_USER     0x08000000
+#define EVP_CAT_RNG   0x40000000
+#define EVP_PRNG_XORSHIFT (EVP_CAT_RNG | 0x0001)
+#define EVP_PRNG_PCG      (EVP_CAT_RNG | 0x0002)
+#define EVP_DRBG_SHA      (EVP_CAT_RNG | 0x0004)
+#define EVP_SEED_USER     (EVP_CAT_RNG | 0x0008)
 #define EVP_RNG_MASK      0x0F000000
 
 // ======================
@@ -154,17 +147,17 @@
 // 5. Cipher Flags
 // ======================
 // Core ciphers
-#define EVP_AES_128      0x00000001
-#define EVP_AES_192      0x00000002
-#define EVP_AES_256      0x00000004
-#define EVP_CHACHA20     0x00000008
+#define EVP_AES_128    0x00000001
+#define EVP_AES_192    0x00000002
+#define EVP_AES_256    0x00000004
+#define EVP_CHACHA20   0x00000008
 
 // Cipher modes
-#define EVP_MODE_CBC     0x00000100
-#define EVP_MODE_CTR     0x00000200
-#define EVP_MODE_GCM     0x00000400
-#define EVP_MODE_CFB     0x00000800
-#define EVP_MODE_OFB     0x00001000
+#define EVP_MODE_CBC   0x00000100
+#define EVP_MODE_CTR   0x00000200
+#define EVP_MODE_GCM   0x00000400
+#define EVP_MODE_CFB   0x00000800
+#define EVP_MODE_OFB   0x00001000
 
 // Padding / KDF (upper 32 bits)
 #define EVP_PADDING_PKCS7 0x000100000000ULL

@@ -29,7 +29,7 @@ TCLIB_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const EVP_MD *md, const uint8_t *key
 
     // normalize key
     if (key_len > md->block_size) {
-        if (!md->hash_init_fn(ctx->ipad_ctx) ||
+        if (!md->hash_init_fn(ctx->ipad_ctx, NULL) ||
             !md->hash_update_fn(ctx->ipad_ctx, key, key_len) ||
             !md->hash_final_fn(ctx->ipad_ctx, ctx->key, md->digest_size)) {
             goto cleanup;
@@ -55,8 +55,8 @@ TCLIB_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const EVP_MD *md, const uint8_t *key
     }
 
     // init hash contexts and feed pads
-    if (!md->hash_init_fn(ctx->ipad_ctx) ||
-        !md->hash_init_fn(ctx->opad_ctx))
+    if (!md->hash_init_fn(ctx->ipad_ctx, NULL) ||
+        !md->hash_init_fn(ctx->opad_ctx, NULL))
         goto cleanup;
 
     if (!md->hash_update_fn(ctx->ipad_ctx, ipad, md->block_size) ||
@@ -175,8 +175,8 @@ TCLIB_STATUS ll_HMAC_Reset(ll_HMAC_CTX *ctx) {
     }
 
     // reset low-level hash contexts
-    if (!ctx->md->hash_init_fn(ctx->ipad_ctx) ||
-        !ctx->md->hash_init_fn(ctx->opad_ctx)) return TCLIB_ERR_BAD_STATE;
+    if (!ctx->md->hash_init_fn(ctx->ipad_ctx, NULL) ||
+        !ctx->md->hash_init_fn(ctx->opad_ctx, NULL)) return TCLIB_ERR_BAD_STATE;
 
     if (!ctx->md->hash_update_fn(ctx->ipad_ctx, ipad, ctx->md->block_size) ||
         !ctx->md->hash_update_fn(ctx->opad_ctx, opad, ctx->md->block_size)) return TCLIB_ERR_BAD_STATE;
@@ -198,12 +198,12 @@ TCLIB_STATUS ll_HMAC_CloneCtx(ll_HMAC_CTX *ctx_dest, const ll_HMAC_CTX *ctx_src)
     
     ctx_dest->md = ctx_src->md;
 
-    ctx_dest->ipad_ctx = EVP_MDCloneCtx(ctx_src->ipad_ctx, ctx_src->md, status);
+    ctx_dest->ipad_ctx = EVP_MDCloneCtx(ctx_src->ipad_ctx, ctx_src->md, &status);
     if (!ctx_dest->ipad_ctx || (status != TCLIB_SUCCESS)) {
         return TCLIB_ERR_ALLOC_FAILED;
     }
 
-    ctx_dest->opad_ctx = EVP_MDCloneCtx(ctx_src->opad_ctx, ctx_src->md, status);
+    ctx_dest->opad_ctx = EVP_MDCloneCtx(ctx_src->opad_ctx, ctx_src->md, &status);
     if (!ctx_dest->opad_ctx || (status != TCLIB_SUCCESS)) {
         DESTROY_CTX(ctx_dest->ipad_ctx, ctx_src->md->ctx_size);
         return TCLIB_ERR_ALLOC_FAILED;

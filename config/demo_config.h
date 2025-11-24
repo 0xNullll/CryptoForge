@@ -26,12 +26,7 @@ FORCE_INLINE void DEMO_print_hex(const uint8_t *digest, size_t size) {
 }
 
 // Test helper (for dev)
-TCLIB_API void DEMO_EVP_test_MD(
-    const EVP_MD *md,
-    const uint8_t *data,
-    size_t len,
-    size_t out_len
-);
+TCLIB_API void test_all_hashes(const uint8_t *input, size_t input_len);
 
 void test_all_hmacs(const uint8_t *key, size_t key_len, const uint8_t *input, size_t input_len);
 
