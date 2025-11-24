@@ -32,25 +32,25 @@ int main(void) {
     const EVP_MD *md = EVP_MDByFlag(EVP_SHA256);  
 
     // --- Test 1: Init + Update + Final ---
-    EVP_STATUS status;
+    TCLIB_STATUS status;
     EVP_HASH_CTX ctx;
     
     status = EVP_HashInit(&ctx, md);
-    if (status != EVP_OK) {
+    if (status != TCLIB_SUCCESS) {
         printf("EVP_HashInit failed\n");
         return 1;
     }
 
     // Update (process stored data)
     status = EVP_HashUpdate(&ctx, (const uint8_t*)input, input_len);
-    if (status != EVP_OK) {
+    if (status != TCLIB_SUCCESS) {
         printf("EVP_HashUpdate failed\n");
         return 1;
     }
 
     // Final
     status = EVP_HashFinal(&ctx, digest, out_len);
-    if (status != EVP_OK) {
+    if (status != TCLIB_SUCCESS) {
         printf("EVP_HashFinal failed\n");
         return 1;
     }
@@ -66,7 +66,7 @@ int main(void) {
 
     // --- Test 2: One-shot hash ---
     status = EVP_ComputeHash(md, digest, (const uint8_t*)input, input_len, out_len);
-    if (status != EVP_OK) {
+    if (status != TCLIB_SUCCESS) {
         printf("EVP_ComputeHash failed\n");
         return 1;
     }

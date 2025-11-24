@@ -4,7 +4,7 @@
 #include "../evp/evp_hash.h"
 #include "../evp/evp_defs.h"
 #include "../evp/evp_flags.h"
-#include "../evp/evp_status.h"
+#include "../../utils/tclib_status.h"
 
 #include "../../config/libs.h"
 
@@ -21,7 +21,6 @@ typedef struct _ll_HMAC_CTX {
     void *opad_ctx;                          // Outer hash context
     uint8_t key[EVP_MAX_DEFAULT_BLOCK_SIZE]; // Pre-padded key (max block size)
     size_t key_len;
-    size_t key_block_size;
     size_t out_len;
 
     int isFinalized;
@@ -33,24 +32,31 @@ typedef struct _ll_HMAC_CTX {
 // ============================
 
 // initializes a new HMAC_CTX for a given EVP_MD hash and key.
-EVP_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const EVP_MD *md, const uint8_t *key, size_t key_len);
+TCLIB_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const EVP_MD *md, const uint8_t *key, size_t key_len);
 
 // Allocates and initializes a new HMAC_CTX for a given EVP_MD hash and key.
 // Returns NULL on allocation failure.
-ll_HMAC_CTX* ll_HMAC_InitAlloc(const EVP_MD *md, const uint8_t *key, size_t key_len, EVP_STATUS *status);
+ll_HMAC_CTX* ll_HMAC_InitAlloc(const EVP_MD *md, const uint8_t *key, size_t key_len, TCLIB_STATUS *status);
 
 // Updates the HMAC with data. Can be called multiple times for streaming.
-EVP_STATUS ll_HMAC_Update(ll_HMAC_CTX *ctx, const uint8_t *data, size_t data_len);
+TCLIB_STATUS ll_HMAC_Update(ll_HMAC_CTX *ctx, const uint8_t *data, size_t data_len);
 
 // Finalizes the HMAC and writes the digest to the output buffer.
 // digest_len should be at least the hash's digest_size.
-EVP_STATUS ll_HMAC_Final(ll_HMAC_CTX *ctx, uint8_t *digest, size_t digest_len);
+TCLIB_STATUS ll_HMAC_Final(ll_HMAC_CTX *ctx, uint8_t *digest, size_t digest_len);
 
 // Frees the ll_HMAC_CTX and its internal buffers.
-EVP_STATUS ll_HMAC_Free(ll_HMAC_CTX *ctx);
+TCLIB_STATUS ll_HMAC_Free(ll_HMAC_CTX *ctx);
 
 // Resets an ll_HMAC_CTX to its initial state with the same key and hash.
-EVP_STATUS ll_HMAC_Reset(ll_HMAC_CTX *ctx);
+TCLIB_STATUS ll_HMAC_Reset(ll_HMAC_CTX *ctx);
+
+// Clone HMAC context into an existing destination context
+TCLIB_STATUS ll_HMAC_Clone(ll_HMAC_CTX *ctx_dest, const ll_HMAC_CTX *ctx_src, TCLIB_STATUS *status);
+
+// Clone HMAC context and allocate a new heap context
+ll_HMAC_CTX *ll_HMAC_CloneAlloc(const ll_HMAC_CTX *ctx_src, TCLIB_STATUS *status);
+
 
 #ifdef __cplusplus
 }

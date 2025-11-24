@@ -639,9 +639,9 @@ static const EVP_MD *EVP_get_cshake256(void) {
 //    int isFinalized;
 // } EVP_HASH_CTX;
 
-EVP_STATUS EVP_HashInit(EVP_HASH_CTX *ctx, const EVP_MD *md) {
+TCLIB_STATUS EVP_HashInit(EVP_HASH_CTX *ctx, const EVP_MD *md) {
     if (!ctx || !md) 
-        return EVP_ERR_NULL_PTR;
+        return TCLIB_ERR_NULL_PTR;
 
     // assign algorithm descriptor
     ctx->md = md;
@@ -649,20 +649,20 @@ EVP_STATUS EVP_HashInit(EVP_HASH_CTX *ctx, const EVP_MD *md) {
     // allocate low-level internal context
     ctx->digest_ctx = SECURE_ALLOC(md->ctx_size);
     if (!ctx->digest_ctx)
-        return EVP_ERR_ALLOC_FAILED;
+        return TCLIB_ERR_ALLOC_FAILED;
 
     // Handle cSHAKE auto-init if MD is cSHAKE
     if (md->cshake_init_fn) {
         // pass empty customization strings by default
         if (!md->cshake_init_fn(ctx->digest_ctx, NULL, 0, NULL, 0)) {
             SECURE_FREE(ctx->digest_ctx, md->ctx_size);
-            return EVP_ERR_BAD_STATE;
+            return TCLIB_ERR_BAD_STATE;
         }
     } else {
         // normal hash init
         if (!md->hash_init_fn(ctx->digest_ctx)) {
             SECURE_FREE(ctx->digest_ctx, md->ctx_size);
-            return EVP_ERR_BAD_STATE;
+            return TCLIB_ERR_BAD_STATE;
         }
     }
 
@@ -670,128 +670,128 @@ EVP_STATUS EVP_HashInit(EVP_HASH_CTX *ctx, const EVP_MD *md) {
     ctx->out_len = md->digest_size != 0 ? md->digest_size : md->default_out_len;
 
     ctx->isHeapAlloc = 0;
-    return EVP_OK;
+    return TCLIB_SUCCESS;
 }
 
-EVP_HASH_CTX* EVP_HashInitAlloc(const EVP_MD *md, EVP_STATUS *status) {
+EVP_HASH_CTX* EVP_HashInitAlloc(const EVP_MD *md, TCLIB_STATUS *status) {
     if (!md) {
-        if (status) *status = EVP_ERR_NULL_PTR;
+        if (status) *status = TCLIB_ERR_NULL_PTR;
         return NULL;
     }
 
     EVP_HASH_CTX *ctx = CREATE_CTX(EVP_HASH_CTX);
     if (!ctx) {
-        if (status) *status = EVP_ERR_ALLOC_FAILED;
+        if (status) *status = TCLIB_ERR_ALLOC_FAILED;
         return NULL;
     }
 
-    EVP_STATUS st = EVP_HashInit(ctx, md);
-    if (st != EVP_OK) {
+    TCLIB_STATUS st = EVP_HashInit(ctx, md);
+    if (st != TCLIB_SUCCESS) {
         DESTROY_CTX(ctx, EVP_HASH_CTX);
         if (status) *status = st;
         return NULL;
     }
 
     ctx->isHeapAlloc = 1;
-    if (status) *status = EVP_OK;
+    if (status) *status = TCLIB_SUCCESS;
     return ctx;
 }
 
-EVP_STATUS EVP_CShakeInit(EVP_HASH_CTX *ctx, const EVP_MD *md,
+TCLIB_STATUS EVP_CShakeInit(EVP_HASH_CTX *ctx, const EVP_MD *md,
                                  const uint8_t *N, size_t N_len,
                                  const uint8_t *S, size_t S_len) {
-    if (!ctx || !md) return EVP_ERR_NULL_PTR;
+    if (!ctx || !md) return TCLIB_ERR_NULL_PTR;
 
     ctx->md = md;
 
     // Allocate low-level context
     ctx->digest_ctx = SECURE_ALLOC(md->ctx_size);
-    if (!ctx->digest_ctx) return EVP_ERR_ALLOC_FAILED;
+    if (!ctx->digest_ctx) return TCLIB_ERR_ALLOC_FAILED;
 
     ctx->out_len = md->digest_size;
 
     if (md->cshake_init_fn) {
         if (!md->cshake_init_fn(ctx->digest_ctx, N, N_len, S, S_len)) {
             SECURE_FREE(ctx->digest_ctx, md->ctx_size);
-            return EVP_ERR_BAD_STATE;
+            return TCLIB_ERR_BAD_STATE;
         }
     } else {
         // fallback: normal hash init
         if (!md->hash_init_fn(ctx->digest_ctx)) {
             SECURE_FREE(ctx->digest_ctx, md->ctx_size);
-            return EVP_ERR_BAD_STATE;
+            return TCLIB_ERR_BAD_STATE;
         }
     }
 
     ctx->isHeapAlloc = 0;
-    return EVP_OK;
+    return TCLIB_SUCCESS;
 }
 
 EVP_HASH_CTX* EVP_CShakeInitAlloc(const EVP_MD *md,
                                         const uint8_t *N, size_t N_len,
                                         const uint8_t *S, size_t S_len,
-                                        EVP_STATUS *status) {
+                                        TCLIB_STATUS *status) {
     if (!md) {
-        if (status) *status = EVP_ERR_NULL_PTR;
+        if (status) *status = TCLIB_ERR_NULL_PTR;
         return NULL;
     }
 
     EVP_HASH_CTX *ctx = CREATE_CTX(EVP_HASH_CTX);
     if (!ctx) {
-        if (status) *status = EVP_ERR_ALLOC_FAILED;
+        if (status) *status = TCLIB_ERR_ALLOC_FAILED;
         return NULL;
     }
 
-    EVP_STATUS st = EVP_CShakeInit(ctx, md, N, N_len, S, S_len);
-    if (st != EVP_OK) {
+    TCLIB_STATUS st = EVP_CShakeInit(ctx, md, N, N_len, S, S_len);
+    if (st != TCLIB_SUCCESS) {
         DESTROY_CTX(ctx, EVP_HASH_CTX);
         if (status) *status = st;
         return NULL;
     }
 
     ctx->isHeapAlloc = 1;
-    if (status) *status = EVP_OK;
+    if (status) *status = TCLIB_SUCCESS;
     return ctx;
 }
 
-EVP_STATUS EVP_HashUpdate(EVP_HASH_CTX *ctx, const uint8_t *data, size_t data_len) {
+TCLIB_STATUS EVP_HashUpdate(EVP_HASH_CTX *ctx, const uint8_t *data, size_t data_len) {
     if (!ctx || !ctx->digest_ctx || !ctx->md || !data)
-        return EVP_ERR_NULL_PTR;
+        return TCLIB_ERR_NULL_PTR;
 
     if (data_len == 0)
-        return EVP_ERR_INVALID_LEN;
+        return TCLIB_ERR_INVALID_LEN;
 
     // Stream hashing
     if (!ctx->md->hash_update_fn(ctx->digest_ctx, data, data_len))
-        return EVP_ERR_CTX_CORRUPT;
+        return TCLIB_ERR_CTX_CORRUPT;
 
-    return EVP_OK;
+    return TCLIB_SUCCESS;
 }
 
-EVP_STATUS EVP_HashFinal(EVP_HASH_CTX *ctx, uint8_t *digest, size_t digest_len) {
+TCLIB_STATUS EVP_HashFinal(EVP_HASH_CTX *ctx, uint8_t *digest, size_t digest_len) {
     if (!ctx || !ctx->digest_ctx || !ctx->md)
-        return EVP_ERR_NULL_PTR;
+        return TCLIB_ERR_NULL_PTR;
 
     if (!digest)
-        return EVP_ERR_NULL_PTR;
+        return TCLIB_ERR_NULL_PTR;
 
     size_t final_len = (digest_len != 0) ? digest_len : ctx->out_len;
 
     // normal fixed-length digest (SHA2, SHA3, MD5...)
     if (!ctx->md->hash_final_fn(ctx->digest_ctx, digest, final_len))
-        return EVP_ERR_CTX_CORRUPT;
+        return TCLIB_ERR_CTX_CORRUPT;
 
     // XOF (SHAKE*, raw Keccak squeeze)
     if (ctx->md->hash_squeeze_fn) {
         if (!ctx->md->hash_squeeze_fn(ctx->digest_ctx, digest, final_len))
-            return EVP_ERR_CTX_CORRUPT;
+            return TCLIB_ERR_CTX_CORRUPT;
     }
 
-    return EVP_OK;
+    return TCLIB_SUCCESS;
 }
 
-EVP_STATUS EVP_HashFree(EVP_HASH_CTX *ctx) {
-    if (!ctx) return EVP_ERR_NULL_PTR;
+TCLIB_STATUS EVP_HashFree(EVP_HASH_CTX *ctx) {
+    if (!ctx) return TCLIB_ERR_NULL_PTR;
 
     if (ctx->digest_ctx) {
         SECURE_ZERO(ctx->digest_ctx, ctx->md->ctx_size);
@@ -800,46 +800,46 @@ EVP_STATUS EVP_HashFree(EVP_HASH_CTX *ctx) {
 
     if (ctx->isHeapAlloc) DESTROY_CTX(ctx, EVP_HASH_CTX);
 
-    return EVP_OK;
+    return TCLIB_SUCCESS;
 }
 
-EVP_STATUS EVP_HashReset(EVP_HASH_CTX *ctx) {
-    if (!ctx || !ctx->md || !ctx->digest_ctx) return EVP_ERR_NULL_PTR;
+TCLIB_STATUS EVP_HashReset(EVP_HASH_CTX *ctx) {
+    if (!ctx || !ctx->md || !ctx->digest_ctx) return TCLIB_ERR_NULL_PTR;
 
     CLEAR_BUF(ctx->digest_ctx);
 
     // Call low-level init function to reset digest_ctx
     if (!ctx->md->hash_init_fn(ctx->digest_ctx)) {
-        return EVP_ERR_BAD_STATE;
+        return TCLIB_ERR_BAD_STATE;
     }
 
     // Reset output length to default
     ctx->out_len = ctx->md->digest_size;
 
-    return EVP_OK;
+    return TCLIB_SUCCESS;
 }
 
 
-EVP_STATUS EVP_ComputeHash(
+TCLIB_STATUS EVP_ComputeHash(
     const EVP_MD *md,
     uint8_t *digest,
     const uint8_t *data,
     size_t data_len,
     size_t out_len) {
     if (!md || !digest || !data)
-        return EVP_ERR_NULL_PTR;
+        return TCLIB_ERR_NULL_PTR;
 
     if (data_len == 0)
-        return EVP_ERR_INVALID_LEN;
+        return TCLIB_ERR_INVALID_LEN;
 
-    EVP_STATUS status;
+    TCLIB_STATUS status;
     EVP_HASH_CTX *ctx = EVP_HashInitAlloc(md, &status);
     if (!ctx)
         return status;
 
     // Feed the entire message
     status = EVP_HashUpdate(ctx, data, data_len);
-    if (status != EVP_OK) {
+    if (status != TCLIB_SUCCESS) {
         EVP_HashFree(ctx);
         return status;
     }
@@ -853,7 +853,7 @@ EVP_STATUS EVP_ComputeHash(
     return status;
 }
 
-EVP_STATUS EVP_ComputeCShake(
+TCLIB_STATUS EVP_ComputeCShake(
     const EVP_MD *md,
     uint8_t *digest,
     const uint8_t *data,
@@ -862,16 +862,16 @@ EVP_STATUS EVP_ComputeCShake(
     const uint8_t *N, size_t N_len,
     const uint8_t *S, size_t S_len) {
 
-    if (!md || !digest || !data) return EVP_ERR_NULL_PTR;
-    if (data_len == 0) return EVP_ERR_INVALID_LEN;
+    if (!md || !digest || !data) return TCLIB_ERR_NULL_PTR;
+    if (data_len == 0) return TCLIB_ERR_INVALID_LEN;
 
-    EVP_STATUS status;
+    TCLIB_STATUS status;
     EVP_HASH_CTX *ctx = EVP_CShakeInitAlloc(md, N, N_len, S, S_len, &status);
     if (!ctx) return status;
 
     // Feed the data
     status = EVP_HashUpdate(ctx, data, data_len);
-    if (status != EVP_OK) {
+    if (status != TCLIB_SUCCESS) {
         EVP_HashFree(ctx);
         return status;
     }
@@ -894,6 +894,24 @@ int EVP_HashCompare(const uint8_t *a, const uint8_t *b, size_t len) {
     }
 
     return (diff == 0) ? 1 : 0;
+}
+
+void* EVP_HashCloneCtx(const void *ctx, const EVP_MD *md, TCLIB_STATUS *status) {
+    if (!ctx || !md || md->ctx_size == 0) {
+        if (status) *status = TCLIB_ERR_NULL_PTR;
+        return NULL;
+    }
+
+    void *new_ctx = SECURE_ALLOC(md->ctx_size);
+    if (!new_ctx) {
+        if (status) *status = TCLIB_ERR_ALLOC_FAILED;
+        return NULL;
+    }
+
+    SECURE_MEMCPY(new_ctx, ctx, md->ctx_size); // shallow copy of internal context memory
+
+    if (status) *status = TCLIB_SUCCESS;
+    return new_ctx;
 }
 
 size_t EVP_HashDigestSize(const EVP_HASH_CTX *ctx)

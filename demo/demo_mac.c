@@ -30,14 +30,14 @@ void test_all_hmacs(const uint8_t *key, size_t key_len, const uint8_t *input, si
         }
 
         ll_HMAC_CTX hmac_ctx;
-        EVP_STATUS status = ll_HMAC_Init(&hmac_ctx, md, key, key_len);
-        if (status != EVP_OK) { 
+        TCLIB_STATUS status = ll_HMAC_Init(&hmac_ctx, md, key, key_len);
+        if (status != TCLIB_SUCCESS) { 
             printf("ll_HMAC_Init failed for %s\n", EVP_HashName(hmac_ctx.md)); 
             continue; 
         }
 
         status = ll_HMAC_Update(&hmac_ctx, input, input_len);
-        if (status != EVP_OK) { 
+        if (status != TCLIB_SUCCESS) { 
             printf("ll_HMAC_Update failed for %s\n", EVP_HashName(hmac_ctx.md)); 
             ll_HMAC_Free(&hmac_ctx); 
             continue; 
@@ -45,7 +45,7 @@ void test_all_hmacs(const uint8_t *key, size_t key_len, const uint8_t *input, si
 
         size_t out_len = hmac_ctx.out_len;
         status = ll_HMAC_Final(&hmac_ctx, digest, out_len);
-        if (status != EVP_OK) { 
+        if (status != TCLIB_SUCCESS) { 
             printf("ll_HMAC_Final failed for %s\n", EVP_HashName(hmac_ctx.md)); 
             ll_HMAC_Free(&hmac_ctx); 
             continue; 
