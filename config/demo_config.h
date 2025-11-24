@@ -3,6 +3,7 @@
 
 #include "crypto_config.h"  // include high-level flags
 #include "../utils/tclib_status.h"
+#include "../utils/misc_utils.h"
 
 #if ENABLE_TESTS  // only include/demo code if tests are enabled
 
@@ -25,7 +26,7 @@ FORCE_INLINE void DEMO_print_hex(const uint8_t *digest, size_t size) {
 }
 
 // Test helper (for dev)
-TC_API void DEMO_EVP_test_MD(
+TCLIB_API void DEMO_EVP_test_MD(
     const EVP_MD *md,
     const uint8_t *data,
     size_t len,

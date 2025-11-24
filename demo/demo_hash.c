@@ -2,7 +2,7 @@
 
 #if ENABLE_TESTS
 
-TC_API void DEMO_EVP_test_MD(const EVP_MD *md, const uint8_t *data, size_t len, size_t outlen) {
+void DEMO_EVP_test_MD(const EVP_MD *md, const uint8_t *data, size_t len, size_t outlen) {
     if (outlen <= 0) return;
 
     uint8_t *digest = malloc(outlen);

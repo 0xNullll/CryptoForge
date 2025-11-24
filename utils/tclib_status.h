@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 #include "../config/libs.h"
-#include "utils.h"
+#include "misc_utils.h"
 
 typedef uint32_t TCLIB_STATUS;
 

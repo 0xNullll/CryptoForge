@@ -2,7 +2,7 @@
 
 int main(void) {
     // Fake command-line arguments
-    const char *fake_input = "what do ya want for nothing?";
+    char *fake_input = "what do ya want for nothing?";
     int fake_argc = 2;
     char *fake_argv[] = { "program_name", (char *)fake_input };
 
@@ -18,11 +18,11 @@ int main(void) {
     printf("\nEVP_MD structure test:\n");
 
     // Test some hashes
-    DEMO_EVP_test_MD(EVP_MDByFlag(EVP_MD5), (const uint8_t *)input, input_len, EVP_MD5_DIGEST_SIZE);
-    DEMO_EVP_test_MD(EVP_MDByFlag(EVP_SHA1), (const uint8_t *)input, input_len, EVP_SHA1_DIGEST_SIZE);
-    DEMO_EVP_test_MD(EVP_MDByFlag(EVP_SHA256), (const uint8_t *)input, input_len, EVP_SHA256_DIGEST_SIZE);
-    DEMO_EVP_test_MD(EVP_MDByFlag(EVP_SHAKE128), (const uint8_t*)input, input_len, 64);   // 64-byte output
-    DEMO_EVP_test_MD(EVP_MDByFlag(EVP_SHAKE256), (const uint8_t*)input, input_len, 100);  // 100-byte output
+    DEMO_EVP_test_MD(EVP_MDByFlag(EVP_MD5), (uint8_t *)input, input_len, EVP_MD5_DIGEST_SIZE);
+    DEMO_EVP_test_MD(EVP_MDByFlag(EVP_SHA1), (uint8_t *)input, input_len, EVP_SHA1_DIGEST_SIZE);
+    DEMO_EVP_test_MD(EVP_MDByFlag(EVP_SHA256), (uint8_t *)input, input_len, EVP_SHA256_DIGEST_SIZE);
+    DEMO_EVP_test_MD(EVP_MDByFlag(EVP_SHAKE128), (uint8_t*)input, input_len, 64);   // 64-byte output
+    DEMO_EVP_test_MD(EVP_MDByFlag(EVP_SHAKE256), (uint8_t*)input, input_len, 100);  // 100-byte output
 
 
     uint8_t digest[64];  // large enough for SHA3-512
@@ -42,7 +42,7 @@ int main(void) {
     }
 
     // Update (process stored data)
-    status = EVP_HashUpdate(&ctx, (const uint8_t*)input, input_len);
+    status = EVP_HashUpdate(&ctx, (uint8_t*)input, input_len);
     if (status != TCLIB_SUCCESS) {
         printf("EVP_HashUpdate failed\n");
         return 1;
@@ -65,7 +65,7 @@ int main(void) {
     EVP_HashFree(&ctx);
 
     // --- Test 2: One-shot hash ---
-    status = EVP_ComputeHash(md, digest, (const uint8_t*)input, input_len, out_len);
+    status = EVP_ComputeHash(md, digest, (uint8_t*)input, input_len, out_len);
     if (status != TCLIB_SUCCESS) {
         printf("EVP_ComputeHash failed\n");
         return 1;
@@ -77,7 +77,7 @@ int main(void) {
 
     // hmac tests
     uint8_t key[] = "Jefe";
-    test_all_hmacs(key, strlen((char*)key), input, strlen((char*)input));
+    test_all_hmacs(key, strlen((char*)key), (uint8_t *)input, strlen((char*)input));
 
 #endif // ENABLE_TESTS
     return 0;

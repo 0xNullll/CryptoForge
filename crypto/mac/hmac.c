@@ -189,24 +189,23 @@ TCLIB_STATUS ll_HMAC_Reset(ll_HMAC_CTX *ctx) {
     return TCLIB_SUCCESS;
 }
 
-TCLIB_STATUS ll_HMAC_Clone(ll_HMAC_CTX *ctx_dest, const ll_HMAC_CTX *ctx_src, TCLIB_STATUS *status) {
+TCLIB_STATUS ll_HMAC_CloneCtx(ll_HMAC_CTX *ctx_dest, const ll_HMAC_CTX *ctx_src) {
     if (!ctx_dest || !ctx_src) {
-        if (status) *status = TCLIB_ERR_NULL_PTR;
         return TCLIB_ERR_NULL_PTR;
     }
 
+    TCLIB_STATUS status;
+    
     ctx_dest->md = ctx_src->md;
 
-    ctx_dest->ipad_ctx = EVP_HashCloneCtx(ctx_src->ipad_ctx, ctx_src->md, status);
-    if (!ctx_dest->ipad_ctx || (status && *status != TCLIB_SUCCESS)) {
-        if (status && *status == TCLIB_SUCCESS) *status = TCLIB_ERR_ALLOC_FAILED;
+    ctx_dest->ipad_ctx = EVP_MDCloneCtx(ctx_src->ipad_ctx, ctx_src->md, status);
+    if (!ctx_dest->ipad_ctx || (status != TCLIB_SUCCESS)) {
         return TCLIB_ERR_ALLOC_FAILED;
     }
 
-    ctx_dest->opad_ctx = EVP_HashCloneCtx(ctx_src->opad_ctx, ctx_src->md, status);
-    if (!ctx_dest->opad_ctx || (status && *status != TCLIB_SUCCESS)) {
+    ctx_dest->opad_ctx = EVP_MDCloneCtx(ctx_src->opad_ctx, ctx_src->md, status);
+    if (!ctx_dest->opad_ctx || (status != TCLIB_SUCCESS)) {
         DESTROY_CTX(ctx_dest->ipad_ctx, ctx_src->md->ctx_size);
-        if (status && *status == TCLIB_SUCCESS) *status = TCLIB_ERR_ALLOC_FAILED;
         return TCLIB_ERR_ALLOC_FAILED;
     }
 
@@ -216,11 +215,10 @@ TCLIB_STATUS ll_HMAC_Clone(ll_HMAC_CTX *ctx_dest, const ll_HMAC_CTX *ctx_src, TC
     ctx_dest->isFinalized  = ctx_src->isFinalized;
     ctx_dest->isHeapAlloc  = 0; // since ctx_dest is pre-allocated
 
-    if (status) *status = TCLIB_SUCCESS;
     return TCLIB_SUCCESS;
 }
 
-ll_HMAC_CTX *ll_HMAC_CloneAlloc(const ll_HMAC_CTX *ctx_src, TCLIB_STATUS *status) {
+ll_HMAC_CTX *ll_HMAC_CloneCtxAlloc(const ll_HMAC_CTX *ctx_src, TCLIB_STATUS *status) {
     if (!ctx_src) {
         if (status) *status = TCLIB_ERR_NULL_PTR;
         return NULL;
@@ -234,7 +232,7 @@ ll_HMAC_CTX *ll_HMAC_CloneAlloc(const ll_HMAC_CTX *ctx_src, TCLIB_STATUS *status
     }
 
     // Use the in-place clone function
-    TCLIB_STATUS ret = ll_HMAC_Clone(ctx_dest, ctx_src, status);
+    TCLIB_STATUS ret = ll_HMAC_CloneCtx(ctx_dest, ctx_src);
     if (ret != TCLIB_SUCCESS) {
         DESTROY_CTX(ctx_dest, sizeof(ll_HMAC_CTX));
         return NULL;
