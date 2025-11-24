@@ -2,6 +2,7 @@
 #define DEMO_HASH_H
 
 #include "crypto_config.h"  // include high-level flags
+#include "../utils/tclib_status.h"
 
 #if ENABLE_TESTS  // only include/demo code if tests are enabled
 
@@ -9,7 +10,6 @@
 
 #include "../crypto/evp/evp_defs.h"
 #include "../crypto/evp/evp_flags.h"
-#include "../crypto/evp/evp_status.h"
 #include "../crypto/evp/evp_hash.h"
 
 
