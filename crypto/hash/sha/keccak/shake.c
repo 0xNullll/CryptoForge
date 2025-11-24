@@ -117,6 +117,9 @@ bool ll_rawshake256_squeeze(ll_RawSHAKE256_CTX *ctx, uint8_t *output, size_t out
     return ll_keccak_squeeze(ctx, output, outlen);
 }
 
+// ======================================
+// cSHAKE128
+// ======================================
 bool ll_cshake128_init(ll_CSHAKE128_CTX *ctx, const uint8_t *N, size_t N_len, const uint8_t *S, size_t S_len) {
     return true;
 }
@@ -130,6 +133,9 @@ bool ll_cshake128_squeeze(ll_CSHAKE128_CTX *ctx, uint8_t *output, size_t outlen)
     return true;
 }
 
+// ======================================
+// cSHAKE256
+// ======================================
 bool ll_cshake256_init(ll_CSHAKE256_CTX *ctx, const uint8_t *N, size_t N_len, const uint8_t *S, size_t S_len) {
     return true;
 }
