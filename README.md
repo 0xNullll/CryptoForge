@@ -140,7 +140,7 @@ Required for block ciphers to handle plaintext not aligned to block size.
 
 ## Layered API Design
 
-1. **Low-level:** raw hash/HMAC/KMAC implementations → internal use  
+1. **Low-level:** raw implementations → internal use  
 2. **EVP layer:** dispatcher by enum/macro, supports streaming/piping and user-facing APIs
 
 ---

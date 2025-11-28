@@ -301,7 +301,7 @@ bool ll_cshake128_init(ll_CSHAKE128_CTX *ctx,
     ctx->S_len = S_len;
 
     ctx->finalized = 0;
-    ctx->custom_absorbed = 0;
+    ctx->customAbsorbed = 0;
     ctx->emptyNameCustom = (N_len == 0) && (S_len == 0);
 
     // initialize Keccak sponge
@@ -312,7 +312,7 @@ bool ll_cshake128_init(ll_CSHAKE128_CTX *ctx,
     if (!ctx->emptyNameCustom) {
         if (!ll_cshake_absorb_custom(&ctx->internal_ctx, ctx->N, ctx->N_len, ctx->S, ctx->S_len))
             return false;
-        ctx->custom_absorbed = 1;
+        ctx->customAbsorbed = 1;
     }
 
     return true;
@@ -330,7 +330,7 @@ bool ll_cshake128_final(ll_CSHAKE128_CTX *ctx) {
     if (ctx->finalized) return false;
 
     // Set domain separation byte according to SP800-185
-    uint8_t suffix = ctx->emptyNameCustom ? 0x1F : 0x04;
+    uint8_t suffix = ctx->emptyNameCustom ? SHAKE128_DOMAIN : CSHAKE128_DOMAIN;
     ctx->internal_ctx.suffix = suffix;
 
     ctx->finalized = 1;
@@ -362,7 +362,7 @@ bool ll_cshake256_init(ll_CSHAKE256_CTX *ctx,
     ctx->S_len = S_len;
 
     ctx->finalized = 0;
-    ctx->custom_absorbed = 0;
+    ctx->customAbsorbed = 0;
     ctx->emptyNameCustom = (N_len == 0) && (S_len == 0);
 
     if (!ll_keccak_sponge_init(&ctx->internal_ctx, SHAKE256_BLOCK_SIZE, SHAKE256_DOMAIN))
@@ -371,7 +371,7 @@ bool ll_cshake256_init(ll_CSHAKE256_CTX *ctx,
     if (!ctx->emptyNameCustom) {
         if (!ll_cshake_absorb_custom(&ctx->internal_ctx, ctx->N, ctx->N_len, ctx->S, ctx->S_len))
             return false;
-        ctx->custom_absorbed = 1;
+        ctx->customAbsorbed = 1;
     }
 
     return true;
@@ -387,7 +387,7 @@ bool ll_cshake256_absorb(ll_CSHAKE256_CTX *ctx, const uint8_t *X, size_t X_len) 
 bool ll_cshake256_final(ll_CSHAKE256_CTX *ctx) {
     if (ctx->finalized) return false;
 
-    uint8_t suffix = ctx->emptyNameCustom ? 0x1F : 0x04;
+    uint8_t suffix = ctx->emptyNameCustom ? SHAKE256_DOMAIN : CSHAKE256_DOMAIN;
     ctx->internal_ctx.suffix = suffix;
 
     ctx->finalized = 1;

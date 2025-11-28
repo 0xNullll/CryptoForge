@@ -37,7 +37,9 @@ FORCE_INLINE void DEMO_print_hex(const uint8_t *digest, size_t size) {
 // Test helper (for dev)
 TCLIB_API void test_all_hashes(const uint8_t *input, size_t input_len, void *opts);
 
-void test_all_hmacs(const uint8_t *key, size_t key_len, const uint8_t *input, size_t input_len);
+TCLIB_API void test_all_hashes_high(const uint8_t *input, size_t input_len, void *opts);
+
+TCLIB_API void test_all_hmacs(const uint8_t *key, size_t key_len, const uint8_t *input, size_t input_len);
 
 #ifdef __cplusplus
 }
