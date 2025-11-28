@@ -14,7 +14,7 @@ Hash functions provide integrity and form the basis for MACs, KDFs, and RNGs.
 - [x] **SHA-224 / SHA-256 / SHA-512** – widely used, secure SHA-2 family.
 - [x] **SHA3-224 / SHA3-256 / SHA3-512** – sponge-based design, resistant to length-extension attacks.
 - [x] **SHAKE / rawSHAKE** – extendable-output functions (XOF), flexible output length.
-- [ ] **cSHAKE** – customizable SHAKE variant for keyed or domain-specific hashing.
+- [x] **cSHAKE** – customizable SHAKE variant for keyed or domain-specific hashing.
 
 **Notes:** 
 - Hashes are required for HMACs, KMACs, and some DRBG constructions.  
