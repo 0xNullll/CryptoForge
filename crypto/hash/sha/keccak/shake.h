@@ -95,7 +95,7 @@ bool ll_rawshake256_squeeze(ll_RawSHAKE256_CTX *ctx, uint8_t *output, size_t out
 // cSHAKE128
 // ======================================
 #define CSHAKE128_BLOCK_SIZE 168
-#define CSHAKE128_DOMAIN 0x00  // domain depends on N/S; 0x00 if empty = SHAKE128
+#define CSHAKE128_DOMAIN 0x04  // domain separation for cSHAKE128 when N or S non-empty
 #define CSHAKE128_DEFAULT_OUT_LEN 32
 
 
@@ -107,7 +107,7 @@ typedef struct _ll_CSHAKE128_CTX {
     uint8_t S[LL_MAX_CUSTOMIZATION]; // Customization string S (can be empty)
     size_t S_len;                    // Length of S in bytes
     int finalized;                   // Flag indicating if finalization has been performed
-    int custom_absorbed;
+    int customAbsorbed;
     uint8_t emptyNameCustom;
     int xof_mode;
 } ll_CSHAKE128_CTX;
@@ -126,7 +126,7 @@ bool ll_cshake128_squeeze(ll_CSHAKE128_CTX *ctx, uint8_t *output, size_t outlen)
 // cSHAKE256
 // ======================================
 #define CSHAKE256_BLOCK_SIZE 136
-#define CSHAKE256_DOMAIN 0x00  // domain depends on N/S; 0x00 if empty = SHAKE256
+#define CSHAKE256_DOMAIN 0x04  // domain separation for cSHAKE256 when N or S non-empty
 #define CSHAKE256_DEFAULT_OUT_LEN 64
 
 typedef struct _ll_CSHAKE256_CTX {
@@ -137,7 +137,7 @@ typedef struct _ll_CSHAKE256_CTX {
     uint8_t S[LL_MAX_CUSTOMIZATION]; // Customization string S (can be empty)
     size_t S_len;                    // Length of S in bytes
     int finalized;                   // Flag indicating if finalization has been performed
-    int custom_absorbed;
+    int customAbsorbed;
     uint8_t emptyNameCustom;
     int xof_mode;
 } ll_CSHAKE256_CTX;

@@ -7,6 +7,9 @@
 extern "C" {
 #endif
 
+#define EVP_MAX_KEY_SIZE 512        // bytes
+#define EVP_MAX_CUSTOMIZATION 512   // bytes
+
 // ==========================
 // EVP_MD: algorithm descriptor
 // ==========================
@@ -24,61 +27,11 @@ typedef struct _EVP_MD {
     bool (*hash_squeeze_fn)(void *ctx, uint8_t *output, size_t outlen);
 } EVP_MD;
 
-// Generic EVP-style XOF
-#define EVP_MAX_CUSTOMIZATION 512
+typedef struct _EVP_XOF_OPTS EVP_XOF_OPTS;
 
-typedef struct _EVP_XOF_OPTS {
-    // Output length
-    size_t out_len;     // requested output length
+typedef struct _EVP_MDEntry EVP_MDEntry;
 
-    // Fixed-size customization strings
-    uint8_t N[EVP_MAX_CUSTOMIZATION];
-    size_t N_len;
-    uint8_t S[EVP_MAX_CUSTOMIZATION];
-    size_t S_len;
-
-    // Bookkeeping
-    int finalized;
-    int custom_absorbed;
-    int emptyNameCustom;
-
-    int isHeapAlloc;          // 1 if allocated by library (heap), 0 if user stack
-} EVP_XOF_OPTS;
-
-typedef struct _EVP_MDEntry{
-    uint32_t flag;
-    const EVP_MD *(*EVP_MDGetter)(void);
-} EVP_MDEntry;
-
-// ==========================
-// EVP_HASH_CTX: runtime context
-// ==========================
-typedef struct _EVP_HASH_CTX {
-    const struct _EVP_MD *md; // selected algorithm
-    const void *opts;
-    void *digest_ctx;         // pointer to low-level context
-    size_t out_len;           // optional output length for XOFs
-
-    int isFinalized;
-    int isHeapAlloc;          // 1 if allocated by library (heap), 0 if user stack
-} EVP_HASH_CTX;
-
-// ==========================
-// HMAC_CTX: runtime context
-// ==========================
-typedef struct _EVP_HMAC_CTX {
-    const EVP_MD *md;           // Underlying hash algorithm
-    EVP_HASH_CTX *inner_ctx;    // Inner hash context
-    EVP_HASH_CTX *outer_ctx;    // Outer hash context
-
-    uint8_t key_block[128];     // Padded key block (max 128 for SHA-512)
-    size_t key_len;             // Original key length
-
-    size_t out_len;             // Output length (for XOFs)
-    bool is_xof;                // True if underlying hash is XOF (SHAKE)
-
-} EVP_HMAC_CTX;
-
+typedef struct _EVP_HASH_CTX EVP_HASH_CTX;
 
 #ifdef __cplusplus
 }

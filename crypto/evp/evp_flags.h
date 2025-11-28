@@ -3,6 +3,9 @@
 
 #include "../../config/crypto_config.h"
 
+#define EVP_MAX_KEY_SIZE 512        // bytes
+#define EVP_MAX_CUSTOMIZATION 512   // bytes
+
 // ======================
 // Maximum default sizes
 // ======================
@@ -114,8 +117,15 @@ typedef enum {
 // ======================
 typedef enum {
     EVP_HMAC = EVP_CAT_MAC | 0x0001,
-    EVP_KMAC = EVP_CAT_MAC | 0x0002
+    EVP_KMAC128 = EVP_CAT_MAC | 0x0002,
+    EVP_KMAC256 = EVP_CAT_MAC | 0x0003
 } EVP_MAC;
+
+
+typedef enum {
+    KMAC128 = EVP_CAT_MAC | 0x0002,
+    KMAC256 = EVP_CAT_MAC | 0x0003
+} ll_KMAC_TYPE;
 
 // ======================
 // 3. RNG / DRBG Flags

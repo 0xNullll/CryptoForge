@@ -21,9 +21,10 @@ typedef struct _ll_HMAC_CTX {
     const EVP_MD *md;                        // Low-level hash descriptor
     void *ipad_ctx;                          // Inner hash context
     void *opad_ctx;                          // Outer hash context
-    uint8_t key[EVP_MAX_DEFAULT_BLOCK_SIZE]; // Pre-padded key (max block size)
-    size_t key_len;
     size_t out_len;
+
+    uint8_t key[EVP_MAX_KEY_SIZE];
+    size_t key_len;
 
     int isFinalized;
     int isHeapAlloc; // 1 if allocated by library (heap), 0 if user stack    
@@ -58,7 +59,6 @@ TCLIB_STATUS ll_HMAC_CloneCtx(ll_HMAC_CTX *ctx_dest, const ll_HMAC_CTX *ctx_src)
 
 // Clone HMAC context and allocate a new heap context
 ll_HMAC_CTX *ll_HMAC_CloneCtxAlloc(const ll_HMAC_CTX *ctx_src, TCLIB_STATUS *status);
-
 
 #ifdef __cplusplus
 }

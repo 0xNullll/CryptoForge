@@ -24,6 +24,39 @@
 extern "C" {
 #endif
 
+typedef struct _EVP_XOF_OPTS {
+    // Output length
+    size_t out_len;     // requested output length
+
+    // Fixed-size customization strings
+    uint8_t N[EVP_MAX_CUSTOMIZATION];
+    size_t N_len;
+    uint8_t S[EVP_MAX_CUSTOMIZATION];
+    size_t S_len;
+
+    // Bookkeeping
+    int finalized;
+    int custom_absorbed;
+    int emptyNameCustom;
+
+    int isHeapAlloc;          // 1 if allocated by library (heap), 0 if user stack
+};
+
+typedef struct _EVP_HASH_CTX {
+    const struct _EVP_MD *md;  // selected algorithm
+    const void *opts;
+    void *digest_ctx;          // pointer to low-level context
+    size_t out_len;            // optional output length for XOFs
+
+    int isFinalized;
+    int isHeapAlloc;           // 1 if allocated by library (heap), 0 if user stack
+};
+
+typedef struct _EVP_MDEntry{
+    uint32_t flag;
+    const EVP_MD *(*EVP_MDGetter)(void);
+};
+
 // ==========================
 // Algorithm selection
 // ==========================
@@ -32,8 +65,8 @@ TCLIB_API const EVP_MD *EVP_MDByFlag(uint32_t algo_flag);
 // ==========================
 // Hash initialization / cleanup
 // ==========================
-TCLIB_API TCLIB_STATUS EVP_HashInit(EVP_HASH_CTX *ctx, const EVP_MD *md, const void *opts);
-TCLIB_API EVP_HASH_CTX* EVP_HashInitAlloc(const EVP_MD *md, const void *opts, TCLIB_STATUS *status);
+TCLIB_API TCLIB_STATUS EVP_HashInit(EVP_HASH_CTX *ctx, const EVP_MD *md, const EVP_XOF_OPTS *opts);
+TCLIB_API EVP_HASH_CTX* EVP_HashInitAlloc(const EVP_MD *md, const EVP_XOF_OPTS *opts, TCLIB_STATUS *status);
 
 TCLIB_API TCLIB_STATUS EVP_HashUpdate(EVP_HASH_CTX *ctx, const uint8_t *data, size_t data_len);
 TCLIB_API TCLIB_STATUS EVP_HashFinal(EVP_HASH_CTX *ctx, uint8_t *digest, size_t digest_len);
@@ -52,12 +85,12 @@ TCLIB_API TCLIB_STATUS EVP_ComputeHashFixed(
 );
 
 TCLIB_API TCLIB_STATUS EVP_ComputeHashXof(
-    const EVP_MD  *md,
-    uint8_t       *digest,
-    const uint8_t *data,
-    size_t         data_len,
-    size_t         out_len,
-    const void    *opts     // Optional: hash-specific options
+    const EVP_MD       *md,
+    uint8_t            *digest,
+    const uint8_t      *data,
+    size_t              data_len,
+    size_t              out_len,
+    const EVP_XOF_OPTS *opts     // Optional: hash-specific options
 );
 
 // ==========================
