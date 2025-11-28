@@ -10,13 +10,30 @@
 extern "C" {
 #endif
 
+#define LL_MAX_CUSTOMIZATION 512
+
 // ======================================
-// SHAKE (Low-level) / RawSHAKE XOF helpers (bit-level)
+// SHAKE (Low-level) / XOF helpers (bit-level)
 // ======================================
 void ll_trunc_s(const uint8_t *X, size_t Xlen, size_t s, uint8_t *out);
+
 void ll_concat_bits(const uint8_t *X, size_t x_bits,
                     const uint8_t *Y, size_t y_bits,
                     uint8_t *out);
+                
+size_t ll_right_encode_uint64(uint64_t x, uint8_t *out);
+
+size_t ll_left_encode_uint64(uint64_t x, uint8_t *out);
+
+size_t ll_encode_string(const uint8_t *S, size_t S_len, uint8_t *out);
+
+size_t ll_encoded_string_len(size_t S_len);
+
+size_t ll_byte_pad(const uint8_t *S, size_t S_len, size_t w, uint8_t *out, size_t out_cap);
+
+size_t ll_substring_bytes(const uint8_t *S, size_t S_len,
+                          size_t start_idx, size_t end_idx,
+                          uint8_t *out);
 
 // ======================================
 // SHAKE128
@@ -81,19 +98,28 @@ bool ll_rawshake256_squeeze(ll_RawSHAKE256_CTX *ctx, uint8_t *output, size_t out
 #define CSHAKE128_DOMAIN 0x00  // domain depends on N/S; 0x00 if empty = SHAKE128
 #define CSHAKE128_DEFAULT_OUT_LEN 32
 
-typedef struct ll_CSHAKE128_CTX {
-    ll_SHAKE128_CTX *internal_ctx;   // pointer to low-level SHAKE128 context
-    size_t out_len;                  // desired output length
-    const uint8_t *N;                // customization string N
-    size_t N_len;
-    const uint8_t *S;                // customization string S
-    size_t S_len;
-    int finalized;                  // whether final has been called
+
+typedef struct _ll_CSHAKE128_CTX {
+    ll_SHAKE128_CTX internal_ctx;
+    size_t out_len;                  // Desired output length in bytes or bits, depending on usage
+    uint8_t N[LL_MAX_CUSTOMIZATION]; // Customization string N (can be empty)
+    size_t N_len;                    // Length of N in bytes
+    uint8_t S[LL_MAX_CUSTOMIZATION]; // Customization string S (can be empty)
+    size_t S_len;                    // Length of S in bytes
+    int finalized;                   // Flag indicating if finalization has been performed
+    int custom_absorbed;
+    uint8_t emptyNameCustom;
+    int xof_mode;
 } ll_CSHAKE128_CTX;
 
-bool ll_cshake128_init(ll_CSHAKE128_CTX *ctx, const uint8_t *N, size_t N_len, const uint8_t *S, size_t S_len);
-bool ll_cshake128_update(ll_CSHAKE128_CTX *ctx, const uint8_t *data, size_t len);
+bool ll_cshake128_init(ll_CSHAKE128_CTX *ctx,
+                       const uint8_t *N, size_t N_len,
+                       const uint8_t *S, size_t S_len);
+
+bool ll_cshake128_absorb(ll_CSHAKE128_CTX *ctx, const uint8_t *data, size_t len);
+
 bool ll_cshake128_final(ll_CSHAKE128_CTX *ctx);
+
 bool ll_cshake128_squeeze(ll_CSHAKE128_CTX *ctx, uint8_t *output, size_t outlen);
 
 // ======================================
@@ -103,19 +129,27 @@ bool ll_cshake128_squeeze(ll_CSHAKE128_CTX *ctx, uint8_t *output, size_t outlen)
 #define CSHAKE256_DOMAIN 0x00  // domain depends on N/S; 0x00 if empty = SHAKE256
 #define CSHAKE256_DEFAULT_OUT_LEN 64
 
-typedef struct ll_CSHAKE256_CTX {
-    ll_SHAKE256_CTX *internal_ctx;   // pointer to low-level SHAKE256 context
-    size_t out_len;                  // desired output length
-    const uint8_t *N;                // customization string N
-    size_t N_len;
-    const uint8_t *S;                // customization string S
-    size_t S_len;
-    int finalized;                  // whether final has been called
+typedef struct _ll_CSHAKE256_CTX {
+    ll_SHAKE256_CTX internal_ctx;
+    size_t out_len;                  // Desired output length in bytes or bits, depending on usage
+    uint8_t N[LL_MAX_CUSTOMIZATION]; // Customization string N (can be empty)
+    size_t N_len;                    // Length of N in bytes
+    uint8_t S[LL_MAX_CUSTOMIZATION]; // Customization string S (can be empty)
+    size_t S_len;                    // Length of S in bytes
+    int finalized;                   // Flag indicating if finalization has been performed
+    int custom_absorbed;
+    uint8_t emptyNameCustom;
+    int xof_mode;
 } ll_CSHAKE256_CTX;
 
-bool ll_cshake256_init(ll_CSHAKE256_CTX *ctx, const uint8_t *N, size_t N_len, const uint8_t *S, size_t S_len);
-bool ll_cshake256_update(ll_CSHAKE256_CTX *ctx, const uint8_t *data, size_t len);
+bool ll_cshake256_init(ll_CSHAKE256_CTX *ctx,
+                       const uint8_t *N, size_t N_len,
+                       const uint8_t *S, size_t S_len);
+
+bool ll_cshake256_absorb(ll_CSHAKE256_CTX *ctx, const uint8_t *data, size_t len);
+
 bool ll_cshake256_final(ll_CSHAKE256_CTX *ctx);
+
 bool ll_cshake256_squeeze(ll_CSHAKE256_CTX *ctx, uint8_t *output, size_t outlen);
 
 #ifdef __cplusplus

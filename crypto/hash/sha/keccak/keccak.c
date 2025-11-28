@@ -227,7 +227,7 @@ bool ll_keccak_p(uint64_t state[5][5], unsigned int w, unsigned int nr) {
     uint64_t mask = (w == 64) ? 0xFFFFFFFFFFFFFFFFULL : 0xFFFFFFFFULL;
 
     for (unsigned int i = 0; i < nr; i++) {
-        Round(state, i, mask); // pass mask to Round so lane size is applied
+        Round(state, i , mask); // pass mask to Round so lane size is applied
     }
 
     return true;
@@ -236,7 +236,7 @@ bool ll_keccak_p(uint64_t state[5][5], unsigned int w, unsigned int nr) {
 // =======================
 // ll_KECCAK_CTX wrappers
 // =======================
-bool ll_keccak_init(ll_KECCAK_CTX *ctx, size_t rate, uint8_t suffix) {
+bool ll_keccak_sponge_init(ll_KECCAK_CTX *ctx, size_t rate, uint8_t suffix) {
     memset(ctx->state, 0, sizeof(ctx->state));
     memset(ctx->buf, 0, sizeof(ctx->buf));
     ctx->buf_len = 0;
@@ -246,8 +246,27 @@ bool ll_keccak_init(ll_KECCAK_CTX *ctx, size_t rate, uint8_t suffix) {
     return true;
 }
 
+// void print_keccak_state_twisted(const uint64_t state[5][5]) {
+//     printf("Keccak state (twisted byte view):\n");
+
+//     // Loop over lanes in "twisted" order (swap x and y for illustration)
+//     for (int y = 0; y < 5; y++) {
+//         for (int x = 0; x < 5; x++) {
+//             uint64_t lane = state[x][y];
+//             // Print lane byte-by-byte, LSB first
+//             for (int b = 0; b < 8; b++) {
+//                 uint8_t byte = (lane >> (8*b)) & 0xFF;
+//                 printf("%02X ", byte);
+//             }
+//             printf("  "); // separate lanes
+//         }
+//         printf("\n");
+//     }
+//     printf("\n");
+// }
+
 // absorb into ctx (buffers partial blocks, processes full blocks)
-bool ll_keccak_absorb(ll_KECCAK_CTX *ctx, const uint8_t *input, size_t inlen) {
+bool ll_keccak_sponge_absorb(ll_KECCAK_CTX *ctx, const uint8_t *input, size_t inlen) {
     if (ctx->finalized) return false; // Cannot absorb after finalization
 
     size_t offset = 0;
@@ -272,7 +291,7 @@ bool ll_keccak_absorb(ll_KECCAK_CTX *ctx, const uint8_t *input, size_t inlen) {
 }
 
 // finalization: multi-rate padding (domain suffix + 10*1), absorb last block
-bool ll_keccak_final(ll_KECCAK_CTX *ctx) {
+bool ll_keccak_sponge_final(ll_KECCAK_CTX *ctx) {
     if (ctx->finalized) return false;
 
     size_t r = ctx->rate;
@@ -296,9 +315,9 @@ bool ll_keccak_final(ll_KECCAK_CTX *ctx) {
 }
 
 // squeeze: produce outlen bytes. Uses permutation between full-rate blocks
-bool ll_keccak_squeeze(ll_KECCAK_CTX *ctx, uint8_t *output, size_t outlen) {
+bool ll_keccak_sponge_squeeze(ll_KECCAK_CTX *ctx, uint8_t *output, size_t outlen) {
     if (!ctx->finalized) {
-        if (!ll_keccak_final(ctx)) return false;
+        if (!ll_keccak_sponge_final(ctx)) return false;
     }
 
     size_t offset = 0;
