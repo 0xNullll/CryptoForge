@@ -24,13 +24,26 @@ typedef struct _EVP_MD {
     bool (*hash_squeeze_fn)(void *ctx, uint8_t *output, size_t outlen);
 } EVP_MD;
 
-typedef struct _EVP_XOF_CSHAKE_OPTS{
-    const uint8_t *N;      // function name for cSHAKE
+// Generic EVP-style XOF
+#define EVP_MAX_CUSTOMIZATION 512
+
+typedef struct _EVP_XOF_OPTS {
+    // Output length
+    size_t out_len;     // requested output length
+
+    // Fixed-size customization strings
+    uint8_t N[EVP_MAX_CUSTOMIZATION];
     size_t N_len;
-    const uint8_t *S;      // customization string
+    uint8_t S[EVP_MAX_CUSTOMIZATION];
     size_t S_len;
-    size_t out_len;        // requested output length
-} EVP_XOF_CSHAKE_OPTS;
+
+    // Bookkeeping
+    int finalized;
+    int custom_absorbed;
+    int emptyNameCustom;
+
+    int isHeapAlloc;          // 1 if allocated by library (heap), 0 if user stack
+} EVP_XOF_OPTS;
 
 typedef struct _EVP_MDEntry{
     uint32_t flag;

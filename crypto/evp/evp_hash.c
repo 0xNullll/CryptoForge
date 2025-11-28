@@ -255,7 +255,7 @@ static bool rawshake256_squeeze_wrapper(void *ctx, uint8_t *output, size_t outle
 // cSHAKE128 simple wrappers
 // ======================================
 static bool cshake128_init_wrapper(void *ctx, const void *opts) {
-    const EVP_XOF_CSHAKE_OPTS *xof_opts = (const EVP_XOF_CSHAKE_OPTS *)opts;
+    const EVP_XOF_OPTS *xof_opts = (const EVP_XOF_OPTS*)opts;
     return ll_cshake128_init(
         (ll_CSHAKE128_CTX *)ctx,
         xof_opts ? xof_opts->N : NULL,
@@ -266,7 +266,7 @@ static bool cshake128_init_wrapper(void *ctx, const void *opts) {
 }
 
 static bool cshake128_update_wrapper(void *ctx, const uint8_t *data, size_t len) {
-    return ll_cshake128_update((ll_CSHAKE128_CTX *)ctx, data, len);
+    return ll_cshake128_absorb((ll_CSHAKE128_CTX *)ctx, data, len);
 }
 
 static bool cshake128_final_wrapper(void *ctx, uint8_t *digest, size_t digest_len) {
@@ -283,7 +283,7 @@ static bool cshake128_squeeze_wrapper(void *ctx, uint8_t *output, size_t outlen)
 // cSHAKE256 simple wrappers
 // ======================================
 static bool cshake256_init_wrapper(void *ctx, const void *opts) {
-    const EVP_XOF_CSHAKE_OPTS *xof_opts = (const EVP_XOF_CSHAKE_OPTS *)opts;
+    const EVP_XOF_OPTS *xof_opts = (const EVP_XOF_OPTS*)opts;
     return ll_cshake256_init(
         (ll_CSHAKE256_CTX *)ctx,
         xof_opts ? xof_opts->N : NULL,
@@ -294,7 +294,7 @@ static bool cshake256_init_wrapper(void *ctx, const void *opts) {
 }
 
 static bool cshake256_update_wrapper(void *ctx, const uint8_t *data, size_t len) {
-    return ll_cshake256_update((ll_CSHAKE256_CTX *)ctx, data, len);
+    return ll_cshake256_absorb((ll_CSHAKE256_CTX *)ctx, data, len);
 }
 
 static bool cshake256_final_wrapper(void *ctx, uint8_t *digest, size_t digest_len) {
@@ -621,6 +621,40 @@ static const EVP_MD *EVP_get_cshake256(void) {
     return &md;
 }
 
+// Table of all supported hashes
+static const EVP_MDEntry evp_md_table[] = {
+    { EVP_MD5,           EVP_get_md5 },
+    { EVP_SHA1,          EVP_get_sha1 },
+    { EVP_SHA224,        EVP_get_sha224 },
+    { EVP_SHA256,        EVP_get_sha256 },
+    { EVP_SHA384,        EVP_get_sha384 },
+    { EVP_SHA512,        EVP_get_sha512 },
+    { EVP_SHA512_224,    EVP_get_sha512_224 },
+    { EVP_SHA512_256,    EVP_get_sha512_256 },
+    { EVP_SHA3_224,      EVP_get_sha3_224 },
+    { EVP_SHA3_256,      EVP_get_sha3_256 },
+    { EVP_SHA3_384,      EVP_get_sha3_384 },
+    { EVP_SHA3_512,      EVP_get_sha3_512 },
+    { EVP_SHAKE128,      EVP_get_shake128 },
+    { EVP_SHAKE256,      EVP_get_shake256 },
+    { EVP_RAWSHAKE128,   EVP_get_raw_shake128 },
+    { EVP_RAWSHAKE256,   EVP_get_raw_shake256 },
+    { EVP_CSHAKE128,     EVP_get_cshake128 },
+    { EVP_CSHAKE256,     EVP_get_cshake256 }
+};
+
+// Replace EVP_MDByFlag with table lookup
+const EVP_MD *EVP_MDByFlag(uint32_t algo_flag) {
+    size_t table_len = sizeof(evp_md_table) / sizeof(evp_md_table[0]);
+    for (size_t i = 0; i < table_len; i++) {
+        if (evp_md_table[i].flag == algo_flag) {
+            return evp_md_table[i].EVP_MDGetter();
+        }
+    }
+    return NULL; // invalid flag
+}
+
+
 TCLIB_STATUS EVP_HashInit(EVP_HASH_CTX *ctx, const EVP_MD *md, const void *opts) {
     if (!ctx || !md)
         return TCLIB_ERR_NULL_PTR;
@@ -704,19 +738,6 @@ TCLIB_STATUS EVP_HashFinal(EVP_HASH_CTX *ctx, uint8_t *digest, size_t digest_len
     return TCLIB_SUCCESS;
 }
 
-TCLIB_STATUS EVP_HashFree(EVP_HASH_CTX *ctx) {
-    if (!ctx) return TCLIB_ERR_NULL_PTR;
-
-    if (ctx->digest_ctx) {
-        SECURE_ZERO(ctx->digest_ctx, ctx->md->ctx_size);
-        SECURE_FREE(ctx->digest_ctx, ctx->md->ctx_size);
-    }
-
-    if (ctx->isHeapAlloc) DESTROY_CTX(ctx, EVP_HASH_CTX);
-
-    return TCLIB_SUCCESS;
-}
-
 TCLIB_STATUS EVP_HashReset(EVP_HASH_CTX *ctx) {
     if (!ctx || !ctx->md || !ctx->digest_ctx) return TCLIB_ERR_NULL_PTR;
 
@@ -731,16 +752,62 @@ TCLIB_STATUS EVP_HashReset(EVP_HASH_CTX *ctx) {
     return TCLIB_SUCCESS;
 }
 
-TCLIB_STATUS EVP_ComputeHash(const EVP_MD *md,
-                             uint8_t *digest,
-                             const uint8_t *data,
-                             size_t data_len,
-                             size_t out_len,
-                             const void *opts) {
+TCLIB_STATUS EVP_HashFree(EVP_HASH_CTX *ctx) {
+    if (!ctx) return TCLIB_ERR_NULL_PTR;
+
+    if (ctx->digest_ctx) {
+        SECURE_ZERO(ctx->digest_ctx, ctx->md->ctx_size);
+        SECURE_FREE(ctx->digest_ctx, ctx->md->ctx_size);
+    }
+
+    if (ctx->isHeapAlloc) DESTROY_CTX(ctx, EVP_HASH_CTX);
+
+    return TCLIB_SUCCESS;
+}
+
+TCLIB_STATUS EVP_ComputeHashFixed(
+    const EVP_MD *md,
+    uint8_t *digest,
+    const uint8_t *data,
+    size_t data_len) {
     if (!md || !digest || !data)
         return TCLIB_ERR_NULL_PTR;
     if (data_len == 0)
         return TCLIB_ERR_INVALID_LEN;
+
+    if (EVP_IS_XOF(md->id))
+        return TCLIB_ERR_UNSUPPORTED;
+
+    TCLIB_STATUS status;
+    EVP_HASH_CTX *ctx = EVP_HashInitAlloc(md, NULL, &status);
+    if (!ctx) return status;
+
+    status = EVP_HashUpdate(ctx, data, data_len);
+    if (status != TCLIB_SUCCESS) {
+        EVP_HashFree(ctx);
+        return status;
+    }
+
+    // Fixed-length hash uses md->digest_size
+    status = EVP_HashFinal(ctx, digest, md->digest_size);
+
+    EVP_HashFree(ctx);
+    return status;
+}
+
+TCLIB_STATUS EVP_ComputeHashXof(
+    const EVP_MD *md,
+    uint8_t *digest,
+    const uint8_t *data,
+    size_t data_len,
+    size_t out_len,
+    const void *opts) { // Optional: hash-specific options
+    if (!md || !digest || !data)
+        return TCLIB_ERR_NULL_PTR;
+    if (data_len == 0 || out_len == 0)
+        return TCLIB_ERR_INVALID_LEN;
+    if (!EVP_IS_XOF(md->id))
+        return TCLIB_ERR_UNSUPPORTED;  // Ensure only XOFs used here
 
     TCLIB_STATUS status;
     EVP_HASH_CTX *ctx = EVP_HashInitAlloc(md, opts, &status);
@@ -752,9 +819,7 @@ TCLIB_STATUS EVP_ComputeHash(const EVP_MD *md,
         return status;
     }
 
-    // XOF uses default_out_len if out_len not provided
-    size_t final_len = out_len ? out_len : (EVP_IS_XOF(md->id) ? md->default_out_len : md->digest_size);
-    status = EVP_HashFinal(ctx, digest, final_len);
+    status = EVP_HashFinal(ctx, digest, out_len);
 
     EVP_HashFree(ctx);
     return status;
@@ -773,26 +838,55 @@ int EVP_HashCompare(const uint8_t *a, const uint8_t *b, size_t len) {
     return (diff == 0) ? 1 : 0;
 }
 
-void* EVP_MDCloneCtx(const void *ctx, const EVP_MD *md, TCLIB_STATUS *status) {
-    if (!ctx || !md || md->ctx_size == 0) {
+TCLIB_STATUS EVP_HashCloneCtx(EVP_HASH_CTX *dst, const EVP_HASH_CTX *src) {
+    if (!dst || !src) return TCLIB_ERR_NULL_PTR;
+
+    // Copy the top-level context
+    SECURE_MEMCPY(dst, src, sizeof(EVP_HASH_CTX));
+
+    // Allocate low-level context if needed
+    if (src->digest_ctx) {
+        dst->digest_ctx = SECURE_ALLOC(src->md->ctx_size);
+        if (!dst->digest_ctx) return TCLIB_ERR_ALLOC_FAILED;
+        SECURE_MEMCPY(dst->digest_ctx, src->digest_ctx, src->md->ctx_size);
+    } else {
+        dst->digest_ctx = NULL;
+    }
+
+    // For XOFs, copy output length if applicable
+    dst->out_len = src->out_len;
+    dst->isFinalized = src->isFinalized;
+    dst->isHeapAlloc = 0; // since caller owns dst
+
+    return TCLIB_SUCCESS;
+}
+
+EVP_HASH_CTX *EVP_HashCloneCtxAlloc(const EVP_HASH_CTX *src, TCLIB_STATUS *status) {
+    if (!src) {
         if (status) *status = TCLIB_ERR_NULL_PTR;
         return NULL;
     }
 
-    void *new_ctx = SECURE_ALLOC(md->ctx_size);
-    if (!new_ctx) {
+    // Allocate top-level context
+    EVP_HASH_CTX *dst = CREATE_CTX(EVP_HASH_CTX);
+    if (!dst) {
         if (status) *status = TCLIB_ERR_ALLOC_FAILED;
         return NULL;
     }
 
-    SECURE_MEMCPY(new_ctx, ctx, md->ctx_size); // shallow copy of internal context memory
+    // Initialize clone
+    TCLIB_STATUS st = EVP_HashCloneCtx(dst, src);
+    if (status) *status = st;
+    if (st != TCLIB_SUCCESS) {
+        free(dst);
+        return NULL;
+    }
 
-    if (status) *status = TCLIB_SUCCESS;
-    return new_ctx;
+    dst->isHeapAlloc = 1; // library owns this memory
+    return dst;
 }
 
-size_t EVP_HashDigestSize(const EVP_HASH_CTX *ctx)
-{
+size_t EVP_HashDigestSize(const EVP_HASH_CTX *ctx) {
     return ctx ? (ctx->md ? ctx->md->digest_size : 0) : 0;
 }
 
@@ -826,50 +920,137 @@ const char* EVP_HashName(const EVP_MD *md) {
     }
 }
 
-// Table of all supported hashes
-static const EVP_MDEntry evp_md_table[] = {
-    { EVP_MD5,           EVP_get_md5 },
-    { EVP_SHA1,          EVP_get_sha1 },
-    { EVP_SHA224,        EVP_get_sha224 },
-    { EVP_SHA256,        EVP_get_sha256 },
-    { EVP_SHA384,        EVP_get_sha384 },
-    { EVP_SHA512,        EVP_get_sha512 },
-    { EVP_SHA512_224,    EVP_get_sha512_224 },
-    { EVP_SHA512_256,    EVP_get_sha512_256 },
-    { EVP_SHA3_224,      EVP_get_sha3_224 },
-    { EVP_SHA3_256,      EVP_get_sha3_256 },
-    { EVP_SHA3_384,      EVP_get_sha3_384 },
-    { EVP_SHA3_512,      EVP_get_sha3_512 },
-    { EVP_SHAKE128,      EVP_get_shake128 },
-    { EVP_SHAKE256,      EVP_get_shake256 },
-    { EVP_RAWSHAKE128,   EVP_get_raw_shake128 },
-    { EVP_RAWSHAKE256,   EVP_get_raw_shake256 },
-    { EVP_CSHAKE128,     EVP_get_cshake128 },
-    { EVP_CSHAKE256,     EVP_get_cshake256 }
-};
-
-// Replace EVP_MDByFlag with table lookup
-const EVP_MD *EVP_MDByFlag(uint32_t algo_flag) {
-    size_t table_len = sizeof(evp_md_table) / sizeof(evp_md_table[0]);
-    for (size_t i = 0; i < table_len; i++) {
-        if (evp_md_table[i].flag == algo_flag) {
-            return evp_md_table[i].EVP_MDGetter();
-        }
-    }
-    return NULL; // invalid flag
-}
-
-TCLIB_STATUS EVP_FillXOFOpts(EVP_XOF_CSHAKE_OPTS *opts,
-                     const uint8_t *N, size_t N_len,
-                     const uint8_t *S, size_t S_len,
-                     size_t out_len) {
+// Fill the XOF options with fixed-size arrays
+TCLIB_STATUS EVP_XOFOptsInit(EVP_XOF_OPTS *opts,
+                             const uint8_t *N, size_t N_len,
+                             const uint8_t *S, size_t S_len,
+                             size_t out_len) {
     if (!opts) return TCLIB_ERR_NULL_PTR;
+    if (N_len > EVP_MAX_CUSTOMIZATION || S_len > EVP_MAX_CUSTOMIZATION)
+        return TCLIB_ERR_INVALID_LEN;
 
-    opts->N = N;
+    // Initialize fields
+    SECURE_ZERO(opts->N, EVP_MAX_CUSTOMIZATION);
+    SECURE_ZERO(opts->S, EVP_MAX_CUSTOMIZATION);
+
     opts->N_len = N_len;
-    opts->S = S;
     opts->S_len = S_len;
     opts->out_len = out_len;
+    opts->finalized = 0;
+    opts->custom_absorbed = 0;
+    opts->emptyNameCustom = 1;
+
+    // Copy N
+    if (N && N_len > 0) {
+        SECURE_MEMCPY(opts->N, N, N_len);
+        opts->emptyNameCustom = 0;
+    }
+
+    // Copy S
+    if (S && S_len > 0) {
+        SECURE_MEMCPY(opts->S, S, S_len);
+        opts->emptyNameCustom = 0;
+    }
+
+    opts->isHeapAlloc = 0;
+    return TCLIB_SUCCESS;
+}
+
+// Allocate + fill XOF options
+EVP_XOF_OPTS* EVP_XOFOptsInitAlloc(const uint8_t *N, size_t N_len,
+                                             const uint8_t *S, size_t S_len,
+                                             size_t out_len, TCLIB_STATUS *status) {
+    if (N_len > EVP_MAX_CUSTOMIZATION || S_len > EVP_MAX_CUSTOMIZATION) {
+        if (status) *status = TCLIB_ERR_INVALID_LEN;
+        return NULL;
+    }
+
+    EVP_XOF_OPTS *opts = CREATE_CTX(EVP_XOF_OPTS);
+    if (!opts) {
+        if (status) *status = TCLIB_ERR_ALLOC_FAILED;
+        return NULL;
+    }
+
+    TCLIB_STATUS st = EVP_XOFOptsInit(opts, N, N_len, S, S_len, out_len);
+    if (st != TCLIB_SUCCESS) {
+        DESTROY_CTX(opts, EVP_XOF_OPTS);
+        if (status) *status = st;
+        return NULL;
+    }
+
+    opts->isHeapAlloc = 1; // mark heap allocation
+    if (status) *status = TCLIB_SUCCESS;
+    return opts;
+}
+
+
+void EVP_FreeXOFOpts(EVP_XOF_OPTS *opts) {
+    if (!opts) return;
+
+    // Zero sensitive data before freeing
+    SECURE_ZERO(opts, sizeof(*opts));
+
+    // Free the structure itself
+    if (opts->isHeapAlloc) DESTROY_CTX(opts, EVP_XOF_OPTS);
+}
+
+// Soft reset without clearing N/S buffers
+void EVP_ResetXOFOpts(EVP_XOF_OPTS *opts) {
+    if (!opts) return;
+
+    // Zero sensitive data
+    SECURE_ZERO(opts->N, EVP_MAX_CUSTOMIZATION);
+    SECURE_ZERO(opts->S, EVP_MAX_CUSTOMIZATION);
+
+    // Reset bookkeeping fields (except isHeapAlloc)
+    opts->N_len = 0;
+    opts->S_len = 0;
+    opts->out_len = 0;
+    opts->finalized = 0;
+    opts->custom_absorbed = 0;
+    opts->emptyNameCustom = 1;
+}
+
+// Deep copy from src to dst (fixed arrays)
+TCLIB_STATUS EVP_CloneXOFOpts(EVP_XOF_OPTS *dst, const EVP_XOF_OPTS *src) {
+    if (!dst || !src) return TCLIB_ERR_NULL_PTR;
+
+    SECURE_MEMCPY(dst->N, src->N, EVP_MAX_CUSTOMIZATION);
+    SECURE_MEMCPY(dst->S, src->S, EVP_MAX_CUSTOMIZATION);
+
+    dst->N_len = src->N_len;
+    dst->S_len = src->S_len;
+    dst->out_len = src->out_len;
+    dst->finalized = src->finalized;
+    dst->custom_absorbed = src->custom_absorbed;
+    dst->emptyNameCustom = src->emptyNameCustom;
 
     return TCLIB_SUCCESS;
+}
+
+EVP_XOF_OPTS *EVP_CloneXOFOptsAlloc(const EVP_XOF_OPTS *src, TCLIB_STATUS *status) {
+    if (!src) {
+        if (status) *status = TCLIB_ERR_NULL_PTR;
+        return NULL;
+    }
+
+    // Allocate new structure
+    EVP_XOF_OPTS *dst = CREATE_CTX(EVP_XOF_OPTS);
+    if (!dst) {
+        if (status) *status = TCLIB_ERR_ALLOC_FAILED;
+        return NULL;
+    }
+
+    // Clone contents
+    TCLIB_STATUS ret = EVP_CloneXOFOpts(dst, src);
+    if (status) *status = ret;
+
+    // If cloning failed, free memory
+    if (ret != TCLIB_SUCCESS) {
+        free(dst);
+        return NULL;
+    }
+
+    dst->isHeapAlloc = 1;
+    return dst;
 }

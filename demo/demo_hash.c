@@ -2,7 +2,7 @@
 
 #if ENABLE_TESTS
 
-void test_all_hashes(const uint8_t *input, size_t input_len) {
+void test_all_hashes(const uint8_t *input, size_t input_len, void *opts) {
     uint8_t digest[EVP_MAX_DEFAULT_DIGEST_SIZE];
 
     // List of hash flags to test
@@ -20,7 +20,9 @@ void test_all_hashes(const uint8_t *input, size_t input_len) {
         EVP_SHA3_384,
         EVP_SHA3_512,
         EVP_SHAKE128,
-        EVP_SHAKE256
+        EVP_SHAKE256,
+        EVP_CSHAKE128,
+        EVP_CSHAKE256
     };
 
     size_t num_hashes = sizeof(hash_flags) / sizeof(hash_flags[0]);
@@ -38,7 +40,13 @@ void test_all_hashes(const uint8_t *input, size_t input_len) {
             continue;
         }
 
-        if (!md->hash_init_fn(ctx, NULL)) {
+        // Only pass opts for cSHAKE / XOF hashes
+        const void *init_opts = NULL;
+        if (hash_flags[i] == EVP_CSHAKE128 || hash_flags[i] == EVP_CSHAKE256) {
+            init_opts = opts;
+        }
+
+        if (!md->hash_init_fn(ctx, init_opts)) {
             printf("%s init failed\n", EVP_HashName(md));
             free(ctx);
             continue;
@@ -68,7 +76,7 @@ void test_all_hashes(const uint8_t *input, size_t input_len) {
 
         printf("%s digest: ", EVP_HashName(md));
         DEMO_print_hex(digest, out_len);
-        
+
         free(ctx);
     }
 }

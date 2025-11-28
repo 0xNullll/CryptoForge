@@ -8,7 +8,7 @@
 #if ENABLE_TESTS  // only include/demo code if tests are enabled
 
 #include "../crypto/mac/hmac.h"
-
+#include "../crypto/hash/sha/keccak/shake.h"
 #include "../crypto/evp/evp_defs.h"
 #include "../crypto/evp/evp_flags.h"
 #include "../crypto/evp/evp_hash.h"
@@ -18,6 +18,15 @@
 extern "C" {
 #endif
 
+typedef struct {
+    const uint8_t *data;
+    size_t data_len;
+    const uint8_t *S;
+    size_t S_len;
+    const uint8_t *outval;
+    size_t outsz;
+} CSHAKE_TEST_VECTOR;
+
 // Utility to print a digest in hex
 FORCE_INLINE void DEMO_print_hex(const uint8_t *digest, size_t size) {
     for (size_t i = 0; i < size; i++)
@@ -26,7 +35,7 @@ FORCE_INLINE void DEMO_print_hex(const uint8_t *digest, size_t size) {
 }
 
 // Test helper (for dev)
-TCLIB_API void test_all_hashes(const uint8_t *input, size_t input_len);
+TCLIB_API void test_all_hashes(const uint8_t *input, size_t input_len, void *opts);
 
 void test_all_hmacs(const uint8_t *key, size_t key_len, const uint8_t *input, size_t input_len);
 

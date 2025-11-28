@@ -189,31 +189,32 @@ TCLIB_STATUS ll_HMAC_Reset(ll_HMAC_CTX *ctx) {
     return TCLIB_SUCCESS;
 }
 
-TCLIB_STATUS ll_HMAC_CloneCtx(ll_HMAC_CTX *ctx_dest, const ll_HMAC_CTX *ctx_src) {
-    if (!ctx_dest || !ctx_src) {
+TCLIB_API TCLIB_STATUS ll_HMAC_CloneCtx(ll_HMAC_CTX *ctx_dest, const ll_HMAC_CTX *ctx_src) {
+    if (!ctx_dest || !ctx_src)
         return TCLIB_ERR_NULL_PTR;
-    }
 
-    TCLIB_STATUS status;
-    
     ctx_dest->md = ctx_src->md;
 
-    ctx_dest->ipad_ctx = EVP_MDCloneCtx(ctx_src->ipad_ctx, ctx_src->md, &status);
-    if (!ctx_dest->ipad_ctx || (status != TCLIB_SUCCESS)) {
+    TCLIB_STATUS status;
+
+    // Allocate and clone inner hash context
+    ctx_dest->ipad_ctx = EVP_HashCloneCtxAlloc(ctx_src->ipad_ctx, &status);
+    if (!ctx_dest->ipad_ctx || status != TCLIB_SUCCESS)
+        return TCLIB_ERR_ALLOC_FAILED;
+
+    // Allocate and clone outer hash context
+    ctx_dest->opad_ctx = EVP_HashCloneCtxAlloc(ctx_src->opad_ctx, &status);
+    if (!ctx_dest->opad_ctx || status != TCLIB_SUCCESS) {
+        EVP_HashFree(ctx_dest->ipad_ctx);
         return TCLIB_ERR_ALLOC_FAILED;
     }
 
-    ctx_dest->opad_ctx = EVP_MDCloneCtx(ctx_src->opad_ctx, ctx_src->md, &status);
-    if (!ctx_dest->opad_ctx || (status != TCLIB_SUCCESS)) {
-        DESTROY_CTX(ctx_dest->ipad_ctx, ctx_src->md->ctx_size);
-        return TCLIB_ERR_ALLOC_FAILED;
-    }
-
+    // Copy simple fields
     SECURE_MEMCPY(ctx_dest->key, ctx_src->key, ctx_src->key_len);
-    ctx_dest->key_len      = ctx_src->key_len;
-    ctx_dest->out_len      = ctx_src->out_len;
-    ctx_dest->isFinalized  = ctx_src->isFinalized;
-    ctx_dest->isHeapAlloc  = 0; // since ctx_dest is pre-allocated
+    ctx_dest->key_len     = ctx_src->key_len;
+    ctx_dest->out_len     = ctx_src->out_len;
+    ctx_dest->isFinalized = ctx_src->isFinalized;
+    ctx_dest->isHeapAlloc = 0; // pre-allocated
 
     return TCLIB_SUCCESS;
 }

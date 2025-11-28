@@ -27,10 +27,10 @@ typedef struct {
 } ll_KECCAK_CTX;
 
 // Low-level functions
-bool ll_keccak_init(ll_KECCAK_CTX *ctx, size_t rate, uint8_t suffix);
-bool ll_keccak_absorb(ll_KECCAK_CTX *ctx, const uint8_t *data, size_t len);
-bool ll_keccak_final(ll_KECCAK_CTX *ctx);
-bool ll_keccak_squeeze(ll_KECCAK_CTX *ctx, uint8_t *output, size_t outlen);
+bool ll_keccak_sponge_init(ll_KECCAK_CTX *ctx, size_t rate, uint8_t suffix);
+bool ll_keccak_sponge_absorb(ll_KECCAK_CTX *ctx, const uint8_t *data, size_t len);
+bool ll_keccak_sponge_final(ll_KECCAK_CTX *ctx);
+bool ll_keccak_sponge_squeeze(ll_KECCAK_CTX *ctx, uint8_t *output, size_t outlen);
 
 // Optional low-level permutation function
 bool ll_keccak_p(uint64_t state[5][5], unsigned int w, unsigned int nr);
