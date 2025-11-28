@@ -16,7 +16,9 @@ Hash functions provide integrity and form the basis for MACs, KDFs, and RNGs.
 - [x] **SHAKE / rawSHAKE** – extendable-output functions (XOF), flexible output length.
 - [ ] **cSHAKE** – customizable SHAKE variant for keyed or domain-specific hashing.
 
-**Notes:** Hashes are required for HMACs, KMACs, and some DRBG constructions.
+**Notes:** 
+- Hashes are required for HMACs, KMACs, and some DRBG constructions.  
+- **cSHAKE implementation is experimental:** it attempts to follow SP800-185 closely, including explicit handling of N/S customization strings. Some libraries simplify or absorb customization differently, so outputs may not match other implementations exactly. Users should verify against their own test vectors.
 
 ---
 
