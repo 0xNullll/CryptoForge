@@ -141,20 +141,14 @@ Required for block ciphers to handle plaintext not aligned to block size.
 
 ## Layered API Design
 
-1. **Low-level (`ll_*`) – Raw Primitives**
-   - Implements atomic algorithms (SHAKE, AES, etc.)
-   - Minimal internal helpers
-   - Fully deterministic, no key checks or policy enforcement
+1. **Low-level & Hybrid / Context Layer**
+   - Implements atomic algorithms (SHAKE, AES, etc.) and builds higher-level contexts
+   - Minimal internal helpers while also maintaining algorithm contexts (e.g., `ll_HMAC_CTX`, `ll_KMAC_CTX`)
+   - Mixes multiple primitives safely and handles internal state and streaming
+   - Fully deterministic, no user-facing key checks or policy enforcement
    - Some `ll_*` may call other lower-level `ll_*` functions
 
-2. **Hybrid / Context Layer**
-   - Bridges primitives and high-level EVP abstractions
-   - Maintains algorithm contexts (e.g., `ll_HMAC_CTX`, `ll_KMAC_CTX`)
-   - Mixes multiple primitives safely
-   - Handles internal state and streaming
-   - Calls multiple `ll_*` primitives
-
-3. **Envelope Layer / User-Facing Layer (`evp_*`)**
+2. **Envelope Layer / User-Facing Layer (`evp_*`)**
    - Dispatcher by enum/macro for algorithm selection
    - Supports streaming, piping, and user-facing APIs
    - Enforces security policies (e.g., minimum key lengths)
