@@ -10,11 +10,13 @@
 extern "C" {
 #endif
 
-#define LL_MAX_CUSTOMIZATION 512
-
 // ======================================
 // SHAKE (Low-level) / XOF helpers (bit-level)
 // ======================================
+#define MAX_KEY_SIZE 512
+#define MAX_CUSTOMIZATION 512
+#define MAX_ENCODED_HEADER_LEN 9
+
 void ll_trunc_s(const uint8_t *X, size_t Xlen, size_t s, uint8_t *out);
 
 void ll_concat_bits(const uint8_t *X, size_t x_bits,
@@ -25,7 +27,7 @@ size_t ll_right_encode_uint64(uint64_t x, uint8_t *out);
 
 size_t ll_left_encode_uint64(uint64_t x, uint8_t *out);
 
-size_t ll_encode_string(const uint8_t *S, size_t S_len, uint8_t *out);
+size_t ll_encode_string(const uint8_t *S, size_t S_len_bytes, uint8_t *out, size_t out_len);
 
 size_t ll_encoded_string_len(size_t S_len);
 
@@ -92,6 +94,14 @@ bool ll_rawshake256_final(ll_RawSHAKE256_CTX *ctx);
 bool ll_rawshake256_squeeze(ll_RawSHAKE256_CTX *ctx, uint8_t *output, size_t outlen);
 
 // ======================================
+// cSHAKE custom absorb functions
+// ======================================
+bool ll_cshake_absorb_custom(
+    ll_KECCAK_CTX *sponge,
+    const uint8_t *N, size_t N_len,
+    const uint8_t *S, size_t S_len);
+
+// ======================================
 // cSHAKE128
 // ======================================
 #define CSHAKE128_BLOCK_SIZE 168
@@ -102,9 +112,9 @@ bool ll_rawshake256_squeeze(ll_RawSHAKE256_CTX *ctx, uint8_t *output, size_t out
 typedef struct _ll_CSHAKE128_CTX {
     ll_SHAKE128_CTX internal_ctx;
     size_t out_len;                  // Desired output length in bytes or bits, depending on usage
-    uint8_t N[LL_MAX_CUSTOMIZATION]; // Customization string N (can be empty)
+    uint8_t N[MAX_CUSTOMIZATION]; // Customization string N (can be empty)
     size_t N_len;                    // Length of N in bytes
-    uint8_t S[LL_MAX_CUSTOMIZATION]; // Customization string S (can be empty)
+    uint8_t S[MAX_CUSTOMIZATION]; // Customization string S (can be empty)
     size_t S_len;                    // Length of S in bytes
     int finalized;                   // Flag indicating if finalization has been performed
     int customAbsorbed;
@@ -132,9 +142,9 @@ bool ll_cshake128_squeeze(ll_CSHAKE128_CTX *ctx, uint8_t *output, size_t outlen)
 typedef struct _ll_CSHAKE256_CTX {
     ll_SHAKE256_CTX internal_ctx;
     size_t out_len;                  // Desired output length in bytes or bits, depending on usage
-    uint8_t N[LL_MAX_CUSTOMIZATION]; // Customization string N (can be empty)
+    uint8_t N[MAX_CUSTOMIZATION]; // Customization string N (can be empty)
     size_t N_len;                    // Length of N in bytes
-    uint8_t S[LL_MAX_CUSTOMIZATION]; // Customization string S (can be empty)
+    uint8_t S[MAX_CUSTOMIZATION]; // Customization string S (can be empty)
     size_t S_len;                    // Length of S in bytes
     int finalized;                   // Flag indicating if finalization has been performed
     int customAbsorbed;

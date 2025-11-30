@@ -5,7 +5,7 @@
 // ======================
 
 // MD5
-static bool md5_init_wrapper(void *ctx, const EVP_XOF_OPTS *opts) {
+static bool md5_init_wrapper(void *ctx, const void *opts) {
     (void)opts;
     return ll_md5_init((ll_MD5_CTX *)ctx);
 }
@@ -22,7 +22,7 @@ static bool md5_final_wrapper(void *ctx, uint8_t *digest, size_t digest_size) {
 // ----------------------
 
 // SHA1
-static bool sha1_init_wrapper(void *ctx, const EVP_XOF_OPTS *opts) {
+static bool sha1_init_wrapper(void *ctx, const void *opts) {
     (void)opts;
     return ll_sha1_init((ll_SHA1_CTX *)ctx);
 }
@@ -35,7 +35,7 @@ static bool sha1_final_wrapper(void *ctx, uint8_t *digest, size_t digest_size) {
 }
 
 // SHA224
-static bool sha224_init_wrapper(void *ctx, const EVP_XOF_OPTS *opts) {
+static bool sha224_init_wrapper(void *ctx, const void *opts) {
     (void)opts;
     return ll_sha224_init((ll_SHA224_CTX *)ctx);
 }
@@ -48,7 +48,7 @@ static bool sha224_final_wrapper(void *ctx, uint8_t *digest, size_t digest_size)
 }
 
 // SHA256
-static bool sha256_init_wrapper(void *ctx, const EVP_XOF_OPTS *opts) {
+static bool sha256_init_wrapper(void *ctx, const void *opts) {
     (void)opts;
     return ll_sha256_init((ll_SHA256_CTX *)ctx);
 }
@@ -61,7 +61,7 @@ static bool sha256_final_wrapper(void *ctx, uint8_t *digest, size_t digest_size)
 }
 
 // SHA384
-static bool sha384_init_wrapper(void *ctx, const EVP_XOF_OPTS *opts) {
+static bool sha384_init_wrapper(void *ctx, const void *opts) {
     (void)opts;
     return ll_sha384_init((ll_SHA384_CTX *)ctx);
 }
@@ -74,7 +74,7 @@ static bool sha384_final_wrapper(void *ctx, uint8_t *digest, size_t digest_size)
 }
 
 // SHA512
-static bool sha512_init_wrapper(void *ctx, const EVP_XOF_OPTS *opts) {
+static bool sha512_init_wrapper(void *ctx, const void *opts) {
     (void)opts;
     return ll_sha512_init((ll_SHA512_CTX *)ctx);
 }
@@ -87,7 +87,7 @@ static bool sha512_final_wrapper(void *ctx, uint8_t *digest, size_t digest_size)
 }
 
 // SHA512_224
-static bool sha512_224_init_wrapper(void *ctx, const EVP_XOF_OPTS *opts) {
+static bool sha512_224_init_wrapper(void *ctx, const void *opts) {
     (void)opts;
     return ll_sha512_224_init((ll_SHA512_224_CTX *)ctx);
 }
@@ -100,7 +100,7 @@ static bool sha512_224_final_wrapper(void *ctx, uint8_t *digest, size_t digest_s
 }
 
 // SHA512_256
-static bool sha512_256_init_wrapper(void *ctx, const EVP_XOF_OPTS *opts) {
+static bool sha512_256_init_wrapper(void *ctx, const void *opts) {
     (void)opts;
     return ll_sha512_256_init((ll_SHA512_256_CTX *)ctx);
 }
@@ -116,7 +116,7 @@ static bool sha512_256_final_wrapper(void *ctx, uint8_t *digest, size_t digest_s
 // SHA3 / SHAKE / RawSHAKE
 // ----------------------
 // SHA3-224
-static bool sha3_224_init_wrapper(void *ctx, const EVP_XOF_OPTS *opts) {
+static bool sha3_224_init_wrapper(void *ctx, const void *opts) {
     (void)opts;
     return ll_sha3_224_init((ll_SHA3_224_CTX *)ctx);
 }
@@ -133,7 +133,7 @@ static bool sha3_224_squeeze_wrapper(void *ctx, uint8_t *output, size_t outlen) 
 }
 
 // SHA3-256
-static bool sha3_256_init_wrapper(void *ctx, const EVP_XOF_OPTS *opts) {
+static bool sha3_256_init_wrapper(void *ctx, const void *opts) {
     (void)opts;
     return ll_sha3_256_init((ll_SHA3_256_CTX *)ctx);
 }
@@ -150,7 +150,7 @@ static bool sha3_256_squeeze_wrapper(void *ctx, uint8_t *output, size_t outlen) 
 }
 
 // SHA3-384
-static bool sha3_384_init_wrapper(void *ctx, const EVP_XOF_OPTS *opts) {
+static bool sha3_384_init_wrapper(void *ctx, const void *opts) {
     (void)opts;
     return ll_sha3_384_init((ll_SHA3_384_CTX *)ctx);
 }
@@ -167,7 +167,7 @@ static bool sha3_384_squeeze_wrapper(void *ctx, uint8_t *output, size_t outlen) 
 }
 
 // SHA3-512
-static bool sha3_512_init_wrapper(void *ctx, const EVP_XOF_OPTS *opts) {
+static bool sha3_512_init_wrapper(void *ctx, const void *opts) {
     (void)opts;
     return ll_sha3_512_init((ll_SHA3_512_CTX *)ctx);
 }
@@ -184,7 +184,7 @@ static bool sha3_512_squeeze_wrapper(void *ctx, uint8_t *output, size_t outlen) 
 }
 
 // SHAKE128
-static bool shake128_init_wrapper(void *ctx, const EVP_XOF_OPTS *opts) {
+static bool shake128_init_wrapper(void *ctx, const void *opts) {
     (void)opts;
     return ll_shake128_init((ll_SHAKE128_CTX *)ctx);
 }
@@ -201,7 +201,7 @@ static bool shake128_squeeze_wrapper(void *ctx, uint8_t *output, size_t outlen) 
 }
 
 // SHAKE256
-static bool shake256_init_wrapper(void *ctx, const EVP_XOF_OPTS *opts) {
+static bool shake256_init_wrapper(void *ctx, const void *opts) {
     (void)opts;
     return ll_shake256_init((ll_SHAKE256_CTX *)ctx);
 }
@@ -218,7 +218,7 @@ static bool shake256_squeeze_wrapper(void *ctx, uint8_t *output, size_t outlen) 
 }
 
 // RawSHAKE128
-static bool rawshake128_init_wrapper(void *ctx, const EVP_XOF_OPTS *opts) {
+static bool rawshake128_init_wrapper(void *ctx, const void *opts) {
     (void)opts;
     return ll_rawshake128_init((ll_RawSHAKE128_CTX *)ctx);
 }
@@ -235,7 +235,7 @@ static bool rawshake128_squeeze_wrapper(void *ctx, uint8_t *output, size_t outle
 }
 
 // RawSHAKE256
-static bool rawshake256_init_wrapper(void *ctx, const EVP_XOF_OPTS *opts) {
+static bool rawshake256_init_wrapper(void *ctx, const void *opts) {
     (void)opts;
     return ll_rawshake256_init((ll_RawSHAKE256_CTX *)ctx);
 }
@@ -254,13 +254,14 @@ static bool rawshake256_squeeze_wrapper(void *ctx, uint8_t *output, size_t outle
 // ======================================
 // cSHAKE128 simple wrappers
 // ======================================
-static bool cshake128_init_wrapper(void *ctx, const EVP_XOF_OPTS *opts) {
+static bool cshake128_init_wrapper(void *ctx, const void *opts) {
+    const EVP_XOF_OPTS *xof_opts = (const EVP_XOF_OPTS *)opts;
     return ll_cshake128_init(
         (ll_CSHAKE128_CTX *)ctx,
-        opts ? opts->N : NULL,
-        opts ? opts->N_len : 0,
-        opts ? opts->S : NULL,
-        opts ? opts->S_len : 0
+        opts ? xof_opts->N : NULL,
+        opts ? xof_opts->N_len : 0,
+        opts ? xof_opts->S : NULL,
+        opts ? xof_opts->S_len : 0
     );
 }
 
@@ -281,13 +282,14 @@ static bool cshake128_squeeze_wrapper(void *ctx, uint8_t *output, size_t outlen)
 // ======================================
 // cSHAKE256 simple wrappers
 // ======================================
-static bool cshake256_init_wrapper(void *ctx, const EVP_XOF_OPTS *opts) {
+static bool cshake256_init_wrapper(void *ctx, const void *opts) {
+    const EVP_XOF_OPTS *xof_opts = (const EVP_XOF_OPTS *)opts;
     return ll_cshake256_init(
         (ll_CSHAKE256_CTX *)ctx,
-        opts ? opts->N : NULL,
-        opts ? opts->N_len : 0,
-        opts ? opts->S : NULL,
-        opts ? opts->S_len : 0
+        xof_opts ? xof_opts->N : NULL,
+        xof_opts ? xof_opts->N_len : 0,
+        xof_opts ? xof_opts->S : NULL,
+        xof_opts ? xof_opts->S_len : 0
     );
 }
 
@@ -317,6 +319,7 @@ static const EVP_MD *EVP_get_md5(void) {
         .digest_size = EVP_MD5_DIGEST_SIZE,
         .block_size = EVP_MD5_BLOCK_SIZE,
         .ctx_size = sizeof(ll_MD5_CTX),
+        .opts_ctx_size = 0,
         .default_out_len = EVP_MD5_DIGEST_SIZE,
         .hash_init_fn = md5_init_wrapper,
         .hash_update_fn = md5_update_wrapper,
@@ -336,6 +339,7 @@ static const EVP_MD *EVP_get_sha1(void) {
         .digest_size = EVP_SHA1_DIGEST_SIZE,
         .block_size = EVP_SHA1_BLOCK_SIZE,
         .ctx_size = sizeof(ll_SHA1_CTX),
+        .opts_ctx_size = 0,
         .default_out_len = EVP_SHA1_DIGEST_SIZE,
         .hash_init_fn = sha1_init_wrapper,
         .hash_update_fn = sha1_update_wrapper,
@@ -355,6 +359,7 @@ static const EVP_MD *EVP_get_sha224(void) {
         .digest_size = EVP_SHA224_DIGEST_SIZE,
         .block_size = EVP_SHA224_BLOCK_SIZE,
         .ctx_size = sizeof(ll_SHA224_CTX),
+        .opts_ctx_size = 0,
         .default_out_len = EVP_SHA224_DIGEST_SIZE,
         .hash_init_fn = sha224_init_wrapper,
         .hash_update_fn = sha224_update_wrapper,
@@ -371,6 +376,7 @@ static const EVP_MD *EVP_get_sha256(void) {
         .digest_size = EVP_SHA256_DIGEST_SIZE,
         .block_size = EVP_SHA256_BLOCK_SIZE,
         .ctx_size = sizeof(ll_SHA256_CTX),
+        .opts_ctx_size = 0,
         .default_out_len = EVP_SHA256_DIGEST_SIZE,
         .hash_init_fn = sha256_init_wrapper,
         .hash_update_fn = sha256_update_wrapper,
@@ -390,6 +396,7 @@ static const EVP_MD *EVP_get_sha384(void) {
         .digest_size = EVP_SHA384_DIGEST_SIZE,
         .block_size = EVP_SHA384_BLOCK_SIZE,
         .ctx_size = sizeof(ll_SHA384_CTX),
+        .opts_ctx_size = 0,
         .default_out_len = EVP_SHA384_DIGEST_SIZE,
         .hash_init_fn = sha384_init_wrapper,
         .hash_update_fn = sha384_update_wrapper,
@@ -406,6 +413,7 @@ static const EVP_MD *EVP_get_sha512(void) {
         .digest_size = EVP_SHA512_DIGEST_SIZE,
         .block_size = EVP_SHA512_BLOCK_SIZE,
         .ctx_size = sizeof(ll_SHA512_CTX),
+        .opts_ctx_size = 0,
         .default_out_len = EVP_SHA512_DIGEST_SIZE,
         .hash_init_fn = sha512_init_wrapper,
         .hash_update_fn = sha512_update_wrapper,
@@ -422,6 +430,7 @@ static const EVP_MD *EVP_get_sha512_224(void) {
         .digest_size = EVP_SHA512_224_DIGEST_SIZE,
         .block_size = EVP_SHA512_224_BLOCK_SIZE,
         .ctx_size = sizeof(ll_SHA512_224_CTX),
+        .opts_ctx_size = 0,
         .default_out_len = EVP_SHA512_224_DIGEST_SIZE,
         .hash_init_fn = sha512_224_init_wrapper,
         .hash_update_fn = sha512_224_update_wrapper,
@@ -438,6 +447,7 @@ static const EVP_MD *EVP_get_sha512_256(void) {
         .digest_size = EVP_SHA512_256_DIGEST_SIZE,
         .block_size = EVP_SHA512_256_BLOCK_SIZE,
         .ctx_size = sizeof(ll_SHA512_256_CTX),
+        .opts_ctx_size = 0,
         .default_out_len = EVP_SHA512_256_DIGEST_SIZE,
         .hash_init_fn = sha512_256_init_wrapper,
         .hash_update_fn = sha512_256_update_wrapper,
@@ -457,6 +467,7 @@ static const EVP_MD *EVP_get_sha3_224(void) {
         .digest_size = EVP_SHA3_224_DIGEST_SIZE,
         .block_size = EVP_SHA3_224_BLOCK_SIZE,
         .ctx_size = sizeof(ll_SHA3_224_CTX),
+        .opts_ctx_size = 0,
         .default_out_len = EVP_SHA3_224_DIGEST_SIZE,
         .hash_init_fn = sha3_224_init_wrapper,
         .hash_update_fn = sha3_224_update_wrapper,
@@ -473,6 +484,7 @@ static const EVP_MD *EVP_get_sha3_256(void) {
         .digest_size = EVP_SHA3_256_DIGEST_SIZE,
         .block_size = EVP_SHA3_256_BLOCK_SIZE,
         .ctx_size = sizeof(ll_SHA3_256_CTX),
+        .opts_ctx_size = 0,
         .default_out_len = EVP_SHA3_256_DIGEST_SIZE,
         .hash_init_fn = sha3_256_init_wrapper,
         .hash_update_fn = sha3_256_update_wrapper,
@@ -489,6 +501,7 @@ static const EVP_MD *EVP_get_sha3_384(void) {
         .digest_size = EVP_SHA3_384_DIGEST_SIZE,
         .block_size = EVP_SHA3_384_BLOCK_SIZE,
         .ctx_size = sizeof(ll_SHA3_384_CTX),
+        .opts_ctx_size = 0,
         .default_out_len = EVP_SHA3_384_DIGEST_SIZE,
         .hash_init_fn = sha3_384_init_wrapper,
         .hash_update_fn = sha3_384_update_wrapper,
@@ -505,6 +518,7 @@ static const EVP_MD *EVP_get_sha3_512(void) {
         .digest_size = EVP_SHA3_512_DIGEST_SIZE,
         .block_size = EVP_SHA3_512_BLOCK_SIZE,
         .ctx_size = sizeof(ll_SHA3_512_CTX),
+        .opts_ctx_size = 0,
         .default_out_len = EVP_SHA3_512_DIGEST_SIZE,
         .hash_init_fn = sha3_512_init_wrapper,
         .hash_update_fn = sha3_512_update_wrapper,
@@ -524,6 +538,7 @@ static const EVP_MD *EVP_get_shake128(void) {
         .digest_size = 0,
         .block_size = EVP_SHAKE128_BLOCK_SIZE,
         .ctx_size = sizeof(ll_SHAKE128_CTX),
+        .opts_ctx_size = sizeof(EVP_XOF_OPTS),
         .default_out_len = EVP_SHAKE128_DEFAULT_DIGEST_SIZE,
         .hash_init_fn = shake128_init_wrapper,
         .hash_update_fn = shake128_update_wrapper,
@@ -540,6 +555,7 @@ static const EVP_MD *EVP_get_shake256(void) {
         .digest_size = 0,
         .block_size = EVP_SHAKE256_BLOCK_SIZE,
         .ctx_size = sizeof(ll_SHAKE256_CTX),
+        .opts_ctx_size = sizeof(EVP_XOF_OPTS),
         .default_out_len = EVP_SHAKE256_DEFAULT_DIGEST_SIZE,
         .hash_init_fn = shake256_init_wrapper,
         .hash_update_fn = shake256_update_wrapper,
@@ -559,6 +575,7 @@ static const EVP_MD *EVP_get_raw_shake128(void) {
         .digest_size = 0,
         .block_size = EVP_RAWSHAKE128_BLOCK_SIZE,
         .ctx_size = sizeof(ll_RawSHAKE128_CTX),
+        .opts_ctx_size = sizeof(EVP_XOF_OPTS),
         .default_out_len = EVP_RAWSHAKE128_DEFAULT_DIGEST_SIZE,
         .hash_init_fn = rawshake128_init_wrapper,
         .hash_update_fn = rawshake128_update_wrapper,
@@ -575,6 +592,7 @@ static const EVP_MD *EVP_get_raw_shake256(void) {
         .digest_size = 0,
         .block_size = EVP_RAWSHAKE256_BLOCK_SIZE,
         .ctx_size = sizeof(ll_RawSHAKE256_CTX),
+        .opts_ctx_size = sizeof(EVP_XOF_OPTS),
         .default_out_len = EVP_RAWSHAKE256_DEFAULT_DIGEST_SIZE,
         .hash_init_fn = rawshake256_init_wrapper,
         .hash_update_fn = rawshake256_update_wrapper,
@@ -594,6 +612,7 @@ static const EVP_MD *EVP_get_cshake128(void) {
         .digest_size = 0,
         .block_size = CSHAKE128_BLOCK_SIZE,
         .ctx_size = sizeof(ll_CSHAKE128_CTX),
+        .opts_ctx_size = sizeof(EVP_XOF_OPTS),
         .default_out_len = EVP_CSHAKE128_DEFAULT_DIGEST_SIZE,
         .hash_init_fn = cshake128_init_wrapper,
         .hash_update_fn = cshake128_update_wrapper,
@@ -610,6 +629,7 @@ static const EVP_MD *EVP_get_cshake256(void) {
         .digest_size = 0,
         .block_size = CSHAKE256_BLOCK_SIZE,
         .ctx_size = sizeof(ll_CSHAKE256_CTX),
+        .opts_ctx_size = sizeof(EVP_XOF_OPTS),
         .default_out_len = EVP_CSHAKE256_DEFAULT_DIGEST_SIZE,
         .hash_init_fn = cshake256_init_wrapper,
         .hash_update_fn = cshake256_update_wrapper,
@@ -652,43 +672,38 @@ const EVP_MD *EVP_MDByFlag(uint32_t algo_flag) {
     return NULL; // invalid flag
 }
 
-
 TCLIB_STATUS EVP_HashInit(EVP_HASH_CTX *ctx, const EVP_MD *md, const EVP_XOF_OPTS *opts) {
-    if (!ctx || !md)
-        return TCLIB_ERR_NULL_PTR;
+    if (!ctx || !md) return TCLIB_ERR_NULL_PTR;
 
+    SECURE_ZERO(ctx, sizeof(*ctx));
     ctx->md = md;
-    ctx->opts = opts;  // store opts for reset or clone
 
-    // Allocate low-level context
+    // Use opts directly; caller owns memory
+    ctx->opts = opts;
+    ctx->isHeapAllocOpts = 0;
+
+    // Allocate low-level digest context
     ctx->digest_ctx = SECURE_ALLOC(md->ctx_size);
-    if (!ctx->digest_ctx)
-        return TCLIB_ERR_ALLOC_FAILED;
+    if (!ctx->digest_ctx) return TCLIB_ERR_ALLOC_FAILED;
 
-    // Call the hash init function (pass opts for XOF, NULL for normal hashes)
-    if (!md->hash_init_fn(ctx->digest_ctx, opts)) {
+    // Init low-level hash
+    if (!md->hash_init_fn(ctx->digest_ctx, ctx->opts)) {
         SECURE_FREE(ctx->digest_ctx, md->ctx_size);
+        ctx->digest_ctx = NULL;
         return TCLIB_ERR_BAD_STATE;
     }
 
-    // Set default output length for XOF / normal hashes
     ctx->out_len = md->digest_size != 0 ? md->digest_size : md->default_out_len;
     ctx->isHeapAlloc = 0;
-
+    ctx->isFinalized = 0;
     return TCLIB_SUCCESS;
 }
 
 EVP_HASH_CTX* EVP_HashInitAlloc(const EVP_MD *md, const EVP_XOF_OPTS *opts, TCLIB_STATUS *status) {
-    if (!md) {
-        if (status) *status = TCLIB_ERR_NULL_PTR;
-        return NULL;
-    }
+    if (!md) { if (status) *status = TCLIB_ERR_NULL_PTR; return NULL; }
 
     EVP_HASH_CTX *ctx = CREATE_CTX(EVP_HASH_CTX);
-    if (!ctx) {
-        if (status) *status = TCLIB_ERR_ALLOC_FAILED;
-        return NULL;
-    }
+    if (!ctx) { if (status) *status = TCLIB_ERR_ALLOC_FAILED; return NULL; }
 
     TCLIB_STATUS st = EVP_HashInit(ctx, md, opts);
     if (st != TCLIB_SUCCESS) {
@@ -736,29 +751,48 @@ TCLIB_STATUS EVP_HashFinal(EVP_HASH_CTX *ctx, uint8_t *digest, size_t digest_len
     return TCLIB_SUCCESS;
 }
 
-TCLIB_STATUS EVP_HashReset(EVP_HASH_CTX *ctx) {
-    if (!ctx || !ctx->md || !ctx->digest_ctx) return TCLIB_ERR_NULL_PTR;
+TCLIB_STATUS EVP_HashFree(EVP_HASH_CTX *ctx) {
+    if (!ctx || !ctx->md)
+        return TCLIB_ERR_NULL_PTR;
 
-    CLEAR_BUF(ctx->digest_ctx);
+    // Securely zero and free the digest context
+    if (ctx->digest_ctx) {
+        SECURE_ZERO(ctx->digest_ctx, ctx->md->ctx_size);
+        SECURE_FREE(ctx->digest_ctx, ctx->md->ctx_size);
+        ctx->digest_ctx = NULL;
+    }
 
-    // Reset using stored opts (for XOF)
-    if (!ctx->md->hash_init_fn(ctx->digest_ctx, ctx->opts))
-        return TCLIB_ERR_BAD_STATE;
+    // Free cloned XOF options if allocated
+    if (ctx->opts && ctx->isHeapAllocOpts) {
+        EVP_XOFOptsFreeAlloc((EVP_XOF_OPTS**)&ctx->opts);
+        ctx->opts = NULL;
+        ctx->isHeapAllocOpts = 0;
+    }
 
+    // Reset bookkeeping
     ctx->out_len = ctx->md->digest_size != 0 ? ctx->md->digest_size : ctx->md->default_out_len;
+    ctx->isFinalized = 0;
+    ctx->isHeapAlloc = 0;
 
     return TCLIB_SUCCESS;
 }
 
-TCLIB_STATUS EVP_HashFree(EVP_HASH_CTX *ctx) {
-    if (!ctx) return TCLIB_ERR_NULL_PTR;
+TCLIB_STATUS EVP_HashFreeAlloc(EVP_HASH_CTX **p_ctx) {
+    if (!p_ctx || !*p_ctx)
+        return TCLIB_ERR_NULL_PTR;
 
-    if (ctx->digest_ctx) {
-        SECURE_ZERO(ctx->digest_ctx, ctx->md->ctx_size);
-        SECURE_FREE(ctx->digest_ctx, ctx->md->ctx_size);
+    EVP_HASH_CTX *ctx = *p_ctx;
+    int wasHeapAlloc = ctx->isHeapAlloc;  // save flag
+
+    // Reuse Free to clean internals
+    EVP_HashFree(ctx);
+
+    // Free the outer struct if heap-allocated
+    if (wasHeapAlloc) {
+        SECURE_ZERO(ctx, sizeof(EVP_HASH_CTX));
+        SECURE_FREE(ctx, sizeof(EVP_HASH_CTX));
+        *p_ctx = NULL;
     }
-
-    if (ctx->isHeapAlloc) DESTROY_CTX(ctx, EVP_HASH_CTX);
 
     return TCLIB_SUCCESS;
 }
@@ -782,14 +816,14 @@ TCLIB_STATUS EVP_ComputeHashFixed(
 
     status = EVP_HashUpdate(ctx, data, data_len);
     if (status != TCLIB_SUCCESS) {
-        EVP_HashFree(ctx);
+        EVP_HashFreeAlloc(&ctx);
         return status;
     }
 
     // Fixed-length hash uses md->digest_size
     status = EVP_HashFinal(ctx, digest, md->digest_size);
 
-    EVP_HashFree(ctx);
+    EVP_HashFreeAlloc(&ctx);
     return status;
 }
 
@@ -813,13 +847,13 @@ TCLIB_STATUS EVP_ComputeHashXof(
 
     status = EVP_HashUpdate(ctx, data, data_len);
     if (status != TCLIB_SUCCESS) {
-        EVP_HashFree(ctx);
+        EVP_HashFreeAlloc(&ctx);
         return status;
     }
 
     status = EVP_HashFinal(ctx, digest, out_len);
 
-    EVP_HashFree(ctx);
+    EVP_HashFreeAlloc(&ctx);
     return status;
 }
 
@@ -851,6 +885,9 @@ TCLIB_STATUS EVP_HashCloneCtx(EVP_HASH_CTX *dst, const EVP_HASH_CTX *src) {
         dst->digest_ctx = NULL;
     }
 
+    dst->opts = src->opts;      // just point to the same EVP_XOF_OPTS
+    dst->isHeapAllocOpts = 0;   // do not free later, caller owns it
+
     // For XOFs, copy output length if applicable
     dst->out_len = src->out_len;
     dst->isFinalized = src->isFinalized;
@@ -876,7 +913,7 @@ EVP_HASH_CTX *EVP_HashCloneCtxAlloc(const EVP_HASH_CTX *src, TCLIB_STATUS *statu
     TCLIB_STATUS st = EVP_HashCloneCtx(dst, src);
     if (status) *status = st;
     if (st != TCLIB_SUCCESS) {
-        free(dst);
+        SECURE_FREE(dst, sizeof(*dst));
         return NULL;
     }
 
@@ -981,32 +1018,40 @@ EVP_XOF_OPTS* EVP_XOFOptsInitAlloc(const uint8_t *N, size_t N_len,
     return opts;
 }
 
-
-void EVP_FreeXOFOpts(EVP_XOF_OPTS *opts) {
+// Frees internal buffers only (for pre-allocated struct)
+void EVP_XOFOptsFree(EVP_XOF_OPTS *opts) {
     if (!opts) return;
 
-    // Zero sensitive data before freeing
-    SECURE_ZERO(opts, sizeof(*opts));
-
-    // Free the structure itself
-    if (opts->isHeapAlloc) DESTROY_CTX(opts, EVP_XOF_OPTS);
-}
-
-// Soft reset without clearing N/S buffers
-void EVP_ResetXOFOpts(EVP_XOF_OPTS *opts) {
-    if (!opts) return;
-
-    // Zero sensitive data
+    // Zero sensitive buffers and reset bookkeeping
     SECURE_ZERO(opts->N, EVP_MAX_CUSTOMIZATION);
     SECURE_ZERO(opts->S, EVP_MAX_CUSTOMIZATION);
 
-    // Reset bookkeeping fields (except isHeapAlloc)
     opts->N_len = 0;
     opts->S_len = 0;
     opts->out_len = 0;
     opts->finalized = 0;
     opts->custom_absorbed = 0;
     opts->emptyNameCustom = 1;
+    opts->isHeapAlloc = 0;
+}
+
+// Frees internal buffers + heap-allocated struct
+void EVP_XOFOptsFreeAlloc(EVP_XOF_OPTS **p_opts) {
+    if (!p_opts || !*p_opts) return;
+
+    EVP_XOF_OPTS *opts = *p_opts;
+
+    int wasHeapAlloc = opts->isHeapAlloc;  // save flag
+
+    EVP_XOFOptsFree(opts);
+    
+    // Free whole struct if heap-allocated
+    if (wasHeapAlloc) {
+        SECURE_ZERO(opts, sizeof(EVP_XOF_OPTS));
+        SECURE_FREE(opts, sizeof(EVP_XOF_OPTS));
+    }
+
+    *p_opts = NULL;
 }
 
 // Deep copy from src to dst (fixed arrays)
@@ -1022,7 +1067,7 @@ TCLIB_STATUS EVP_CloneXOFOpts(EVP_XOF_OPTS *dst, const EVP_XOF_OPTS *src) {
     dst->finalized = src->finalized;
     dst->custom_absorbed = src->custom_absorbed;
     dst->emptyNameCustom = src->emptyNameCustom;
-
+    dst->isHeapAlloc = 0;
     return TCLIB_SUCCESS;
 }
 
@@ -1032,23 +1077,25 @@ EVP_XOF_OPTS *EVP_CloneXOFOptsAlloc(const EVP_XOF_OPTS *src, TCLIB_STATUS *statu
         return NULL;
     }
 
-    // Allocate new structure
-    EVP_XOF_OPTS *dst = CREATE_CTX(EVP_XOF_OPTS);
+    // Allocate new structure and zero it to avoid uninitialized reads
+    EVP_XOF_OPTS *dst = (EVP_XOF_OPTS *)SECURE_ALLOC(sizeof(EVP_XOF_OPTS));
     if (!dst) {
         if (status) *status = TCLIB_ERR_ALLOC_FAILED;
         return NULL;
     }
 
-    // Clone contents
+    // Deep copy contents
     TCLIB_STATUS ret = EVP_CloneXOFOpts(dst, src);
-    if (status) *status = ret;
-
-    // If cloning failed, free memory
     if (ret != TCLIB_SUCCESS) {
-        free(dst);
+        if (status) *status = ret;
+        // Properly free internal buffers if cloning partially allocated them
+        EVP_XOFOptsFreeAlloc(&dst);
         return NULL;
     }
 
+    // Mark it as heap-allocated first
     dst->isHeapAlloc = 1;
+
+    if (status) *status = TCLIB_SUCCESS;
     return dst;
 }

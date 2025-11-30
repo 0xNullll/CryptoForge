@@ -109,11 +109,17 @@ ll_HMAC_CTX* ll_HMAC_InitAlloc(const EVP_MD *md, const uint8_t *key, size_t key_
 }
 
 TCLIB_STATUS ll_HMAC_Update(ll_HMAC_CTX *ctx, const uint8_t *data, size_t data_len) {
-    if (!ctx || !ctx->md || !ctx->ipad_ctx || !data)
+    if (!ctx || !ctx->md || !ctx->ipad_ctx)
         return TCLIB_ERR_NULL_PTR;
 
+    if (data_len > 0 && !data)
+        return TCLIB_ERR_INVALID_PARAM;
+
+    if (ctx->isFinalized) 
+        return TCLIB_ERR_HASH_FINALIZED;
+
     if (data_len == 0)
-        return TCLIB_ERR_INVALID_LEN;
+        return TCLIB_SUCCESS; // noop
 
     if (!ctx->md->hash_update_fn(ctx->ipad_ctx, data, data_len))
         return TCLIB_ERR_CTX_CORRUPT;
@@ -122,14 +128,21 @@ TCLIB_STATUS ll_HMAC_Update(ll_HMAC_CTX *ctx, const uint8_t *data, size_t data_l
 }
 
 TCLIB_STATUS ll_HMAC_Final(ll_HMAC_CTX *ctx, uint8_t *digest, size_t digest_len) {
-    if (!ctx || !ctx->md || !ctx->ipad_ctx || !ctx->opad_ctx)
+    if (!ctx || !ctx->md || !ctx->ipad_ctx || !ctx->opad_ctx || !digest)
         return TCLIB_ERR_NULL_PTR;
+
+    if (digest_len == 0 && ctx->out_len == 0)
+        return TCLIB_ERR_INVALID_LEN; // nothing to write
+
+    if (ctx->isFinalized) 
+        return TCLIB_ERR_HASH_FINALIZED;
 
     size_t final_len = (digest_len != 0) ? digest_len : ctx->out_len;
     if (final_len > ctx->out_len) final_len = ctx->out_len; // clamp
 
-    // compute inner hash
     uint8_t inner_hash[EVP_MAX_DEFAULT_DIGEST_SIZE];
+
+    // compute inner hash
     if (!ctx->md->hash_final_fn(ctx->ipad_ctx, inner_hash, ctx->md->digest_size))
         return TCLIB_ERR_CTX_CORRUPT;
 
@@ -143,70 +156,68 @@ TCLIB_STATUS ll_HMAC_Final(ll_HMAC_CTX *ctx, uint8_t *digest, size_t digest_len)
 
     SECURE_ZERO(inner_hash, sizeof(inner_hash));
     ctx->isFinalized = 1;
+
     return TCLIB_SUCCESS;
 }
 
 TCLIB_STATUS ll_HMAC_Free(ll_HMAC_CTX *ctx) {
-    if (!ctx) return TCLIB_ERR_NULL_PTR;
+    if (!ctx || !ctx->md)
+        return TCLIB_ERR_NULL_PTR;
 
-    if (ctx->ipad_ctx && ctx->md) {
-    SECURE_ZERO(ctx->ipad_ctx, ctx->md->ctx_size);
-    SECURE_FREE(ctx->ipad_ctx, ctx->md->ctx_size);
+    // Zero and free inner (ipad) and outer (opad) contexts
+    if (ctx->ipad_ctx) {
+        SECURE_ZERO(ctx->ipad_ctx, ctx->md->ctx_size);
+        SECURE_FREE(ctx->ipad_ctx, ctx->md->ctx_size);
+        ctx->ipad_ctx = NULL;
     }
 
-    if (ctx->opad_ctx && ctx->md) {
+    if (ctx->opad_ctx) {
         SECURE_ZERO(ctx->opad_ctx, ctx->md->ctx_size);
         SECURE_FREE(ctx->opad_ctx, ctx->md->ctx_size);
+        ctx->opad_ctx = NULL;
     }
 
-    if (ctx->isHeapAlloc) DESTROY_CTX(ctx, ll_HMAC_CTX);
-
-    return TCLIB_SUCCESS;
-}
-
-TCLIB_STATUS ll_HMAC_Reset(ll_HMAC_CTX *ctx) {
-    if (!ctx || !ctx->md || !ctx->ipad_ctx || !ctx->opad_ctx) return TCLIB_ERR_NULL_PTR;
-
-    // re-apply XOR pads
-    uint8_t ipad[EVP_MAX_DEFAULT_BLOCK_SIZE], opad[EVP_MAX_DEFAULT_BLOCK_SIZE];
-    for (size_t i = 0; i < ctx->md->block_size; i++) {
-        ipad[i] = ctx->key[i] ^ 0x36;
-        opad[i] = ctx->key[i] ^ 0x5c;
-    }
-
-    // reset low-level hash contexts
-    if (!ctx->md->hash_init_fn(ctx->ipad_ctx, NULL) ||
-        !ctx->md->hash_init_fn(ctx->opad_ctx, NULL)) return TCLIB_ERR_BAD_STATE;
-
-    if (!ctx->md->hash_update_fn(ctx->ipad_ctx, ipad, ctx->md->block_size) ||
-        !ctx->md->hash_update_fn(ctx->opad_ctx, opad, ctx->md->block_size)) return TCLIB_ERR_BAD_STATE;
-
-    SECURE_ZERO(ipad, ctx->md->block_size);
-    SECURE_ZERO(opad, ctx->md->block_size);
-
-    ctx->out_len = ctx->md->digest_size != 0 ? ctx->md->digest_size : ctx->md->default_out_len;
+    // Zero key material and reset fields
+    SECURE_ZERO(ctx->key, sizeof(ctx->key));
+    ctx->key_len = 0;
+    ctx->out_len = 0;
     ctx->isFinalized = 0;
+    ctx->isHeapAlloc = 0;
+
     return TCLIB_SUCCESS;
 }
 
-TCLIB_API TCLIB_STATUS ll_HMAC_CloneCtx(ll_HMAC_CTX *ctx_dest, const ll_HMAC_CTX *ctx_src) {
+TCLIB_STATUS ll_HMAC_FreeAlloc(ll_HMAC_CTX **p_ctx) {
+    if (!p_ctx || !*p_ctx)
+        return TCLIB_ERR_NULL_PTR;
+
+    ll_HMAC_CTX *ctx = *p_ctx;
+    int wasHeapAlloc = ctx->isHeapAlloc;  // save flag
+
+    // Reuse Free to clean internals
+    ll_HMAC_Free(ctx);
+
+    // Free the outer struct if heap-allocated
+    if (wasHeapAlloc) {
+        SECURE_ZERO(ctx, sizeof(ll_HMAC_CTX));
+        SECURE_FREE(ctx, sizeof(ll_HMAC_CTX));
+        *p_ctx = NULL;
+    }
+
+    return TCLIB_SUCCESS;
+}
+
+TCLIB_STATUS ll_HMAC_CloneCtx(ll_HMAC_CTX *ctx_dest, const ll_HMAC_CTX *ctx_src) {
     if (!ctx_dest || !ctx_src)
         return TCLIB_ERR_NULL_PTR;
 
+    // Copy MD pointer
     ctx_dest->md = ctx_src->md;
 
-    TCLIB_STATUS status;
-
-    // Allocate and clone inner hash context
-    ctx_dest->ipad_ctx = EVP_HashCloneCtxAlloc(ctx_src->ipad_ctx, &status);
-    if (!ctx_dest->ipad_ctx || status != TCLIB_SUCCESS)
-        return TCLIB_ERR_ALLOC_FAILED;
-
-    // Allocate and clone outer hash context
-    ctx_dest->opad_ctx = EVP_HashCloneCtxAlloc(ctx_src->opad_ctx, &status);
-    if (!ctx_dest->opad_ctx || status != TCLIB_SUCCESS) {
-        EVP_HashFree(ctx_dest->ipad_ctx);
-        return TCLIB_ERR_ALLOC_FAILED;
+    // Copy the inner and outer contexts as raw memory
+    if (ctx_src->md && ctx_src->md->ctx_size > 0) {
+        SECURE_MEMCPY(ctx_dest->ipad_ctx, ctx_src->ipad_ctx, ctx_src->md->ctx_size);
+        SECURE_MEMCPY(ctx_dest->opad_ctx, ctx_src->opad_ctx, ctx_src->md->ctx_size);
     }
 
     // Copy simple fields
@@ -214,7 +225,7 @@ TCLIB_API TCLIB_STATUS ll_HMAC_CloneCtx(ll_HMAC_CTX *ctx_dest, const ll_HMAC_CTX
     ctx_dest->key_len     = ctx_src->key_len;
     ctx_dest->out_len     = ctx_src->out_len;
     ctx_dest->isFinalized = ctx_src->isFinalized;
-    ctx_dest->isHeapAlloc = 0; // pre-allocated
+    ctx_dest->isHeapAlloc = 0; // pre-allocated, no dynamic memory inside
 
     return TCLIB_SUCCESS;
 }

@@ -7,9 +7,6 @@
 extern "C" {
 #endif
 
-#define EVP_MAX_KEY_SIZE 512        // bytes
-#define EVP_MAX_CUSTOMIZATION 512   // bytes
-
 // ==========================
 // EVP_MD: algorithm descriptor
 // ==========================
@@ -19,6 +16,7 @@ typedef struct _EVP_MD {
     size_t digest_size;      // output size in bytes
     size_t block_size;       // internal block size
     size_t ctx_size;         // size of low-level context
+    size_t opts_ctx_size;    // size of high-level optional context
     size_t default_out_len;  // for SHAKE / XOF functions
 
     bool (*hash_init_fn)(void *ctx, const void *opts);

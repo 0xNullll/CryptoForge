@@ -55,7 +55,7 @@ void ll_concat_bits(const uint8_t *X, size_t x_bits,
  *     Encodes a 64-bit integer x as a variable-length big-endian
  *     byte string preceded by a length byte at the beginning.
  *
- * - ll_encode_string(S, S_len, out):
+ * - ll_encode_string(S, S_len_bytes, out, out_len):
  *     Encodes a byte string S as left_encode(bitlen(S)) || S.
  *     Returns the total number of bytes written.
  *
@@ -71,85 +71,104 @@ void ll_concat_bits(const uint8_t *X, size_t x_bits,
  *     Returns a byte-aligned substring from start_idx to end_idx-1.
  */
 
+// Right-encode a 64-bit integer (x) in big-endian, length byte at the end
 size_t ll_right_encode_uint64(uint64_t x, uint8_t *out) {
     size_t n = 1;
     uint64_t tmp = x;
-    while (tmp >>= 8) n++;  // determine number of bytes needed
+    while (tmp >>= 8) n++;  // number of bytes needed
 
-    // Encode x in big-endian using a simple loop
-    for (size_t i = 0; i < n; i++) {
+    // Encode x in big-endian
+    for (size_t i = 0; i < n; i++)
         out[i] = (uint8_t)(x >> (8 * (n - 1 - i))) & 0xFF;
-    }
 
-    out[n] = (uint8_t)n;    // append length byte at end
+    out[n] = (uint8_t)n;  // append length byte at end
     return n + 1;
 }
 
+// Left-encode a 64-bit integer (x) in big-endian, length byte at start
 size_t ll_left_encode_uint64(uint64_t x, uint8_t *out) {
     size_t n = 1;
     uint64_t tmp = x;
-    while (tmp >>= 8) n++;  // determine number of bytes needed
+    while (tmp >>= 8) n++;  // number of bytes needed
 
     out[0] = (uint8_t)n;    // length byte at start
 
-    // Encode x in big-endian using a simple loop
-    for (size_t i = 0; i < n; i++) {
+    // Encode x in big-endian
+    for (size_t i = 0; i < n; i++)
         out[1 + i] = (uint8_t)(x >> (8 * (n - 1 - i))) & 0xFF;
-    }
 
     return n + 1;
 }
 
-size_t ll_encode_string(const uint8_t *S, size_t S_len, uint8_t *out) {
-    size_t n = ll_left_encode_uint64(S_len, out); // left-encode length
-    memcpy(out + n, S, S_len);                     // append string
-    return n + S_len;                              // total bytes written
+// Encode a string according to SP800-185 (length in bytes)
+size_t ll_encode_string(const uint8_t *S, size_t S_len_bytes, uint8_t *out, size_t out_len) {
+    if (!out) return 0;  // output pointer must be valid
+
+    // Calculate bit-length of the string
+    uint64_t bitlen = (uint64_t)S_len_bytes * 8;
+
+    // Encode bit-length
+    uint8_t tmp[16];  // max bytes needed for ll_left_encode_uint64
+    size_t n = ll_left_encode_uint64(bitlen, tmp);
+
+    // Check if output buffer is large enough
+    if (out_len < n + S_len_bytes) {
+        // Not enough space
+        return 0;
+    }
+
+    // Copy left-encoded length
+    memcpy(out, tmp, n);
+
+    // Append string bytes
+    if (S && S_len_bytes > 0) {
+        memcpy(out + n, S, S_len_bytes);
+    }
+
+    return n + S_len_bytes;  // total bytes written
 }
 
+// Compute the total encoded string length in bytes (bits-only)
 size_t ll_encoded_string_len(size_t S_len) {
-    uint64_t bitlen = (uint64_t)S_len * 8;
+    uint64_t bits = (uint64_t)S_len * 8;
     size_t n = 1;
-    uint64_t tmp = bitlen;
-    while (tmp >>= 8) n++; // number of bytes needed for bitlen
-    return n + 1 + S_len;  // n bytes for bitlen + 1 length byte + string itself
+    uint64_t tmp = bits;
+    while (tmp >>= 8) n++;  // number of bytes needed to encode bit-length
+    return n + 1 + S_len;   // n bytes for bitlen + 1 length byte + string itself
 }
 
-// Caller must ensure 'out_len' >= left_encode(w) + S_len + (w-1) padding
+
+// Bytepad a string (already bit-length encoded) to nearest multiple of w
 size_t ll_byte_pad(const uint8_t *S, size_t S_len,
                    size_t w, uint8_t *out, size_t out_cap) {
     if (w == 0 || !out) return 0;
 
     uint8_t le[9];
-    size_t le_len = ll_left_encode_uint64(w, le);
+    size_t le_len = ll_left_encode_uint64(w, le);  // left-encode w (bytes)
 
-    // left_encode(w) || S
-    size_t n = le_len + S_len;
+    size_t n = le_len + S_len;                     // total length before padding
 
-    // caller must provide enough space for the whole output
     if (out_cap < n) return 0;
 
+    // copy left_encode(w) || S
     memcpy(out, le, le_len);
-
     if (S_len)
         memcpy(out + le_len, S, S_len);
 
-    // pad with zeros to nearest multiple of w
+    // pad to nearest multiple of w
     size_t pad = (w - (n % w)) % w;
-
-    if (out_cap < n + pad)
-        return 0;
-
+    if (out_cap < n + pad) return 0;
     if (pad)
         memset(out + n, 0, pad);
 
     return n + pad;
 }
 
+// Extract a byte-range (substring) from a byte array
 size_t ll_substring_bytes(const uint8_t *S, size_t S_len,
                           size_t start_idx, size_t end_idx,
                           uint8_t *out) {
     if (!S || !out || start_idx >= end_idx || start_idx >= S_len) return 0;
-
     if (end_idx > S_len) end_idx = S_len;
 
     size_t len = end_idx - start_idx;
@@ -233,47 +252,27 @@ bool ll_rawshake256_squeeze(ll_RawSHAKE256_CTX *ctx, uint8_t *output, size_t out
     return ll_keccak_sponge_squeeze(ctx, output, outlen);
 }
 
-/*
- * NOTE: cSHAKE / KMAC Output Differences
- *
- * Observation:
- *   - Outputs differ from common libraries (OpenSSL, PyCryptodome, XKCP) and
- *     do not exactly match FIPS 202 / 800-185 reference vectors.
- *
- * Reason:
- *   - Libraries often shortcut SP 800-185 steps:
- *       • Skip bytepad() for N/S
- *       • Absorb customization strings in chunks
- *       • Simplify domain separation when N or S is empty
- *   - This implementation strictly follows FIPS 202 / 800-185:
- *       • Proper encode_string(N) || encode_string(S)
- *       • Correct bytepad(rate) and domain separation
- *   - Keccak-f[1600] matches libraries, so intermediate states differ from FIPS examples.
- *
- * Implication:
- *   - Despite differing hex outputs, this code is standard-compliant and secure.
- *   - Safe for building KMAC and other SP 800-185 primitives.
- */
-
 // ==============================
 // cSHAKE low-level helpers
 // ==============================
-static bool ll_cshake_absorb_custom(
+
+bool ll_cshake_absorb_custom(
     ll_KECCAK_CTX *sponge,
     const uint8_t *N, size_t N_len,
     const uint8_t *S, size_t S_len) {
     if ((!N || N_len == 0) && (!S || S_len == 0))
-        return true;
+        return true;  // nothing to absorb
 
-    // Maximum encoded size for N and S
-    uint8_t tmp[2 * LL_MAX_CUSTOMIZATION + 2 * 8]; // extra for length encoding
+    // Temporary buffer for encoded N + S
+    uint8_t tmp[2 * MAX_CUSTOMIZATION + MAX_ENCODED_HEADER_LEN * 8]; 
     size_t pos = 0;
 
-    pos += ll_encode_string(N, N_len, tmp + pos);
-    pos += ll_encode_string(S, S_len, tmp + pos);
+    // Encode N in bits
+    pos += ll_encode_string(N, N_len, tmp + pos, sizeof(tmp));
+    pos += ll_encode_string(S, S_len, tmp + pos, sizeof(tmp));
 
-    // Maximum padded length (rate multiple)
-    uint8_t padded[pos + sponge->rate]; // over-estimate
+    // Bytepad to rate multiple
+    uint8_t padded[2 * KECCAK_BLOCK_SIZE]; // safe over-estimate
     size_t padded_len = ll_byte_pad(tmp, pos, sponge->rate, padded, sizeof(padded));
 
     // Absorb into sponge
@@ -286,19 +285,25 @@ static bool ll_cshake_absorb_custom(
 bool ll_cshake128_init(ll_CSHAKE128_CTX *ctx,
                        const uint8_t *N, size_t N_len,
                        const uint8_t *S, size_t S_len) {
-    if (N_len > LL_MAX_CUSTOMIZATION || S_len > LL_MAX_CUSTOMIZATION)
+    if (N_len > MAX_CUSTOMIZATION || S_len > MAX_CUSTOMIZATION)
         return false;
 
     memset(ctx, 0, sizeof(*ctx));
 
     // Copy N and S into the fixed arrays
-    if (N && N_len > 0)
+    if (N && N_len > 0) {
         memcpy(ctx->N, N, N_len);
-    ctx->N_len = N_len;
+        ctx->N_len = N_len;
+    } else {
+        ctx->N_len = 0;
+    }
 
-    if (S && S_len > 0)
+    if (S && S_len > 0) {
         memcpy(ctx->S, S, S_len);
-    ctx->S_len = S_len;
+        ctx->S_len = S_len;
+    } else {
+        ctx->S_len = 0;
+    }
 
     ctx->finalized = 0;
     ctx->customAbsorbed = 0;
@@ -347,7 +352,7 @@ bool ll_cshake128_squeeze(ll_CSHAKE128_CTX *ctx, uint8_t *output, size_t outlen)
 bool ll_cshake256_init(ll_CSHAKE256_CTX *ctx,
                        const uint8_t *N, size_t N_len,
                        const uint8_t *S, size_t S_len) {
-    if (N_len > LL_MAX_CUSTOMIZATION || S_len > LL_MAX_CUSTOMIZATION)
+    if (N_len > MAX_CUSTOMIZATION || S_len > MAX_CUSTOMIZATION)
         return false;
 
     memset(ctx, 0, sizeof(*ctx));

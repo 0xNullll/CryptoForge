@@ -40,7 +40,7 @@ typedef struct _EVP_XOF_OPTS {
     int emptyNameCustom;
 
     int isHeapAlloc;          // 1 if allocated by library (heap), 0 if user stack
-};
+} EVP_XOF_OPTS;
 
 typedef struct _EVP_HASH_CTX {
     const struct _EVP_MD *md;  // selected algorithm
@@ -50,12 +50,13 @@ typedef struct _EVP_HASH_CTX {
 
     int isFinalized;
     int isHeapAlloc;           // 1 if allocated by library (heap), 0 if user stack
-};
+    int isHeapAllocOpts;
+} EVP_HASH_CTX;
 
-typedef struct _EVP_MDEntry{
+typedef struct _EVP_MDEntry {
     uint32_t flag;
     const EVP_MD *(*EVP_MDGetter)(void);
-};
+} EVP_MDEntry;
 
 // ==========================
 // Algorithm selection
@@ -71,8 +72,11 @@ TCLIB_API EVP_HASH_CTX* EVP_HashInitAlloc(const EVP_MD *md, const EVP_XOF_OPTS *
 TCLIB_API TCLIB_STATUS EVP_HashUpdate(EVP_HASH_CTX *ctx, const uint8_t *data, size_t data_len);
 TCLIB_API TCLIB_STATUS EVP_HashFinal(EVP_HASH_CTX *ctx, uint8_t *digest, size_t digest_len);
 
-TCLIB_API TCLIB_STATUS EVP_HashReset(EVP_HASH_CTX *ctx);
+// Frees internal buffers of a pre-allocated EVP_HASH_CTX
 TCLIB_API TCLIB_STATUS EVP_HashFree(EVP_HASH_CTX *ctx);
+
+// Frees internal buffers + heap-allocated EVP_HASH_CTX
+TCLIB_API TCLIB_STATUS EVP_HashFreeAlloc(EVP_HASH_CTX **p_ctx);
 
 // ==========================
 // One-shot hash convenience
@@ -126,8 +130,8 @@ TCLIB_API EVP_XOF_OPTS* EVP_XOFOptsInitAlloc(
     TCLIB_STATUS *status
 );
 
-TCLIB_API void EVP_ResetXOFOpts(EVP_XOF_OPTS *opts);
-TCLIB_API void EVP_FreeXOFOpts(EVP_XOF_OPTS *opts);
+TCLIB_API void EVP_XOFOptsFree(EVP_XOF_OPTS *opts);
+TCLIB_API void EVP_XOFOptsFreeAlloc(EVP_XOF_OPTS **p_opts);
 
 TCLIB_API TCLIB_STATUS EVP_CloneXOFOpts(EVP_XOF_OPTS *dst, const EVP_XOF_OPTS *src);
 TCLIB_API EVP_XOF_OPTS *EVP_CloneXOFOptsAlloc(const EVP_XOF_OPTS *src, TCLIB_STATUS *status);

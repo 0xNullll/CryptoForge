@@ -19,10 +19,10 @@ typedef enum {
     // --------------------------
     TCLIB_SUCCESS = 0,
     TCLIB_ERR_UNKNOWN = 1,
-
     // --------------------------
     // Argument / input issues
     // --------------------------
+    TCLIB_ERR_INVALID_PARAM,    // generic “invalid argument” code
     TCLIB_ERR_NULL_PTR,         // Passed NULL pointer
     TCLIB_ERR_INVALID_LEN,      // Invalid length
     TCLIB_ERR_BAD_STATE,        // Wrong call order

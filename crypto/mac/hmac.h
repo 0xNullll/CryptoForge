@@ -48,11 +48,11 @@ TCLIB_STATUS ll_HMAC_Update(ll_HMAC_CTX *ctx, const uint8_t *data, size_t data_l
 // digest_len should be at least the hash's digest_size.
 TCLIB_STATUS ll_HMAC_Final(ll_HMAC_CTX *ctx, uint8_t *digest, size_t digest_len);
 
-// Frees the ll_HMAC_CTX and its internal buffers.
+// Frees internal buffers of a pre-allocated context
 TCLIB_STATUS ll_HMAC_Free(ll_HMAC_CTX *ctx);
 
-// Resets an ll_HMAC_CTX to its initial state with the same key and hash.
-TCLIB_STATUS ll_HMAC_Reset(ll_HMAC_CTX *ctx);
+// Frees internal buffers + the heap-allocated context
+TCLIB_STATUS ll_HMAC_FreeAlloc(ll_HMAC_CTX **p_ctx);
 
 // Clone HMAC context into an existing destination context
 TCLIB_STATUS ll_HMAC_CloneCtx(ll_HMAC_CTX *ctx_dest, const ll_HMAC_CTX *ctx_src);

@@ -17,18 +17,18 @@ Hash functions provide integrity and form the basis for MACs, KDFs, and RNGs.
 - [x] **cSHAKE** – customizable SHAKE variant for keyed or domain-specific hashing.
 
 **Notes:** 
-- Hashes are required for HMACs, KMACs, and some DRBG constructions.  
-- **cSHAKE implementation is experimental:** it attempts to follow SP800-185 closely, including explicit handling of N/S customization strings. Some libraries simplify or absorb customization differently, so outputs may not match other implementations exactly. Users should verify against their own test vectors.
-
+- Hashes are required for HMACs, KMACs, and some DRBG constructions.
 ---
 
-### 2. HMAC / KMAC
+### 2. MACS
 Message Authentication Codes ensure **data integrity and authenticity**.
 
 - [x] **HMAC-SHA1** – simple MAC using SHA-1 (legacy).
 - [x] **HMAC-SHA2** – widely used, secure.
 - [x] **HMAC-SHA3** – newer design, resistant to length-extension attacks.
-- [ ] **KMAC** – keyed SHA-3 based MAC, supports variable-length keys and output.
+- [x] **KMAC** – SHA-3 based MAC, flexible key and output size.
+- [x] **KMAC-XOF** – SHA-3 based MAC with extendable output, flexible key and output size.
+- [ ] **CMAC** - block-cipher based MAC, widely used with AES.
 
 **Notes:** MACs are building blocks for authenticated encryption and secure RNGs.
 
