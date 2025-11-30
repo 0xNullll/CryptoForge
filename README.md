@@ -10,11 +10,12 @@ Designed with **layered APIs** similar to OpenSSL, but smaller scale, where each
 ### 1. Hashing
 Hash functions provide integrity and form the basis for MACs, KDFs, and RNGs.
 
-- [x] **SHA-1** – legacy hash, good for learning, not recommended for new designs.
-- [x] **SHA-224 / SHA-256 / SHA-512** – widely used, secure SHA-2 family.
-- [x] **SHA3-224 / SHA3-256 / SHA3-512** – sponge-based design, resistant to length-extension attacks.
-- [x] **SHAKE / rawSHAKE** – extendable-output functions (XOF), flexible output length.
-- [x] **cSHAKE** – customizable SHAKE variant for keyed or domain-specific hashing.
+- [x] **MD-5** - legacy hash, fast but insecure, not recommended for new designs.
+- [x] **SHA-1** – legacy hash, weak against collisions, mainly for learning purposes.
+- [x] **SHA-224 / SHA-256 / SHA-384 / SHA-512 / SHA-512-224 / SHA-512-256** – widely used, secure SHA-2 family.
+- [x] **SHA3-224 / SHA3-256 / SHA3-384 / SHA3-512** – sponge-based design, resistant to length-extension attacks.
+- [x] **SHAKE128 / SHAKE256 / rawSHAKE128 / rawSHAKE256** – extendable-output functions (XOF), flexible output length.
+- [x] **cSHAKE128 / cSHAKE256** – customizable SHAKE variant for keyed or domain-specific hashing.
 
 **Notes:** 
 - Hashes are required for HMACs, KMACs, and some DRBG constructions.
