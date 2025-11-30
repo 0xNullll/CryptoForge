@@ -1,46 +1,5 @@
 #include "shake.h"
 
-// ======================================
-// Bit-level helpers
-// ======================================
-void ll_trunc_s(const uint8_t *X, size_t Xlen, size_t s, uint8_t *out) {
-    size_t full_bytes = s / 8;
-    size_t rem_bits  = s % 8;
-
-    if (full_bytes > Xlen) full_bytes = Xlen;
-    memcpy(out, X, full_bytes);
-
-    if (rem_bits && full_bytes < Xlen) {
-        uint8_t mask = 0xFF << (8 - rem_bits);
-        out[full_bytes] = X[full_bytes] & mask;
-    }
-}
-
-void ll_concat_bits(const uint8_t *X, size_t x_bits,
-                    const uint8_t *Y, size_t y_bits,
-                    uint8_t *out) {
-
-    size_t out_bits = x_bits + y_bits;
-    size_t out_bytes = (out_bits + 7) / 8;
-    memset(out, 0, out_bytes);
-
-    size_t x_full_bytes = x_bits / 8;
-    memcpy(out, X, x_full_bytes);
-
-    size_t x_rem_bits = x_bits % 8;
-    if (x_rem_bits && x_full_bytes < out_bytes) {
-        out[x_full_bytes] = X[x_full_bytes] & (0xFF << (8 - x_rem_bits));
-    }
-
-    for (size_t i = 0; i < y_bits; i++) {
-        size_t bit_index = x_bits + i;
-        size_t out_byte = bit_index / 8;
-        size_t out_bit  = 7 - (bit_index % 8);
-        uint8_t y_bit = (Y[i / 8] >> (7 - (i % 8))) & 1;
-        out[out_byte] |= y_bit << out_bit;
-    }
-}
-
 /*
  * ================= FIPS 800-185 Helpers =================
  *
@@ -256,7 +215,7 @@ bool ll_rawshake256_squeeze(ll_RawSHAKE256_CTX *ctx, uint8_t *output, size_t out
 // cSHAKE low-level helpers
 // ==============================
 
-bool ll_cshake_absorb_custom(
+static bool ll_cshake_absorb_custom(
     ll_KECCAK_CTX *sponge,
     const uint8_t *N, size_t N_len,
     const uint8_t *S, size_t S_len) {
