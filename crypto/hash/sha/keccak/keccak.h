@@ -14,7 +14,6 @@ extern "C" {
 // ======================================
 #define KECCAK_ROUNDS 24
 #define SHA3_KECCAK_F_WIDTH 1600
-
 #define KECCAK_BLOCK_SIZE 200
 
 typedef struct {

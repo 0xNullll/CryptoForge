@@ -3,7 +3,7 @@
 int main(void) {
     TCLIB_STATUS status;
 
-    const char *input = "Nobody inspects the spammish repetition";
+    const char *input = "My Tagged Application";
     size_t input_len = strlen(input);
 
 #if ENABLE_TESTS
@@ -11,12 +11,13 @@ int main(void) {
 
     // Example: XOF (cSHAKE / SHAKE) setup
     EVP_XOF_OPTS xof_opts;
-    uint8_t raw_bytes[] = {0x68};
+    uint8_t raw_bytes[] = {0x00, 0x01, 0x02, 0x03};
     size_t raw_len = sizeof(raw_bytes);
 
     status = EVP_XOFOptsInit(&xof_opts,
-                             raw_bytes, raw_len,
+                            //  raw_bytes, raw_len,
                              NULL, 0,    // N and S empty
+                             raw_bytes, raw_len,
                              32          // Output length in bytes
     );
 
@@ -53,11 +54,14 @@ int main(void) {
     printf("\n");
 
     EVP_HashFree(&ctx);
+    EVP_XOFOptsFree(&xof_opts);
 
     // HMAC tests
-    uint8_t key[] = "Jefe";
+    uint8_t key[] = "My Tagged Applicationnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn";
 
     test_all_hmacs(key, strlen((char*)key), (uint8_t*)input, input_len);
+
+    test_all_kmacs(key, strlen((char*)key), (uint8_t*)input, input_len, (uint8_t*)input, input_len);
 
 #endif // ENABLE_TESTS
 

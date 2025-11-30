@@ -2,7 +2,7 @@
 
 #if ENABLE_TESTS
 
-void test_all_hashes(const uint8_t *input, size_t input_len, void *opts) {
+void test_all_hashes(const uint8_t *input, size_t input_len, const EVP_XOF_OPTS *opts) {
     uint8_t digest[EVP_MAX_DEFAULT_DIGEST_SIZE];
 
     // List of hash flags to test
@@ -85,7 +85,7 @@ void test_all_hashes(const uint8_t *input, size_t input_len, void *opts) {
     }
 }
 
-void test_all_hashes_high(const uint8_t *input, size_t input_len, void *opts) {
+void test_all_hashes_high(const uint8_t *input, size_t input_len, const EVP_XOF_OPTS *opts) {
     uint8_t digest[EVP_MAX_DEFAULT_DIGEST_SIZE];
 
     uint32_t hash_flags[] = {

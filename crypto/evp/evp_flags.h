@@ -3,8 +3,9 @@
 
 #include "../../config/crypto_config.h"
 
-#define EVP_MAX_KEY_SIZE 512        // bytes
-#define EVP_MAX_CUSTOMIZATION 512   // bytes
+#define EVP_MAX_KEY_SIZE MAX_KEY_SIZE                     // bytes
+#define EVP_MAX_CUSTOMIZATION MAX_CUSTOMIZATION           // bytes
+#define EVP_MAX_ENCODED_HEADER_LEN MAX_ENCODED_HEADER_LEN // bytes
 
 // ======================
 // Maximum default sizes
@@ -82,7 +83,8 @@ typedef enum {
 typedef enum {
     EVP_CAT_DIGEST = 0x00000000, // MD5, SHA1, SHA2, SHA3
     EVP_CAT_XOF    = 0x10000000, // SHAKE / cSHAKE / RAWXOF
-    EVP_CAT_MAC    = 0x20000000  // HMAC / KMAC
+    EVP_CAT_MAC    = 0x20000000, // HMAC / KMAC
+    EVP_CAT_RNG    = 0x40000000
 } EVP_Category;
 
 // Unique algorithm IDs
@@ -116,22 +118,17 @@ typedef enum {
 // 2. HMAC / KMAC Flags
 // ======================
 typedef enum {
-    EVP_HMAC = EVP_CAT_MAC | 0x0001,
-    EVP_KMAC128 = EVP_CAT_MAC | 0x0002,
-    EVP_KMAC256 = EVP_CAT_MAC | 0x0003
+    EVP_HMAC       = EVP_CAT_MAC | 0x0001,
+    EVP_KMAC128    = EVP_CAT_MAC | 0x0002,
+    EVP_KMAC256    = EVP_CAT_MAC | 0x0003,
+    EVP_KMACXOF128 = EVP_CAT_MAC | 0x0004,
+    EVP_KMACXOF256 = EVP_CAT_MAC | 0x0005
 } EVP_MAC;
-
-
-typedef enum {
-    KMAC128 = EVP_CAT_MAC | 0x0002,
-    KMAC256 = EVP_CAT_MAC | 0x0003
-} ll_KMAC_TYPE;
 
 // ======================
 // 3. RNG / DRBG Flags
 // ======================
 typedef enum {
-    EVP_CAT_RNG         = 0x40000000,
     EVP_PRNG_XORSHIFT   = EVP_CAT_RNG | 0x0001,
     EVP_PRNG_PCG        = EVP_CAT_RNG | 0x0002,
     EVP_DRBG_SHA        = EVP_CAT_RNG | 0x0004,
