@@ -16,12 +16,6 @@ extern "C" {
 #define MAX_KEY_SIZE 512
 #define MAX_CUSTOMIZATION 512
 #define MAX_ENCODED_HEADER_LEN 9
-
-void ll_trunc_s(const uint8_t *X, size_t Xlen, size_t s, uint8_t *out);
-
-void ll_concat_bits(const uint8_t *X, size_t x_bits,
-                    const uint8_t *Y, size_t y_bits,
-                    uint8_t *out);
                 
 size_t ll_right_encode_uint64(uint64_t x, uint8_t *out);
 
@@ -92,14 +86,6 @@ bool ll_rawshake256_init(ll_RawSHAKE256_CTX *ctx);
 bool ll_rawshake256_absorb(ll_RawSHAKE256_CTX *ctx, const uint8_t *data, size_t len);
 bool ll_rawshake256_final(ll_RawSHAKE256_CTX *ctx);
 bool ll_rawshake256_squeeze(ll_RawSHAKE256_CTX *ctx, uint8_t *output, size_t outlen);
-
-// ======================================
-// cSHAKE custom absorb functions
-// ======================================
-bool ll_cshake_absorb_custom(
-    ll_KECCAK_CTX *sponge,
-    const uint8_t *N, size_t N_len,
-    const uint8_t *S, size_t S_len);
 
 // ======================================
 // cSHAKE128

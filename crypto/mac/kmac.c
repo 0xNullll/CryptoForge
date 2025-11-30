@@ -23,13 +23,6 @@
         ? ll_cshake128_squeeze((ll_CSHAKE128_CTX*)(ctx)->cshake_ctx, (digest), (len)) \
         : ll_cshake256_squeeze((ll_CSHAKE256_CTX*)(ctx)->cshake_ctx, (digest), (len)))
 
-#define LL_KMAC_TYPE_IS_VALID(type) \
-    ((type) == KMAC128 || (type) == KMAC256 || \
-     (type) == KMACXOF128 || (type) == KMACXOF256)
-
-#define LL_KMAC_IS_128(ctx) ((ctx)->type == KMAC128 || (ctx)->type == KMACXOF128)
-#define LL_KMAC_IS_XOF(ctx) ((ctx)->type == KMACXOF128 || (ctx)->type == KMACXOF256)
-
 /*
  * See SP800-185 "Appendix A - KMAC, .... in Terms of Keccak[c]"
  *
@@ -273,4 +266,3 @@ TCLIB_STATUS ll_KMAC_FreeAlloc(ll_KMAC_CTX **p_ctx) {
 #undef ll_KMAC_ABSORB
 #undef ll_KMAC_SQUEEZE
 #undef ll_KMAC_FINALIZE
-#undef LL_KMAC_TYPE_IS_VALID
