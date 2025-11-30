@@ -154,7 +154,7 @@ Required for block ciphers to handle plaintext not aligned to block size.
    - Handles internal state and streaming
    - Calls multiple `ll_*` primitives
 
-3. **EVP / User-Facing Layer (`evp_*`)**
+3. **Envelope Layer / User-Facing Layer (`evp_*`)**
    - Dispatcher by enum/macro for algorithm selection
    - Supports streaming, piping, and user-facing APIs
    - Enforces security policies (e.g., minimum key lengths)
