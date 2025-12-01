@@ -17,8 +17,7 @@ Hash functions provide integrity and form the basis for MACs, KDFs, and RNGs.
 - [x] **SHAKE / rawSHAKE** – 128 / 256, extendable-output, flexible length.  
 - [x] **cSHAKE** – 128 / 256, customizable for keyed or domain-specific hashing.
 
-**Notes:** 
-- Hashes are required for HMACs, KMACs, and some DRBG constructions.
+**Notes:** Hashes are required for HMACs, KMACs, and some DRBG constructions.
 ---
 
 ### 2. MACS
@@ -66,7 +65,7 @@ Provide **key exchange, digital signatures, and encryption** using public/privat
 - [ ] **EdDSA (Ed25519)** – modern signature scheme, fast and secure.
 - [ ] **Diffie-Hellman (DH)** – key exchange protocol, establishes shared secret over insecure channels.
 
-**Notes:** Focus on RSA and ECC for most practical implementations. Use DH or ECDH for secure session key establishment.
+**Notes:** RSA and ECC more standard and most practical implementations. Using DH or ECDH for secure session key establishment.
 
 ---
 
