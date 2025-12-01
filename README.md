@@ -135,7 +135,7 @@ Required for block ciphers to handle plaintext not aligned to block size.
 ├─ /utils
 │   ├─ mem.h            <-- secure memory helpers
 │   ├─ misc_utils.h     <-- force_inline, generic macros
-│   └─ tclib_status.h
+│   └─ cf_status.h
 └─ /demo
     ├─ demo_hash.c
     ├─ demo_mac.c
@@ -173,4 +173,4 @@ Required for block ciphers to handle plaintext not aligned to block size.
 
 ## License
 
-This project is released under the **MIT License**. See `LICENSE` for full text.
+This project is released under the **MIT License**. See '[LICENSE](LICENSE)' for full text.
