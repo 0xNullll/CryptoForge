@@ -1,4 +1,4 @@
-# TinyCryptLib
+# CryptoForge
 
 A **modular, lightweight C crypto library** including SHA variants, HMAC, KMAC, and Keccak.  
 Designed with **layered APIs** similar to OpenSSL, but smaller scale, where each API layer has its own prefix.
