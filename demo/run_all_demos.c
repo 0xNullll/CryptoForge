@@ -61,6 +61,8 @@ int main(void) {
 
     test_all_hmacs(key, strlen((char*)key), (uint8_t*)input, input_len);
 
+    printf("\n------------------------------------------------------\n");
+
     test_all_kmacs(key, strlen((char*)key), (uint8_t*)input, input_len, (uint8_t*)input, input_len);
 
 #endif // ENABLE_TESTS

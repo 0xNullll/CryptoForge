@@ -7,9 +7,10 @@
 
 #if ENABLE_TESTS  // only include/demo code if tests are enabled
 
+#include "../crypto/hash/sha/keccak/shake.h"
 #include "../crypto/mac/hmac.h"
 #include "../crypto/mac/kmac.h"
-#include "../crypto/hash/sha/keccak/shake.h"
+#include "../crypto/kdf/hkdf.h"
 #include "../crypto/evp/evp_defs.h"
 #include "../crypto/evp/evp_flags.h"
 #include "../crypto/evp/evp_hash.h"
@@ -19,14 +20,14 @@
 extern "C" {
 #endif
 
-typedef struct {
-    const uint8_t *data;
-    size_t data_len;
-    const uint8_t *S;
-    size_t S_len;
-    const uint8_t *outval;
-    size_t outsz;
-} CSHAKE_TEST_VECTOR;
+// typedef struct {
+//     const uint8_t *data;
+//     size_t data_len;
+//     const uint8_t *S;
+//     size_t S_len;
+//     const uint8_t *outval;
+//     size_t outsz;
+// } CSHAKE_TEST_VECTOR;
 
 // Utility to print a digest in hex
 FORCE_INLINE void DEMO_print_hex(const uint8_t *digest, size_t size) {

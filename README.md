@@ -30,6 +30,7 @@ Message Authentication Codes ensure **data integrity and authenticity**.
 - [x] **KMAC** – SHA-3 based MAC, flexible key and output size.
 - [x] **KMAC-XOF** – SHA-3 based MAC with extendable output, flexible key and output size.
 - [ ] **CMAC** - block-cipher based MAC, widely used with AES.
+- [ ] **PBMAC1 (optional-advanced)** – password-based MAC: PBKDF2 + HMAC.
 
 **Notes:** MACs are building blocks for authenticated encryption and secure RNGs.
 
@@ -51,6 +52,7 @@ Provide **confidentiality** via block and stream ciphers.
 
 - [ ] **AES (CBC / CTR / GCM / XTS)** – block cipher with multiple modes.
 - [ ] **ChaCha20 (+ Poly1305)** – stream cipher, software-friendly, AEAD support with Poly1305.
+- [ ] **PBES2 (optional-advanced)** – PBKDF2 + AES encryption scheme.
 
 **Notes:** Start with simple modes (CBC/CTR), then implement authenticated encryption (GCM/Poly1305).
 
@@ -80,7 +82,7 @@ Stretch and derive keys securely.
 
 - [ ] **scrypt** – memory-hard KDF designed to derive strong keys from low-entropy inputs
 - [ ] **PBKDF2** – password-based key derivation using iterative hashing.
-- [ ] **HKDF** – modern extract+expand key derivation using HMAC.
+- [x] **HKDF** – modern extract+expand key derivation using HMAC.
 
 ---
 
@@ -122,11 +124,14 @@ Required for block ciphers to handle plaintext not aligned to block size.
 │   ├─ /mac
 │   │   ├─ hmac.{c,h}
 │   │   └─ kmac.{c,h}
+│   ├─ /kdf
+│   │   └─ hkdf.{c,h}
 │   └─ /evp
 │       ├─ evp_defs.h
 │       ├─ evp_flags.h
 │       ├─ evp_hash.{c,h}
-│       └─ evp_mac.{c,h}
+│       ├─ evp_mac.{c,h}
+│       └─ evp_kdf.{c,h}
 ├─ /utils
 │   ├─ mem.h            <-- secure memory helpers
 │   ├─ misc_utils.h     <-- force_inline, generic macros

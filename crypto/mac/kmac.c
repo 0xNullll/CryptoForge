@@ -62,6 +62,7 @@
  *
  */
 
+// computes the key for KMAC -> bytepad(encode_string(K), rate)
 static size_t kmac_bytepad_encode_key(unsigned char *out, size_t out_max_len,
                                      size_t *out_len,
                                      const unsigned char *in, size_t in_len,
@@ -90,11 +91,11 @@ TCLIB_STATUS ll_KMAC_Init(ll_KMAC_CTX *ctx,
 
     memset(ctx, 0, sizeof(*ctx));
     ctx->type = type;
-    ctx->isXOF = LL_KMAC_IS_XOF(ctx);
-    ctx->out_len = LL_KMAC_IS_128(ctx) ? CSHAKE128_DEFAULT_OUT_LEN : CSHAKE256_DEFAULT_OUT_LEN; // 32 bytes = 256-bit, 64 bytes = 512-bit
+    ctx->isXOF = LL_KMAC_IS_XOF(ctx->type);
+    ctx->out_len = LL_KMAC_IS_128(ctx->type) ? CSHAKE128_DEFAULT_OUT_LEN : CSHAKE256_DEFAULT_OUT_LEN; // 32 bytes = 256-bit, 64 bytes = 512-bit
 
     // Allocate cSHAKE context
-    if (LL_KMAC_IS_128(ctx)) {
+    if (LL_KMAC_IS_128(ctx->type)) {
         if (!ctx->cshake_ctx) ctx->cshake_ctx = malloc(sizeof(ll_CSHAKE128_CTX));
     } else {
         if (!ctx->cshake_ctx) ctx->cshake_ctx = malloc(sizeof(ll_CSHAKE256_CTX));
@@ -106,7 +107,7 @@ TCLIB_STATUS ll_KMAC_Init(ll_KMAC_CTX *ctx,
         return TCLIB_ERR_CTX_CORRUPT;
 
     // Step 2: encode + bytepad the key
-    size_t rate_bytes = LL_KMAC_IS_128(ctx) ? CSHAKE128_BLOCK_SIZE : CSHAKE256_BLOCK_SIZE;
+    size_t rate_bytes = LL_KMAC_IS_128(ctx->type) ? CSHAKE128_BLOCK_SIZE : CSHAKE256_BLOCK_SIZE;
     uint8_t padded_key[2 * KECCAK_BLOCK_SIZE];
     size_t padded_len = kmac_bytepad_encode_key(padded_key, sizeof(padded_key),
                                                 NULL, key, key_len, rate_bytes);
@@ -179,8 +180,27 @@ TCLIB_STATUS ll_KMAC_Final(ll_KMAC_CTX *ctx, uint8_t *digest, size_t digest_len)
 
     size_t final_len = digest_len ? digest_len : ctx->out_len;
 
+    // For non-XOF, store final_len on first finalization
     if (!ctx->isXOF && !ctx->isFinalized)
         ctx->out_len = final_len;
+
+    /* ------------------- Safety Cap / Fallback ------------------- */
+#ifdef KMAC_FALLBACK_DEFAULT_LEN
+    if (!ctx->isXOF) {
+        // fallback to base digest size if length not provided
+        final_len = digest_len ? digest_len : ctx->out_len;
+    } else {
+        // XOF requires explicit digest length
+        if (digest_len == 0) 
+            return TCLIB_ERR_INVALID_LEN;
+        final_len = digest_len;
+    }
+#else
+    // strict mode: digest_len must be explicitly provided
+    if (digest_len == 0) 
+        return TCLIB_ERR_INVALID_LEN;
+    final_len = digest_len;
+#endif
 
     // already finalized → just squeeze
     if (ctx->isFinalized) {
@@ -210,6 +230,11 @@ TCLIB_STATUS ll_KMAC_Final(ll_KMAC_CTX *ctx, uint8_t *digest, size_t digest_len)
     ctx->isFinalized = 1;
     return TCLIB_SUCCESS;
 }
+
+#undef ll_KMAC_INIT
+#undef ll_KMAC_ABSORB
+#undef ll_KMAC_SQUEEZE
+#undef ll_KMAC_FINALIZE
 
 // Frees internal buffers of a pre-allocated KMAC context
 TCLIB_STATUS ll_KMAC_Free(ll_KMAC_CTX *ctx) {
@@ -262,7 +287,102 @@ TCLIB_STATUS ll_KMAC_FreeAlloc(ll_KMAC_CTX **p_ctx) {
     return TCLIB_SUCCESS;
 }
 
-#undef ll_KMAC_INIT
-#undef ll_KMAC_ABSORB
-#undef ll_KMAC_SQUEEZE
-#undef ll_KMAC_FINALIZE
+// typedef struct _ll_KMAC_CTX {
+//     // Core CSHAKE sponge context
+//     void *cshake_ctx;
+
+//     // Key (raw bytes) and length
+//     uint8_t key[MAX_KEY_SIZE];
+//     size_t  key_len;
+
+//     // Requested output length in bytes (L in the spec)
+//     size_t out_len;
+
+//     // Customization strings
+//     uint8_t S[MAX_CUSTOMIZATION]; // Customization string (can be empty)
+//     size_t  S_len;
+
+//     // Bookkeeping flags
+//     int isFinalized;        // 1 if finalization done
+//     int customAbsorbed;     // 1 if N||S absorbed
+//     int emptyNameCustom;    // 1 if S are empty
+
+//     int isXOF;
+//     int isHeapAlloc;        // 1 if allocated on heap, 0 if stack
+
+//     // KMAC variant
+//     ll_KMAC_TYPE type;      // e.g., KMAC128, KMAC256, KMACXOF128, KMACXOF256
+// } ll_KMAC_CTX;
+
+TCLIB_STATUS ll_KMAC_CloneCtx(ll_KMAC_CTX *ctx_dest, const ll_KMAC_CTX *ctx_src) {
+    if (!ctx_dest || !ctx_src)
+        return TCLIB_ERR_NULL_PTR;
+
+    // Clone CSHAKE context
+    if (ctx_src->cshake_ctx) {
+        size_t cshake_ctx_size = LL_KMAC_IS_128(ctx_src->type) ? CSHAKE128_BLOCK_SIZE : CSHAKE256_BLOCK_SIZE;
+
+        if (ctx_dest->cshake_ctx) {
+            SECURE_FREE(ctx_dest->cshake_ctx, cshake_ctx_size);
+        }
+        ctx_dest->cshake_ctx = SECURE_ALLOC(cshake_ctx_size);
+        if (!ctx_dest->cshake_ctx)
+            return TCLIB_ERR_ALLOC_FAILED;
+
+        SECURE_MEMCPY(ctx_dest->cshake_ctx, ctx_src->cshake_ctx, cshake_ctx_size);
+    } else {
+        ctx_dest->cshake_ctx = NULL;
+    }
+
+    // Copy key and customization
+    ctx_dest->key_len = ctx_src->key_len;
+    SECURE_MEMCPY(ctx_dest->key, ctx_src->key, ctx_src->key_len);
+
+    ctx_dest->S_len = ctx_src->S_len;
+    SECURE_MEMCPY(ctx_dest->S, ctx_src->S, ctx_src->S_len);
+
+    // Copy output length
+    ctx_dest->out_len = ctx_src->out_len;
+
+    // Copy flags
+    ctx_dest->isFinalized      = ctx_src->isFinalized;
+    ctx_dest->customAbsorbed   = ctx_src->customAbsorbed;
+    ctx_dest->emptyNameCustom  = ctx_src->emptyNameCustom;
+    ctx_dest->isXOF            = ctx_src->isXOF;
+    ctx_dest->isHeapAlloc      = 0;
+
+    // Copy KMAC type
+    ctx_dest->type = ctx_src->type;
+
+    return TCLIB_SUCCESS;
+}
+
+ll_KMAC_CTX *ll_KMAC_CloneCtxAlloc(const ll_KMAC_CTX *ctx_src, TCLIB_STATUS *status) {
+    if (!ctx_src) {
+        if (status) *status = TCLIB_ERR_NULL_PTR;
+        return NULL;
+    }
+
+    // Allocate a new ll_KMAC_CTX on the heap
+    ll_KMAC_CTX *ctx_dest = (ll_KMAC_CTX *)SECURE_ALLOC(sizeof(ll_KMAC_CTX));
+    if (!ctx_dest) {
+        if (status) *status = TCLIB_ERR_ALLOC_FAILED;
+        return NULL;
+    }
+
+    // Zero-initialize the new context
+    SECURE_ZERO(ctx_dest, sizeof(ll_KMAC_CTX));
+
+    // Use existing clone function to copy contents
+    TCLIB_STATUS ret = ll_KMAC_CloneCtx(ctx_dest, ctx_src);
+    if (ret != TCLIB_SUCCESS) {
+        SECURE_FREE(ctx_dest, sizeof(ll_KMAC_CTX));
+        if (status) *status = ret;
+        return NULL;
+    }
+
+    ctx_dest->isHeapAlloc = 1; // mark as heap-allocated
+
+    if (status) *status = TCLIB_SUCCESS;
+    return ctx_dest;
+}

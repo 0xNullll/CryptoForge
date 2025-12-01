@@ -316,11 +316,11 @@ static const EVP_MD *EVP_get_md5(void) {
     static EVP_MD md = {
         .id = EVP_MD5,
         .domain = 0,
-        .digest_size = EVP_MD5_DIGEST_SIZE,
-        .block_size = EVP_MD5_BLOCK_SIZE,
+        .digest_size = MD5_DIGEST_SIZE,
+        .block_size = MD5_BLOCK_SIZE,
         .ctx_size = sizeof(ll_MD5_CTX),
         .opts_ctx_size = 0,
-        .default_out_len = EVP_MD5_DIGEST_SIZE,
+        .default_out_len = MD5_DIGEST_SIZE,
         .hash_init_fn = md5_init_wrapper,
         .hash_update_fn = md5_update_wrapper,
         .hash_final_fn = md5_final_wrapper,
@@ -336,11 +336,11 @@ static const EVP_MD *EVP_get_sha1(void) {
     static EVP_MD md = {
         .id = EVP_SHA1,
         .domain = 0,
-        .digest_size = EVP_SHA1_DIGEST_SIZE,
-        .block_size = EVP_SHA1_BLOCK_SIZE,
+        .digest_size = SHA1_DIGEST_SIZE,
+        .block_size = SHA1_BLOCK_SIZE,
         .ctx_size = sizeof(ll_SHA1_CTX),
         .opts_ctx_size = 0,
-        .default_out_len = EVP_SHA1_DIGEST_SIZE,
+        .default_out_len = SHA1_DIGEST_SIZE,
         .hash_init_fn = sha1_init_wrapper,
         .hash_update_fn = sha1_update_wrapper,
         .hash_final_fn = sha1_final_wrapper,
@@ -356,11 +356,11 @@ static const EVP_MD *EVP_get_sha224(void) {
     static EVP_MD md = {
         .id = EVP_SHA224,
         .domain = 0,
-        .digest_size = EVP_SHA224_DIGEST_SIZE,
-        .block_size = EVP_SHA224_BLOCK_SIZE,
+        .digest_size = SHA224_DIGEST_SIZE,
+        .block_size = SHA224_BLOCK_SIZE,
         .ctx_size = sizeof(ll_SHA224_CTX),
         .opts_ctx_size = 0,
-        .default_out_len = EVP_SHA224_DIGEST_SIZE,
+        .default_out_len = SHA224_DIGEST_SIZE,
         .hash_init_fn = sha224_init_wrapper,
         .hash_update_fn = sha224_update_wrapper,
         .hash_final_fn = sha224_final_wrapper,
@@ -373,11 +373,11 @@ static const EVP_MD *EVP_get_sha256(void) {
     static EVP_MD md = {
         .id = EVP_SHA256,
         .domain = 0,
-        .digest_size = EVP_SHA256_DIGEST_SIZE,
-        .block_size = EVP_SHA256_BLOCK_SIZE,
+        .digest_size = SHA256_DIGEST_SIZE,
+        .block_size = SHA256_BLOCK_SIZE,
         .ctx_size = sizeof(ll_SHA256_CTX),
         .opts_ctx_size = 0,
-        .default_out_len = EVP_SHA256_DIGEST_SIZE,
+        .default_out_len = SHA256_DIGEST_SIZE,
         .hash_init_fn = sha256_init_wrapper,
         .hash_update_fn = sha256_update_wrapper,
         .hash_final_fn = sha256_final_wrapper,
@@ -393,11 +393,11 @@ static const EVP_MD *EVP_get_sha384(void) {
     static EVP_MD md = {
         .id = EVP_SHA384,
         .domain = 0,
-        .digest_size = EVP_SHA384_DIGEST_SIZE,
-        .block_size = EVP_SHA384_BLOCK_SIZE,
+        .digest_size = SHA384_DIGEST_SIZE,
+        .block_size = SHA384_BLOCK_SIZE,
         .ctx_size = sizeof(ll_SHA384_CTX),
         .opts_ctx_size = 0,
-        .default_out_len = EVP_SHA384_DIGEST_SIZE,
+        .default_out_len = SHA384_DIGEST_SIZE,
         .hash_init_fn = sha384_init_wrapper,
         .hash_update_fn = sha384_update_wrapper,
         .hash_final_fn = sha384_final_wrapper,
@@ -410,11 +410,11 @@ static const EVP_MD *EVP_get_sha512(void) {
     static EVP_MD md = {
         .id = EVP_SHA512,
         .domain = 0,
-        .digest_size = EVP_SHA512_DIGEST_SIZE,
-        .block_size = EVP_SHA512_BLOCK_SIZE,
+        .digest_size = SHA512_DIGEST_SIZE,
+        .block_size = SHA512_BLOCK_SIZE,
         .ctx_size = sizeof(ll_SHA512_CTX),
         .opts_ctx_size = 0,
-        .default_out_len = EVP_SHA512_DIGEST_SIZE,
+        .default_out_len = SHA512_DIGEST_SIZE,
         .hash_init_fn = sha512_init_wrapper,
         .hash_update_fn = sha512_update_wrapper,
         .hash_final_fn = sha512_final_wrapper,
@@ -427,11 +427,11 @@ static const EVP_MD *EVP_get_sha512_224(void) {
     static EVP_MD md = {
         .id = EVP_SHA512_224,
         .domain = 0,
-        .digest_size = EVP_SHA512_224_DIGEST_SIZE,
-        .block_size = EVP_SHA512_224_BLOCK_SIZE,
+        .digest_size = SHA512_224_DIGEST_SIZE,
+        .block_size = SHA512_224_BLOCK_SIZE,
         .ctx_size = sizeof(ll_SHA512_224_CTX),
         .opts_ctx_size = 0,
-        .default_out_len = EVP_SHA512_224_DIGEST_SIZE,
+        .default_out_len = SHA512_224_DIGEST_SIZE,
         .hash_init_fn = sha512_224_init_wrapper,
         .hash_update_fn = sha512_224_update_wrapper,
         .hash_final_fn = sha512_224_final_wrapper,
@@ -444,11 +444,11 @@ static const EVP_MD *EVP_get_sha512_256(void) {
     static EVP_MD md = {
         .id = EVP_SHA512_256,
         .domain = 0,
-        .digest_size = EVP_SHA512_256_DIGEST_SIZE,
-        .block_size = EVP_SHA512_256_BLOCK_SIZE,
+        .digest_size = SHA512_256_DIGEST_SIZE,
+        .block_size = SHA512_256_BLOCK_SIZE,
         .ctx_size = sizeof(ll_SHA512_256_CTX),
         .opts_ctx_size = 0,
-        .default_out_len = EVP_SHA512_256_DIGEST_SIZE,
+        .default_out_len = SHA512_256_DIGEST_SIZE,
         .hash_init_fn = sha512_256_init_wrapper,
         .hash_update_fn = sha512_256_update_wrapper,
         .hash_final_fn = sha512_256_final_wrapper,
@@ -464,11 +464,11 @@ static const EVP_MD *EVP_get_sha3_224(void) {
     static EVP_MD md = {
         .id = EVP_SHA3_224,
         .domain = 0,
-        .digest_size = EVP_SHA3_224_DIGEST_SIZE,
-        .block_size = EVP_SHA3_224_BLOCK_SIZE,
+        .digest_size = SHA3_224_DIGEST_SIZE,
+        .block_size = SHA3_224_BLOCK_SIZE,
         .ctx_size = sizeof(ll_SHA3_224_CTX),
         .opts_ctx_size = 0,
-        .default_out_len = EVP_SHA3_224_DIGEST_SIZE,
+        .default_out_len = SHA3_224_DIGEST_SIZE,
         .hash_init_fn = sha3_224_init_wrapper,
         .hash_update_fn = sha3_224_update_wrapper,
         .hash_final_fn = sha3_224_final_wrapper,
@@ -481,11 +481,11 @@ static const EVP_MD *EVP_get_sha3_256(void) {
     static EVP_MD md = {
         .id = EVP_SHA3_256,
         .domain = 0,
-        .digest_size = EVP_SHA3_256_DIGEST_SIZE,
-        .block_size = EVP_SHA3_256_BLOCK_SIZE,
+        .digest_size = SHA3_256_DIGEST_SIZE,
+        .block_size = SHA3_256_BLOCK_SIZE,
         .ctx_size = sizeof(ll_SHA3_256_CTX),
         .opts_ctx_size = 0,
-        .default_out_len = EVP_SHA3_256_DIGEST_SIZE,
+        .default_out_len = SHA3_256_DIGEST_SIZE,
         .hash_init_fn = sha3_256_init_wrapper,
         .hash_update_fn = sha3_256_update_wrapper,
         .hash_final_fn = sha3_256_final_wrapper,
@@ -498,11 +498,11 @@ static const EVP_MD *EVP_get_sha3_384(void) {
     static EVP_MD md = {
         .id = EVP_SHA3_384,
         .domain = 0,
-        .digest_size = EVP_SHA3_384_DIGEST_SIZE,
-        .block_size = EVP_SHA3_384_BLOCK_SIZE,
+        .digest_size = SHA3_384_DIGEST_SIZE,
+        .block_size = SHA3_384_BLOCK_SIZE,
         .ctx_size = sizeof(ll_SHA3_384_CTX),
         .opts_ctx_size = 0,
-        .default_out_len = EVP_SHA3_384_DIGEST_SIZE,
+        .default_out_len = SHA3_384_DIGEST_SIZE,
         .hash_init_fn = sha3_384_init_wrapper,
         .hash_update_fn = sha3_384_update_wrapper,
         .hash_final_fn = sha3_384_final_wrapper,
@@ -515,11 +515,11 @@ static const EVP_MD *EVP_get_sha3_512(void) {
     static EVP_MD md = {
         .id = EVP_SHA3_512,
         .domain = 0,
-        .digest_size = EVP_SHA3_512_DIGEST_SIZE,
-        .block_size = EVP_SHA3_512_BLOCK_SIZE,
+        .digest_size = SHA3_512_DIGEST_SIZE,
+        .block_size = SHA3_512_BLOCK_SIZE,
         .ctx_size = sizeof(ll_SHA3_512_CTX),
         .opts_ctx_size = 0,
-        .default_out_len = EVP_SHA3_512_DIGEST_SIZE,
+        .default_out_len = SHA3_512_DIGEST_SIZE,
         .hash_init_fn = sha3_512_init_wrapper,
         .hash_update_fn = sha3_512_update_wrapper,
         .hash_final_fn = sha3_512_final_wrapper,
@@ -536,10 +536,10 @@ static const EVP_MD *EVP_get_shake128(void) {
         .id = EVP_SHAKE128,
         .domain = 0,
         .digest_size = 0,
-        .block_size = EVP_SHAKE128_BLOCK_SIZE,
+        .block_size = SHAKE128_BLOCK_SIZE,
         .ctx_size = sizeof(ll_SHAKE128_CTX),
         .opts_ctx_size = sizeof(EVP_XOF_OPTS),
-        .default_out_len = EVP_SHAKE128_DEFAULT_DIGEST_SIZE,
+        .default_out_len = SHAKE128_DEFAULT_OUT_LEN,
         .hash_init_fn = shake128_init_wrapper,
         .hash_update_fn = shake128_update_wrapper,
         .hash_final_fn = shake128_final_wrapper,
@@ -553,10 +553,10 @@ static const EVP_MD *EVP_get_shake256(void) {
         .id = EVP_SHAKE256,
         .domain = 0,
         .digest_size = 0,
-        .block_size = EVP_SHAKE256_BLOCK_SIZE,
+        .block_size = SHAKE256_BLOCK_SIZE,
         .ctx_size = sizeof(ll_SHAKE256_CTX),
         .opts_ctx_size = sizeof(EVP_XOF_OPTS),
-        .default_out_len = EVP_SHAKE256_DEFAULT_DIGEST_SIZE,
+        .default_out_len = SHAKE256_DEFAULT_OUT_LEN,
         .hash_init_fn = shake256_init_wrapper,
         .hash_update_fn = shake256_update_wrapper,
         .hash_final_fn = shake256_final_wrapper,
@@ -573,10 +573,10 @@ static const EVP_MD *EVP_get_raw_shake128(void) {
         .id = EVP_RAWSHAKE128,
         .domain = RAWSHAKE128_DOMAIN,
         .digest_size = 0,
-        .block_size = EVP_RAWSHAKE128_BLOCK_SIZE,
+        .block_size = RAWSHAKE128_BLOCK_SIZE,
         .ctx_size = sizeof(ll_RawSHAKE128_CTX),
         .opts_ctx_size = sizeof(EVP_XOF_OPTS),
-        .default_out_len = EVP_RAWSHAKE128_DEFAULT_DIGEST_SIZE,
+        .default_out_len = RAWSHAKE128_DEFAULT_OUT_LEN,
         .hash_init_fn = rawshake128_init_wrapper,
         .hash_update_fn = rawshake128_update_wrapper,
         .hash_final_fn = rawshake128_final_wrapper,
@@ -590,10 +590,10 @@ static const EVP_MD *EVP_get_raw_shake256(void) {
         .id = EVP_RAWSHAKE256,
         .domain = RAWSHAKE256_DOMAIN,
         .digest_size = 0,
-        .block_size = EVP_RAWSHAKE256_BLOCK_SIZE,
+        .block_size = RAWSHAKE256_BLOCK_SIZE,
         .ctx_size = sizeof(ll_RawSHAKE256_CTX),
         .opts_ctx_size = sizeof(EVP_XOF_OPTS),
-        .default_out_len = EVP_RAWSHAKE256_DEFAULT_DIGEST_SIZE,
+        .default_out_len = RAWSHAKE256_DEFAULT_OUT_LEN,
         .hash_init_fn = rawshake256_init_wrapper,
         .hash_update_fn = rawshake256_update_wrapper,
         .hash_final_fn = rawshake256_final_wrapper,
@@ -613,7 +613,7 @@ static const EVP_MD *EVP_get_cshake128(void) {
         .block_size = CSHAKE128_BLOCK_SIZE,
         .ctx_size = sizeof(ll_CSHAKE128_CTX),
         .opts_ctx_size = sizeof(EVP_XOF_OPTS),
-        .default_out_len = EVP_CSHAKE128_DEFAULT_DIGEST_SIZE,
+        .default_out_len = CSHAKE128_DEFAULT_OUT_LEN,
         .hash_init_fn = cshake128_init_wrapper,
         .hash_update_fn = cshake128_update_wrapper,
         .hash_final_fn = cshake128_final_wrapper,
@@ -630,7 +630,7 @@ static const EVP_MD *EVP_get_cshake256(void) {
         .block_size = CSHAKE256_BLOCK_SIZE,
         .ctx_size = sizeof(ll_CSHAKE256_CTX),
         .opts_ctx_size = sizeof(EVP_XOF_OPTS),
-        .default_out_len = EVP_CSHAKE256_DEFAULT_DIGEST_SIZE,
+        .default_out_len = CSHAKE256_DEFAULT_OUT_LEN,
         .hash_init_fn = cshake256_init_wrapper,
         .hash_update_fn = cshake256_update_wrapper,
         .hash_final_fn = cshake256_final_wrapper,
@@ -737,7 +737,23 @@ TCLIB_STATUS EVP_HashFinal(EVP_HASH_CTX *ctx, uint8_t *digest, size_t digest_len
     if (!digest)
         return TCLIB_ERR_NULL_PTR;
 
-    size_t final_len = digest_len != 0 ? digest_len : ctx->out_len;
+    size_t final_len = 0;
+
+#if HASH_FALLBACK_DEFAULT_LEN
+    final_len = (digest_len != 0) ? digest_len : ctx->md->default_out_len;
+#else
+    if (!EVP_IS_XOF(ctx->md->id)) {
+        // Fixed-length hash
+        if (digest_len < ctx->md->default_out_len)
+            return TCLIB_ERR_OUTPUT_BUFFER_TOO_SMALL;
+        final_len = ctx->md->default_out_len;
+    } else {
+        // XOF
+        if (digest_len == 0)
+            return TCLIB_ERR_INVALID_LEN;
+        final_len = digest_len;
+    }
+#endif
 
     if (!ctx->md->hash_final_fn(ctx->digest_ctx, digest, final_len))
         return TCLIB_ERR_CTX_CORRUPT;
@@ -873,10 +889,16 @@ int EVP_HashCompare(const uint8_t *a, const uint8_t *b, size_t len) {
 TCLIB_STATUS EVP_HashCloneCtx(EVP_HASH_CTX *dst, const EVP_HASH_CTX *src) {
     if (!dst || !src) return TCLIB_ERR_NULL_PTR;
 
+    // Free existing low-level digest context if present
+    if (dst->digest_ctx) {
+        SECURE_FREE(dst->digest_ctx, dst->md ? dst->md->ctx_size : 0);
+        dst->digest_ctx = NULL;
+    }
+
     // Copy the top-level context
     SECURE_MEMCPY(dst, src, sizeof(EVP_HASH_CTX));
 
-    // Allocate low-level context if needed
+    // Allocate and copy low-level digest context if needed
     if (src->digest_ctx) {
         dst->digest_ctx = SECURE_ALLOC(src->md->ctx_size);
         if (!dst->digest_ctx) return TCLIB_ERR_ALLOC_FAILED;

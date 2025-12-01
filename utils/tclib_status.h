@@ -22,12 +22,13 @@ typedef enum {
     // --------------------------
     // Argument / input issues
     // --------------------------
-    TCLIB_ERR_INVALID_PARAM,    // generic “invalid argument” code
-    TCLIB_ERR_NULL_PTR,         // Passed NULL pointer
-    TCLIB_ERR_INVALID_LEN,      // Invalid length
-    TCLIB_ERR_BAD_STATE,        // Wrong call order
-    TCLIB_ERR_UNSUPPORTED,      // Unsupported algorithm
-    TCLIB_ERR_OUTPUT_TOO_SMALL, // Output buffer too small
+    TCLIB_ERR_INVALID_PARAM,           // generic “invalid argument” code
+    TCLIB_ERR_NULL_PTR,                // Passed NULL pointer
+    TCLIB_ERR_INVALID_LEN,             // Invalid length
+    TCLIB_ERR_BAD_STATE,               // Wrong call order
+    TCLIB_ERR_UNSUPPORTED,             // Unsupported algorithm
+    TCLIB_ERR_OUTPUT_BUFFER_TOO_SMALL, // Output buffer too small
+    TCLIB_ERR_LIMIT_EXCEEDED,
 
     // --------------------------
     // Memory / allocation issues
@@ -65,7 +66,8 @@ static FORCE_INLINE const char* tclib_status_str(TCLIB_STATUS status) {
         case TCLIB_ERR_INVALID_LEN: return "TCLIB_ERR_INVALID_LEN";
         case TCLIB_ERR_BAD_STATE: return "TCLIB_ERR_BAD_STATE";
         case TCLIB_ERR_UNSUPPORTED: return "TCLIB_ERR_UNSUPPORTED";
-        case TCLIB_ERR_OUTPUT_TOO_SMALL: return "TCLIB_ERR_OUTPUT_TOO_SMALL";
+        case TCLIB_ERR_OUTPUT_BUFFER_TOO_SMALL: return "TCLIB_ERR_OUTPUT_BUFFER_TOO_SMALL";
+        case TCLIB_ERR_LIMIT_EXCEEDED: return "TCLIB_ERR_LIMIT_EXCEEDED";
         case TCLIB_ERR_ALLOC_FAILED: return "TCLIB_ERR_ALLOC_FAILED";
         case TCLIB_ERR_CTX_CORRUPT: return "TCLIB_ERR_CTX_CORRUPT";
         case TCLIB_ERR_HASH_FINALIZED: return "TCLIB_ERR_HASH_FINALIZED";
