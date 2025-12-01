@@ -7,13 +7,13 @@
 // 1. Platform / DLL / Compiler Macros
 // ======================
 #ifdef _WIN32
-  #ifdef BUILDING_TC_DLL
-    #define TCLIB_API __declspec(dllexport)
+  #ifdef BUILDING_CF_DLL
+    #define CF_API __declspec(dllexport)
   #else
-    #define TCLIB_API __declspec(dllimport)
+    #define CF_API __declspec(dllimport)
   #endif
 #else
-  #define TCLIB_API
+  #define CF_API
 #endif
 
 #ifdef _MSC_VER

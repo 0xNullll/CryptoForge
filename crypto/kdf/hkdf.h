@@ -8,7 +8,7 @@
 #include "../evp/evp_flags.h"
 
 #include "../../utils/mem.h"
-#include "../../utils/tclib_status.h"
+#include "../../utils/CF_status.h"
 
 #include "../../config/libs.h"
 
@@ -43,34 +43,34 @@ typedef struct _ll_HKDF_CTX {
 // ============================
 
 // Initializes a new HKDF_CTX with optional info; PRK is not set yet.
-TCLIB_STATUS ll_HKDF_Init(ll_HKDF_CTX *ctx, const EVP_MD *md, const uint8_t *info, size_t info_len);
+CF_STATUS ll_HKDF_Init(ll_HKDF_CTX *ctx, const EVP_MD *md, const uint8_t *info, size_t info_len);
 
 // Allocates and initializes a new HKDF_CTX on the heap
-ll_HKDF_CTX* ll_HKDF_InitAlloc(const EVP_MD *md, const uint8_t *info, size_t info_len, TCLIB_STATUS *status);
+ll_HKDF_CTX* ll_HKDF_InitAlloc(const EVP_MD *md, const uint8_t *info, size_t info_len, CF_STATUS *status);
 
 // Performs HKDF-Extract with given salt and input key material, stores PRK in context
-TCLIB_STATUS ll_HKDF_Extract(
+CF_STATUS ll_HKDF_Extract(
     ll_HKDF_CTX *ctx,
     const uint8_t *salt, size_t salt_len,
     const uint8_t *ikm, size_t ikm_len);
 
 // Performs HKDF-Expand using the stored PRK and info, writes OKM of okm_len bytes
-TCLIB_STATUS ll_HKDF_Expand(
+CF_STATUS ll_HKDF_Expand(
     ll_HKDF_CTX *ctx,
     uint8_t *okm, size_t okm_len,
     const uint8_t *new_info, size_t new_info_len);
 
 // Frees internal buffers of a pre-allocated context
-TCLIB_STATUS ll_HKDF_Free(ll_HKDF_CTX *ctx);
+CF_STATUS ll_HKDF_Free(ll_HKDF_CTX *ctx);
 
 // Frees internal buffers + the heap-allocated context
-TCLIB_STATUS ll_HKDF_FreeAlloc(ll_HKDF_CTX **p_ctx);
+CF_STATUS ll_HKDF_FreeAlloc(ll_HKDF_CTX **p_ctx);
 
 // Clone HKDF context into an existing destination context
-TCLIB_STATUS ll_HKDF_CloneCtx(ll_HKDF_CTX *ctx_dest, const ll_HKDF_CTX *ctx_src);
+CF_STATUS ll_HKDF_CloneCtx(ll_HKDF_CTX *ctx_dest, const ll_HKDF_CTX *ctx_src);
 
 // Clone HKDF context and allocate a new heap context
-ll_HKDF_CTX *ll_HKDF_CloneCtxAlloc(const ll_HKDF_CTX *ctx_src, TCLIB_STATUS *status);
+ll_HKDF_CTX *ll_HKDF_CloneCtxAlloc(const ll_HKDF_CTX *ctx_src, CF_STATUS *status);
 
 #ifdef __cplusplus
 }

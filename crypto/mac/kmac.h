@@ -6,7 +6,7 @@
 #include "../evp/evp_flags.h"
 
 #include "../../utils/mem.h"
-#include "../../utils/tclib_status.h"
+#include "../../utils/CF_status.h"
 
 #include "../../config/libs.h"
 
@@ -56,7 +56,7 @@ typedef struct _ll_KMAC_CTX {
 } ll_KMAC_CTX;
 
 // Initializes a new ll_KMAC_CTX for a given key, output length, and optional customization strings.
-TCLIB_STATUS ll_KMAC_Init(
+CF_STATUS ll_KMAC_Init(
     ll_KMAC_CTX *ctx,
     const uint8_t *key, size_t key_len,
     const uint8_t *S, size_t S_len,
@@ -68,23 +68,23 @@ ll_KMAC_CTX* ll_KMAC_InitAlloc(
     const uint8_t *key, size_t key_len,
     const uint8_t *S, size_t S_len,
     ll_KMAC_TYPE type,      // varients: KMAC128, KMAC256, KMACXOF128, KMACXOF256
-    TCLIB_STATUS *status
+    CF_STATUS *status
 );
 
 // Updates the KMAC with data. Can be called multiple times for streaming.
-TCLIB_STATUS ll_KMAC_Update(ll_KMAC_CTX *ctx, const uint8_t *data, size_t data_len);
+CF_STATUS ll_KMAC_Update(ll_KMAC_CTX *ctx, const uint8_t *data, size_t data_len);
 
 // Finalizes the KMAC if not finalized already and writes the output to the digest buffer
-TCLIB_STATUS ll_KMAC_Final(ll_KMAC_CTX *ctx, uint8_t *digest, size_t digest_len);
+CF_STATUS ll_KMAC_Final(ll_KMAC_CTX *ctx, uint8_t *digest, size_t digest_len);
 
 // Resets a KMAC context to its initial state with the same key and customization strings.
-TCLIB_STATUS ll_KMAC_Free(ll_KMAC_CTX *ctx);
+CF_STATUS ll_KMAC_Free(ll_KMAC_CTX *ctx);
 
 // Frees the ll_KMAC_CTX and its internal buffers.
-TCLIB_STATUS ll_KMAC_FreeAlloc(ll_KMAC_CTX **p_ctx);
+CF_STATUS ll_KMAC_FreeAlloc(ll_KMAC_CTX **p_ctx);
 
 // Clones a KMAC context into an existing destination context.
-TCLIB_STATUS ll_KMAC_CloneCtx(
+CF_STATUS ll_KMAC_CloneCtx(
     ll_KMAC_CTX *ctx_dest,
     const ll_KMAC_CTX *ctx_src
 );
@@ -92,7 +92,7 @@ TCLIB_STATUS ll_KMAC_CloneCtx(
 // Clones a KMAC context and allocates a new heap context.
 ll_KMAC_CTX* ll_KMAC_CloneCtxAlloc(
     const ll_KMAC_CTX *ctx_src,
-    TCLIB_STATUS *status
+    CF_STATUS *status
 );
 
 #ifdef __cplusplus

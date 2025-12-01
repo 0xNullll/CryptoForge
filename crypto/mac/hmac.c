@@ -1,17 +1,17 @@
 #include "hmac.h"
 
-TCLIB_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const EVP_MD *md, const uint8_t *key, size_t key_len) {
+CF_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const EVP_MD *md, const uint8_t *key, size_t key_len) {
     if (!ctx || !md || !key)
-        return TCLIB_ERR_NULL_PTR;
+        return CF_ERR_NULL_PTR;
 
     if (key_len == 0)
-        return TCLIB_ERR_INVALID_LEN;
+        return CF_ERR_INVALID_LEN;
 
     if (EVP_IS_XOF(md->id))
-        return TCLIB_ERR_UNSUPPORTED;
+        return CF_ERR_UNSUPPORTED;
 
     if (md->block_size == 0 || md->block_size > EVP_MAX_DEFAULT_BLOCK_SIZE)
-        return TCLIB_ERR_UNSUPPORTED;
+        return CF_ERR_UNSUPPORTED;
 
     ctx->md = md;
     ctx->out_len = md->digest_size != 0 ? md->digest_size : md->default_out_len;
@@ -19,12 +19,12 @@ TCLIB_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const EVP_MD *md, const uint8_t *key
     // allocate low-level internal contexts
     ctx->ipad_ctx = SECURE_ALLOC(md->ctx_size);
     if (!ctx->ipad_ctx)
-        return TCLIB_ERR_ALLOC_FAILED;
+        return CF_ERR_ALLOC_FAILED;
 
     ctx->opad_ctx = SECURE_ALLOC(md->ctx_size);
     if (!ctx->opad_ctx) {
         SECURE_FREE(ctx->ipad_ctx, md->ctx_size);
-        return TCLIB_ERR_ALLOC_FAILED;
+        return CF_ERR_ALLOC_FAILED;
     }
 
     // normalize key
@@ -68,7 +68,7 @@ TCLIB_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const EVP_MD *md, const uint8_t *key
 
     ctx->isHeapAlloc = 0;
     ctx->isFinalized = 0;
-    return TCLIB_SUCCESS;
+    return CF_SUCCESS;
 
 cleanup:
     if (ctx->ipad_ctx) {
@@ -81,61 +81,61 @@ cleanup:
         SECURE_FREE(ctx->opad_ctx, md->ctx_size);
     }
 
-    return TCLIB_ERR_CTX_CORRUPT;
+    return CF_ERR_CTX_CORRUPT;
 }
 
-ll_HMAC_CTX* ll_HMAC_InitAlloc(const EVP_MD *md, const uint8_t *key, size_t key_len, TCLIB_STATUS *status) {
+ll_HMAC_CTX* ll_HMAC_InitAlloc(const EVP_MD *md, const uint8_t *key, size_t key_len, CF_STATUS *status) {
     if (!md) {
-        if (status) *status = TCLIB_ERR_NULL_PTR;
+        if (status) *status = CF_ERR_NULL_PTR;
         return NULL;
     }
 
     ll_HMAC_CTX *ctx = CREATE_CTX(ll_HMAC_CTX);
     if (!ctx) {
-        if (status) *status = TCLIB_ERR_ALLOC_FAILED;
+        if (status) *status = CF_ERR_ALLOC_FAILED;
         return NULL;
     }
 
-    TCLIB_STATUS st = ll_HMAC_Init(ctx, md, key, key_len);
-    if (st != TCLIB_SUCCESS) {
+    CF_STATUS st = ll_HMAC_Init(ctx, md, key, key_len);
+    if (st != CF_SUCCESS) {
         DESTROY_CTX(ctx, ll_HMAC_CTX);
         if (status) *status = st;
         return NULL;
     }
 
     ctx->isHeapAlloc = 1;
-    if (status) *status = TCLIB_SUCCESS;
+    if (status) *status = CF_SUCCESS;
     return ctx;
 }
 
-TCLIB_STATUS ll_HMAC_Update(ll_HMAC_CTX *ctx, const uint8_t *data, size_t data_len) {
+CF_STATUS ll_HMAC_Update(ll_HMAC_CTX *ctx, const uint8_t *data, size_t data_len) {
     if (!ctx || !ctx->md || !ctx->ipad_ctx)
-        return TCLIB_ERR_NULL_PTR;
+        return CF_ERR_NULL_PTR;
 
     if (data_len > 0 && !data)
-        return TCLIB_ERR_INVALID_PARAM;
+        return CF_ERR_INVALID_PARAM;
 
     if (ctx->isFinalized) 
-        return TCLIB_ERR_HASH_FINALIZED;
+        return CF_ERR_HASH_FINALIZED;
 
     if (data_len == 0)
-        return TCLIB_SUCCESS; // noop
+        return CF_SUCCESS; // noop
 
     if (!ctx->md->hash_update_fn(ctx->ipad_ctx, data, data_len))
-        return TCLIB_ERR_CTX_CORRUPT;
+        return CF_ERR_CTX_CORRUPT;
 
-    return TCLIB_SUCCESS;
+    return CF_SUCCESS;
 }
 
-TCLIB_STATUS ll_HMAC_Final(ll_HMAC_CTX *ctx, uint8_t *digest, size_t digest_len) {
+CF_STATUS ll_HMAC_Final(ll_HMAC_CTX *ctx, uint8_t *digest, size_t digest_len) {
     if (!ctx || !ctx->md || !ctx->ipad_ctx || !ctx->opad_ctx || !digest)
-        return TCLIB_ERR_NULL_PTR;
+        return CF_ERR_NULL_PTR;
 
     if (digest_len == 0 && ctx->out_len == 0)
-        return TCLIB_ERR_INVALID_LEN; // nothing to write
+        return CF_ERR_INVALID_LEN; // nothing to write
 
     if (ctx->isFinalized) 
-        return TCLIB_ERR_HASH_FINALIZED;
+        return CF_ERR_HASH_FINALIZED;
 
     size_t final_len = 0;
 
@@ -145,7 +145,7 @@ TCLIB_STATUS ll_HMAC_Final(ll_HMAC_CTX *ctx, uint8_t *digest, size_t digest_len)
 #else
     // strict mode: digest_len must be explicitly provided
     if (digest_len == 0)
-        return TCLIB_ERR_INVALID_LEN;
+        return CF_ERR_INVALID_LEN;
     final_len = digest_len;
 #endif
 
@@ -157,25 +157,25 @@ TCLIB_STATUS ll_HMAC_Final(ll_HMAC_CTX *ctx, uint8_t *digest, size_t digest_len)
 
     // compute inner hash
     if (!ctx->md->hash_final_fn(ctx->ipad_ctx, inner_hash, ctx->md->digest_size))
-        return TCLIB_ERR_CTX_CORRUPT;
+        return CF_ERR_CTX_CORRUPT;
 
     // feed inner hash into opad context
     if (!ctx->md->hash_update_fn(ctx->opad_ctx, inner_hash, ctx->md->digest_size))
-        return TCLIB_ERR_CTX_CORRUPT;
+        return CF_ERR_CTX_CORRUPT;
 
     // compute final HMAC
     if (!ctx->md->hash_final_fn(ctx->opad_ctx, digest, final_len))
-        return TCLIB_ERR_CTX_CORRUPT;
+        return CF_ERR_CTX_CORRUPT;
 
     SECURE_ZERO(inner_hash, sizeof(inner_hash));
     ctx->isFinalized = 1;
 
-    return TCLIB_SUCCESS;
+    return CF_SUCCESS;
 }
 
-TCLIB_STATUS ll_HMAC_Free(ll_HMAC_CTX *ctx) {
+CF_STATUS ll_HMAC_Free(ll_HMAC_CTX *ctx) {
     if (!ctx || !ctx->md)
-        return TCLIB_ERR_NULL_PTR;
+        return CF_ERR_NULL_PTR;
 
     // Zero and free inner (ipad) and outer (opad) contexts
     if (ctx->ipad_ctx) {
@@ -197,12 +197,12 @@ TCLIB_STATUS ll_HMAC_Free(ll_HMAC_CTX *ctx) {
     ctx->isFinalized = 0;
     ctx->isHeapAlloc = 0;
 
-    return TCLIB_SUCCESS;
+    return CF_SUCCESS;
 }
 
-TCLIB_STATUS ll_HMAC_FreeAlloc(ll_HMAC_CTX **p_ctx) {
+CF_STATUS ll_HMAC_FreeAlloc(ll_HMAC_CTX **p_ctx) {
     if (!p_ctx || !*p_ctx)
-        return TCLIB_ERR_NULL_PTR;
+        return CF_ERR_NULL_PTR;
 
     ll_HMAC_CTX *ctx = *p_ctx;
     int wasHeapAlloc = ctx->isHeapAlloc;  // save flag
@@ -217,12 +217,12 @@ TCLIB_STATUS ll_HMAC_FreeAlloc(ll_HMAC_CTX **p_ctx) {
         *p_ctx = NULL;
     }
 
-    return TCLIB_SUCCESS;
+    return CF_SUCCESS;
 }
 
-TCLIB_STATUS ll_HMAC_CloneCtx(ll_HMAC_CTX *ctx_dest, const ll_HMAC_CTX *ctx_src) {
+CF_STATUS ll_HMAC_CloneCtx(ll_HMAC_CTX *ctx_dest, const ll_HMAC_CTX *ctx_src) {
     if (!ctx_dest || !ctx_src)
-        return TCLIB_ERR_NULL_PTR;
+        return CF_ERR_NULL_PTR;
 
     // Copy MD pointer
     ctx_dest->md = ctx_src->md;
@@ -243,7 +243,7 @@ TCLIB_STATUS ll_HMAC_CloneCtx(ll_HMAC_CTX *ctx_dest, const ll_HMAC_CTX *ctx_src)
         ctx_dest->ipad_ctx = SECURE_ALLOC(ctx_src->md->ctx_size);
         ctx_dest->opad_ctx = SECURE_ALLOC(ctx_src->md->ctx_size);
         if (!ctx_dest->ipad_ctx || !ctx_dest->opad_ctx)
-            return TCLIB_ERR_ALLOC_FAILED;
+            return CF_ERR_ALLOC_FAILED;
 
         // Copy the memory from source
         SECURE_MEMCPY(ctx_dest->ipad_ctx, ctx_src->ipad_ctx, ctx_src->md->ctx_size);
@@ -257,25 +257,25 @@ TCLIB_STATUS ll_HMAC_CloneCtx(ll_HMAC_CTX *ctx_dest, const ll_HMAC_CTX *ctx_src)
     ctx_dest->isFinalized = ctx_src->isFinalized;
     ctx_dest->isHeapAlloc = 0; // pre-allocated, no dynamic memory inside
 
-    return TCLIB_SUCCESS;
+    return CF_SUCCESS;
 }
 
-ll_HMAC_CTX *ll_HMAC_CloneCtxAlloc(const ll_HMAC_CTX *ctx_src, TCLIB_STATUS *status) {
+ll_HMAC_CTX *ll_HMAC_CloneCtxAlloc(const ll_HMAC_CTX *ctx_src, CF_STATUS *status) {
     if (!ctx_src) {
-        if (status) *status = TCLIB_ERR_NULL_PTR;
+        if (status) *status = CF_ERR_NULL_PTR;
         return NULL;
     }
 
     // Allocate the destination context
     ll_HMAC_CTX *ctx_dest = CREATE_CTX(ll_HMAC_CTX);
     if (!ctx_dest) {
-        if (status) *status = TCLIB_ERR_ALLOC_FAILED;
+        if (status) *status = CF_ERR_ALLOC_FAILED;
         return NULL;
     }
 
     // Use the in-place clone function
-    TCLIB_STATUS ret = ll_HMAC_CloneCtx(ctx_dest, ctx_src);
-    if (ret != TCLIB_SUCCESS) {
+    CF_STATUS ret = ll_HMAC_CloneCtx(ctx_dest, ctx_src);
+    if (ret != CF_SUCCESS) {
         DESTROY_CTX(ctx_dest, sizeof(ll_HMAC_CTX));
         return NULL;
     }

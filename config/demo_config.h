@@ -2,7 +2,7 @@
 #define DEMO_HASH_H
 
 #include "crypto_config.h"  // include high-level flags
-#include "../utils/tclib_status.h"
+#include "../utils/cf_status.h"
 #include "../utils/misc_utils.h"
 
 #if ENABLE_TESTS  // only include/demo code if tests are enabled
@@ -37,13 +37,13 @@ FORCE_INLINE void DEMO_print_hex(const uint8_t *digest, size_t size) {
 }
 
 // Test helper (for dev)
-TCLIB_API void test_all_hashes(const uint8_t *input, size_t input_len, const EVP_XOF_OPTS *opts);
+CF_API void test_all_hashes(const uint8_t *input, size_t input_len, const EVP_XOF_OPTS *opts);
 
-TCLIB_API void test_all_hashes_high(const uint8_t *input, size_t input_len, const EVP_XOF_OPTS *opts);
+CF_API void test_all_hashes_high(const uint8_t *input, size_t input_len, const EVP_XOF_OPTS *opts);
 
-TCLIB_API void test_all_hmacs(const uint8_t *key, size_t key_len, const uint8_t *input, size_t input_len);
+CF_API void test_all_hmacs(const uint8_t *key, size_t key_len, const uint8_t *input, size_t input_len);
 
-TCLIB_API void test_all_kmacs(
+CF_API void test_all_kmacs(
     const uint8_t *key, size_t key_len,
     const uint8_t *input, size_t input_len,
     const uint8_t *S, size_t S_len);

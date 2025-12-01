@@ -1,7 +1,7 @@
 #include "../config/demo_config.h"
 
 int main(void) {
-    TCLIB_STATUS status;
+    CF_STATUS status;
 
     const char *input = "My Tagged Application";
     size_t input_len = strlen(input);
@@ -21,7 +21,7 @@ int main(void) {
                              32          // Output length in bytes
     );
 
-    if (status != TCLIB_SUCCESS) {
+    if (status != CF_SUCCESS) {
         printf("EVP_FillXOFOpts failed\n");
         return 1;
     }
@@ -40,13 +40,13 @@ int main(void) {
     EVP_HASH_CTX ctx;
 
     status = EVP_HashInit(&ctx, md, NULL);
-    if (status != TCLIB_SUCCESS) { printf("EVP_HashInit failed\n"); return 1; }
+    if (status != CF_SUCCESS) { printf("EVP_HashInit failed\n"); return 1; }
 
     status = EVP_HashUpdate(&ctx, (uint8_t*)input, input_len);
-    if (status != TCLIB_SUCCESS) { printf("EVP_HashUpdate failed\n"); return 1; }
+    if (status != CF_SUCCESS) { printf("EVP_HashUpdate failed\n"); return 1; }
 
     status = EVP_HashFinal(&ctx, digest, out_len);
-    if (status != TCLIB_SUCCESS) { printf("EVP_HashFinal failed\n"); return 1; }
+    if (status != CF_SUCCESS) { printf("EVP_HashFinal failed\n"); return 1; }
 
     printf("Digest %s: ", EVP_HashName(md));
     for (size_t i = 0; i < EVP_HashDigestSize(&ctx); i++)

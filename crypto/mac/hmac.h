@@ -6,7 +6,7 @@
 #include "../evp/evp_flags.h"
 
 #include "../../utils/mem.h"
-#include "../../utils/tclib_status.h"
+#include "../../utils/CF_status.h"
 
 #include "../../config/libs.h"
 
@@ -35,30 +35,30 @@ typedef struct _ll_HMAC_CTX {
 // ============================
 
 // initializes a new HMAC_CTX for a given EVP_MD hash and key.
-TCLIB_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const EVP_MD *md, const uint8_t *key, size_t key_len);
+CF_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const EVP_MD *md, const uint8_t *key, size_t key_len);
 
 // Allocates and initializes a new HMAC_CTX for a given EVP_MD hash and key.
 // Returns NULL on allocation failure.
-ll_HMAC_CTX* ll_HMAC_InitAlloc(const EVP_MD *md, const uint8_t *key, size_t key_len, TCLIB_STATUS *status);
+ll_HMAC_CTX* ll_HMAC_InitAlloc(const EVP_MD *md, const uint8_t *key, size_t key_len, CF_STATUS *status);
 
 // Updates the HMAC with data. Can be called multiple times for streaming.
-TCLIB_STATUS ll_HMAC_Update(ll_HMAC_CTX *ctx, const uint8_t *data, size_t data_len);
+CF_STATUS ll_HMAC_Update(ll_HMAC_CTX *ctx, const uint8_t *data, size_t data_len);
 
 // Finalizes the HMAC and writes the digest to the output buffer.
 // digest_len should be at least the hash's digest_size.
-TCLIB_STATUS ll_HMAC_Final(ll_HMAC_CTX *ctx, uint8_t *digest, size_t digest_len);
+CF_STATUS ll_HMAC_Final(ll_HMAC_CTX *ctx, uint8_t *digest, size_t digest_len);
 
 // Frees internal buffers of a pre-allocated context
-TCLIB_STATUS ll_HMAC_Free(ll_HMAC_CTX *ctx);
+CF_STATUS ll_HMAC_Free(ll_HMAC_CTX *ctx);
 
 // Frees internal buffers + the heap-allocated context
-TCLIB_STATUS ll_HMAC_FreeAlloc(ll_HMAC_CTX **p_ctx);
+CF_STATUS ll_HMAC_FreeAlloc(ll_HMAC_CTX **p_ctx);
 
 // Clone HMAC context into an existing destination context
-TCLIB_STATUS ll_HMAC_CloneCtx(ll_HMAC_CTX *ctx_dest, const ll_HMAC_CTX *ctx_src);
+CF_STATUS ll_HMAC_CloneCtx(ll_HMAC_CTX *ctx_dest, const ll_HMAC_CTX *ctx_src);
 
 // Clone HMAC context and allocate a new heap context
-ll_HMAC_CTX *ll_HMAC_CloneCtxAlloc(const ll_HMAC_CTX *ctx_src, TCLIB_STATUS *status);
+ll_HMAC_CTX *ll_HMAC_CloneCtxAlloc(const ll_HMAC_CTX *ctx_src, CF_STATUS *status);
 
 #ifdef __cplusplus
 }

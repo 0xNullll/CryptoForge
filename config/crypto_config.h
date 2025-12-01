@@ -1,8 +1,8 @@
 #ifndef CRYPTO_CONFIG_H
 #define CRYPTO_CONFIG_H
 
-#ifndef BUILDING_TC_DLL
-#define BUILDING_TC_DLL 1
+#ifndef BUILDING_CF_DLL
+#define BUILDING_CF_DLL 1
 #endif
 
 #ifndef HASH_FALLBACK_DEFAULT_LEN
