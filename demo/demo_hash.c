@@ -120,7 +120,7 @@ void test_all_hashes_high(const uint8_t *input, size_t input_len, const EVP_XOF_
         size_t out_len = md->digest_size ? md->digest_size
                                          : md->default_out_len;
 
-        TCLIB_STATUS status;
+        CF_STATUS status;
 
         if (EVP_IS_XOF(md->id)) {
             // XOF and cSHAKE
@@ -142,7 +142,7 @@ void test_all_hashes_high(const uint8_t *input, size_t input_len, const EVP_XOF_
             );
         }
 
-        if (status != TCLIB_SUCCESS) {
+        if (status != CF_SUCCESS) {
             printf("%s failed (status=%d)\n",
                    EVP_HashName(md),
                    status);

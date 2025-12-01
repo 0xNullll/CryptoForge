@@ -30,14 +30,14 @@ void test_all_hmacs(const uint8_t *key, size_t key_len, const uint8_t *input, si
         }
 
         ll_HMAC_CTX hmac_ctx;
-        TCLIB_STATUS status = ll_HMAC_Init(&hmac_ctx, md, key, key_len);
-        if (status != TCLIB_SUCCESS) { 
+        CF_STATUS status = ll_HMAC_Init(&hmac_ctx, md, key, key_len);
+        if (status != CF_SUCCESS) { 
             printf("ll_HMAC_Init failed for %s\n", EVP_HashName(hmac_ctx.md)); 
             continue; 
         }
 
         status = ll_HMAC_Update(&hmac_ctx, input, input_len);
-        if (status != TCLIB_SUCCESS) { 
+        if (status != CF_SUCCESS) { 
             printf("ll_HMAC_Update failed for %s\n", EVP_HashName(hmac_ctx.md)); 
             ll_HMAC_Free(&hmac_ctx); 
             continue; 
@@ -45,7 +45,7 @@ void test_all_hmacs(const uint8_t *key, size_t key_len, const uint8_t *input, si
 
         size_t out_len = hmac_ctx.out_len;
         status = ll_HMAC_Final(&hmac_ctx, digest, out_len);
-        if (status != TCLIB_SUCCESS) { 
+        if (status != CF_SUCCESS) { 
             printf("ll_HMAC_Final failed for %s\n", EVP_HashName(hmac_ctx.md)); 
             ll_HMAC_Free(&hmac_ctx); 
             continue; 
@@ -87,15 +87,15 @@ void test_all_kmacs(
                             : (kmac_types[i] == KMAC128 ? CSHAKE128_DEFAULT_OUT_LEN : CSHAKE256_DEFAULT_OUT_LEN);
 
         // Initialize
-        TCLIB_STATUS status = ll_KMAC_Init(&kmac_ctx, key, key_len, S, S_len, kmac_types[i]);
-        if (status != TCLIB_SUCCESS) {
+        CF_STATUS status = ll_KMAC_Init(&kmac_ctx, key, key_len, S, S_len, kmac_types[i]);
+        if (status != CF_SUCCESS) {
             printf("ll_KMAC_Init failed: error code = %u\n", status);
             continue;
         }
 
         // Absorb input
         status = ll_KMAC_Update(&kmac_ctx, input, input_len);
-        if (status != TCLIB_SUCCESS) {
+        if (status != CF_SUCCESS) {
             printf("ll_KMAC_Update failed: error code = %u\n", status);
             ll_KMAC_Free(&kmac_ctx);
             continue;
@@ -103,7 +103,7 @@ void test_all_kmacs(
 
         // Finalize
         status = ll_KMAC_Final(&kmac_ctx, digest, out_len);
-        if (status != TCLIB_SUCCESS) {
+        if (status != CF_SUCCESS) {
             printf("ll_KMAC_Final failed: error code = %u\n", status);
             ll_KMAC_Free(&kmac_ctx);
             continue;
