@@ -5,6 +5,22 @@
 #define BUILDING_TC_DLL 1
 #endif
 
+#ifndef HASH_FALLBACK_DEFAULT_LEN
+#define HASH_FALLBACK_DEFAULT_LEN 1 // If defined, digest_len=0 will fall back to default hash size
+#endif 
+
+#ifndef HMAC_FALLBACK_DEFAULT_LEN
+#define HMAC_FALLBACK_DEFAULT_LEN 1 // If defined, digest_len=0 will fall back to default HMAC size
+#endif 
+
+#ifndef KMAC_FALLBACK_DEFAULT_LEN
+#define KMAC_FALLBACK_DEFAULT_LEN 1 // If defined, digest_len=0 will fall back to default KMAC size
+#endif 
+
+#ifndef HKDF_FALLBACK_DEFAULT_LEN
+#define HKDF_FALLBACK_DEFAULT_LEN 1 // If defined, digest_len=0 will fall back to default HKDF size
+#endif 
+
 #ifndef ENABLE_TESTS
 #define ENABLE_TESTS 1       // enable demo/test code
 #endif

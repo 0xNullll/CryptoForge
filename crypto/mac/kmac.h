@@ -18,8 +18,8 @@ extern "C" {
     ((type) == KMAC128 || (type) == KMAC256 || \
      (type) == KMACXOF128 || (type) == KMACXOF256)
 
-#define LL_KMAC_IS_128(ctx) ((ctx)->type == KMAC128 || (ctx)->type == KMACXOF128)
-#define LL_KMAC_IS_XOF(ctx) ((ctx)->type == KMACXOF128 || (ctx)->type == KMACXOF256)
+#define LL_KMAC_IS_128(type) ((type) == KMAC128 || (type) == KMACXOF128)
+#define LL_KMAC_IS_XOF(type) ((type) == KMACXOF128 || (type) == KMACXOF256)
 
 typedef enum {
     KMAC128      = EVP_CAT_MAC | 0x0002,

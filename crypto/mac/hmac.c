@@ -137,8 +137,21 @@ TCLIB_STATUS ll_HMAC_Final(ll_HMAC_CTX *ctx, uint8_t *digest, size_t digest_len)
     if (ctx->isFinalized) 
         return TCLIB_ERR_HASH_FINALIZED;
 
-    size_t final_len = (digest_len != 0) ? digest_len : ctx->out_len;
-    if (final_len > ctx->out_len) final_len = ctx->out_len; // clamp
+    size_t final_len = 0;
+
+#ifdef HMAC_FALLBACK_DEFAULT_LEN
+    // If digest_len==0, use underlying hash size
+    final_len = (digest_len != 0) ? digest_len : ctx->md->default_out_len;
+#else
+    // strict mode: digest_len must be explicitly provided
+    if (digest_len == 0)
+        return TCLIB_ERR_INVALID_LEN;
+    final_len = digest_len;
+#endif
+
+    // Safety: cannot exceed hash output
+    if (final_len > ctx->md->default_out_len)
+        final_len = ctx->md->default_out_len;
 
     uint8_t inner_hash[EVP_MAX_DEFAULT_DIGEST_SIZE];
 
@@ -216,6 +229,23 @@ TCLIB_STATUS ll_HMAC_CloneCtx(ll_HMAC_CTX *ctx_dest, const ll_HMAC_CTX *ctx_src)
 
     // Copy the inner and outer contexts as raw memory
     if (ctx_src->md && ctx_src->md->ctx_size > 0) {
+        // Free existing destination buffers if allocated
+        if (ctx_dest->ipad_ctx) {
+            SECURE_FREE(ctx_dest->ipad_ctx, ctx_src->md->ctx_size);
+            ctx_dest->ipad_ctx = NULL;
+        }
+        if (ctx_dest->opad_ctx) {
+            SECURE_FREE(ctx_dest->opad_ctx, ctx_src->md->ctx_size);
+            ctx_dest->opad_ctx = NULL;
+        }
+
+        // Allocate new memory for destination
+        ctx_dest->ipad_ctx = SECURE_ALLOC(ctx_src->md->ctx_size);
+        ctx_dest->opad_ctx = SECURE_ALLOC(ctx_src->md->ctx_size);
+        if (!ctx_dest->ipad_ctx || !ctx_dest->opad_ctx)
+            return TCLIB_ERR_ALLOC_FAILED;
+
+        // Copy the memory from source
         SECURE_MEMCPY(ctx_dest->ipad_ctx, ctx_src->ipad_ctx, ctx_src->md->ctx_size);
         SECURE_MEMCPY(ctx_dest->opad_ctx, ctx_src->opad_ctx, ctx_src->md->ctx_size);
     }
