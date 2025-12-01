@@ -737,29 +737,28 @@ CF_STATUS EVP_HashFinal(EVP_HASH_CTX *ctx, uint8_t *digest, size_t digest_len) {
     if (!digest)
         return CF_ERR_NULL_PTR;
 
-    size_t final_len = 0;
+    size_t final_len;
 
-#if HASH_FALLBACK_DEFAULT_LEN
-    final_len = (digest_len != 0) ? digest_len : ctx->md->default_out_len;
-#else
-    if (!EVP_IS_XOF(ctx->md->id)) {
-        // Fixed-length hash
-        if (digest_len < ctx->md->default_out_len)
-            return CF_ERR_OUTPUT_BUFFER_TOO_SMALL;
-        final_len = ctx->md->default_out_len;
-    } else {
-        // XOF
+    if (EVP_IS_XOF(ctx->md->id)) {
+        // XOF: allow variable-length output
         if (digest_len == 0)
             return CF_ERR_INVALID_LEN;
         final_len = digest_len;
-    }
-#endif
+    } else {
+        // Fixed-length hash: always use default size
+        final_len = ctx->md->default_out_len;
 
+        // Optional: ensure caller buffer is large enough
+        if (digest_len != 0 && digest_len < final_len)
+            return CF_ERR_OUTPUT_BUFFER_TOO_SMALL;
+    }
+
+    // Finalize hash
     if (!ctx->md->hash_final_fn(ctx->digest_ctx, digest, final_len))
         return CF_ERR_CTX_CORRUPT;
 
-    if (ctx->md->hash_squeeze_fn) {
-        // For XOF and SHA3: only call hash_squeeze_fn
+    // For XOFs or SHA3 variants that require squeezing
+    if (ctx->md->hash_squeeze_fn && EVP_IS_XOF(ctx->md->id)) {
         if (!ctx->md->hash_squeeze_fn(ctx->digest_ctx, digest, final_len))
             return CF_ERR_CTX_CORRUPT;
     }
@@ -785,8 +784,9 @@ CF_STATUS EVP_HashFree(EVP_HASH_CTX *ctx) {
         ctx->isHeapAllocOpts = 0;
     }
 
-    // Reset bookkeeping
-    ctx->out_len = ctx->md->digest_size != 0 ? ctx->md->digest_size : ctx->md->default_out_len;
+    // zero the high level info
+    SECURE_ZERO(ctx, sizeof(*ctx));
+
     ctx->isFinalized = 0;
     ctx->isHeapAlloc = 0;
 

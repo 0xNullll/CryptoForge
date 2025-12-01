@@ -60,12 +60,10 @@ void test_all_hmacs(const uint8_t *key, size_t key_len, const uint8_t *input, si
 }
 
 // Test all KMAC variants
-// Test all KMAC variants
 void test_all_kmacs(
     const uint8_t *key, size_t key_len,
     const uint8_t *input, size_t input_len,
-    const uint8_t *S, size_t S_len)
-{
+    const uint8_t *S, size_t S_len) {
     uint8_t digest[EVP_MAX_DEFAULT_DIGEST_SIZE];
 
     // KMAC types to test
