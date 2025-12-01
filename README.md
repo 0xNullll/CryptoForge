@@ -58,7 +58,19 @@ Provide **confidentiality** via block and stream ciphers.
 
 ---
 
-### 5. RNG / DRBG
+### 5. Asymmetric Ciphers
+Provide **key exchange, digital signatures, and encryption** using public/private key pairs.
+
+- [ ] **RSA** – widely used for encryption and signatures; security depends on factoring large integers.
+- [ ] **Elliptic Curve Cryptography (ECC / ECDSA / ECDH)** – smaller keys, efficient; used for signatures (ECDSA) and key exchange (ECDH).
+- [ ] **EdDSA (Ed25519)** – modern signature scheme, fast and secure.
+- [ ] **Diffie-Hellman (DH)** – key exchange protocol, establishes shared secret over insecure channels.
+
+**Notes:** Focus on RSA and ECC for most practical implementations. Use DH or ECDH for secure session key establishment.
+
+---
+
+### 6. RNG / DRBG
 Random number generation for keys, nonces, and salts.
 
 - [ ] **Fast PRNG (Xorshift128+, PCG)** – software-efficient, non-crypto use.
@@ -69,7 +81,7 @@ Random number generation for keys, nonces, and salts.
 
 ---
 
-### 6. Salts / Nonces
+### 7. Salts / Nonces
 Stretch and derive keys securely. Turn passwords or shared secrets into cryptographically strong keys.
 
 - [ ] **Salt generator (RNG)** – for hashing, KDFs, and MACs.
@@ -77,7 +89,7 @@ Stretch and derive keys securely. Turn passwords or shared secrets into cryptogr
 
 ---
 
-### 7. Key Derivation Functions (KDFs)
+### 8. Key Derivation Functions (KDFs)
 Stretch and derive keys securely.
 
 - [ ] **scrypt** – memory-hard KDF designed to derive strong keys from low-entropy inputs
@@ -86,7 +98,7 @@ Stretch and derive keys securely.
 
 ---
 
-### 8. Padding Utilities
+### 9. Padding Utilities
 Required for block ciphers to handle plaintext not aligned to block size.
 
 - [ ] **PKCS#7 padding** – standard padding scheme.
@@ -94,11 +106,12 @@ Required for block ciphers to handle plaintext not aligned to block size.
 
 ---
 
-### 9. Optional / Future Enhancements
+### 10. Optional / Future Enhancements
 - Additional AES modes (CFB, OFB, CCM) and ChaCha variants.
 - TRNGs (jitter, thermal noise, hardware-based) for high-quality entropy.
 - Unit tests using RFC/NIST test vectors.
 - Integrated authenticated encryption pipelines combining MACs and ciphers.
+
 ---
 
 ## Directory Structure
@@ -167,7 +180,7 @@ Required for block ciphers to handle plaintext not aligned to block size.
 - [FIPS 202 – SHA-3 Standard: Permutation-Based Hash and Extendable-Output Functions, August 2015](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf)
 - [RFC 2104 – HMAC: Keyed-Hashing for Message Authentication, February 1997](https://www.rfc-editor.org/rfc/rfc2104)
 - [SP800-185 – SHA-3 Derived Functions: cSHAKE, KMAC, TupleHash, ParallelHash, August 2015](https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf)
-
+- [RFC 5869 – HMAC-based Extract-and-Expand Key Derivation Function (HKDF), May 2010](https://datatracker.ietf.org/doc/html/rfc5869)
 
 ---
 

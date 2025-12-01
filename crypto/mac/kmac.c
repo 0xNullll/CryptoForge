@@ -178,34 +178,14 @@ CF_STATUS ll_KMAC_Update(ll_KMAC_CTX *ctx, const uint8_t *data, size_t data_len)
 CF_STATUS ll_KMAC_Final(ll_KMAC_CTX *ctx, uint8_t *digest, size_t digest_len) {
     if (!ctx || !ctx->cshake_ctx || !digest) return CF_ERR_NULL_PTR;
 
-    size_t final_len = digest_len ? digest_len : ctx->out_len;
-
-    // For non-XOF, store final_len on first finalization
-    if (!ctx->isXOF && !ctx->isFinalized)
-        ctx->out_len = final_len;
-
-    /* ------------------- Safety Cap / Fallback ------------------- */
-#ifdef KMAC_FALLBACK_DEFAULT_LEN
-    if (!ctx->isXOF) {
-        // fallback to base digest size if length not provided
-        final_len = digest_len ? digest_len : ctx->out_len;
-    } else {
-        // XOF requires explicit digest length
-        if (digest_len == 0) 
-            return CF_ERR_INVALID_LEN;
-        final_len = digest_len;
-    }
-#else
-    // strict mode: digest_len must be explicitly provided
-    if (digest_len == 0) 
+    // XOF must have explicit output length
+    if (digest_len == 0)
         return CF_ERR_INVALID_LEN;
-    final_len = digest_len;
-#endif
 
     // already finalized → just squeeze
     if (ctx->isFinalized) {
-        if (!ctx->isXOF && final_len != ctx->out_len) return CF_ERR_INVALID_LEN;
-        if (!ll_KMAC_SQUEEZE(ctx, digest, final_len)) return CF_ERR_CTX_CORRUPT;
+        if (!ctx->isXOF && digest_len != ctx->out_len) return CF_ERR_INVALID_LEN;
+        if (!ll_KMAC_SQUEEZE(ctx, digest, digest_len)) return CF_ERR_CTX_CORRUPT;
         return CF_SUCCESS;
     }
 
@@ -215,7 +195,7 @@ CF_STATUS ll_KMAC_Final(ll_KMAC_CTX *ctx, uint8_t *digest, size_t digest_len) {
 
     // right_encode(L) or right_encode(0)
     size_t tmp_len = ctx->isXOF ? ll_right_encode_uint64(0, tmp)
-                                : ll_right_encode_uint64((uint64_t)final_len * 8, tmp);
+                                : ll_right_encode_uint64((uint64_t)digest_len * 8, tmp);
 
     if (tmp_len == 0) return CF_ERR_INVALID_LEN;
 
@@ -224,7 +204,7 @@ CF_STATUS ll_KMAC_Final(ll_KMAC_CTX *ctx, uint8_t *digest, size_t digest_len) {
         return CF_ERR_CTX_CORRUPT;
 
     // Now squeeze
-    if (!ll_KMAC_SQUEEZE(ctx, digest, final_len))
+    if (!ll_KMAC_SQUEEZE(ctx, digest, digest_len))
         return CF_ERR_CTX_CORRUPT;
 
     ctx->isFinalized = 1;

@@ -48,6 +48,12 @@ CF_API void test_all_kmacs(
     const uint8_t *input, size_t input_len,
     const uint8_t *S, size_t S_len);
 
+CF_API void test_all_hkdfs(
+    const uint8_t *info, size_t info_len,
+    const uint8_t *salt, size_t salt_len,
+    const uint8_t *ikm, size_t ikm_len,
+    size_t okm_len);
+
 #ifdef __cplusplus
 }
 #endif

@@ -137,22 +137,7 @@ CF_STATUS ll_HMAC_Final(ll_HMAC_CTX *ctx, uint8_t *digest, size_t digest_len) {
     if (ctx->isFinalized) 
         return CF_ERR_HASH_FINALIZED;
 
-    size_t final_len = 0;
-
-#ifdef HMAC_FALLBACK_DEFAULT_LEN
-    // If digest_len==0, use underlying hash size
-    final_len = (digest_len != 0) ? digest_len : ctx->md->default_out_len;
-#else
-    // strict mode: digest_len must be explicitly provided
-    if (digest_len == 0)
-        return CF_ERR_INVALID_LEN;
-    final_len = digest_len;
-#endif
-
-    // Safety: cannot exceed hash output
-    if (final_len > ctx->md->default_out_len)
-        final_len = ctx->md->default_out_len;
-
+    const size_t hash_len = ctx->md->digest_size;
     uint8_t inner_hash[EVP_MAX_DEFAULT_DIGEST_SIZE];
 
     // compute inner hash
@@ -164,7 +149,7 @@ CF_STATUS ll_HMAC_Final(ll_HMAC_CTX *ctx, uint8_t *digest, size_t digest_len) {
         return CF_ERR_CTX_CORRUPT;
 
     // compute final HMAC
-    if (!ctx->md->hash_final_fn(ctx->opad_ctx, digest, final_len))
+    if (!ctx->md->hash_final_fn(ctx->opad_ctx, digest, hash_len))
         return CF_ERR_CTX_CORRUPT;
 
     SECURE_ZERO(inner_hash, sizeof(inner_hash));

@@ -61,6 +61,7 @@ ll_HKDF_CTX* ll_HKDF_InitAlloc(const EVP_MD *md, const uint8_t *info, size_t inf
     if (status) *status = CF_SUCCESS;
     return ctx;
 }
+
 CF_STATUS ll_HKDF_Extract(
     ll_HKDF_CTX *ctx,
     const uint8_t *salt, size_t salt_len,
@@ -74,19 +75,7 @@ CF_STATUS ll_HKDF_Extract(
     if (salt && salt_len == 0)
         return CF_ERR_INVALID_PARAM;
 
-    size_t final_len = 0;
-
-#ifdef HKDF_FALLBACK_DEFAULT_LEN
-    final_len = (ikm_len != 0) ? ikm_len : ctx->md->default_out_len;
-#else
-    if (ikm_len == 0)
-        return CF_ERR_INVALID_LEN;
-    final_len = ikm_len;
-#endif
-
-    // Safety cap: cannot exceed hash output
-    if (final_len > ctx->md->default_out_len)
-        final_len = ctx->md->default_out_len;
+    size_t hash_len = ctx->md->digest_size;  // always PRK = hash output size
 
     CF_STATUS st;
     ll_HMAC_CTX *hmac_ctx = (ll_HMAC_CTX *)SECURE_ALLOC(sizeof(ll_HMAC_CTX));
@@ -109,23 +98,23 @@ CF_STATUS ll_HKDF_Extract(
     }
 
     // Allocate and compute PRK
-    ctx->prk = (uint8_t *)SECURE_ALLOC(final_len);
+    ctx->prk = (uint8_t *)SECURE_ALLOC(hash_len);
     if (!ctx->prk) {
         ll_HMAC_Free(hmac_ctx);
         SECURE_FREE(hmac_ctx, sizeof(ll_HMAC_CTX));
         return CF_ERR_ALLOC_FAILED;
     }
 
-    st = ll_HMAC_Final(hmac_ctx, ctx->prk, final_len);
+    st = ll_HMAC_Final(hmac_ctx, ctx->prk, hash_len);
     ll_HMAC_Free(hmac_ctx);                     // clean internal buffers
     SECURE_FREE(hmac_ctx, sizeof(ll_HMAC_CTX)); // free the struct itself
     if (st != CF_SUCCESS) {
-        SECURE_FREE((void *)ctx->prk, final_len);
+        SECURE_FREE((void *)ctx->prk, hash_len);
         ctx->prk = NULL;
         return st;
     }
 
-    ctx->prk_len = final_len;
+    ctx->prk_len = hash_len;
     return CF_SUCCESS;
 }
 
@@ -143,76 +132,76 @@ CF_STATUS ll_HKDF_Expand(
         return CF_ERR_INVALID_PARAM;
 
     const size_t hash_len = ctx->md->digest_size;
-    const size_t max_okm =  LL_HKDF_MAX_OKM(hash_len); // RFC 5869 limit
-    size_t final_len = 0;
+    const size_t max_okm = LL_HKDF_MAX_OKM(hash_len); // RFC 5869 max 255 blocks
 
-#ifdef HKDF_FALLBACK_DEFAULT_LEN
-    final_len = (okm_len != 0) ? okm_len : hash_len;
-#else
-    if (okm_len == 0)
-        return CF_ERR_INVALID_LEN;
-    final_len = okm_len;
-#endif
-
-    if (final_len > max_okm)
+    if (okm_len > max_okm)
         return CF_ERR_LIMIT_EXCEEDED;
 
-    // Replace info if new_info is provided
+    // Only replace info once, before generating blocks
     if (new_info) {
         if (ctx->info) {
             SECURE_FREE(ctx->info, ctx->info_len);
             ctx->info = NULL;
+            ctx->info_len = 0;
         }
+
         ctx->info = (uint8_t *)SECURE_ALLOC(new_info_len);
         if (!ctx->info)
             return CF_ERR_ALLOC_FAILED;
-        SECURE_MEMCPY((void *)ctx->info, new_info, new_info_len);
+
+        SECURE_MEMCPY(ctx->info, new_info, new_info_len);
         ctx->info_len = new_info_len;
     }
 
-    uint8_t block[EVP_MAX_DEFAULT_BLOCK_SIZE];
-    size_t generated = 0;
+    // Prepare for multi-block generation
+    SECURE_ZERO(ctx->prev_block, sizeof(ctx->prev_block));
     size_t prev_block_len = 0;
+    ctx->counter = 0;
 
     ll_HMAC_CTX *hmac_ctx = (ll_HMAC_CTX *)SECURE_ALLOC(sizeof(ll_HMAC_CTX));
     if (!hmac_ctx)
         return CF_ERR_ALLOC_FAILED;
 
     CF_STATUS st;
+    size_t generated = 0;
+    uint8_t block[EVP_MAX_DEFAULT_BLOCK_SIZE];
 
-    // Loop to generate blocks until OKM is fully filled
-    while (generated < final_len) {
-        if (ctx->counter >= 255) {
-            ll_HMAC_Free(hmac_ctx);
-            SECURE_FREE(hmac_ctx, sizeof(ll_HMAC_CTX));
-            return CF_ERR_LIMIT_EXCEEDED;
+    while (generated < okm_len) {
+        if (ctx->counter >= LL_HKDF_MAX_BLOCKS) { // RFC 5869 max 255 blocks
+            st = CF_ERR_LIMIT_EXCEEDED;
+            goto cleanup;
         }
 
-        ctx->counter++; // block index (starts at 1)
+        ctx->counter++; // Block index (1..255)
 
-        // Initialize HMAC with PRK
         st = ll_HMAC_Init(hmac_ctx, ctx->md, ctx->prk, ctx->prk_len);
         if (st != CF_SUCCESS)
             goto cleanup;
 
-        // Feed previous block (empty for first), info, and counter
+        // Feed previous block if exists
         if (prev_block_len)
             st = ll_HMAC_Update(hmac_ctx, ctx->prev_block, prev_block_len);
-        if (st == CF_SUCCESS && ctx->info && ctx->info_len)
-            st = ll_HMAC_Update(hmac_ctx, ctx->info, ctx->info_len);
-        if (st == CF_SUCCESS)
-            st = ll_HMAC_Update(hmac_ctx, &ctx->counter, 1);
-
         if (st != CF_SUCCESS)
             goto cleanup;
 
-        // Finalize HMAC block
+        // Feed info
+        if (ctx->info && ctx->info_len)
+            st = ll_HMAC_Update(hmac_ctx, ctx->info, ctx->info_len);
+        if (st != CF_SUCCESS)
+            goto cleanup;
+
+        // Feed counter
+        st = ll_HMAC_Update(hmac_ctx, &ctx->counter, 1);
+        if (st != CF_SUCCESS)
+            goto cleanup;
+
+        // Finalize block
         st = ll_HMAC_Final(hmac_ctx, block, hash_len);
         if (st != CF_SUCCESS)
             goto cleanup;
 
-        // Copy appropriate number of bytes to OKM
-        size_t to_copy = (final_len - generated) > hash_len ? hash_len : (final_len - generated);
+        // Copy required bytes to output
+        size_t to_copy = (okm_len - generated > hash_len) ? hash_len : (okm_len - generated);
         SECURE_MEMCPY(okm + generated, block, to_copy);
         generated += to_copy;
 
@@ -221,12 +210,57 @@ CF_STATUS ll_HKDF_Expand(
         prev_block_len = hash_len;
     }
 
-    ll_HMAC_Free(hmac_ctx);
-    SECURE_FREE(hmac_ctx, sizeof(ll_HMAC_CTX));
-    return CF_SUCCESS;
+    st = CF_SUCCESS;
 
 cleanup:
     ll_HMAC_Free(hmac_ctx);
     SECURE_FREE(hmac_ctx, sizeof(ll_HMAC_CTX));
     return st;
+}
+
+CF_STATUS ll_HKDF_Free(ll_HKDF_CTX *ctx) {
+    if (!ctx)
+        return CF_ERR_NULL_PTR;
+
+    if (ctx->prk) {
+        if (ctx->prk_len == 0)
+            return CF_ERR_CTX_CORRUPT;
+
+        SECURE_ZERO(ctx->prk, ctx->prk_len);
+        SECURE_FREE(ctx->prk, ctx->prk_len);
+    }
+
+    if (ctx->info) {
+        if (ctx->info_len == 0)
+            return CF_ERR_CTX_CORRUPT;
+
+        SECURE_ZERO(ctx->info, ctx->info_len);
+        SECURE_FREE(ctx->info, ctx->info_len);
+    }
+
+    SECURE_ZERO(ctx->prev_block, sizeof(ctx->prev_block));
+
+    // clear high-level data
+    SECURE_ZERO(ctx, sizeof(*ctx));
+
+    return CF_SUCCESS;
+}
+
+CF_STATUS ll_HKDF_FreeAlloc(ll_HKDF_CTX **p_ctx) {
+    if (!p_ctx || !*p_ctx)
+        return CF_ERR_NULL_PTR;
+
+    ll_HKDF_CTX *ctx = *p_ctx;
+    int wasHeapAlloc = ctx->isHeapAlloc;  // save flag
+
+    CF_STATUS st = ll_HKDF_Free(ctx);
+    if (st != CF_SUCCESS)
+        return st;
+
+    if (wasHeapAlloc)
+        SECURE_FREE(ctx, sizeof(*ctx));   // free only if heap-allocated
+
+    *p_ctx = NULL;  // nullify caller pointer
+
+    return CF_SUCCESS;
 }
