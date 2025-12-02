@@ -5,6 +5,10 @@
 #define BUILDING_CF_DLL 1
 #endif
 
+#ifndef USE_STRICT_SECURE_MEMORY
+#define USE_STRICT_SECURE_MEMORY 0  // enable OS based memory functions for maximum security and prevent advanced side-channel attacks
+#endif
+
 #ifndef ENABLE_TESTS
 #define ENABLE_TESTS 1       // enable demo/test code
 #endif

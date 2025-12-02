@@ -1,83 +1,75 @@
 #ifndef MEM_H
 #define MEM_H
 
+/**
+ * @file mem.h
+ * @brief Secure memory management functions for CryptoForge
+ *
+ * This header provides **level-one secure memory functions**:
+ * 1. Allocation with zero-initialization (using calloc)
+ * 2. Memory copy and zeroing with volatile to prevent compiler optimizations
+ * 3. Secure free (zero memory before freeing)
+ *
+ * Future expansion (Level 2 & 3):
+ * - OS-backed memory allocation and locking
+ * - Advanced secure zeroing and constant-time copy
+ *
+ * Macros provide a unified interface: SECURE_ALLOC, SECURE_MEMSET, SECURE_MEMCPY, SECURE_FREE
+ */
+
 #include "../config/libs.h"
 #include "misc_utils.h"
-#include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
 
-// -------------------------
-// Secure memory allocation
-// -------------------------
+// -----------------------------------------------------------------------------
+// Level 1: Normal secure memory functions
+// -----------------------------------------------------------------------------
+
+// Allocate memory safely and zero-initialize
 static FORCE_INLINE void* secure_malloc(size_t size) {
     if (size == 0) return NULL;
-
-    // calloc guarantees zero-initialized memory
     void *ptr = calloc(1, size);
     return ptr;
 }
 
-// Secure free without double pointer
-static FORCE_INLINE void secure_free(void *ptr, size_t size) {
-    if (!ptr) return;
+// Overwrite a memory block with zeros without freeing
+void secure_zero(void *ptr, size_t len);
 
-    volatile uint8_t *p = (volatile uint8_t*)ptr;
-    while (size--) *p++ = 0;
+#if USE_STRICT_SECURE_MEMORY
 
-    free(ptr);
-    ptr = NULL;
-}
+// Placeholders for future Level 2 / 3 implementations
+void strict_secure_memset(void *dst, int val, size_t len);
+void strict_secure_memcpy(void *dst, const void *src, size_t len);
 
-// Zero memory without freeing
-static FORCE_INLINE void secure_zero(void *ptr, size_t len) {
-    if (!ptr || len == 0) return;
+#else
 
-    volatile uint8_t *p = (volatile uint8_t*)ptr;
-    while (len--) *p++ = 0;
-}
-
-// checks for null pointers
+// Safe memory copy with null-pointer and length checks
 static FORCE_INLINE void secure_memcpy(void *dst, const void *src, size_t len) {
     if (!dst || !src || len == 0) return;
     memcpy(dst, src, len);
 }
 
-// Secure memset: guaranteed not to be optimized away
-static FORCE_INLINE void secure_memset(void *dst, int val, size_t len) {
-    if (!dst || len == 0) return;
-    volatile uint8_t *p = (volatile uint8_t *)dst;
-    while (len--) *p++ = (uint8_t)val;
-}
+// Overwrite memory safely, preventing compiler optimizations
+void secure_memset(void *dst, int val, size_t len);
 
-// -------------------------
-// Context helpers
-// -------------------------
-static FORCE_INLINE void* create_ctx(size_t ctx_size) {
-    return secure_malloc(ctx_size);
-}
+#endif // USE_STRICT_SECURE_MEMORY
 
-// Destroy context (just free memory, cannot nullify caller)
-static FORCE_INLINE void destroy_ctx(void *ctx, size_t ctx_size) {
-    if (!ctx) return;
-    secure_free(ctx, ctx_size);
-}
+// Secure free: zero memory before freeing
+void secure_free(void *ptr, size_t size);
 
-// -------------------------
-// Macros for convenience
-// -------------------------
+// -----------------------------------------------------------------------------
+// Convenience macros
+// -----------------------------------------------------------------------------
 #define SECURE_ALLOC(sz)        secure_malloc((sz))
 #define SECURE_ZERO(buf, len)   secure_zero((buf), (len))
+
+#if USE_STRICT_SECURE_MEMORY
+  #define SECURE_MEMSET(dst, val, len) strict_secure_memset((dst), (val), (len))
+  #define SECURE_MEMCPY(dst, src, len) strict_secure_memcpy((dst), (src), (len))
+#else
+  #define SECURE_MEMSET(dst, val, len) secure_memset((dst), (val), (len))
+  #define SECURE_MEMCPY(dst, src, len) secure_memcpy((dst), (src), (len))
+#endif
+
 #define SECURE_FREE(ptr, size)  secure_free((ptr), (size))
-
-#define SECURE_MEMCPY(dst, src, len) secure_memcpy((dst), (src), (len))
-#define SECURE_MEMSET(dst, val, len) secure_memset((dst), (val), (len))
-
-// Safely clear a fixed-size buffer (array)
-#define CLEAR_BUF(buf)           secure_zero((buf), sizeof(buf))
-
-// Context helpers
-#define CREATE_CTX(type)        ((type*)create_ctx(sizeof(type)))
-#define DESTROY_CTX(ptr, type)  destroy_ctx((ptr), sizeof(type))
 
 #endif // MEM_H

@@ -702,12 +702,12 @@ CF_STATUS EVP_HashInit(EVP_HASH_CTX *ctx, const EVP_MD *md, const EVP_XOF_OPTS *
 EVP_HASH_CTX* EVP_HashInitAlloc(const EVP_MD *md, const EVP_XOF_OPTS *opts, CF_STATUS *status) {
     if (!md) { if (status) *status = CF_ERR_NULL_PTR; return NULL; }
 
-    EVP_HASH_CTX *ctx = CREATE_CTX(EVP_HASH_CTX);
+    EVP_HASH_CTX *ctx = (EVP_HASH_CTX *)SECURE_ALLOC(sizeof(EVP_HASH_CTX));
     if (!ctx) { if (status) *status = CF_ERR_ALLOC_FAILED; return NULL; }
 
     CF_STATUS st = EVP_HashInit(ctx, md, opts);
     if (st != CF_SUCCESS) {
-        DESTROY_CTX(ctx, EVP_HASH_CTX);
+        SECURE_FREE(ctx, sizeof(EVP_HASH_CTX));
         if (status) *status = st;
         return NULL;
     }
@@ -758,7 +758,7 @@ CF_STATUS EVP_HashFinal(EVP_HASH_CTX *ctx, uint8_t *digest, size_t digest_len) {
         return CF_ERR_CTX_CORRUPT;
 
     // For XOFs or SHA3 variants that require squeezing
-    if (ctx->md->hash_squeeze_fn && EVP_IS_XOF(ctx->md->id)) {
+    if (ctx->md->hash_squeeze_fn && IS_KECCAK_BASED(ctx->md->id)) {
         if (!ctx->md->hash_squeeze_fn(ctx->digest_ctx, digest, final_len))
             return CF_ERR_CTX_CORRUPT;
     }
@@ -956,7 +956,7 @@ EVP_HASH_CTX *EVP_HashCloneCtxAlloc(const EVP_HASH_CTX *src, CF_STATUS *status) 
     }
 
     // Allocate top-level context
-    EVP_HASH_CTX *dst = CREATE_CTX(EVP_HASH_CTX);
+    EVP_HASH_CTX *dst = (EVP_HASH_CTX *)SECURE_ALLOC(sizeof(EVP_HASH_CTX));
     if (!dst) {
         if (status) *status = CF_ERR_ALLOC_FAILED;
         return NULL;
@@ -1053,7 +1053,7 @@ EVP_XOF_OPTS* EVP_XOFOptsInitAlloc(const uint8_t *N, size_t N_len,
         return NULL;
     }
 
-    EVP_XOF_OPTS *opts = CREATE_CTX(EVP_XOF_OPTS);
+    EVP_XOF_OPTS *opts = (EVP_XOF_OPTS *)SECURE_ALLOC(sizeof(EVP_XOF_OPTS));
     if (!opts) {
         if (status) *status = CF_ERR_ALLOC_FAILED;
         return NULL;
@@ -1061,7 +1061,7 @@ EVP_XOF_OPTS* EVP_XOFOptsInitAlloc(const uint8_t *N, size_t N_len,
 
     CF_STATUS st = EVP_XOFOptsInit(opts, N, N_len, S, S_len, out_len);
     if (st != CF_SUCCESS) {
-        DESTROY_CTX(opts, EVP_XOF_OPTS);
+        SECURE_FREE(opts, sizeof(EVP_XOF_OPTS));
         if (status) *status = st;
         return NULL;
     }

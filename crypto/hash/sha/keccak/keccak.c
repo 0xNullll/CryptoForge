@@ -97,7 +97,7 @@ static void Pi(uint64_t A[5][5]) {
     uint64_t T[5][5];
 
     // T = A
-    memcpy(T, A, sizeof(T));
+    SECURE_MEMCPY(T, A, sizeof(T));
 
     // A[y][x] = T[x][(3*y+x)%5]
     A[0][0] = T[0][0];
@@ -237,8 +237,8 @@ bool ll_keccak_p(uint64_t state[5][5], unsigned int w, unsigned int nr) {
 // ll_KECCAK_CTX wrappers
 // =======================
 bool ll_keccak_sponge_init(ll_KECCAK_CTX *ctx, size_t rate, uint8_t suffix) {
-    memset(ctx->state, 0, sizeof(ctx->state));
-    memset(ctx->buf, 0, sizeof(ctx->buf));
+    SECURE_MEMSET(ctx->state, 0, sizeof(ctx->state));
+    SECURE_MEMSET(ctx->buf, 0, sizeof(ctx->buf));
     ctx->buf_len = 0;
     ctx->rate = rate;
     ctx->suffix = suffix;
@@ -275,7 +275,7 @@ bool ll_keccak_sponge_absorb(ll_KECCAK_CTX *ctx, const uint8_t *input, size_t in
         size_t space = ctx->rate - ctx->buf_len;
         size_t to_copy = (inlen < space) ? inlen : space;
 
-        memcpy(ctx->buf + ctx->buf_len, input + offset, to_copy);
+        SECURE_MEMCPY(ctx->buf + ctx->buf_len, input + offset, to_copy);
         ctx->buf_len += to_copy;
         offset += to_copy;
         inlen -= to_copy;
@@ -297,7 +297,7 @@ bool ll_keccak_sponge_final(ll_KECCAK_CTX *ctx) {
     size_t r = ctx->rate;
     size_t num = ctx->buf_len;
 
-    memset(ctx->buf + num, 0, r - num);
+    SECURE_MEMSET(ctx->buf + num, 0, r - num);
 
     if (num == r - 1)
         ctx->buf[num] ^= ctx->suffix ^ 0x80;  // combine suffix + final bit
@@ -328,7 +328,7 @@ bool ll_keccak_sponge_squeeze(ll_KECCAK_CTX *ctx, uint8_t *output, size_t outlen
 
         // always squeeze into tmp, copy requested bytes
         squeeze_block(ctx->state, tmp, ctx->rate);
-        memcpy(output + offset, tmp, block);
+        SECURE_MEMCPY(output + offset, tmp, block);
 
         offset += block;
         outlen -= block;

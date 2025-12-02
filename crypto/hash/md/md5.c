@@ -74,7 +74,7 @@ static bool ll_md5_process_block(ll_MD5_CTX *ctx, const uint8_t block[64]){
     II(c,d,a,b,x[2],15,0x2ad7d2bb);  II(b,c,d,a,x[9],21,0xeb86d391);
 
     ctx->state[0]+=a; ctx->state[1]+=b; ctx->state[2]+=c; ctx->state[3]+=d;
-    memset(x,0,sizeof(x));
+    SECURE_MEMSET(x, 0, sizeof(x));
     return true;
 }
 
@@ -96,7 +96,7 @@ bool ll_md5_update(ll_MD5_CTX *ctx,const uint8_t *data,size_t len){
     while(i<len){
         size_t space=MD5_BLOCK_SIZE-ctx->buffer_len;
         size_t to_copy=(len-i<space)?len-i:space;
-        memcpy(ctx->buffer+ctx->buffer_len,data+ i,to_copy);
+        SECURE_MEMCPY(ctx->buffer+ctx->buffer_len,data+ i,to_copy);
         ctx->buffer_len+=to_copy;
         ctx->bitlen+=to_copy*8;
         i+=to_copy;
@@ -112,11 +112,11 @@ bool ll_md5_final(ll_MD5_CTX *ctx,uint8_t digest[MD5_DIGEST_SIZE]){
     if(!ctx||!digest) return false;
 
     uint8_t block[MD5_BLOCK_SIZE]={0};
-    memcpy(block,ctx->buffer,ctx->buffer_len);
+    SECURE_MEMCPY(block, ctx->buffer, ctx->buffer_len);
     block[ctx->buffer_len++]=0x80;
 
-    size_t padLen=(ctx->buffer_len>56)?(120-ctx->buffer_len):(56-ctx->buffer_len);
-    memset(block+ctx->buffer_len,0,padLen);
+    size_t padLen=(ctx->buffer_len>56) ? (120-ctx->buffer_len) : (56-ctx->buffer_len);
+    SECURE_MEMSET(block+ctx->buffer_len, 0, padLen);
     ctx->buffer_len+=padLen;
 
     // Append length in bits
@@ -132,6 +132,6 @@ bool ll_md5_final(ll_MD5_CTX *ctx,uint8_t digest[MD5_DIGEST_SIZE]){
     if(!ll_md5_process_block(ctx,block)) return false;
     
     HASH_PACK32(digest,ctx->state,MD5_DIGEST_SIZE);
-    memset(ctx,0,sizeof(*ctx));
+    SECURE_MEMSET(ctx, 0, sizeof(*ctx));
     return true;
 }

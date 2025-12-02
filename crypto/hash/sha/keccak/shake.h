@@ -4,6 +4,7 @@
 #include "../../hash_common.h"
 #include "../../../../config/crypto_config.h"
 #include "../../../../utils/misc_utils.h"
+#include "../../../../utils/mem.h"
 #include "keccak.h"
 
 #ifdef __cplusplus

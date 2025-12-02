@@ -16,7 +16,7 @@
 // Low-level API functions
 // -------------------------
 bool ll_sha1_init(ll_SHA1_CTX *ctx) {
-    memset(ctx, 0, sizeof(*ctx));
+    SECURE_MEMSET(ctx, 0, sizeof(*ctx));
 
     ctx->h0 = 0x67452301UL;
     ctx->h1 = 0xefcdab89UL;
@@ -80,7 +80,7 @@ bool ll_sha1_update(ll_SHA1_CTX *ctx, const uint8_t *data, size_t len) {
         size_t to_copy = SHA1_BLOCK_SIZE - ctx->num;
         if (to_copy > len) to_copy = len;
 
-        memcpy(ctx->buf + ctx->num, data, to_copy);
+        SECURE_MEMCPY(ctx->buf + ctx->num, data, to_copy);
         ctx->num += (uint32_t)to_copy;
         data += to_copy;
         len -= to_copy;
@@ -100,16 +100,16 @@ bool ll_sha1_final(ll_SHA1_CTX *ctx, uint8_t digest[SHA1_DIGEST_SIZE]) {
     uint8_t block[SHA1_BLOCK_SIZE] = {0};
 
     // Copy leftover bytes and append 0x80
-    memcpy(block, ctx->buf, ctx->num);
+    SECURE_MEMCPY(block, ctx->buf, ctx->num);
     block[ctx->num++] = 0x80;
 
     // Pad zeros
     if (ctx->num > 56) {
-        memset(block + ctx->num, 0, SHA1_BLOCK_SIZE - ctx->num);
+        SECURE_MEMSET(block + ctx->num, 0, SHA1_BLOCK_SIZE - ctx->num);
         if (!ll_sha1_process_block(ctx, block)) return false;
-        memset(block, 0, 56); // new zeroed block
+        SECURE_MEMSET(block, 0, 56); // new zeroed block
     } else {
-        memset(block + ctx->num, 0, 56 - ctx->num);
+        SECURE_MEMSET(block + ctx->num, 0, 56 - ctx->num);
     }
 
     // Append length in bits using CPU-endian aware macro

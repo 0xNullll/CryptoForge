@@ -90,7 +90,7 @@ ll_HMAC_CTX* ll_HMAC_InitAlloc(const EVP_MD *md, const uint8_t *key, size_t key_
         return NULL;
     }
 
-    ll_HMAC_CTX *ctx = CREATE_CTX(ll_HMAC_CTX);
+    ll_HMAC_CTX *ctx = (ll_HMAC_CTX *)SECURE_ALLOC(sizeof(ll_HMAC_CTX));
     if (!ctx) {
         if (status) *status = CF_ERR_ALLOC_FAILED;
         return NULL;
@@ -98,7 +98,7 @@ ll_HMAC_CTX* ll_HMAC_InitAlloc(const EVP_MD *md, const uint8_t *key, size_t key_
 
     CF_STATUS st = ll_HMAC_Init(ctx, md, key, key_len);
     if (st != CF_SUCCESS) {
-        DESTROY_CTX(ctx, ll_HMAC_CTX);
+        SECURE_FREE(ctx, sizeof(ll_HMAC_CTX));
         if (status) *status = st;
         return NULL;
     }
@@ -144,6 +144,12 @@ CF_STATUS ll_HMAC_Final(ll_HMAC_CTX *ctx, uint8_t *digest, size_t digest_len) {
     if (!ctx->md->hash_final_fn(ctx->ipad_ctx, inner_hash, ctx->md->digest_size))
         return CF_ERR_CTX_CORRUPT;
 
+    // For SHA3 variants that require squeezing
+    if (ctx->md->hash_squeeze_fn && IS_KECCAK_BASED(ctx->md->id)) {
+        if (!ctx->md->hash_squeeze_fn(ctx->ipad_ctx, inner_hash, ctx->md->digest_size))
+            return CF_ERR_CTX_CORRUPT;
+    }
+
     // feed inner hash into opad context
     if (!ctx->md->hash_update_fn(ctx->opad_ctx, inner_hash, ctx->md->digest_size))
         return CF_ERR_CTX_CORRUPT;
@@ -151,6 +157,12 @@ CF_STATUS ll_HMAC_Final(ll_HMAC_CTX *ctx, uint8_t *digest, size_t digest_len) {
     // compute final HMAC
     if (!ctx->md->hash_final_fn(ctx->opad_ctx, digest, hash_len))
         return CF_ERR_CTX_CORRUPT;
+
+    // For SHA3 variants that require squeezing
+    if (ctx->md->hash_squeeze_fn && IS_KECCAK_BASED(ctx->md->id)) {
+        if (!ctx->md->hash_squeeze_fn(ctx->opad_ctx, digest, hash_len))
+            return CF_ERR_CTX_CORRUPT;
+    }
 
     SECURE_ZERO(inner_hash, sizeof(inner_hash));
     ctx->isFinalized = 1;
@@ -252,7 +264,7 @@ ll_HMAC_CTX *ll_HMAC_CloneCtxAlloc(const ll_HMAC_CTX *ctx_src, CF_STATUS *status
     }
 
     // Allocate the destination context
-    ll_HMAC_CTX *ctx_dest = CREATE_CTX(ll_HMAC_CTX);
+    ll_HMAC_CTX *ctx_dest = (ll_HMAC_CTX *)SECURE_ALLOC(sizeof(ll_HMAC_CTX));
     if (!ctx_dest) {
         if (status) *status = CF_ERR_ALLOC_FAILED;
         return NULL;
@@ -261,7 +273,7 @@ ll_HMAC_CTX *ll_HMAC_CloneCtxAlloc(const ll_HMAC_CTX *ctx_src, CF_STATUS *status
     // Use the in-place clone function
     CF_STATUS ret = ll_HMAC_CloneCtx(ctx_dest, ctx_src);
     if (ret != CF_SUCCESS) {
-        DESTROY_CTX(ctx_dest, sizeof(ll_HMAC_CTX));
+        SECURE_FREE(ctx_dest, sizeof(ll_HMAC_CTX));
         return NULL;
     }
 
