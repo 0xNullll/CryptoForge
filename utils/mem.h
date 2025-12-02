@@ -17,6 +17,20 @@
  * Macros provide a unified interface: SECURE_ALLOC, SECURE_MEMSET, SECURE_MEMCPY, SECURE_FREE
  */
 
+/**
+ * Memory Tracking (Optional Debugging)
+ *
+ * This feature allows tracking memory usage **per source file**. It is intended
+ * for debugging, profiling, and planning memory requirements in constrained
+ * environments (embedded devices, VMs, or limited RAM systems).
+ *
+ * Features:
+ * - Tracks total memory allocated per file.
+ * - Optional logging of allocations with file and line information for advanced debugging.
+ * - Can help detect memory leaks, excessive allocations, or heavy memory usage per module.
+ * - Disabled in release builds for zero overhead.
+ */
+
 #include "../config/libs.h"
 #include "misc_utils.h"
 
