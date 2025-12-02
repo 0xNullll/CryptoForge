@@ -77,11 +77,11 @@ size_t ll_encode_string(const uint8_t *S, size_t S_len_bytes, uint8_t *out, size
     }
 
     // Copy left-encoded length
-    memcpy(out, tmp, n);
+    SECURE_MEMCPY(out, tmp, n);
 
     // Append string bytes
     if (S && S_len_bytes > 0) {
-        memcpy(out + n, S, S_len_bytes);
+        SECURE_MEMCPY(out + n, S, S_len_bytes);
     }
 
     return n + S_len_bytes;  // total bytes written
@@ -110,15 +110,15 @@ size_t ll_byte_pad(const uint8_t *S, size_t S_len,
     if (out_cap < n) return 0;
 
     // copy left_encode(w) || S
-    memcpy(out, le, le_len);
+    SECURE_MEMCPY(out, le, le_len);
     if (S_len)
-        memcpy(out + le_len, S, S_len);
+        SECURE_MEMCPY(out + le_len, S, S_len);
 
     // pad to nearest multiple of w
     size_t pad = (w - (n % w)) % w;
     if (out_cap < n + pad) return 0;
     if (pad)
-        memset(out + n, 0, pad);
+        SECURE_MEMSET(out + n, 0, pad);
 
     return n + pad;
 }
@@ -131,7 +131,7 @@ size_t ll_substring_bytes(const uint8_t *S, size_t S_len,
     if (end_idx > S_len) end_idx = S_len;
 
     size_t len = end_idx - start_idx;
-    memcpy(out, S + start_idx, len);
+    SECURE_MEMCPY(out, S + start_idx, len);
     return len;
 }
 
@@ -247,18 +247,18 @@ bool ll_cshake128_init(ll_CSHAKE128_CTX *ctx,
     if (N_len > MAX_CUSTOMIZATION || S_len > MAX_CUSTOMIZATION)
         return false;
 
-    memset(ctx, 0, sizeof(*ctx));
+    SECURE_MEMSET(ctx, 0, sizeof(*ctx));
 
     // Copy N and S into the fixed arrays
     if (N && N_len > 0) {
-        memcpy(ctx->N, N, N_len);
+        SECURE_MEMCPY(ctx->N, N, N_len);
         ctx->N_len = N_len;
     } else {
         ctx->N_len = 0;
     }
 
     if (S && S_len > 0) {
-        memcpy(ctx->S, S, S_len);
+        SECURE_MEMCPY(ctx->S, S, S_len);
         ctx->S_len = S_len;
     } else {
         ctx->S_len = 0;
@@ -314,15 +314,15 @@ bool ll_cshake256_init(ll_CSHAKE256_CTX *ctx,
     if (N_len > MAX_CUSTOMIZATION || S_len > MAX_CUSTOMIZATION)
         return false;
 
-    memset(ctx, 0, sizeof(*ctx));
+    SECURE_MEMSET(ctx, 0, sizeof(*ctx));
 
     // Copy N and S into the fixed arrays
     if (N && N_len > 0)
-        memcpy(ctx->N, N, N_len);
+        SECURE_MEMCPY(ctx->N, N, N_len);
     ctx->N_len = N_len;
 
     if (S && S_len > 0)
-        memcpy(ctx->S, S, S_len);
+        SECURE_MEMCPY(ctx->S, S, S_len);
     ctx->S_len = S_len;
 
     ctx->finalized = 0;

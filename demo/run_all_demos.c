@@ -27,10 +27,10 @@ int main(void) {
     }
 
     printf("low level funcs:\n");
-    test_all_hashes(raw_bytes, raw_len, &xof_opts);
+    test_all_hashes((const uint8_t *)input, input_len, &xof_opts);
     printf("------------------------------------------------------\n\n");
     printf("high level funcs:\n");
-    test_all_hashes_high(raw_bytes, raw_len, &xof_opts);
+    test_all_hashes_high((const uint8_t *)input, input_len, &xof_opts);
     printf("------------------------------------------------------\n\n");
 
     // Example: Incremental hash using EVP_Hash* API

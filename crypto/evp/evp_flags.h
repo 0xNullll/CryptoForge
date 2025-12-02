@@ -111,6 +111,14 @@ typedef enum {
 
 // Helper macros for category checks
 #define EVP_IS_DIGEST_SIZE(id) (((id) & 0xF0000000) == EVP_CAT_DIGEST)
+
+#define IS_KECCAK_BASED(id) \
+    (((id) == EVP_SHA3_224)   || ((id) == EVP_SHA3_256)   || \
+     ((id) == EVP_SHA3_384)   || ((id) == EVP_SHA3_512)   || \
+     ((id) == EVP_SHAKE128)   || ((id) == EVP_SHAKE256)   || \
+     ((id) == EVP_RAWSHAKE128)|| ((id) == EVP_RAWSHAKE256)|| \
+     ((id) == EVP_CSHAKE128)  || ((id) == EVP_CSHAKE256))
+
 #define EVP_IS_XOF(id)    (((id) & 0xF0000000) == EVP_CAT_XOF)
 #define EVP_IS_MAC(id)    (((id) & 0xF0000000) == EVP_CAT_MAC)
 

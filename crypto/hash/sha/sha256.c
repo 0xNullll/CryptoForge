@@ -36,7 +36,7 @@ static const uint32_t K256[64] = {
 // SHA-256 Low-level implementation
 // ======================================
 bool ll_sha256_init(ll_SHA256_CTX *ctx) {
-    memset(ctx, 0, sizeof(*ctx));
+    SECURE_MEMSET(ctx, 0, sizeof(*ctx));
     ctx->state[0] = 0x6a09e667UL;
     ctx->state[1] = 0xbb67ae85UL;
     ctx->state[2] = 0x3c6ef372UL;
@@ -79,7 +79,7 @@ bool ll_sha256_update(ll_SHA256_CTX *ctx, const uint8_t *data, size_t len) {
     if(ctx->buf_len){
         size_t fill = SHA256_BLOCK_SIZE - ctx->buf_len;
         if(fill>len) fill=len;
-        memcpy(ctx->buf+ctx->buf_len, data, fill);
+        SECURE_MEMCPY(ctx->buf+ctx->buf_len, data, fill);
         ctx->buf_len+=fill; i+=fill;
         if(ctx->buf_len==SHA256_BLOCK_SIZE){
             if(!ll_sha256_process_block(ctx, ctx->buf)) return false;
@@ -92,7 +92,7 @@ bool ll_sha256_update(ll_SHA256_CTX *ctx, const uint8_t *data, size_t len) {
 
     if(i<len){
         ctx->buf_len=len-i;
-        memcpy(ctx->buf, data+i, ctx->buf_len);
+        SECURE_MEMCPY(ctx->buf, data+i, ctx->buf_len);
     }
 
     return true;
@@ -102,11 +102,11 @@ bool ll_sha256_final(ll_SHA256_CTX *ctx, uint8_t digest[SHA256_DIGEST_SIZE]) {
     if(!ctx || !digest) return false;
 
     uint8_t block[SHA256_BLOCK_SIZE] = {0};
-    memcpy(block, ctx->buf, ctx->buf_len);
+    SECURE_MEMCPY(block, ctx->buf, ctx->buf_len);
     block[ctx->buf_len++] = 0x80;
 
     size_t pad_len = (ctx->buf_len <= 56) ? (56 - ctx->buf_len) : (64 + 56 - ctx->buf_len);
-    memset(block + ctx->buf_len, 0, pad_len);
+    SECURE_MEMSET(block + ctx->buf_len, 0, pad_len);
 
     uint64_t bit_len = ctx->len * 8;
     STORE64(block + 56, bit_len);
@@ -114,7 +114,7 @@ bool ll_sha256_final(ll_SHA256_CTX *ctx, uint8_t digest[SHA256_DIGEST_SIZE]) {
     if(!ll_sha256_process_block(ctx, block)) return false;
 
     if(ctx->buf_len + pad_len + 8 > 64){
-        memset(block,0,SHA256_BLOCK_SIZE);
+        SECURE_MEMSET(block,0,SHA256_BLOCK_SIZE);
         if(!ll_sha256_process_block(ctx, block)) return false;
     }
 
@@ -128,7 +128,7 @@ bool ll_sha256_final(ll_SHA256_CTX *ctx, uint8_t digest[SHA256_DIGEST_SIZE]) {
 // SHA-224 Low-level implementation
 // ======================================
 bool ll_sha224_init(ll_SHA224_CTX *ctx) {
-    memset(ctx,0,sizeof(*ctx));
+    SECURE_MEMSET(ctx,0,sizeof(*ctx));
     ctx->state[0] = 0xc1059ed8UL;
     ctx->state[1] = 0x367cd507UL;
     ctx->state[2] = 0x3070dd17UL;
@@ -147,6 +147,6 @@ bool ll_sha224_update(ll_SHA224_CTX *ctx, const uint8_t *data, size_t len) {
 bool ll_sha224_final(ll_SHA224_CTX *ctx, uint8_t digest[SHA224_DIGEST_SIZE]) {
     uint8_t full_digest[SHA256_DIGEST_SIZE];
     if(!ll_sha256_final((ll_SHA256_CTX*)ctx, full_digest)) return false;
-    memcpy(digest, full_digest, SHA224_DIGEST_SIZE);
+    SECURE_MEMCPY(digest, full_digest, SHA224_DIGEST_SIZE);
     return true;
 }
