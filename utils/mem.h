@@ -2,33 +2,35 @@
 #define MEM_H
 
 /**
- * @file mem.h
- * @brief Secure memory management functions for CryptoForge
+ * Memory Management Layers
  *
- * This header provides **level-one secure memory functions**:
- * 1. Allocation with zero-initialization (using calloc)
- * 2. Memory copy and zeroing with volatile to prevent compiler optimizations
- * 3. Secure free (zero memory before freeing)
+ * This library provides **three optional memory management layers** to handle
+ * different use cases, security levels, and performance requirements:
  *
- * Future expansion (Level 2 & 3):
- * - OS-backed memory allocation and locking
- * - Advanced secure zeroing and constant-time copy
+ * 1. **Secure, non-OS-based memory**  
+ *    - Direct memory operations without relying on OS primitives.  
+ *    - Ensures secure zeroing, custom allocation, and no hidden system calls.  
+ *    - Useful for deterministic low-level memory handling and high-security contexts.
  *
- * Macros provide a unified interface: SECURE_ALLOC, SECURE_MEMSET, SECURE_MEMCPY, SECURE_FREE
- */
-
-/**
- * Memory Tracking (Optional Debugging)
+ * 2. **OS-based memory without locks**  
+ *    - Uses OS allocation primitives (e.g., VirtualAlloc / mmap / malloc).  
+ *    - No internal locking; suitable for single-threaded or carefully synchronized code.  
+ *    - Lightweight and faster than locked versions.
  *
- * This feature allows tracking memory usage **per source file**. It is intended
- * for debugging, profiling, and planning memory requirements in constrained
- * environments (embedded devices, VMs, or limited RAM systems).
+ * 3. **OS-based memory with locks**  
+ *    - Thread-safe allocations using locks/mutexes.  
+ *    - Ensures correctness in multi-threaded environments.  
+ *    - Slightly higher overhead but safe for concurrent access.
  *
- * Features:
- * - Tracks total memory allocated per file.
- * - Optional logging of allocations with file and line information for advanced debugging.
- * - Can help detect memory leaks, excessive allocations, or heavy memory usage per module.
- * - Disabled in release builds for zero overhead.
+ * Combined with the **optional per-file memory tracking**, these layers allow:
+ * - Fine-grained control over security and performance.  
+ * - Accurate debugging and profiling in constrained environments.  
+ * - Flexible selection depending on the target system and use case.
+ *
+ * Note:
+ * Most crypto libraries do not provide multiple configurable memory layers with
+ * built-in tracking; this design aims to give full control and observability
+ * without sacrificing performance.
  */
 
 #include "../config/libs.h"
