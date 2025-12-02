@@ -150,7 +150,7 @@ Required for block ciphers to handle plaintext not aligned to block size.
 │       ├─ evp_mac.{c,h}
 │       └─ evp_kdf.{c,h}
 ├─ /utils
-│   ├─ mem.h            <-- secure memory helpers
+│   ├─ mem.{c,h}        <-- secure memory helpers
 │   ├─ misc_utils.h     <-- force_inline, generic macros
 │   └─ cf_status.h
 └─ /demo
