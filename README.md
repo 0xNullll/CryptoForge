@@ -18,6 +18,7 @@ Hash functions provide integrity and form the basis for MACs, KDFs, and RNGs.
 - [x] **cSHAKE** – 128 / 256, customizable for keyed or domain-specific hashing.
 
 **Notes:** Hashes are required for HMACs, KMACs, and some DRBG constructions.
+
 ---
 
 ### 2. MACS
