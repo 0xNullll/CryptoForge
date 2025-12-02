@@ -35,14 +35,17 @@ Message Authentication Codes ensure **data integrity and authenticity**.
 
 ---
 
-### 3. Pre-Cipher Utilities
+### 3. Encoders/Decoders
 Utilities for encoding and decoding data to facilitate testing and real-world usage.
 
 - [ ] **Hex encode/decode** – common format for test vectors.
-- [ ] **Base64 encode/decode** – widely used in networking and data transfer.
 - [ ] **Base32 encode/decode** – optional, used in protocols like TOTP.
+- [ ] **Base64 encode/decode** (standard) – widely used in networking and data transfer.
+- [ ] **Base64 URL-safe encode/decode** – safe for URLs and filenames; optional padding.
+- [ ] **Base64 URL-safe no-padding encode/decode** – used in JWTs and query parameters.
+- [ ] **Base85 / Ascii85 encode/decode** – compact encoding for ASCII-safe transmission; includes z shortcut for zero blocks.
 
-**Notes:** Implement these before ciphers to simplify testing with RFC/NIST vectors.
+**Notes:** Streaming and leftover handling are recommended for Base32, Base64, Base64 URL-safe, and Base85 to support incremental processing.
 
 ---
 
