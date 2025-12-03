@@ -8,9 +8,12 @@
 #if ENABLE_TESTS  // only include/demo code if tests are enabled
 
 #include "../crypto/hash/sha/keccak/shake.h"
+
 #include "../crypto/mac/hmac.h"
 #include "../crypto/mac/kmac.h"
 #include "../crypto/kdf/hkdf.h"
+#include "../crypto/enc/base64.h"
+
 #include "../crypto/evp/evp_defs.h"
 #include "../crypto/evp/evp_flags.h"
 #include "../crypto/evp/evp_hash.h"
@@ -53,6 +56,8 @@ CF_API void test_all_hkdfs(
     const uint8_t *salt, size_t salt_len,
     const uint8_t *ikm, size_t ikm_len,
     size_t okm_len);
+
+void test_base64();
 
 #ifdef __cplusplus
 }
