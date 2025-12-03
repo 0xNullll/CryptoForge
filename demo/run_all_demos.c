@@ -85,6 +85,10 @@ int main(void) {
 
     test_all_hkdfs(info, sizeof(info), salt, sizeof(salt), ikm, sizeof(ikm), okm_len);
 
+    printf("---------------------------------------------");
+
+    test_base64();
+
 #endif // ENABLE_TESTS
 
     return 0;

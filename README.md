@@ -143,6 +143,8 @@ Required for block ciphers to handle plaintext not aligned to block size.
 │   │   └─ kmac.{c,h}
 │   ├─ /kdf
 │   │   └─ hkdf.{c,h}
+│   ├─ /enc
+│   │   └─ base64.{c,h}
 │   └─ /evp
 │       ├─ evp_defs.h
 │       ├─ evp_flags.h
