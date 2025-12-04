@@ -118,15 +118,15 @@ int main(void) {
 
     size_t n = sizeof(test_strings) / sizeof(test_strings[0]);
     for (size_t i = 0; i < n; i++) {
-        const uint8_t *input = (const uint8_t *)test_strings[i];
+        const uint8_t *base_input = (const uint8_t *)test_strings[i];
         size_t len = strlen(test_strings[i]);
 
-        test_base32("Standard Base32", input, len, 0);
-        test_base32("No Padding Base32", input, len, 1);
+        test_base32("Standard Base32", base_input, len, 0);
+        test_base32("No Padding Base32", base_input, len, 1);
 
-        test_base64("Standard Base64", input, len, ENC_BASE64, DEC_BASE64);
-        test_base64("URL-safe Base64", input, len, ENC_BASE64_URL, DEC_BASE64_URL);
-        test_base64("No Padding", input, len, ENC_BASE64_URL_NOPAD, DEC_BASE64_URL_NOPAD);
+        test_base64("Standard Base64", base_input, len, ENC_BASE64, DEC_BASE64);
+        test_base64("URL-safe Base64", base_input, len, ENC_BASE64_URL, DEC_BASE64_URL);
+        test_base64("No Padding", base_input, len, ENC_BASE64_URL_NOPAD, DEC_BASE64_URL_NOPAD);
     }
 
     for (size_t i = 0; i < 3; i++) {
