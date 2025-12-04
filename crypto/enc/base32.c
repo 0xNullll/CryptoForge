@@ -52,7 +52,7 @@ bool ll_BASE32_Encode(const uint8_t *data, size_t data_len, char *out, size_t *o
                        ((uint64_t)in3 << 8) | ((uint64_t)in4);
 
         size_t total_bits = rem * 8;
-        int chunks = (total_bits + 4) / 5; // number of 5-bit chunks
+        size_t chunks = (total_bits + 4) / 5; // number of 5-bit chunks
 
         for (int c = 0; c < 8; c++) {
             if (c < chunks) {
