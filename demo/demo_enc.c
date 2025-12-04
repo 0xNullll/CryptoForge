@@ -19,7 +19,7 @@ void test_base64(const char *label, const uint8_t *input, size_t len, uint32_t e
         return;
     }
 
-    int match = (memcmp(input, decoded, len) == 0);
+    int match = (dec_len == len && memcmp(input, decoded, len) == 0);
 
     printf("[%s]\n", label);
     printf("Input:     '");

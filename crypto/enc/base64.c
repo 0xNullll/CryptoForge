@@ -115,7 +115,6 @@ bool ll_BASE64_Decode(const char *data, size_t data_len, uint8_t *out, size_t *o
 
             if (c == BASE64_PAD_CHAR) {
                 val = 0;
-                if (!noPad) valid_chars++; // padding counts as char only in standard mode
             } else if (!isUrlSafe) {
                 if (c >= '+' && c <= 'z') val = BASE64_REV_TABLE[c - '+'];
             } else {
