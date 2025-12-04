@@ -41,13 +41,11 @@ Utilities for encoding and decoding data to facilitate testing and real-world us
 
 - [ ] **Hex encode/decode** – common format for test vectors.
 - [ ] **Base32 encode/decode** – optional, used in protocols like TOTP.
-- [ ] **Base64 encode/decode** (standard) – widely used in networking and data transfer.
-- [ ] **Base64 URL-safe encode/decode** – safe for URLs and filenames; optional padding.
-- [ ] **Base64 URL-safe no-padding encode/decode** – used in JWTs and query parameters.
+- [x] **Base64 encode/decode** (standard) – widely used in networking and data transfer.
+- [x] **Base64 URL-safe encode/decode** – safe for URLs and filenames; optional padding.
+- [x] **Base64 URL-safe no-padding encode/decode** – used in JWTs and query parameters.
 - [ ] **Base85 / Ascii85 encode/decode** – compact encoding for ASCII-safe transmission; includes z shortcut for zero blocks.
 - [ ] **Base58 encode/decode** - Optional but recommended for “completeness”; crypto addresses, blockchain
-
-**Notes:** Streaming and leftover handling are recommended for Base32, Base64, Base64 URL-safe, and Base85 to support incremental processing.
 
 ---
 

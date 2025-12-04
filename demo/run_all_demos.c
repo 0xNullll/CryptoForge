@@ -85,7 +85,7 @@ int main(void) {
 
     test_all_hkdfs(info, sizeof(info), salt, sizeof(salt), ikm, sizeof(ikm), okm_len);
 
-    printf("---------------------------------------------");
+    printf("---------------------------------------------\n");
 
     // All Base64 characters for testing
     const char *all_chars_std = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -100,14 +100,42 @@ int main(void) {
         all_chars_url
     };
 
+    const uint8_t test_hex_1[] = { 0x14, 0xFB, 0x9C, 0x03, 0xD9, 0x7E };
+    const uint8_t test_hex_2[] = { 0x14, 0xFB, 0x9C, 0x03, 0xD9 };
+    const uint8_t test_hex_3[] = { 0x14, 0xFB, 0x9C, 0x03 };
+
+    const uint8_t *test_hex[] = {
+        test_hex_1,
+        test_hex_2,
+        test_hex_3
+    };
+
+    size_t test_hex_len[] = {
+        sizeof(test_hex_1),
+        sizeof(test_hex_2),
+        sizeof(test_hex_3)
+    };
+
     size_t n = sizeof(test_strings) / sizeof(test_strings[0]);
     for (size_t i = 0; i < n; i++) {
         const uint8_t *input = (const uint8_t *)test_strings[i];
         size_t len = strlen(test_strings[i]);
 
+        test_base32("Standard Base32", input, len, 0);
+        test_base32("No Padding Base32", input, len, 1);
+
         test_base64("Standard Base64", input, len, ENC_BASE64, DEC_BASE64);
         test_base64("URL-safe Base64", input, len, ENC_BASE64_URL, DEC_BASE64_URL);
-        test_base64("URL-safe No Padding", input, len, ENC_BASE64_URL_NOPAD, DEC_BASE64_URL_NOPAD);
+        test_base64("No Padding", input, len, ENC_BASE64_URL_NOPAD, DEC_BASE64_URL_NOPAD);
+    }
+
+    for (size_t i = 0; i < 3; i++) {
+        test_hex_base32("test vector Standard Base32", test_hex[i], test_hex_len[i], 0);
+        test_hex_base32("test vector No Padding Base32", test_hex[i], test_hex_len[i], 1);
+
+        test_hex_base64("test vector Standard Base64", test_hex[i], test_hex_len[i], ENC_BASE64, DEC_BASE64);
+        test_hex_base64("test vector URL-safe Base64", test_hex[i], test_hex_len[i], ENC_BASE64_URL, DEC_BASE64_URL);
+        test_hex_base64("test vector URL-safe No Padding Base64", test_hex[i], test_hex_len[i], ENC_BASE64_URL_NOPAD, DEC_BASE64_URL_NOPAD);
     }
 
 
