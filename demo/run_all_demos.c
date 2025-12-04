@@ -87,7 +87,29 @@ int main(void) {
 
     printf("---------------------------------------------");
 
-    test_base64();
+    // All Base64 characters for testing
+    const char *all_chars_std = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    const char *all_chars_url = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+
+    const char *test_strings[] = {
+        "hello",
+        "foobar",
+        "Base64 encoding test!",
+        "any carnal pleasure.",
+        all_chars_std,
+        all_chars_url
+    };
+
+    size_t n = sizeof(test_strings) / sizeof(test_strings[0]);
+    for (size_t i = 0; i < n; i++) {
+        const uint8_t *input = (const uint8_t *)test_strings[i];
+        size_t len = strlen(test_strings[i]);
+
+        test_base64("Standard Base64", input, len, ENC_BASE64, DEC_BASE64);
+        test_base64("URL-safe Base64", input, len, ENC_BASE64_URL, DEC_BASE64_URL);
+        test_base64("URL-safe No Padding", input, len, ENC_BASE64_URL_NOPAD, DEC_BASE64_URL_NOPAD);
+    }
+
 
 #endif // ENABLE_TESTS
 

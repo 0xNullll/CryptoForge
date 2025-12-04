@@ -146,13 +146,14 @@ typedef enum {
 // ======================
 // 4. Encoding / Decoding Flags
 // ======================
+
 typedef enum {
-    EVP_ENC_HEX      = 0x00010000,
-    EVP_DEC_HEX      = 0x00020000,
-    EVP_ENC_BASE64   = 0x00040000,
-    EVP_DEC_BASE64   = 0x00080000,
-    EVP_ENC_BASE32   = 0x00100000,
-    EVP_DEC_BASE32   = 0x00200000
+    EVP_ENC_BASE64           = 0x00040000,  // Standard Base64
+    EVP_DEC_BASE64           = 0x00080000,
+    EVP_ENC_BASE64_URL       = 0x00100000,  // URL-safe Base64 with padding
+    EVP_DEC_BASE64_URL       = 0x00200000,
+    EVP_ENC_BASE64_URL_NOPAD = 0x00400000,  // URL-safe Base64 without padding
+    EVP_DEC_BASE64_URL_NOPAD = 0x00800000
 } EVP_Encoding;
 
 // ======================
