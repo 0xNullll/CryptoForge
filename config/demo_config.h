@@ -12,6 +12,7 @@
 #include "../crypto/mac/hmac.h"
 #include "../crypto/mac/kmac.h"
 #include "../crypto/kdf/hkdf.h"
+#include "../crypto/enc/base32.h"
 #include "../crypto/enc/base64.h"
 
 #include "../crypto/evp/evp_defs.h"
@@ -57,7 +58,11 @@ CF_API void test_all_hkdfs(
     const uint8_t *ikm, size_t ikm_len,
     size_t okm_len);
 
-void test_base64(const char *label, const uint8_t *input, size_t len, uint32_t enc_mode, uint32_t dec_mode);
+CF_API void test_base32(const char *label, const uint8_t *input, size_t len, int noPad);
+CF_API void test_hex_base32(const char *label, const uint8_t *input, size_t len, int noPad);
+
+CF_API void test_base64(const char *label, const uint8_t *input, size_t len, uint32_t enc_mode, uint32_t dec_mode);
+CF_API void test_hex_base64(const char *label, const uint8_t *input, size_t len, uint32_t enc_mode, uint32_t dec_mode);
 
 #ifdef __cplusplus
 }
