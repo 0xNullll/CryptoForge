@@ -57,7 +57,7 @@ CF_API void test_all_hkdfs(
     const uint8_t *ikm, size_t ikm_len,
     size_t okm_len);
 
-void test_base64();
+void test_base64(const char *label, const uint8_t *input, size_t len, uint32_t enc_mode, uint32_t dec_mode);
 
 #ifdef __cplusplus
 }

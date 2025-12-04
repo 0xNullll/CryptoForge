@@ -12,19 +12,26 @@ extern "C" {
 #define BASE64_ENC_LEN(data_len) (4 * (((data_len) + 2) / 3) + 1) // +1 for '\0'
 #define BASE64_DEC_LEN(data_len) (3 * ((data_len) / 4))
 
+#define ENC_BASE64           0x00040000  // Standard Base64
+#define DEC_BASE64           0x00080000
+#define ENC_BASE64_URL       0x00100000  // URL-safe Base64 with padding
+#define DEC_BASE64_URL       0x00200000
+#define ENC_BASE64_URL_NOPAD 0x00400000  // URL-safe Base64 without padding
+#define DEC_BASE64_URL_NOPAD 0x00800000
+
 // Encode input buffer to Base64.
 // 'out' must be large enough to hold the result
 // 'out_len' will be set to the actual number of characters written.
 bool ll_BASE64_Encode(
     const uint8_t *data, size_t data_len,
-    char *out, size_t *out_len);
+    char *out, size_t *out_len, uint32_t mode);
 
 // Decode Base64 input buffer to raw bytes.
 // 'out' must be large enough to hold the decoded bytes
 // 'out_len' will be set to the actual number of bytes written.
 bool ll_BASE64_Decode(
     const char *data, size_t data_len,
-    uint8_t *out, size_t *out_len);
+    uint8_t *out, size_t *out_len, uint32_t mode);
 
 #ifdef __cplusplus
 }
