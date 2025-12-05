@@ -2,7 +2,6 @@
 #define BASE32_H
 
 #include "../../config/libs.h"
-#include "../../utils/cf_status.h"
 #include "../../utils/mem.h"
 
 #ifdef __cplusplus
@@ -10,8 +9,8 @@ extern "C" {
 #endif
 
 // Base32 (RFC 4648) length macros
-#define BASE32_ENC_LEN(data_len) (8 * (((data_len) + 4) / 5) + 1) // +1 for '\0'
-#define BASE32_DEC_LEN(data_len) (5 * ((data_len) / 8))
+#define BASE32_ENC_LEN(data_len) (8 * (((size_t)(data_len) + 4) / 5) + 1) // +1 for '\0'
+#define BASE32_DEC_LEN(data_len) (5 * ((size_t)(data_len) / 8))
 
 // Encode input buffer to Base32.
 // 'out' must be large enough to hold the result

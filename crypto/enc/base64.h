@@ -2,7 +2,6 @@
 #define BASE64_H
 
 #include "../../config/libs.h"
-#include "../../utils/cf_status.h"
 #include "../../utils/mem.h"
 
 #ifdef __cplusplus
@@ -10,8 +9,8 @@ extern "C" {
 #endif
 
 // Base64 (RFC 4648) length macros
-#define BASE64_ENC_LEN(data_len) (4 * (((data_len) + 2) / 3) + 1) // +1 for '\0'
-#define BASE64_DEC_LEN(data_len) (3 * ((data_len) / 4))
+#define BASE64_ENC_LEN(data_len) (4 * (((size_t)(data_len) + 2) / 3) + 1) // +1 for '\0'
+#define BASE64_DEC_LEN(data_len) (3 * ((size_t)(data_len) / 4))
 
 #define ENC_BASE64           0x00040000  // Standard Base64
 #define DEC_BASE64           0x00080000
