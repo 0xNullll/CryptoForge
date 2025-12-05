@@ -39,14 +39,16 @@ Message Authentication Codes ensure **data integrity and authenticity**.
 ### 3. Encoders/Decoders
 Utilities for encoding and decoding data to facilitate testing and real-world usage.
 
-- [x] **Hex encode/decode** – common format for test vectors.
+- [x] **base16 UppererCase encode/decode** – standard RFC 3548 base16, common format for test vectors.
+- [x] **base16 LowerCase encode/decode** – optional but common format for test vectors.
 - [x] **Base32 encode/decode** – commonly used in applications such as TOTP for encoding binary data.
 - [x] **Base32 no-padding encode/decode** – optional variant, often employed in TOTP and other systems where padding characters are omitted.
 - [x] **Base64 encode/decode** (standard) – widely used in networking and data transfer.
 - [x] **Base64 URL-safe encode/decode** – safe for URLs and filenames; optional padding.
 - [x] **Base64 URL-safe no-padding encode/decode** – used in JWTs and query parameters.
-- [ ] **Base85 / Ascii85 encode/decode** – compact encoding for ASCII-safe transmission; includes z shortcut for zero blocks.
 - [x] **Base58 encode/decode** - Optional but recommended for “completeness”; crypto addresses, blockchain
+- [ ] **Base85 Ascii85 compact ASCII-safe** – classic variant used in PostScript/PDF; supports 'z' shortcut for zero blocks.
+- [ ] **Base85 Z85 compact ASCII-safe** – modern variant used in ZeroMQ; fixed mapping, no padding, clean and safe for binary data.
 
 ---
 
