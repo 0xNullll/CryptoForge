@@ -94,7 +94,7 @@ int main(void) {
     const char *test_strings[] = {
         "hello",
         "foobar",
-        "Base64 encoding test!",
+        "Base encoding test!",
         "any carnal pleasure.",
         all_chars_std,
         all_chars_url
@@ -103,17 +103,20 @@ int main(void) {
     const uint8_t test_hex_1[] = { 0x14, 0xFB, 0x9C, 0x03, 0xD9, 0x7E };
     const uint8_t test_hex_2[] = { 0x14, 0xFB, 0x9C, 0x03, 0xD9 };
     const uint8_t test_hex_3[] = { 0x14, 0xFB, 0x9C, 0x03 };
+    const uint8_t test_hex_4[] = { 0x00, 0x00, 0x01, 0x02 };
 
     const uint8_t *test_hex[] = {
         test_hex_1,
         test_hex_2,
-        test_hex_3
+        test_hex_3,
+        test_hex_4
     };
 
     size_t test_hex_len[] = {
         sizeof(test_hex_1),
         sizeof(test_hex_2),
-        sizeof(test_hex_3)
+        sizeof(test_hex_3),
+        sizeof(test_hex_4)
     };
 
     size_t n = sizeof(test_strings) / sizeof(test_strings[0]);
@@ -121,21 +124,48 @@ int main(void) {
         const uint8_t *base_input = (const uint8_t *)test_strings[i];
         size_t len = strlen(test_strings[i]);
 
+        test_base16("Standard Uppercase-Base16", base_input, len, ENC_BASE16_UPPER);
+        test_base16("Standard Lowercase-Base16", base_input, len, ENC_BASE16_LOWER);
+
+        printf("---------------------------------------------\n");
+
         test_base32("Standard Base32", base_input, len, 0);
         test_base32("No Padding Base32", base_input, len, 1);
+    
+        printf("---------------------------------------------\n");
+
+        test_base58("Standard Base58", base_input, len);
+
+        printf("---------------------------------------------\n");
 
         test_base64("Standard Base64", base_input, len, ENC_BASE64, DEC_BASE64);
         test_base64("URL-safe Base64", base_input, len, ENC_BASE64_URL, DEC_BASE64_URL);
-        test_base64("No Padding", base_input, len, ENC_BASE64_URL_NOPAD, DEC_BASE64_URL_NOPAD);
+        test_base64("No Padding URL-safe Base64", base_input, len, ENC_BASE64_URL_NOPAD, DEC_BASE64_URL_NOPAD);
+
+        printf("---------------------------------------------\n");
     }
 
-    for (size_t i = 0; i < 3; i++) {
+    for (size_t i = 0; i < 4; i++) {
+
+        test_hex_base16("test vector Standard Uppercase-Base16", test_hex[i], test_hex_len[i], ENC_BASE16_UPPER);
+        test_hex_base16("test vector Standard Lowercase-Base16", test_hex[i], test_hex_len[i], ENC_BASE16_LOWER);
+
+        printf("---------------------------------------------\n");
+
         test_hex_base32("test vector Standard Base32", test_hex[i], test_hex_len[i], 0);
         test_hex_base32("test vector No Padding Base32", test_hex[i], test_hex_len[i], 1);
 
+        printf("---------------------------------------------\n");
+
+        test_hex_base58("test vector Standard Base58", test_hex[i], test_hex_len[i]);
+
+        printf("---------------------------------------------\n");
+
         test_hex_base64("test vector Standard Base64", test_hex[i], test_hex_len[i], ENC_BASE64, DEC_BASE64);
         test_hex_base64("test vector URL-safe Base64", test_hex[i], test_hex_len[i], ENC_BASE64_URL, DEC_BASE64_URL);
-        test_hex_base64("test vector URL-safe No Padding Base64", test_hex[i], test_hex_len[i], ENC_BASE64_URL_NOPAD, DEC_BASE64_URL_NOPAD);
+        test_hex_base64("test vector No Padding URL-safe Base64", test_hex[i], test_hex_len[i], ENC_BASE64_URL_NOPAD, DEC_BASE64_URL_NOPAD);
+
+        printf("---------------------------------------------\n");
     }
 
 

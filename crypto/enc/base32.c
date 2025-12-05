@@ -3,12 +3,7 @@
 #define BASE32_PAD_CHAR '='
 
 // Base32 encoding table (RFC 4648)
-static const char BASE32_ENC_TABLE[32] = {
-    'A','B','C','D','E','F','G','H',
-    'I','J','K','L','M','N','O','P',
-    'Q','R','S','T','U','V','W','X',
-    'Y','Z','2','3','4','5','6','7'
-};
+static const char BASE32_ENC_TABLE[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 
 // Base32 reverse lookup table (shifted).
 // This table maps ASCII characters '2' (50) to 'z' (122) into Base32 values.
@@ -18,7 +13,7 @@ static const char BASE32_ENC_TABLE[32] = {
 //   - '2'-'7' -> 26..31
 // - Invalid chars are -1
 // - ignored chars (like '=' or '\n') are -2
-static const char BASE32_REV_TABLE[] = {
+static const int8_t BASE32_REV_TABLE[] = {
     // '2'-'7' (50-55)
     26,27,28,29,30,31,
     // '8'-'@' (56-64) → invalid
@@ -26,14 +21,6 @@ static const char BASE32_REV_TABLE[] = {
     // 'A'-'Z' (65-90)
     0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25
 };
-
-// static const int8_t BASE32_REV_TABLE[] = {
-//     ['A'] = 0, ['B'] = 1, ['C'] = 2, ['D'] = 3, ['E'] = 4, ['F'] = 5, ['G'] = 6, ['H'] = 7,
-//     ['I'] = 8, ['J'] = 9, ['K'] = 10, ['L'] = 11, ['M'] = 12, ['N'] = 13, ['O'] = 14, ['P'] = 15,
-//     ['Q'] = 16, ['R'] = 17, ['S'] = 18, ['T'] = 19, ['U'] = 20, ['V'] = 21, ['W'] = 22, ['X'] = 23,
-//     ['Y'] = 24, ['Z'] = 25,
-//     ['2'] = 26, ['3'] = 27, ['4'] = 28, ['5'] = 29, ['6'] = 30, ['7'] = 31
-// };
 
 bool ll_BASE32_Encode(const uint8_t *data, size_t data_len, char *out, size_t *out_len, int noPad) {
     if (!data || data_len == 0 || !out || !out_len) return false;
@@ -55,7 +42,7 @@ bool ll_BASE32_Encode(const uint8_t *data, size_t data_len, char *out, size_t *o
         size_t chunks = (total_bits + 4) / 5; // number of 5-bit chunks
 
         for (int c = 0; c < 8; c++) {
-            if (c < chunks) {
+            if (c < (int)chunks) {
                 out[index++] = BASE32_ENC_TABLE[(buf >> (35 - c*5)) & 0x1F];
             } else if (!noPad) {
                 out[index++] = BASE32_PAD_CHAR;
@@ -68,77 +55,16 @@ bool ll_BASE32_Encode(const uint8_t *data, size_t data_len, char *out, size_t *o
     return true;
 }
 
-// bool ll_BASE32_Encode(const uint8_t *data, size_t data_len, char *out, size_t *out_len, int noPad) {
-//     if (!data || data_len == 0 || !out || !out_len) return false;
-
-//     size_t index = 0;
-//     for (size_t i = 0; i < data_len; i += 5) {
-//         uint8_t in0 = data[i];
-//         uint8_t in1 = (i + 1 < data_len) ? data[i + 1] : 0;
-//         uint8_t in2 = (i + 2 < data_len) ? data[i + 2] : 0;
-//         uint8_t in3 = (i + 3 < data_len) ? data[i + 3] : 0;
-//         uint8_t in4 = (i + 4 < data_len) ? data[i + 4] : 0;
-
-//         size_t rem = data_len - i;
-//         uint64_t buf = ((uint64_t)in0 << 32) | ((uint64_t)in1 << 24) | ((uint64_t)in2 << 16) |
-//                        ((uint64_t)in3 << 8)  | ((uint64_t)in4);
-
-//         // 1st character
-//         out[index++] = BASE32_ENC_TABLE[(buf >> 35) & 0x1F];
-
-//         // 2nd character
-//         out[index++] = BASE32_ENC_TABLE[(buf >> 30) & 0x1F];
-
-//         // 3rd character
-//         if (rem > 1) {
-//             out[index++] = BASE32_ENC_TABLE[(buf >> 25) & 0x1F];
-//         } else if (!noPad) {
-//             out[index++] = BASE32_PAD_CHAR;
-//         }
-
-//         // 4th character
-//         if (rem > 1) {
-//             out[index++] = BASE32_ENC_TABLE[(buf >> 20) & 0x1F];
-//         } else if (!noPad) {
-//             out[index++] = BASE32_PAD_CHAR;
-//         }
-
-//         // 5th character
-//         if (rem > 2) {
-//             out[index++] = BASE32_ENC_TABLE[(buf >> 15) & 0x1F];
-//         } else if (!noPad) {
-//             out[index++] = BASE32_PAD_CHAR;
-//         }
-
-//         // 6th character
-//         if (rem > 3) {
-//             out[index++] = BASE32_ENC_TABLE[(buf >> 10) & 0x1F];
-//         } else if (!noPad) {
-//             out[index++] = BASE32_PAD_CHAR;
-//         }
-
-//         // 7th character
-//         if (rem > 4) {
-//             out[index++] = BASE32_ENC_TABLE[(buf >> 5) & 0x1F];
-//         } else if (!noPad) {
-//             out[index++] = BASE32_PAD_CHAR;
-//         }
-
-//         // 8th character
-//         if (rem > 4) {
-//             out[index++] = BASE32_ENC_TABLE[buf & 0x1F];
-//         } else if (!noPad) {
-//             out[index++] = BASE32_PAD_CHAR;
-//         }
-//     }
-
-//     out[index] = '\0';
-//     *out_len = index;
-//     return true;
-// }
-
 bool ll_BASE32_Decode(const char *data, size_t data_len, uint8_t *out, size_t *out_len, int noPad) {
     if (!data || data_len == 0 || !out || !out_len) return false;
+
+    // Adjust data_len if null terminator appears before
+    for (size_t i = 0; i < data_len; ++i) {
+        if (data[i] == '\0') {
+            data_len = i;
+            break;
+        }
+    }
 
     // Standard Base32 must be multiple of 8 unless noPad
     if (!noPad && data_len % 8 != 0) return false;
@@ -149,7 +75,7 @@ bool ll_BASE32_Decode(const char *data, size_t data_len, uint8_t *out, size_t *o
     for (size_t i = 0; i < data_len; i += 8) {
         buf = 0;
         int valid_chars = 0;
-        
+
         // Read up to 8 input characters
         for (int j = 0; j < 8; j++) {
             char c = (i + (size_t)j < data_len) ? data[i + (size_t)j] : BASE32_PAD_CHAR;

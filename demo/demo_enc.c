@@ -2,6 +2,74 @@
 
 #if ENABLE_TESTS
 
+void test_base16(const char *label, const uint8_t *input, size_t len, uint32_t mode) {
+    char encoded[512] = {0};   // big enough buffer
+    uint8_t decoded[512] = {0};
+    size_t enc_len = sizeof(encoded);
+    size_t dec_len = sizeof(decoded);
+
+    bool enc_ok = ll_BASE16_Encode(input, len, encoded, &enc_len, mode);
+    if (!enc_ok) {
+        printf("[%s] Encode failed\n", label);
+        return;
+    }
+
+    bool dec_ok = ll_BASE16_Decode(encoded, enc_len, decoded, &dec_len);
+    if (!dec_ok) {
+        printf("[%s] Decode failed\n", label);
+        return;
+    }
+
+    int match = (dec_len == len && memcmp(input, decoded, len) == 0);
+
+    printf("[%s]\n", label);
+    printf("Input:     '");
+    for (size_t i = 0; i < len; i++) putchar(input[i]);
+    printf("'\n");
+
+    printf("Encoded:   '%s'\n", encoded);
+
+    printf("Decoded:   '");
+    for (size_t i = 0; i < dec_len; i++) putchar(decoded[i]);
+    printf("'\n");
+
+    printf("Match:     %s\n\n", match ? "YES" : "NO");
+}
+
+void test_hex_base16(const char *label, const uint8_t *input, size_t len, uint32_t mode) {
+    char encoded[512] = {0};   // big enough buffer
+    uint8_t decoded[512] = {0};
+    size_t enc_len = sizeof(encoded);
+    size_t dec_len = sizeof(decoded);
+
+    bool enc_ok = ll_BASE16_Encode(input, len, encoded, &enc_len, mode);
+    if (!enc_ok) {
+        printf("[%s] Encode failed\n", label);
+        return;
+    }
+
+    bool dec_ok = ll_BASE16_Decode(encoded, enc_len, decoded, &dec_len);
+    if (!dec_ok) {
+        printf("[%s] Decode failed\n", label);
+        return;
+    }
+
+    int match = (dec_len == len && memcmp(input, decoded, len) == 0);
+
+    printf("[%s]\n", label);
+    printf("Input:     ");
+    for (size_t i = 0; i < len; i++) printf("%02X ", input[i]);
+    printf("\n");
+
+    printf("Encoded:   '%s'\n", encoded);
+
+    printf("Decoded:   ");
+    for (size_t i = 0; i < dec_len; i++) printf("%02X ", decoded[i]);
+    printf("\n");
+
+    printf("Match:     %s\n\n", match ? "YES" : "NO");
+}
+
 void test_base32(const char *label, const uint8_t *input, size_t len, int noPad) {
     char encoded[512] = {0};   // big enough buffer
     uint8_t decoded[512] = {0};
@@ -60,6 +128,75 @@ void test_hex_base32(const char *label, const uint8_t *input, size_t len, int no
     printf("\n");
 
     printf("Encoded:   '%.*s'\n", (int)enc_len, encoded);
+
+    printf("Decoded:   ");
+    for (size_t i = 0; i < dec_len; i++) printf("%02X ", decoded[i]);
+    printf("\n");
+
+    printf("Match:     %s\n\n", match ? "YES" : "NO");
+}
+
+
+void test_base58(const char *label, const uint8_t *input, size_t len) {
+    char encoded[512] = {0};   // big enough buffer
+    uint8_t decoded[512] = {0};
+    size_t enc_len = sizeof(encoded);
+    size_t dec_len = sizeof(decoded);
+
+    bool enc_ok = ll_BASE58_Encode(input, len, encoded, &enc_len);
+    if (!enc_ok) {
+        printf("[%s] Encode failed\n", label);
+        return;
+    }
+
+    bool dec_ok = ll_BASE58_Decode(encoded, enc_len, decoded, &dec_len);
+    if (!dec_ok) {
+        printf("[%s] Decode failed\n", label);
+        return;
+    }
+
+    int match = (dec_len == len && memcmp(input, decoded, len) == 0);
+
+    printf("[%s]\n", label);
+    printf("Input:     '");
+    for (size_t i = 0; i < len; i++) putchar(input[i]);
+    printf("'\n");
+
+    printf("Encoded:   '%s'\n", encoded);
+
+    printf("Decoded:   '");
+    for (size_t i = 0; i < dec_len; i++) putchar(decoded[i]);
+    printf("'\n");
+
+    printf("Match:     %s\n\n", match ? "YES" : "NO");
+}
+
+void test_hex_base58(const char *label, const uint8_t *input, size_t len) {
+    char encoded[512] = {0};   // big enough buffer
+    uint8_t decoded[512] = {0};
+    size_t enc_len = sizeof(encoded);
+    size_t dec_len = sizeof(decoded);
+
+    bool enc_ok = ll_BASE58_Encode(input, len, encoded, &enc_len);
+    if (!enc_ok) {
+        printf("[%s] Encode failed\n", label);
+        return;
+    }
+
+    bool dec_ok = ll_BASE58_Decode(encoded, enc_len, decoded, &dec_len);
+    if (!dec_ok) {
+        printf("[%s] Decode failed\n", label);
+        return;
+    }
+
+    int match = (dec_len == len && memcmp(input, decoded, len) == 0);
+
+    printf("[%s]\n", label);
+    printf("Input:     ");
+    for (size_t i = 0; i < len; i++) printf("%02X ", input[i]);
+    printf("\n");
+
+    printf("Encoded:   '%s'\n", encoded);
 
     printf("Decoded:   ");
     for (size_t i = 0; i < dec_len; i++) printf("%02X ", decoded[i]);
@@ -133,6 +270,5 @@ void test_hex_base64(const char *label, const uint8_t *input, size_t len, uint32
 
     printf("Match:     %s\n\n", match ? "YES" : "NO");
 }
-
 
 #endif // ENABLE_TESTS
