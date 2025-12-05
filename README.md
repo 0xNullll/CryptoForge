@@ -39,7 +39,7 @@ Message Authentication Codes ensure **data integrity and authenticity**.
 ### 3. Encoders/Decoders
 Utilities for encoding and decoding data to facilitate testing and real-world usage.
 
-- [ ] **Hex encode/decode** – common format for test vectors.
+- [x] **Hex encode/decode** – common format for test vectors.
 - [x] **Base32 encode/decode** – commonly used in applications such as TOTP for encoding binary data.
 - [x] **Base32 no-padding encode/decode** – optional variant, often employed in TOTP and other systems where padding characters are omitted.
 - [x] **Base64 encode/decode** (standard) – widely used in networking and data transfer.
