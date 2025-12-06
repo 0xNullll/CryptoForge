@@ -149,7 +149,8 @@ Required for block ciphers to handle plaintext not aligned to block size.
 │   │   │  base32.{c,h}
 │   │   │  base64.{c,h}
 │   │   │  base58.{c,h}
-│   │   └─ base64.{c,h}
+│   │   │  base64.{c,h}
+│   │   └─ base85.{c,h}
 │   └─ /evp
 │       ├─ evp_defs.h
 │       ├─ evp_flags.h
