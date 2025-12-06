@@ -145,18 +145,19 @@ Required for block ciphers to handle plaintext not aligned to block size.
 │   ├─ /kdf
 │   │   └─ hkdf.{c,h}
 │   ├─ /enc
-│   │   │  base16.{c,h}
-│   │   │  base32.{c,h}
-│   │   │  base64.{c,h}
-│   │   │  base58.{c,h}
-│   │   │  base64.{c,h}
+│   │   ├─ base16.{c,h}
+│   │   ├─ base32.{c,h}
+│   │   ├─ base64.{c,h}
+│   │   ├─ base58.{c,h}
+│   │   ├─ base64.{c,h}
 │   │   └─ base85.{c,h}
 │   └─ /evp
 │       ├─ evp_defs.h
 │       ├─ evp_flags.h
 │       ├─ evp_hash.{c,h}
 │       ├─ evp_mac.{c,h}
-│       └─ evp_kdf.{c,h}
+│       ├─ evp_kdf.{c,h}
+│       └─ evp_enc.{c,h}
 ├─ /utils
 │   ├─ mem.{c,h}        <-- secure memory helpers
 │   ├─ misc_utils.h     <-- force_inline, generic macros
