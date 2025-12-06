@@ -3,8 +3,8 @@
 #if ENABLE_TESTS
 
 void test_base16(const char *label, const uint8_t *input, size_t len, uint32_t mode) {
-    char encoded[512] = {0};   // big enough buffer
-    uint8_t decoded[512] = {0};
+    char encoded[1024] = {0};   // big enough buffer
+    uint8_t decoded[1024] = {0};
     size_t enc_len = sizeof(encoded);
     size_t dec_len = sizeof(decoded);
 
