@@ -7,6 +7,10 @@ static const char BASE64_ENC_TABLE[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn
 
 static const char BASE64_ENC_URL_SAFE_TABLE[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
+#define BASE64_MIN '+'
+#define BASE64_URL_SAFE_MIN '-'
+#define BASE64_MAX 'z'
+
 // Base64 reverse lookup table (shifted).  
 // This table maps ASCII characters '+' (43) to 'z' (122) into Base64 values.
 // Indexing: val = BASE64_REV_TABLE[ch - '+']
@@ -41,7 +45,7 @@ bool ll_BASE64_Encode(const uint8_t *data, size_t data_len, char *out, size_t *o
     if (!data || data_len == 0 || !out || !out_len) return false;
 
     int noPad = ((mode & ENC_BASE64_URL_NOPAD) != 0);
-    int isUrlSafe = ((mode & ENC_BASE64_URL) != 0 || (mode & ENC_BASE64_URL_NOPAD) != 0);
+    int isUrlSafe = ((mode & ENC_BASE64_URL) != 0);
 
     const char *table = isUrlSafe ? BASE64_ENC_URL_SAFE_TABLE : BASE64_ENC_TABLE;
     size_t index = 0;
@@ -81,6 +85,7 @@ bool ll_BASE64_Encode(const uint8_t *data, size_t data_len, char *out, size_t *o
 bool ll_BASE64_Decode(const char *data, size_t data_len, uint8_t *out, size_t *out_len, uint32_t mode) {
     if (!data || data_len == 0 || !out || !out_len) return false;
 
+#if BASE_TRUNCATE_ON_NULL
     // Adjust data_len if null terminator appears before
     for (size_t i = 0; i < data_len; ++i) {
         if (data[i] == '\0') {
@@ -88,15 +93,16 @@ bool ll_BASE64_Decode(const char *data, size_t data_len, uint8_t *out, size_t *o
             break;
         }
     }
+#endif // BASE_TRUNCATE_ON_NULL
 
     int noPad = ((mode & DEC_BASE64_URL_NOPAD) != 0);
-    int isUrlSafe = ((mode & DEC_BASE64_URL) != 0 || (mode & DEC_BASE64_URL_NOPAD) != 0);
+    int isUrlSafe = ((mode & DEC_BASE64_URL) != 0);
 
     // Standard Base64 must be multiple of 4 unless padding is omitted
     if (!isUrlSafe && !noPad && data_len % 4 != 0) 
         return false;
 
-    const char start_char = isUrlSafe ? '-' : '+';
+    const char start_char = isUrlSafe ? BASE64_URL_SAFE_MIN : BASE64_MIN;
     const int8_t *rev_table = isUrlSafe ? BASE64_REV_URL_SAFE_TABLE : BASE64_REV_TABLE;
 
     size_t index = 0;
@@ -112,7 +118,7 @@ bool ll_BASE64_Decode(const char *data, size_t data_len, uint8_t *out, size_t *o
             if (c == BASE64_PAD_CHAR) {
                 val = 0;
             } else {
-                if (c >= start_char && c <= 'z') val = rev_table[c - start_char];
+                if (c >= start_char && c <= BASE64_MAX) val = rev_table[c - start_char];
             }
 
             if (val < 0) return false; // invalid char

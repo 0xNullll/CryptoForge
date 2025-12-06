@@ -13,6 +13,10 @@
 #define ENABLE_TESTS 1       // enable demo/test code
 #endif
 
+#ifndef BASE_TRUNCATE_ON_NULL
+#define BASE_TRUNCATE_ON_NULL 0 // Check every input byte and enforce max length / null termination
+#endif
+
 // ------------------------
 // Function name prefix support
 // ------------------------

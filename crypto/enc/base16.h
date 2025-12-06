@@ -8,8 +8,8 @@
 extern "C" {
 #endif
 
-#define ENC_BASE16_UPPER    0x00010000
-#define ENC_BASE16_LOWER    0x00020000
+#define ENC_BASE16_UPPER    0x01  // '0'-'9','A'-'F'
+#define ENC_BASE16_LOWER    0x04  // '0'-'9','a'-'f'
 
 #define BASE16_ENC_LEN(data_len) ((size_t)(data_len) * 2 + 1)
 #define BASE16_DEC_LEN(data_len) ((size_t)(data_len) / 2)
