@@ -47,8 +47,8 @@ Utilities for encoding and decoding data to facilitate testing and real-world us
 - [x] **Base64 URL-safe encode/decode** – safe for URLs and filenames; optional padding.
 - [x] **Base64 URL-safe no-padding encode/decode** – used in JWTs and query parameters.
 - [x] **Base58 encode/decode** - Optional but recommended for “completeness”; crypto addresses, blockchain
-- [ ] **Base85 Ascii85 compact ASCII-safe** – classic variant used in PostScript/PDF; supports 'z' shortcut for zero blocks.
-- [ ] **Base85 Z85 compact ASCII-safe** – modern variant used in ZeroMQ; fixed mapping, no padding, clean and safe for binary data.
+- [x] **Base85 Ascii85 compact ASCII-safe encode/decode** – classic variant used in PostScript/PDF; supports 'z' shortcut for zero blocks.
+- [x] **Base85 Z85 compact ASCII-safe encode/decodes** – modern variant used in ZeroMQ; fixed mapping, no padding, clean and safe for binary data.
 
 ---
 
@@ -194,6 +194,9 @@ Required for block ciphers to handle plaintext not aligned to block size.
 - [RFC 5869 – HMAC-based Extract-and-Expand Key Derivation Function (HKDF), May 2010](https://datatracker.ietf.org/doc/html/rfc5869)
 - [RFC 4648 – The Base16, Base32, and Base64 Data Encodings, October 2006](https://datatracker.ietf.org/doc/html/rfc4648)
 - [RFC 3548 – Base16, Base32, and Base64 Data Encodings, July 2003](https://datatracker.ietf.org/doc/html/rfc3548)
+- [Ascii85 – ASCII/Base85 Binary‑to‑Text Encoding (btoa/Adobe/PDF/PostScript), circa 1990s](https://en.wikipedia.org/wiki/Ascii85)
+- [RFC 32 – The Z85 (ZeroMQ Base85) Data Encoding, March 2010](https://rfc.zeromq.org/spec/32/)
+
 ---
 
 ## License

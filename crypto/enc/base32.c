@@ -5,8 +5,11 @@
 // Base32 encoding table (RFC 4648)
 static const char BASE32_ENC_TABLE[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 
+#define BASE32_MIN '2'
+#define BASE32_MAX 'Z'
+
 // Base32 reverse lookup table (shifted).
-// This table maps ASCII characters '2' (50) to 'z' (122) into Base32 values.
+// This table maps ASCII characters '2' (50) to 'Z' (90) into Base32 values.
 // Indexing: val = BASE32_REV_TABLE[ch - '2']
 // - Valid Base32 chars map to 0..31
 //   - 'A'-'Z' -> 0..25
@@ -22,10 +25,12 @@ static const int8_t BASE32_REV_TABLE[] = {
     0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25
 };
 
-bool ll_BASE32_Encode(const uint8_t *data, size_t data_len, char *out, size_t *out_len, int noPad) {
+bool ll_BASE32_Encode(const uint8_t *data, size_t data_len, char *out, size_t *out_len, uint32_t mode) {
     if (!data || data_len == 0 || !out || !out_len) return false;
 
     size_t index = 0;
+
+    int noPad = ((mode & ENC_BASE32_NOPAD) != 0);
 
     for (size_t i = 0; i < data_len; i += 5) {
         uint8_t in0 = data[i];
@@ -55,9 +60,10 @@ bool ll_BASE32_Encode(const uint8_t *data, size_t data_len, char *out, size_t *o
     return true;
 }
 
-bool ll_BASE32_Decode(const char *data, size_t data_len, uint8_t *out, size_t *out_len, int noPad) {
+bool ll_BASE32_Decode(const char *data, size_t data_len, uint8_t *out, size_t *out_len, uint32_t mode) {
     if (!data || data_len == 0 || !out || !out_len) return false;
 
+#if BASE_TRUNCATE_ON_NULL
     // Adjust data_len if null terminator appears before
     for (size_t i = 0; i < data_len; ++i) {
         if (data[i] == '\0') {
@@ -65,6 +71,9 @@ bool ll_BASE32_Decode(const char *data, size_t data_len, uint8_t *out, size_t *o
             break;
         }
     }
+#endif // BASE_TRUNCATE_ON_NULL
+
+    int noPad = ((mode & DEC_BASE32_NOPAD) != 0);
 
     // Standard Base32 must be multiple of 8 unless noPad
     if (!noPad && data_len % 8 != 0) return false;
@@ -85,7 +94,7 @@ bool ll_BASE32_Decode(const char *data, size_t data_len, uint8_t *out, size_t *o
                 val = 0;
             }
 
-            else if (c >= '2' && c <= 'Z') val = BASE32_REV_TABLE[c - '2'];
+            else if (c >= BASE32_MIN && c <= BASE32_MAX) val = BASE32_REV_TABLE[c - BASE32_MIN];
 
             if (val < 0) return false; // invalid char
 

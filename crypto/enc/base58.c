@@ -1,6 +1,11 @@
 #include "base58.h"
 
+#define BASE58_LEADING_ZERO '1'
+
 static const char BASE58_ENC_TABLE[] = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+
+#define BASE58_MIN '1'
+#define BASE58_MAX 'z'
 
 // Base58 reverse lookup table (shifted).
 // This table maps ASCII characters '1' (49) to 'z' (122) into Base58 values.
@@ -50,7 +55,7 @@ bool ll_BASE58_Encode(const uint8_t *data, size_t data_len, char *out, size_t *o
     }
 
     // leading '1's for zeros
-    for (i = 0; i < zcount; ++i) out[i] = '1';
+    for (i = 0; i < zcount; ++i) out[i] = BASE58_LEADING_ZERO;
 
     // convert buf -> chars
     for (; j < size; ++i, ++j) {
@@ -58,13 +63,14 @@ bool ll_BASE58_Encode(const uint8_t *data, size_t data_len, char *out, size_t *o
     }
 
     out[i] = '\0';
-    *out_len = i + 1;
+    *out_len = i;
     return true;
 }
 
 bool ll_BASE58_Decode(const char *data, size_t data_len, uint8_t *out, size_t *out_len) {
     if (!data || data_len == 0 || !out || !out_len) return false;
 
+#if BASE_TRUNCATE_ON_NULL
     // Adjust data_len if null terminator appears before
     for (size_t i = 0; i < data_len; ++i) {
         if (data[i] == '\0') {
@@ -72,10 +78,11 @@ bool ll_BASE58_Decode(const char *data, size_t data_len, uint8_t *out, size_t *o
             break;
         }
     }
+#endif // BASE_TRUNCATE_ON_NULL
 
     // Count leading '1's -> map to leading zeros
     size_t zcount = 0;
-    while (zcount < data_len && data[zcount] == '1') zcount++;
+    while (zcount < data_len && data[zcount] == BASE58_LEADING_ZERO) zcount++;
 
     // Approx max size: 0.733 * digits
     size_t size = BASE58_DEC_LEN(data_len - zcount);
@@ -86,7 +93,7 @@ bool ll_BASE58_Decode(const char *data, size_t data_len, uint8_t *out, size_t *o
     for (size_t i = zcount; i < data_len; ++i) {
         int val = -1;
         char c = data[i];
-        if (c >= '1' && c <= 'z') val = BASE58_REV_TABLE[c - '1']; // reverse lookup
+        if (c >= BASE58_MIN && c <= BASE58_MAX) val = BASE58_REV_TABLE[c - BASE58_MIN]; // reverse lookup
         if (val < 0) return false; // invalid char
 
         for (size_t j = size - 1; j != (size_t)-1; --j) {
