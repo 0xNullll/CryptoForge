@@ -12,12 +12,12 @@ extern "C" {
 #define BASE64_ENC_LEN(data_len) (4 * (((size_t)(data_len) + 2) / 3) + 1) // +1 for '\0'
 #define BASE64_DEC_LEN(data_len) (3 * ((size_t)(data_len) / 4))
 
-#define ENC_BASE64_STD       0x100    // Standard Base64
-#define DEC_BASE64_STD       0x200
-#define ENC_BASE64_URL       0x400    // URL-safe Base64 with padding
-#define DEC_BASE64_URL       0x800
-#define ENC_BASE64_URL_NOPAD 0x1000   // URL-safe Base64 without padding
-#define DEC_BASE64_URL_NOPAD 0x2000
+#define ENC_BASE64_STD       0x400    // Standard Base64
+#define DEC_BASE64_STD       0x800
+#define ENC_BASE64_URL       0x1000   // URL-safe Base64 with padding
+#define DEC_BASE64_URL       0x2000
+#define ENC_BASE64_URL_NOPAD 0x4000   // URL-safe Base64 without padding
+#define DEC_BASE64_URL_NOPAD 0x8000
 
 // Encode input buffer to Base64.
 // 'out' must be large enough to hold the result
