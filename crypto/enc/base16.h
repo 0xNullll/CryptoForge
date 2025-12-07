@@ -8,10 +8,11 @@
 extern "C" {
 #endif
 
-#define ENC_BASE16_UPPER    0x01  // '0'-'9','A'-'F'
-#define ENC_BASE16_LOWER    0x02  // '0'-'9','a'-'f'
+#define BASE16_UPPER    0x01  // '0'-'9','A'-'F'
+#define BASE16_LOWER    0x02  // '0'-'9','a'-'f'
 
-#define BASE16_ENC_LEN(data_len) ((size_t)(data_len) * 2 + 1)
+// Base16 (RFC 3548) length macros
+#define BASE16_ENC_LEN(data_len) ((size_t)(data_len) * 2 + 1)  // +1 for '\0'
 #define BASE16_DEC_LEN(data_len) ((size_t)(data_len) / 2)
 
 // Encode input buffer to Base16.

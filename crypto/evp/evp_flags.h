@@ -149,36 +149,36 @@ typedef enum {
 
 typedef enum {
     // --- Base16 / Hex ---
-    EVP_ENC_BASE16_UPPER  = 0x01,  // '0'-'9','A'-'F'
-    EVP_ENC_BASE16_LOWER  = 0x02,  // '0'-'9','a'-'f'
-    EVP_DEC_BASE16        = 0x04,
+    EVP_BASE16_UPPER       = 0x01,  // '0'-'9','A'-'F'
+    EVP_BASE16_LOWER       = 0x02,  // '0'-'9','a'-'f'
+    EVP_BASE16_DEC         = 0x04,
 
     // --- Base32 ---
-    EVP_ENC_BASE32        = 0x10,
-    EVP_DEC_BASE32        = 0x20,
-    EVP_ENC_BASE32_NOPAD  = 0x40,
-    EVP_DEC_BASE32_NOPAD  = 0x80,
+    EVP_BASE32_ENC         = 0x10,
+    EVP_BASE32_DEC         = 0x20,
+    EVP_BASE32_ENC_NOPAD   = 0x40,
+    EVP_BASE32_DEC_NOPAD   = 0x80,
 
     // --- Base58 ---
-    EVP_ENC_BASE58         = 0x100,    // Base58 encode
-    EVP_DEC_BASE58         = 0x200,    // Base58 decode
+    EVP_BASE58_ENC         = 0x100,
+    EVP_BASE58_DEC         = 0x200,
 
     // --- Base64 ---
-    EVP_ENC_BASE64_STD       = 0x400,    // Standard Base64
-    EVP_DEC_BASE64_STD       = 0x800,
-    EVP_ENC_BASE64_URL       = 0x1000,   // URL-safe Base64 with padding
-    EVP_DEC_BASE64_URL       = 0x2000,
-    EVP_ENC_BASE64_URL_NOPAD = 0x4000,   // URL-safe Base64 without padding
-    EVP_DEC_BASE64_URL_NOPAD = 0x8000,
+    EVP_BASE64_STD_ENC        = 0x400,
+    EVP_BASE64_STD_DEC        = 0x800,
+    EVP_BASE64_URL_ENC        = 0x1000,
+    EVP_BASE64_URL_DEC        = 0x2000,
+    EVP_BASE64_URL_ENC_NOPAD  = 0x4000,
+    EVP_BASE64_URL_DEC_NOPAD  = 0x8000,
 
     // --- Base85 variants ---
-    EVP_ENC_BASE85_STD    = 0x10000,     // Standard ASCII85 ('z' supported)
-    EVP_DEC_BASE85_STD    = 0x20000,
-    EVP_ENC_BASE85_EXT    = 0x40000,     // Extended ASCII85 ('y' optional)
-    EVP_DEC_BASE85_EXT    = 0x80000,
-    EVP_ENC_BASE85_Z85    = 0x100000,    // Z85 variant (no z/y, different charset)
-    EVP_DEC_BASE85_Z85    = 0x200000,
-    EVP_DEC_BASE85_WS     = 0x400000     // Ignore white spaces
+    EVP_BASE85_STD_ENC     = 0x10000,   // Standard ASCII85 ('z' supported)
+    EVP_BASE85_STD_DEC     = 0x20000,
+    EVP_BASE85_EXT_ENC     = 0x40000,   // Extended ASCII85 ('y' optional)
+    EVP_BASE85_EXT_DEC     = 0x80000,
+    EVP_BASE85_Z85_ENC     = 0x100000,  // Z85 variant (no z/y, different charset)
+    EVP_BASE85_Z85_DEC     = 0x200000,
+    EVP_BASE85_IGNORE_WS   = 0x400000   // Ignore white spaces
 } EVP_Encoding;
 
 // ======================
