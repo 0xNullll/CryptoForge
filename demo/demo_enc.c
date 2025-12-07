@@ -218,6 +218,7 @@ void test_base64(const char *label, const uint8_t *input, size_t len, uint32_t e
 
     bool dec_ok = ll_BASE64_Decode(encoded, enc_len, decoded, &dec_len, dec_mode);
     if (!dec_ok) {
+        printf("dec_Ok = %d\n", dec_ok);
         printf("[%s] Decode failed\n", label);
         return;
     }
@@ -279,9 +280,21 @@ void test_base85(const char *label, const uint8_t *input, size_t len, uint32_t e
     uint8_t decoded[512] = {0};
     size_t enc_len = 0, dec_len = 0;
 
+    // Check Z85 input length before encoding
+    if ((dec_mode & EVP_BASE85_Z85_ENC) && (enc_len % 4 != 0)) {
+        printf("[%s] Cannot encode Z85:  input length %zu is not a multiple of 4\n", label, enc_len);
+        return;
+    }
+
     bool enc_ok = ll_BASE85_Encode(input, len, encoded, &enc_len, enc_mode);
     if (!enc_ok) {
         printf("[%s] Encode failed\n", label);
+        return;
+    }
+
+    // Check Z85 input length before decoding
+    if ((dec_mode & EVP_BASE85_Z85_DEC) && (enc_len % 5 != 0)) {
+        printf("[%s] Cannot decode Z85: encoded length %zu is not a multiple of 5\n", label, enc_len);
         return;
     }
 
@@ -315,9 +328,21 @@ void test_hex_base85(const char *label, const uint8_t *input, size_t len, uint32
     uint8_t decoded[512] = {0};
     size_t enc_len = 0, dec_len = 0;
 
+    // Check Z85 input length before encoding
+    if ((dec_mode & EVP_BASE85_Z85_ENC) && (enc_len % 4 != 0)) {
+        printf("[%s] Cannot encode Z85:  input length %zu is not a multiple of 4\n", label, enc_len);
+        return;
+    }
+
     bool enc_ok = ll_BASE85_Encode(input, len, encoded, &enc_len, enc_mode);
     if (!enc_ok) {
         printf("[%s] Encode failed\n", label);
+        return;
+    }
+
+    // Check Z85 input length before decoding
+    if ((dec_mode & EVP_BASE85_Z85_DEC) && (enc_len % 5 != 0)) {
+        printf("[%s] Cannot decode Z85: encoded length %zu is not a multiple of 5\n", label, enc_len);
         return;
     }
 
@@ -342,5 +367,6 @@ void test_hex_base85(const char *label, const uint8_t *input, size_t len, uint32
 
     printf("Match:     %s\n\n", match ? "YES" : "NO");
 }
+
 
 #endif // ENABLE_TESTS

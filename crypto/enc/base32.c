@@ -30,7 +30,7 @@ bool ll_BASE32_Encode(const uint8_t *data, size_t data_len, char *out, size_t *o
 
     size_t index = 0;
 
-    int noPad = ((mode & ENC_BASE32_NOPAD) != 0);
+    int noPad = ((mode & BASE32_ENC_NOPAD) != 0);
 
     for (size_t i = 0; i < data_len; i += 5) {
         uint8_t in0 = data[i];
@@ -73,7 +73,7 @@ bool ll_BASE32_Decode(const char *data, size_t data_len, uint8_t *out, size_t *o
     }
 #endif // BASE_TRUNCATE_ON_NULL
 
-    int noPad = ((mode & DEC_BASE32_NOPAD) != 0);
+    int noPad = ((mode & BASE32_DEC_NOPAD) != 0);
 
     // Standard Base32 must be multiple of 8 unless noPad
     if (!noPad && data_len % 8 != 0) return false;

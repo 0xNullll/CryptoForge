@@ -34,18 +34,18 @@ static const int8_t BASE64_REV_TABLE[] = {
 // - ignored chars (like '=' or '\n') are -2
 static const int8_t BASE64_REV_URL_SAFE_TABLE[] = {
     62,-1,-1,52,53,54,55,56,57,58,59,60,61,
-    -1,-1,-1,-2,-1,-1,-1,0,1,2,3,4,5,6,7,8,9,10,
+    -1,-1,-1,-1,-1,-1,-1,0,1,2,3,4,5,6,7,8,9,10,
     11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,
-    -1,-1,-1,-1,-1,-1,26,27,28,29,30,31,32,33,34,
+    -1,-1,-1,-1,63,-1,26,27,28,29,30,31,32,33,34,
     35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,
-    50,51,63
+    50,51
 };
 
 bool ll_BASE64_Encode(const uint8_t *data, size_t data_len, char *out, size_t *out_len, uint32_t mode) {
     if (!data || data_len == 0 || !out || !out_len) return false;
 
-    int noPad = ((mode & ENC_BASE64_URL_NOPAD) != 0);
-    int isUrlSafe = ((mode & ENC_BASE64_URL) != 0);
+    int noPad = ((mode & BASE64_URL_ENC_NOPAD) != 0);
+    int isUrlSafe = ((mode & BASE64_URL_ENC) != 0);
 
     const char *table = isUrlSafe ? BASE64_ENC_URL_SAFE_TABLE : BASE64_ENC_TABLE;
     size_t index = 0;
@@ -95,12 +95,14 @@ bool ll_BASE64_Decode(const char *data, size_t data_len, uint8_t *out, size_t *o
     }
 #endif // BASE_TRUNCATE_ON_NULL
 
-    int noPad = ((mode & DEC_BASE64_URL_NOPAD) != 0);
-    int isUrlSafe = ((mode & DEC_BASE64_URL) != 0);
+    bool isStd = (mode & BASE64_STD_DEC) != 0;
+    bool isUrlSafe = (mode & BASE64_URL_DEC) != 0;
+    bool noPad = (mode & BASE64_URL_DEC_NOPAD) != 0;
 
-    // Standard Base64 must be multiple of 4 unless padding is omitted
-    if (!isUrlSafe && !noPad && data_len % 4 != 0) 
-        return false;
+    // Only check padding rules if standard Base64 or URL-safe with padding
+    if ((isStd || isUrlSafe) && !noPad && (data_len % 4 != 0)) {
+        return false; // invalid length
+    }
 
     const char start_char = isUrlSafe ? BASE64_URL_SAFE_MIN : BASE64_MIN;
     const int8_t *rev_table = isUrlSafe ? BASE64_REV_URL_SAFE_TABLE : BASE64_REV_TABLE;

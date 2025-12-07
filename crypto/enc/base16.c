@@ -34,7 +34,7 @@ bool ll_BASE16_Encode(const uint8_t *data, size_t data_len,
                       char *out, size_t *out_len, uint32_t mode) {
     if (!data || data_len == 0 || !out || !out_len) return false;
 
-    const char *table = (mode == ENC_BASE16_LOWER || mode == ENC_BASE16_UPPER)
+    const char *table = (mode == BASE16_LOWER)
                         ? BASE16_ENC_TABLE_LOWER
                         : BASE16_ENC_TABLE_UPPER;
 

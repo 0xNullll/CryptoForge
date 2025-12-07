@@ -1,7 +1,5 @@
 #include "base85.h"
 
-#define DIV85(number) ((uint32_t)((DIV85_MAGIC * number) >> 32) >> 6)
-
 #define ASCII85_ZERO_SHORTCUT 'z'    // shortcut for 0x00000000
 #define ASCII85_SPACE_SHORTCUT 'y'   // shortcut for 0x20202020
 
@@ -50,8 +48,8 @@ static FORCE_INLINE uint32_t read_u32_be(const uint8_t *in) {
 bool ll_BASE85_Encode(const uint8_t *data, size_t data_len, char *out, size_t *out_len, uint32_t mode) {
     if (!data || !out || !out_len) return false;
 
-    bool isZ85 = (mode & ENC_BASE85_Z85) != 0;
-    bool useExt = (mode & ENC_BASE85_EXT) != 0;
+    bool isZ85 = (mode & BASE85_Z85_ENC) != 0;
+    bool useExt = (mode & BASE85_EXT_ENC) != 0;
 
     if (isZ85) {
         // Z85 requires input length multiple of 4
@@ -91,7 +89,7 @@ bool ll_BASE85_Encode(const uint8_t *data, size_t data_len, char *out, size_t *o
             else enc[j] += 33;
         }
 
-        memcpy(out + index, enc, 5);
+        SECURE_MEMCPY(out + index, enc, 5);
         index += 5;
     }
 
@@ -125,8 +123,8 @@ bool ll_BASE85_Encode(const uint8_t *data, size_t data_len, char *out, size_t *o
 bool ll_BASE85_Decode(const char *data, size_t data_len, uint8_t *out, size_t *out_len, uint32_t mode) {
     if (!data || data_len == 0 || !out || !out_len) return false;
 
-    bool isZ85 = (mode & DEC_BASE85_Z85) != 0;
-    bool useExt = (mode & DEC_BASE85_EXT) != 0;
+    bool isZ85 = (mode & BASE85_Z85_DEC) != 0;
+    bool useExt = (mode & BASE85_EXT_DEC) != 0;
 
     if (isZ85) {
         // Z85 decoding requires input length multiple of 5 characters
@@ -136,7 +134,7 @@ bool ll_BASE85_Decode(const char *data, size_t data_len, uint8_t *out, size_t *o
     }
 
     const int8_t *rev_table = isZ85 ? BASE85_Z85_REV_TABLE : BASE85_ASCII85_REV_TABLE;
-    char min_char = isZ85 ? BASE85_ASCII85_MIN : BASE85_ASCII85_MIN;
+    char min_char = isZ85 ? BASE85_Z85_MIN : BASE85_ASCII85_MIN;
     char max_char = isZ85 ? BASE85_Z85_MAX : BASE85_ASCII85_MAX;
 
     size_t index = 0;
@@ -147,7 +145,7 @@ bool ll_BASE85_Decode(const char *data, size_t data_len, uint8_t *out, size_t *o
         char c = data[i];
 
         // Ignore whitespace if flag is set
-        if ((mode & DEC_BASE85_WS) && isspace((unsigned char)c)) continue;
+        if ((mode & BASE85_IGNORE_WS) && isspace((unsigned char)c)) continue;
 
         // Shortcuts (ASCII85 only)
         if (!isZ85 && c == ASCII85_ZERO_SHORTCUT && count == 0) { 

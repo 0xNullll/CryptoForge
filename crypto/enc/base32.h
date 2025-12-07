@@ -12,10 +12,10 @@ extern "C" {
 #define BASE32_ENC_LEN(data_len) (8 * (((size_t)(data_len) + 4) / 5) + 1) // +1 for '\0'
 #define BASE32_DEC_LEN(data_len) (5 * ((size_t)(data_len) / 8))
 
-#define ENC_BASE32        0x10
-#define DEC_BASE32        0x20
-#define ENC_BASE32_NOPAD  0x40
-#define DEC_BASE32_NOPAD  0x80
+#define BASE32_ENC        0x10
+#define BASE32_DEC        0x20
+#define BASE32_ENC_NOPAD  0x40
+#define BASE32_DEC_NOPAD  0x80
 
 // Encode input buffer to Base32.
 // 'out' must be large enough to hold the result
