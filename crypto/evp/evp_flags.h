@@ -168,8 +168,8 @@ typedef enum {
     EVP_BASE64_STD_DEC        = 0x800,
     EVP_BASE64_URL_ENC        = 0x1000,
     EVP_BASE64_URL_DEC        = 0x2000,
-    EVP_BASE64_URL_ENC_NOPAD  = 0x4000,
-    EVP_BASE64_URL_DEC_NOPAD  = 0x8000,
+    EVP_BASE64_NOPAD_ENC      = 0x4000,
+    EVP_BASE64_NOPAD_DEC      = 0x8000,
 
     // --- Base85 variants ---
     EVP_BASE85_STD_ENC     = 0x10000,   // Standard ASCII85 ('z' supported)
@@ -180,6 +180,38 @@ typedef enum {
     EVP_BASE85_Z85_DEC     = 0x200000,
     EVP_BASE85_IGNORE_WS   = 0x400000   // Ignore white spaces
 } EVP_Encoding;
+
+// Helper macros for category checks
+
+#define IS_ENC(v)   ((v) & ( \
+        EVP_BASE16_UPPER | EVP_BASE16_LOWER | \
+        EVP_BASE32_ENC | EVP_BASE32_ENC_NOPAD | \
+        EVP_BASE58_ENC | \
+        EVP_BASE64_STD_ENC | EVP_BASE64_URL_ENC | EVP_BASE64_NOPAD_ENC | \
+        EVP_BASE85_STD_ENC | EVP_BASE85_EXT_ENC | EVP_BASE85_Z85_ENC ))
+
+#define IS_DEC(v)   ((v) & ( \
+        EVP_BASE16_DEC | \
+        EVP_BASE32_DEC | EVP_BASE32_DEC_NOPAD | \
+        EVP_BASE58_DEC | \
+        EVP_BASE64_STD_DEC | EVP_BASE64_URL_DEC | EVP_BASE64_NOPAD_DEC | \
+        EVP_BASE85_STD_DEC | EVP_BASE85_EXT_DEC | EVP_BASE85_Z85_DEC ))
+
+#define IS_BASE16(v)   ((v) & (EVP_BASE16_UPPER | EVP_BASE16_LOWER | EVP_BASE16_DEC))
+
+#define IS_BASE32(v)   ((v) & (EVP_BASE32_ENC | EVP_BASE32_DEC | \
+                               EVP_BASE32_ENC_NOPAD | EVP_BASE32_DEC_NOPAD))
+
+#define IS_BASE58(v)   ((v) & (EVP_BASE58_ENC | EVP_BASE58_DEC))
+
+#define IS_BASE64(v)   ((v) & (EVP_BASE64_STD_ENC | EVP_BASE64_STD_DEC | \
+                               EVP_BASE64_URL_ENC | EVP_BASE64_URL_DEC | \
+                               EVP_BASE64_NOPAD_ENC | EVP_BASE64_NOPAD_DEC))
+
+#define IS_BASE85(v)   ((v) & (EVP_BASE85_STD_ENC | EVP_BASE85_STD_DEC | \
+                               EVP_BASE85_EXT_ENC | EVP_BASE85_EXT_DEC | \
+                               EVP_BASE85_Z85_ENC | EVP_BASE85_Z85_DEC | \
+                               EVP_BASE85_IGNORE_WS))
 
 // ======================
 // 5. Cipher Flags

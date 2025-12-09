@@ -10,6 +10,11 @@ static const char BASE85_Z85_ENC_TABLE[] = "0123456789abcdefghijklmnopqrstuvwxyz
 #define BASE85_ASCII85_MAX 'u'
 #define BASE85_Z85_MAX '}'
 
+// Base85 reverse lookup table (Ascii85).
+// This table maps ASCII characters '!' (33) to 'u' (117) into Base85 values.
+// Indexing: val = BASE85_ASCII85_REV_TABLE[ch - '!']
+// - Valid Ascii85 chars map to 0..84
+// - Table is sequential because Ascii85 digits are simply (ch - '!')
 static const int8_t BASE85_ASCII85_REV_TABLE[] = {
     0,  1,  2,  3,  4,  5,  6,  7,  8,  9,    // ! to )
    10, 11, 12, 13, 14, 15, 16, 17, 18, 19,    // * to +
@@ -22,6 +27,11 @@ static const int8_t BASE85_ASCII85_REV_TABLE[] = {
    80, 81, 82, 83, 84                         // \ to u
 };
 
+// Base85 reverse lookup table (Z85).
+// This table maps ASCII characters '!' (33) to '}' (125) into Z85 values.
+// Indexing: val = BASE85_Z85_REV_TABLE[ch - '!']
+// - Valid Z85 chars map to 0..84
+// - Table is not sequential like Ascii85; it follows the Z85 specification order
 static const int8_t BASE85_Z85_REV_TABLE[] = {
     68, -1, 84, 83, 82, 72, -1, 75, 76, 70, 65, -1, 63, 62, 69, // offsets 0-14
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, // '0'-'9' offsets 15-24
@@ -53,7 +63,7 @@ bool ll_BASE85_Encode(const uint8_t *data, size_t data_len, char *out, size_t *o
 
     if (isZ85) {
         // Z85 requires input length multiple of 4
-        if (data_len % 4 != 0) {
+        if (data_len % BASE85_Z85_IN_BLOCK_SIZE != 0) {
             return false;  // cannot encode
         }
     }
@@ -123,12 +133,22 @@ bool ll_BASE85_Encode(const uint8_t *data, size_t data_len, char *out, size_t *o
 bool ll_BASE85_Decode(const char *data, size_t data_len, uint8_t *out, size_t *out_len, uint32_t mode) {
     if (!data || data_len == 0 || !out || !out_len) return false;
 
+#if BASE_TRUNCATE_ON_NULL
+    // Adjust data_len if null terminator appears before
+    for (size_t i = 0; i < data_len; ++i) {
+        if (data[i] == '\0') {
+            data_len = i;
+            break;
+        }
+    }
+#endif // BASE_TRUNCATE_ON_NULL
+
     bool isZ85 = (mode & BASE85_Z85_DEC) != 0;
     bool useExt = (mode & BASE85_EXT_DEC) != 0;
 
     if (isZ85) {
         // Z85 decoding requires input length multiple of 5 characters
-        if (data_len % 5 != 0) {
+        if (data_len % BASE85_Z85_OUT_BLOCK_SIZE != 0) {
             return false;  // invalid input length for Z85
         }
     }

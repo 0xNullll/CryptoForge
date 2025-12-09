@@ -88,16 +88,14 @@ int main(void) {
     printf("---------------------------------------------\n");
 
     // All Base64 characters for testing
-    const char *all_chars_std = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    const char *all_chars_url = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+    const char *all_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/-_";
 
     const char *test_strings[] = {
         "hello",
         "foobar",
         "Base encoding test!",
         "any carnal pleasure.",
-        all_chars_std,
-        all_chars_url,
+        all_chars,
         "Man is distinguished, not only by his reason, but by this singular passion from other animals, which is a lust of the mind, that by a perseverance of delight in the continued and indefatigable generation of knowledge, exceeds the short vehemence of any carnal pleasure."
     };
 
@@ -143,8 +141,9 @@ int main(void) {
         printf("---------------------------------------------\n");
 
         test_base64("Standard Base64", base_input, len, EVP_BASE64_STD_ENC, EVP_BASE64_STD_DEC);
+        test_base64("No Padding Standard Base64", base_input, len, EVP_BASE64_STD_ENC | EVP_BASE64_NOPAD_ENC, EVP_BASE64_STD_DEC | EVP_BASE64_NOPAD_DEC);
         test_base64("URL-safe Base64", base_input, len, EVP_BASE64_URL_ENC, EVP_BASE64_URL_DEC);
-        test_base64("No Padding URL-safe Base64", base_input, len, EVP_BASE64_URL_ENC | EVP_BASE64_URL_ENC_NOPAD, EVP_BASE64_URL_DEC | EVP_BASE64_URL_DEC_NOPAD);
+        test_base64("No Padding URL-safe Base64", base_input, len, EVP_BASE64_URL_ENC | EVP_BASE64_NOPAD_ENC, EVP_BASE64_URL_DEC | EVP_BASE64_NOPAD_DEC);
 
         printf("---------------------------------------------\n");
 
@@ -172,8 +171,9 @@ int main(void) {
         printf("---------------------------------------------\n");
 
         test_hex_base64("test vector Standard Base64", test_hex[i], test_hex_len[i], EVP_BASE64_STD_ENC, EVP_BASE64_STD_DEC);
+        test_hex_base64("test vector No Padding Standard Base64", test_hex[i], test_hex_len[i], EVP_BASE64_STD_ENC | EVP_BASE64_NOPAD_ENC, EVP_BASE64_STD_DEC | EVP_BASE64_NOPAD_DEC);
         test_hex_base64("test vector URL-safe Base64", test_hex[i], test_hex_len[i], EVP_BASE64_URL_ENC, EVP_BASE64_URL_DEC);
-        test_hex_base64("test vector No Padding URL-safe Base64", test_hex[i], test_hex_len[i], EVP_BASE64_URL_ENC | EVP_BASE64_URL_ENC_NOPAD, EVP_BASE64_URL_DEC | EVP_BASE64_URL_DEC_NOPAD);
+        test_hex_base64("test vector No Padding URL-safe Base64", test_hex[i], test_hex_len[i], EVP_BASE64_URL_ENC | EVP_BASE64_NOPAD_ENC, EVP_BASE64_URL_DEC | EVP_BASE64_NOPAD_DEC);
 
         printf("---------------------------------------------\n");
 
