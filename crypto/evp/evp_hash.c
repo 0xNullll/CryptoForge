@@ -640,7 +640,7 @@ static const EVP_MD *EVP_get_cshake256(void) {
 }
 
 // Table of all supported hashes
-static const EVP_MDEntry evp_md_table[] = {
+static const EVP_MD_ENTRY evp_md_table[] = {
     { EVP_MD5,           EVP_get_md5 },
     { EVP_SHA1,          EVP_get_sha1 },
     { EVP_SHA224,        EVP_get_sha224 },
@@ -917,7 +917,7 @@ int EVP_HashCompare(const uint8_t *a, const uint8_t *b, size_t len) {
     return (int)gt - (int)lt;
 }
 
-CF_STATUS EVP_HashCloneCtx(EVP_HASH_CTX *dst, const EVP_HASH_CTX *src) {
+CF_STATUS EVP_CloneHashCtx(EVP_HASH_CTX *dst, const EVP_HASH_CTX *src) {
     if (!dst || !src) return CF_ERR_NULL_PTR;
 
     // Free existing low-level digest context if present
@@ -949,7 +949,7 @@ CF_STATUS EVP_HashCloneCtx(EVP_HASH_CTX *dst, const EVP_HASH_CTX *src) {
     return CF_SUCCESS;
 }
 
-EVP_HASH_CTX *EVP_HashCloneCtxAlloc(const EVP_HASH_CTX *src, CF_STATUS *status) {
+EVP_HASH_CTX *EVP_CloneHashCtxAlloc(const EVP_HASH_CTX *src, CF_STATUS *status) {
     if (!src) {
         if (status) *status = CF_ERR_NULL_PTR;
         return NULL;

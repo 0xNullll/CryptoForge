@@ -44,7 +44,7 @@ static const int8_t BASE64_REV_URL_SAFE_TABLE[] = {
 bool ll_BASE64_Encode(const uint8_t *data, size_t data_len, char *out, size_t *out_len, uint32_t mode) {
     if (!data || data_len == 0 || !out || !out_len) return false;
 
-    int noPad = ((mode & BASE64_URL_ENC_NOPAD) != 0);
+    int noPad = ((mode & BASE64_NOPAD_ENC) != 0);
     int isUrlSafe = ((mode & BASE64_URL_ENC) != 0);
 
     const char *table = isUrlSafe ? BASE64_ENC_URL_SAFE_TABLE : BASE64_ENC_TABLE;
@@ -97,10 +97,10 @@ bool ll_BASE64_Decode(const char *data, size_t data_len, uint8_t *out, size_t *o
 
     bool isStd = (mode & BASE64_STD_DEC) != 0;
     bool isUrlSafe = (mode & BASE64_URL_DEC) != 0;
-    bool noPad = (mode & BASE64_URL_DEC_NOPAD) != 0;
+    bool noPad = (mode & BASE64_NOPAD_DEC) != 0;
 
     // Only check padding rules if standard Base64 or URL-safe with padding
-    if ((isStd || isUrlSafe) && !noPad && (data_len % 4 != 0)) {
+    if ((isStd || isUrlSafe) && !noPad && (data_len % BASE64_BLOCK_SIZE != 0)) {
         return false; // invalid length
     }
 

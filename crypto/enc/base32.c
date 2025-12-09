@@ -76,7 +76,7 @@ bool ll_BASE32_Decode(const char *data, size_t data_len, uint8_t *out, size_t *o
     int noPad = ((mode & BASE32_DEC_NOPAD) != 0);
 
     // Standard Base32 must be multiple of 8 unless noPad
-    if (!noPad && data_len % 8 != 0) return false;
+    if (!noPad && data_len % BASE32_BLOCK_SIZE != 0) return false;
 
     size_t index = 0;
     uint64_t buf;

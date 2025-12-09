@@ -12,6 +12,8 @@ extern "C" {
 #define BASE32_ENC_LEN(data_len) (8 * (((size_t)(data_len) + 4) / 5) + 1) // +1 for '\0'
 #define BASE32_DEC_LEN(data_len) (5 * ((size_t)(data_len) / 8))
 
+#define BASE32_BLOCK_SIZE 8
+
 #define BASE32_ENC        0x10
 #define BASE32_DEC        0x20
 #define BASE32_ENC_NOPAD  0x40

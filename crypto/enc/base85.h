@@ -14,6 +14,9 @@ extern "C" {
 // Base85 decoding length (safe for ASCII85, Z85)
 #define BASE85_DEC_LEN(data_len) ((size_t)(data_len) / 5 * 4 + 4) // // +4 for possible partial block in ASCII85
 
+#define BASE85_Z85_IN_BLOCK_SIZE   4
+#define BASE85_Z85_OUT_BLOCK_SIZE  5
+
 #define BASE85_STD_ENC   0x10000      // Standard ASCII85 ('z' supported)
 #define BASE85_STD_DEC   0x20000
 #define BASE85_EXT_ENC   0x40000      // Extended ASCII85 ('y' optional)

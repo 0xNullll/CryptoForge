@@ -66,7 +66,7 @@ bool ll_BASE16_Decode(const char *data, size_t data_len, uint8_t *out, size_t *o
 #endif // BASE_TRUNCATE_ON_NULL
 
     // Must be even number of characters
-    if (data_len % 2 != 0) return false;
+    if (data_len % BASE16_BLOCK_SIZE != 0) return false;
 
     size_t index = 0;
 
