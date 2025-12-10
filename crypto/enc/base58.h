@@ -8,13 +8,32 @@
 extern "C" {
 #endif
 
+#define BASE58_MIN '1'
+#define BASE58_MAX 'z'
+
+// Base58 reverse lookup table (shifted).
+// This table maps ASCII characters '1' (49) to 'z' (122) into Base58 values.
+// Indexing: val = BASE58_REV_TABLE[ch - '1']
+// - Valid Base58 chars map to 0..57
+//   - '1'-'9'   -> 0..8
+//   - 'A'-'H', 'J'-'N', 'P'-'Z' -> 9..32
+//   - 'a'-'k', 'm'-'z' -> 33..57
+// - Invalid chars are -1
+static const int8_t BASE58_REV_TABLE[] = {
+     0, 1, 2, 3, 4, 5, 6,  7, 8,-1,-1,-1,-1,-1,-1,-1,
+     9,10,11,12,13,14,15, 16,-1,17,18,19,20,21,-1,22,
+    23,24,25,26,27,28,29, 30,31,32,-1,-1,-1,-1,-1,-1,
+    33,34,35,36,37,38,39, 40,41,42,43,-1,44,45,46,47,
+    48,49,50,51,52,53,54, 55,56,57
+};
+
 // Maximum Base58 encoded length for `data_len` bytes
-// ceil(data_len * log(256)/log(58)) + 1 for '\0' and leading zeros
+// ceil(data_len * log(256)/log(58)) + 2 for '\0' and leading zeros
 #define BASE58_ENC_LEN(data_len) ((size_t)((data_len) * 138 / 100 + 2))
 
 // Maximum decoded length for Base58 string of `str_len` characters
-// ceil(str_len * log(58)/log(256)) + 1 for safety
-#define BASE58_DEC_LEN(str_len)  ((size_t)((str_len) * 733 / 1000 + 1))
+// ceil(str_len * log(58)/log(256)) +8 bytes gives enough room for intermediate carry/overflow handling.
+#define BASE58_DEC_LEN(str_len)  ((size_t)((str_len) * 733 / 1000 + 8))
 
 // Encode input buffer to Base58.
 // 'out' must be large enough to hold the result

@@ -700,10 +700,16 @@ CF_STATUS EVP_HashInit(EVP_HASH_CTX *ctx, const EVP_MD *md, const EVP_XOF_OPTS *
 }
 
 EVP_HASH_CTX* EVP_HashInitAlloc(const EVP_MD *md, const EVP_XOF_OPTS *opts, CF_STATUS *status) {
-    if (!md) { if (status) *status = CF_ERR_NULL_PTR; return NULL; }
+    if (!md) {
+        if (status) *status = CF_ERR_NULL_PTR;
+        return NULL;
+    }
 
     EVP_HASH_CTX *ctx = (EVP_HASH_CTX *)SECURE_ALLOC(sizeof(EVP_HASH_CTX));
-    if (!ctx) { if (status) *status = CF_ERR_ALLOC_FAILED; return NULL; }
+    if (!ctx) {
+        if (status) *status = CF_ERR_ALLOC_FAILED;
+        return NULL;
+    }
 
     CF_STATUS st = EVP_HashInit(ctx, md, opts);
     if (st != CF_SUCCESS) {
@@ -963,8 +969,9 @@ EVP_HASH_CTX *EVP_CloneHashCtxAlloc(const EVP_HASH_CTX *src, CF_STATUS *status) 
     }
 
     // Initialize clone
-    CF_STATUS st = EVP_HashCloneCtx(dst, src);
+    CF_STATUS st = EVP_CloneHashCtx(dst, src);
     if (status) *status = st;
+    
     if (st != CF_SUCCESS) {
         SECURE_FREE(dst, sizeof(*dst));
         return NULL;

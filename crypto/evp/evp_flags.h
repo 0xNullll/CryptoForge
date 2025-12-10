@@ -183,35 +183,25 @@ typedef enum {
 
 // Helper macros for category checks
 
-#define IS_ENC(v)   ((v) & ( \
+#define EVP_IS_ENC(v)   ((v) & ( \
         EVP_BASE16_UPPER | EVP_BASE16_LOWER | \
         EVP_BASE32_ENC | EVP_BASE32_ENC_NOPAD | \
         EVP_BASE58_ENC | \
         EVP_BASE64_STD_ENC | EVP_BASE64_URL_ENC | EVP_BASE64_NOPAD_ENC | \
         EVP_BASE85_STD_ENC | EVP_BASE85_EXT_ENC | EVP_BASE85_Z85_ENC ))
 
-#define IS_DEC(v)   ((v) & ( \
+#define EVP_IS_DEC(v)   ((v) & ( \
         EVP_BASE16_DEC | \
         EVP_BASE32_DEC | EVP_BASE32_DEC_NOPAD | \
         EVP_BASE58_DEC | \
         EVP_BASE64_STD_DEC | EVP_BASE64_URL_DEC | EVP_BASE64_NOPAD_DEC | \
         EVP_BASE85_STD_DEC | EVP_BASE85_EXT_DEC | EVP_BASE85_Z85_DEC ))
 
-#define IS_BASE16(v)   ((v) & (EVP_BASE16_UPPER | EVP_BASE16_LOWER | EVP_BASE16_DEC))
-
-#define IS_BASE32(v)   ((v) & (EVP_BASE32_ENC | EVP_BASE32_DEC | \
-                               EVP_BASE32_ENC_NOPAD | EVP_BASE32_DEC_NOPAD))
-
-#define IS_BASE58(v)   ((v) & (EVP_BASE58_ENC | EVP_BASE58_DEC))
-
-#define IS_BASE64(v)   ((v) & (EVP_BASE64_STD_ENC | EVP_BASE64_STD_DEC | \
-                               EVP_BASE64_URL_ENC | EVP_BASE64_URL_DEC | \
-                               EVP_BASE64_NOPAD_ENC | EVP_BASE64_NOPAD_DEC))
-
-#define IS_BASE85(v)   ((v) & (EVP_BASE85_STD_ENC | EVP_BASE85_STD_DEC | \
-                               EVP_BASE85_EXT_ENC | EVP_BASE85_EXT_DEC | \
-                               EVP_BASE85_Z85_ENC | EVP_BASE85_Z85_DEC | \
-                               EVP_BASE85_IGNORE_WS))
+#define EVP_BASE16_MASK 0x07      // 0b00000111
+#define EVP_BASE32_MASK 0xF0      // 0b11110000
+#define EVP_BASE58_MASK 0x300     // 0b001100000000
+#define EVP_BASE64_MASK 0xFC00    // 0b11111100000000
+#define EVP_BASE85_MASK 0x7F0000  // 0b0111111100000000000000
 
 // ======================
 // 5. Cipher Flags

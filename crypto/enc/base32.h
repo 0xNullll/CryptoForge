@@ -8,9 +8,31 @@
 extern "C" {
 #endif
 
+#define BASE32_PAD_CHAR '='
+
+#define BASE32_MIN '2'
+#define BASE32_MAX 'Z'
+
+// Base32 reverse lookup table (shifted).
+// This table maps ASCII characters '2' (50) to 'Z' (90) into Base32 values.
+// Indexing: val = BASE32_REV_TABLE[ch - '2']
+// - Valid Base32 chars map to 0..31
+//   - 'A'-'Z' -> 0..25
+//   - '2'-'7' -> 26..31
+// - Invalid chars are -1
+// - ignored chars (like '=' or '\n') are -2
+static const int8_t BASE32_REV_TABLE[] = {
+    // '2'-'7' (50-55)
+    26,27,28,29,30,31,
+    // '8'-'@' (56-64) → invalid
+    -1,-1,-1,-1,-1,-2,-1,-1,-1,
+    // 'A'-'Z' (65-90)
+    0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25
+};
+
 // Base32 (RFC 4648) length macros
-#define BASE32_ENC_LEN(data_len) (8 * (((size_t)(data_len) + 4) / 5) + 1) // +1 for '\0'
-#define BASE32_DEC_LEN(data_len) (5 * ((size_t)(data_len) / 8))
+#define BASE32_ENC_LEN(data_len) (8 * (((size_t)(data_len) + 4) / 5) + 2) // +2 for '\0'
+#define BASE32_DEC_LEN(data_len) (((size_t)(data_len) * 5 + 7) / 8 + 1) // +1 for safety
 
 #define BASE32_BLOCK_SIZE 8
 

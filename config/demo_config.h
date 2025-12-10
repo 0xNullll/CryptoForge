@@ -21,17 +21,31 @@
 #include "../crypto/evp/evp_defs.h"
 #include "../crypto/evp/evp_flags.h"
 #include "../crypto/evp/evp_hash.h"
+#include "../crypto/evp/evp_enc.h"
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+typedef struct _DEMO_ENC_TEST{
+    uint32_t enc;
+    uint32_t dec;
+    const char *desc;
+} DEMO_ENC_TEST;
+
 // Utility to print a digest in hex
 FORCE_INLINE void DEMO_print_hex(const uint8_t *digest, size_t size) {
     for (size_t i = 0; i < size; i++)
         printf("%02x", digest[i]);
     printf("\n");
+}
+
+FORCE_INLINE void DEMO_print_str(const char *label, const char *data, size_t len) {
+    printf("%s: \"", label);
+    for (size_t i = 0; i < len; i++)
+        putchar(data[i]);
+    printf("\"\n");
 }
 
 // Test helper (for dev)
@@ -66,6 +80,8 @@ CF_API void test_hex_base64(const char *label, const uint8_t *input, size_t len,
 
 CF_API void test_base85(const char *label, const uint8_t *input, size_t len, uint32_t enc_mode, uint32_t dec_mode);
 CF_API void test_hex_base85(const char *label, const uint8_t *input, size_t len, uint32_t enc_mode, uint32_t dec_mode);
+
+CF_API void test_all_encoders_high(const uint8_t *input, size_t input_len);
 
 #ifdef __cplusplus
 }
