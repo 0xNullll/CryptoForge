@@ -27,7 +27,13 @@ typedef struct _EVP_ENCODER {
     size_t min_input;     // Minimum input bytes per block
     size_t min_output;    // Minimum output chars per block
 
-    uint32_t no_min_out_flags;  // Flags that bypass min_output rule
+    uint32_t no_min_flags;  // Flags that bypass min_input & min_output rule
+
+    char min_char;
+    char max_char;
+    const int8_t *rev_table;      // primary table
+    const int8_t *rev_table_alt;  // alternate (URL-safe, Z85, etc.)
+    char pad;
 
     bool (*encode_fn)(
         const uint8_t *data, size_t data_len,
@@ -47,9 +53,6 @@ typedef struct _EVP_ENCODER_CTX {
     uint32_t encFlags;            // Variant flags (ENC/DEC/url/nopad, etc.)
     uint32_t decFlags;            // Variant flags (ENC/DEC/url/nopad, etc.)
 
-    uint8_t buffer[5];            // Leftover input bytes for streaming
-    size_t buffered_len;
-
     int isHeapAlloc;              // True if allocated on heap
 } EVP_ENCODER_CTX;
 
@@ -59,55 +62,46 @@ typedef struct _EVP_ENCODER_CTX {
 CF_API CF_STATUS EVP_EncInit(EVP_ENCODER_CTX *ctx, uint32_t enc_flags, uint32_t dec_flags);
 CF_API EVP_ENCODER_CTX* EVP_EncInitAlloc(uint32_t enc_flags, uint32_t dec_flags, CF_STATUS *status);
 
-// Streaming / incremental encoding
-CF_API CF_STATUS EVP_EncUpdate(EVP_ENCODER_CTX *ctx, const uint8_t *src, size_t src_len, char *dst, size_t *dst_len);
-CF_API CF_STATUS EVP_EncFinal(EVP_ENCODER_CTX *ctx, char *dst, size_t *dst_len);
-
-// Streaming / incremental decoding
-CF_API CF_STATUS EVP_DecUpdate(EVP_ENCODER_CTX *ctx, const char *src, size_t src_len, uint8_t *dst, size_t *dst_len);
-CF_API CF_STATUS EVP_DecFinal(EVP_ENCODER_CTX *ctx, uint8_t *dst, size_t *dst_len);
-
 // ============================
 // Memory management
 // ============================
-CF_API CF_STATUS EVP_EncFree(EVP_ENCODER_CTX *ctx);
 CF_API CF_STATUS EVP_EncFreeAlloc(EVP_ENCODER_CTX **p_ctx);
 
 // ============================
 // One-shot encoding
 // ============================
-CF_API CF_STATUS EVP_Encode(uint32_t enc_flags,
+CF_API CF_STATUS EVP_Encode(EVP_ENCODER_CTX *ctx,
                             const uint8_t *src, size_t src_len,
                             char *dst, size_t *dst_len);
 
-CF_API CF_STATUS EVP_EncodeRaw(uint32_t enc_flags,
+CF_API CF_STATUS EVP_EncodeRaw(EVP_ENCODER_CTX *ctx,
                                const void *src, size_t src_len,
                                char *dst, size_t *dst_len);
 
-CF_API char* EVP_EncodeAlloc(uint32_t enc_flags,
+CF_API char* EVP_EncodeAlloc(EVP_ENCODER_CTX *ctx,
                              const uint8_t *src, size_t src_len,
                              size_t *out_len, CF_STATUS *status);
 
-CF_API char* EVP_EncodeAllocRaw(uint32_t enc_flags,
+CF_API char* EVP_EncodeAllocRaw(EVP_ENCODER_CTX *ctx,
                                 const void *src, size_t src_len,
                                 size_t *out_len, CF_STATUS *status);
 
 // ============================
 // One-shot decoding
 // ============================
-CF_API CF_STATUS EVP_Decode(uint32_t dec_flags,
+CF_API CF_STATUS EVP_Decode(EVP_ENCODER_CTX *ctx,
                             const char *src, size_t src_len,
                             uint8_t *dst, size_t *dst_len);
 
-CF_API CF_STATUS EVP_DecodeRaw(uint32_t dec_flags,
+CF_API CF_STATUS EVP_DecodeRaw(EVP_ENCODER_CTX *ctx,
                                const void *src, size_t src_len,
                                uint8_t *dst, size_t *dst_len);
 
-CF_API uint8_t* EVP_DecodeAlloc(uint32_t dec_flags,
+CF_API uint8_t* EVP_DecodeAlloc(EVP_ENCODER_CTX *ctx,
                                 const char *src, size_t src_len,
                                 size_t *out_len, CF_STATUS *status);
 
-CF_API uint8_t* EVP_DecodeAllocRaw(uint32_t dec_flags,
+CF_API uint8_t* EVP_DecodeAllocRaw(EVP_ENCODER_CTX *ctx,
                                    const void *src, size_t src_len,
                                    size_t *out_len, CF_STATUS *status);
 
@@ -120,14 +114,15 @@ CF_API EVP_ENCODER_CTX* EVP_CloneEncCtxAlloc(const EVP_ENCODER_CTX *src, CF_STAT
 // ============================
 // Utilities
 // ============================
-size_t EVP_EncodeRequiredLen(uint32_t enc_flags, size_t input_len);
-size_t EVP_DecodeRequiredLen(uint32_t dec_flags, size_t input_len);
+CF_API size_t EVP_EncodeRequiredLen(uint32_t enc_flags, size_t input_len);
+CF_API size_t EVP_DecodeRequiredLen(uint32_t dec_flags, size_t input_len);
 
-bool EVP_IsValidEncoded(uint32_t dec_flags, const char *src, size_t len);
+CF_API bool EVP_IsValidEncoded(uint32_t dec_flags, const char *src, size_t len);
 
-const char* EVP_EncoderName(EVP_ENCODER_CTX *ctx);
-size_t EVP_EncoderMinInput(EVP_ENCODER_CTX *ctx);
-size_t EVP_EncoderMinOutput(EVP_ENCODER_CTX *ctx);
+CF_API const char* EVP_EncName(EVP_ENCODER_CTX *ctx);
+
+CF_API size_t EVP_EncMinInput(EVP_ENCODER_CTX *ctx);
+CF_API size_t EVP_EncMinOutput(EVP_ENCODER_CTX *ctx);
 
 #ifdef __cplusplus
 }

@@ -4,32 +4,6 @@
 static const char BASE16_ENC_TABLE_UPPER[] = "0123456789ABCDEF";
 static const char BASE16_ENC_TABLE_LOWER[] = "0123456789abcdef";
 
-#define BASE32_MIN '0'
-#define BASE32_MAX 'f'
-
-// Base16 reverse lookup table (shifted).
-// This table maps ASCII characters '0' (48) to 'f' (102) into Base16 values.
-// Indexing: val = BASE32_REV_TABLE[ch - '0']
-// Valid:
-//  - '0'-'9' -> 0..9
-//  - 'A'-'F' -> 10..15
-//  - 'a'-'f' -> 10..15
-// - Invalid chars are -1
-static const int8_t BASE16_REV_TABLE[] = {
-    // '0'-'9' (48-57)
-     0,1,2,3,4,5,6,7,8,9,
-    // ':'- '@' (58-64) -> invalid
-    -1,-1,-1,-1,-1,-1,-1,
-    // 'A'-'F' (65-70)
-    10,11,12,13,14,15,
-    // 'G'-'`' (71-96) -> mostly invalid
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,
-    // 'a'-'f' (97-102)
-    10,11,12,13,14,15
-};
-
 bool ll_BASE16_Encode(const uint8_t *data, size_t data_len,
                       char *out, size_t *out_len, uint32_t mode) {
     if (!data || data_len == 0 || !out || !out_len) return false;
@@ -77,8 +51,8 @@ bool ll_BASE16_Decode(const char *data, size_t data_len, uint8_t *out, size_t *o
         int8_t hi = -1;
         int8_t lo = -1;
 
-        if (c1 >= BASE32_MIN && c1 <= BASE32_MAX) hi = BASE16_REV_TABLE[c1 - BASE32_MIN];
-        if (c2 >= BASE32_MIN && c2 <= BASE32_MAX) lo = BASE16_REV_TABLE[c2 - BASE32_MIN];
+        if (c1 >= BASE16_MIN && c1 <= BASE16_MAX) hi = BASE16_REV_TABLE[c1 - BASE16_MIN];
+        if (c2 >= BASE16_MIN && c2 <= BASE16_MAX) lo = BASE16_REV_TABLE[c2 - BASE16_MIN];
 
         if (hi < 0 || lo < 0) return false; // invalid hex char
 

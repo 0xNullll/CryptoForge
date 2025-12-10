@@ -4,25 +4,6 @@
 
 static const char BASE58_ENC_TABLE[] = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
-#define BASE58_MIN '1'
-#define BASE58_MAX 'z'
-
-// Base58 reverse lookup table (shifted).
-// This table maps ASCII characters '1' (49) to 'z' (122) into Base58 values.
-// Indexing: val = BASE58_REV_TABLE[ch - '1']
-// - Valid Base58 chars map to 0..57
-//   - '1'-'9'   -> 0..8
-//   - 'A'-'H', 'J'-'N', 'P'-'Z' -> 9..32
-//   - 'a'-'k', 'm'-'z' -> 33..57
-// - Invalid chars are -1
-static const int8_t BASE58_REV_TABLE[] = {
-     0, 1, 2, 3, 4, 5, 6,  7, 8,-1,-1,-1,-1,-1,-1,-1,
-     9,10,11,12,13,14,15, 16,-1,17,18,19,20,21,-1,22,
-    23,24,25,26,27,28,29, 30,31,32,-1,-1,-1,-1,-1,-1,
-    33,34,35,36,37,38,39, 40,41,42,43,-1,44,45,46,47,
-    48,49,50,51,52,53,54, 55,56,57
-};
-
 bool ll_BASE58_Encode(const uint8_t *data, size_t data_len, char *out, size_t *out_len) {
     if (!data || data_len == 0 || !out || !out_len) return false;
 
@@ -84,7 +65,7 @@ bool ll_BASE58_Decode(const char *data, size_t data_len, uint8_t *out, size_t *o
     size_t zcount = 0;
     while (zcount < data_len && data[zcount] == BASE58_LEADING_ZERO) zcount++;
 
-    // Approx max size: 0.733 * digits
+    // Approx max size: 0.733 * digits + 8, gives enough room for intermediate carry/overflow handling.
     size_t size = BASE58_DEC_LEN(data_len - zcount);
     uint8_t buf[size];
     SECURE_ZERO(buf, size);

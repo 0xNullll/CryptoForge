@@ -151,7 +151,11 @@ int main(void) {
         test_base85("Optional 'y' ascii85 Base85", base_input, len, EVP_BASE85_STD_ENC | EVP_BASE85_EXT_ENC, EVP_BASE85_STD_DEC | EVP_BASE85_EXT_DEC);
         test_base85("z85 Base85", base_input, len, EVP_BASE85_Z85_ENC, EVP_BASE85_Z85_DEC);
 
-        printf("---------------------------------------------\n");
+        printf("-------------- high level encode test -------------------\n");
+
+        test_all_encoders_high(base_input, len);
+
+        printf("-------------- end of high level encode test ----------------\n");
     }
 
     for (size_t i = 0; i < 5; i++) {
@@ -181,10 +185,12 @@ int main(void) {
         test_hex_base85("test vector Optional 'y' ascii85 Base85", test_hex[i], test_hex_len[i], EVP_BASE85_STD_ENC | EVP_BASE85_EXT_ENC, EVP_BASE85_STD_DEC | EVP_BASE85_EXT_DEC);
         test_hex_base85("test vector z85 Base85", test_hex[i], test_hex_len[i], EVP_BASE85_Z85_ENC, EVP_BASE85_Z85_DEC);
 
-        printf("---------------------------------------------\n");
-    
-    }
+        printf("-------------- high level encode test -------------------\n");
 
+        test_all_encoders_high(test_hex[i], test_hex_len[i]);
+
+        printf("-------------- end of high level encode test ----------------\n");
+    }
 
 #endif // ENABLE_TESTS
 
