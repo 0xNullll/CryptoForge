@@ -30,6 +30,7 @@ Message Authentication Codes ensure **data integrity and authenticity**.
 - [x] **KMAC** – SHA-3 based MAC, flexible key and output size.
 - [x] **KMAC-XOF** – SHA-3 based MAC with extendable output, flexible key and output size.
 - [ ] **CMAC** - block-cipher based MAC, widely used with AES.
+- [ ] **Poly1305** - fast, one-time-key MAC, good for stream-like usage.
 - [ ] **PBMAC1 (optional-advanced)** – password-based MAC: PBKDF2 + HMAC.
 
 **Notes:** MACs are building blocks for authenticated encryption and secure RNGs.
@@ -183,6 +184,8 @@ Small, reusable helpers that make your library more **robust, convenient, and de
 └─ /demo
     ├─ demo_hash.c
     ├─ demo_mac.c
+    ├─ demo_kdf.c
+    ├─ demo_enc.c
     └─ run_all_demos.c
 ```
 
