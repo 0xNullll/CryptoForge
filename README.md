@@ -30,6 +30,7 @@ Message Authentication Codes ensure **data integrity and authenticity**.
 - [x] **KMAC** – SHA-3 based MAC, flexible key and output size.
 - [x] **KMAC-XOF** – SHA-3 based MAC with extendable output, flexible key and output size.
 - [ ] **CMAC** - block-cipher based MAC, widely used with AES.
+- [ ] **GMAC** – Galois/Counter Mode based MAC for authenticated encryption.
 - [ ] **Poly1305** - fast, one-time-key MAC, good for stream-like usage.
 - [ ] **PBMAC1 (optional-advanced)** – password-based MAC: PBKDF2 + HMAC.
 
@@ -124,15 +125,14 @@ Required for block ciphers to handle plaintext not aligned to block size.
 Small, reusable helpers that make your library more **robust, convenient, and developer-friendly**.
 
 - [ ] **Input normalization** – trim whitespace, remove null bytes, convert line endings.
-- [ ] **Length calculation helpers** – compute required buffer size for encodings or cipher output.
-- [ ] **Safe memory operations** – secure zeroing, constant-time comparison, copy helpers.
-- [ ] **Encoding/decoding wrappers** – unified interface for all Base16/32/58/64/85 variants.
-- [ ] **Validation helpers** – check input sizes, valid character ranges, or padding correctness.
+- [-] **Length calculation helpers** – compute required buffer size for encodings or cipher output.
+- [-] **Safe memory operations** – secure zeroing, constant-time comparison, copy helpers.
+- [-] **Validation helpers** – check input sizes, valid character ranges, or padding correctness.
 - [ ] **Flexible padding helpers** – add/remove PKCS#7, zero padding, or custom padding schemes.
-- [ ] **Extended Base85 flags** – optional whitespace ignoring, ‘y’ extension, or fixed-length padding.
-- [ ] **Debug / hex dump functions** – for printing binary data safely and clearly.
+- [x] **Extended Base85 flags** – optional whitespace ignoring, ‘y’ extension, or fixed-length padding.
+- [-] **Debug / hex dump functions** – for printing binary data safely and clearly.
 - [ ] **File I/O helpers** – load/save buffers safely for test vectors or demo purposes.
-- [ ] **Vector testing utilities** – compare output against test vectors automatically.
+- [-] **Vector testing utilities** – compare output against test vectors automatically.
 
 **Notes:** Utilities don’t add new crypto primitives but make the library **polished, safe, and easier to use** for demos, testing, or practical applications.
 

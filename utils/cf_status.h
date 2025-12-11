@@ -40,7 +40,7 @@ typedef enum {
     // Reserved base values for modules
     // --------------------------
     CF_ERR_HASH_BASE   = 0x1000, // Hash-specific errors
-    CF_ERR_CIPHER_BASE = 0x2000, // Ciphers (future)
+    CF_ERR_CIPHER_BASE = 0x2000, // Ciphers
     CF_ERR_MAC_BASE    = 0x3000, // HMAC/KMAC/etc
     CF_ERR_KDF_BASE    = 0x4000, // PBKDF2/Argon/etc
 } GLOBAL_CF_STATUS;
@@ -49,7 +49,7 @@ typedef enum {
 // 2. Hash-specific errors
 // ==========================
 typedef enum {
-    CF_ERR_HASH_FINALIZED     = CF_ERR_HASH_BASE, // update after final()
+    CF_ERR_HASH_FINALIZED     = CF_ERR_HASH_BASE,   // update after final()
     CF_ERR_HASH_STATE_INVALID,                      // internal state invalid
     CF_ERR_HASH_PAD_ERROR,                          // padding issue (rare)
     CF_ERR_HASH_BAD_BLOCK_SIZE,                     // block misalignment
@@ -58,7 +58,7 @@ typedef enum {
 // ==========================
 // 3. Status string helper
 // ==========================
-static FORCE_INLINE const char* CF_status_str(CF_STATUS status) {
+CF_API const char* CF_status_str(CF_STATUS status) {
     switch (status) {
         case CF_SUCCESS: return "CF_SUCCESS";
         case CF_ERR_UNKNOWN: return "CF_ERR_UNKNOWN";
