@@ -175,7 +175,6 @@ static FORCE_INLINE void TWISTED_PUT64(uint8_t *p, uint64_t x) {
 // =======================
 #if CPU_BIG_ENDIAN
 // On big-endian CPUs, swap bytes to little-endian
-
 static FORCE_INLINE void HASH_PACK32(uint8_t *out, const uint32_t *in, unsigned int len) {
     for (unsigned int i = 0, j = 0; j < len; i++, j += 4) {
         out[j]   = (uint8_t)(in[i] & 0xff);
@@ -197,11 +196,11 @@ static FORCE_INLINE void HASH_UNPACK32(uint32_t *out, const uint8_t *in, unsigne
 #else
 // On little-endian CPUs, memory matches the format → use direct memcpy
 static FORCE_INLINE void HASH_PACK32(uint8_t *out, const uint32_t *in, unsigned int len) {
-    memcpy(out, in, len);
+    SECURE_MEMCPY(out, in, len);
 }
 
 static FORCE_INLINE void HASH_UNPACK32(uint32_t *out, const uint8_t *in, unsigned int len) {
-    memcpy(out, in, len);
+    SECURE_MEMCPY(out, in, len);
 }
 #endif
 
