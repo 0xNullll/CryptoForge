@@ -57,9 +57,21 @@ Utilities for encoding and decoding data to facilitate testing and real-world us
 ### 4. Symmetric Ciphers
 Provide **confidentiality** via block and stream ciphers.
 
-- [ ] **AES (CBC / CTR / GCM / XTS)** – block cipher with multiple modes.
-- [ ] **ChaCha20 (+ Poly1305)** – stream cipher, software-friendly, AEAD support with Poly1305.
-- [ ] **PBES2 (optional-advanced)** – PBKDF2 + AES encryption scheme.
+- [x] **AES Core** – block cipher implementation (AES-128 / AES-192 / AES-256)
+- [ ] **AES-ECB** – basic block mode (testing only; insecure for real use)
+- [ ] **AES-CBC** – Cipher Block Chaining mode with padding support
+- [ ] **AES-CTR** – Counter mode, stream-like, encryption = decryption
+- [ ] **AES-GCM** – Galois/Counter Mode, AEAD with authentication tag
+- [ ] **AES-CCM** – Counter with CBC-MAC, AEAD mode for embedded systems
+- [ ] **AES-XTS** – disk/sector encryption with tweak support
+- [ ] **AES-CFB** – Cipher Feedback mode (optional / legacy)
+- [ ] **AES-OFB** – Output Feedback mode (optional / legacy)
+- [ ] **AES-KW (RFC 3394 / SP 800-38F)** – AES Key Wrap, fixed-length key wrapping
+- [ ] **AES-KWP (RFC 5649 / SP 800-38F)** – AES Key Wrap with padding, arbitrary key lengths
+- [ ] **AES-FF1** – Format-Preserving Encryption with Feistel network
+- [ ] **AES-FF3 / FF3-1** – Optional FPE variant, faster and lighter
+- [ ] **ChaCha20 (+ Poly1305)** – stream cipher with AEAD support
+- [ ] **PBES2 (optional-advanced)** – PBKDF2 + AES encryption scheme for password-based encryption
 
 **Notes:** Start with simple modes (CBC/CTR), then implement authenticated encryption (GCM/Poly1305).
 
