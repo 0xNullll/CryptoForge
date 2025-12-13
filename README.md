@@ -153,11 +153,15 @@ Small, reusable helpers that make your library more **robust, convenient, and de
 ## Directory Structure
 
 ```c
-/TinyCryptLib
+/CryptoForge
 ├─ /config
 │   ├─ crypto_config.h      <-- DLL/export, PREFIX_T, compile flags
 │   └─ demo_config.h
 ├─ /crypto
+│   ├─ /cipher
+│   │   ├─ /aes
+│   │   │   └─ aes_core.{c,h}
+│   │   └─ /chacha
 │   ├─ /hash
 │   │   ├─ hash_common.h     <-- padding, endian helpers, round macros
 │   │   ├─ /sha
