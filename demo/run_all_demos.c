@@ -192,6 +192,14 @@ int main(void) {
         printf("-------------- end of high level encode test ----------------\n");
     }
 
+    printf("**************************************\n");
+    test_aes128_fips197();
+    printf("**************************************\n");
+    test_aes192_fips197();
+    printf("**************************************\n");
+    test_aes256_fips197();
+    printf("**************************************\n");
+
 #endif // ENABLE_TESTS
 
     return 0;

@@ -23,6 +23,7 @@
 
 #include "../../config/libs.h"
 #include "../../config/crypto_config.h"
+#include "../../utils/mem.h"
 #include "../../utils/misc_utils.h"
 
 // =======================

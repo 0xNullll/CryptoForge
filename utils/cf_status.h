@@ -75,10 +75,7 @@ typedef enum {
     CF_ERR_HASH_BAD_BLOCK_SIZE,                     // block misalignment
 } HASH_CF_STATUS;
 
-// ==========================
-// 3. Status string helper
-// ==========================
-CF_API const char* CF_status_str(CF_STATUS status) {
+static FORCE_INLINE const char* CF_status_str(CF_STATUS status) {
     switch (status) {
         case CF_SUCCESS: return "CF_SUCCESS";
         case CF_ERR_UNKNOWN: return "CF_ERR_UNKNOWN";

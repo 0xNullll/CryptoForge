@@ -1,5 +1,5 @@
 /*
- * CryptoForge - <short description of this file/module>
+ * CryptoForge - Base85.c / Hex encoding and decoding functions
  * Copyright (C) 2025 0xNullll
  *
  * This program is free software: you can redistribute it and/or modify

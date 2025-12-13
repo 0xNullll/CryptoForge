@@ -38,6 +38,8 @@
 #include "../crypto/enc/base64.h"
 #include "../crypto/enc/base85.h"
 
+#include "../crypto/cipher/aes/aes_core.h"
+
 #include "../crypto/evp/evp_defs.h"
 #include "../crypto/evp/evp_flags.h"
 #include "../crypto/evp/evp_hash.h"
@@ -102,6 +104,10 @@ CF_API void test_base85(const char *label, const uint8_t *input, size_t len, uin
 CF_API void test_hex_base85(const char *label, const uint8_t *input, size_t len, uint32_t enc_mode, uint32_t dec_mode);
 
 CF_API void test_all_encoders_high(const uint8_t *input, size_t input_len);
+
+CF_API void test_aes128_fips197(void);
+CF_API void test_aes192_fips197(void);
+CF_API void test_aes256_fips197(void);
 
 #ifdef __cplusplus
 }

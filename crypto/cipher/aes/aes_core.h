@@ -1,0 +1,37 @@
+#ifndef AES_CORE_H
+#define AES_CORE_H
+
+#include "../../../utils/mem.h"
+#include "../../../utils/misc_utils.h"
+#include "../../../config/libs.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define AES_BLOCK_SIZE   16
+#define AES_128_KEY_SIZE 16
+#define AES_192_KEY_SIZE 24
+#define AES_256_KEY_SIZE 32
+#define AES_MAX_KEY_SIZE 32
+
+#define AES_128_ROUNDS 10
+#define AES_192_ROUNDS 12
+#define AES_256_ROUNDS 14
+#define AES_MAX_ROUND 14
+
+typedef struct {
+    uint32_t rk[4 * (AES_MAX_ROUND + 1)];  // max size for AES-256
+    uint32_t Nr;                           // number of rounds
+} AES_KEY;
+
+bool ll_AES_Init(const uint8_t *userKey, size_t UserkeySize, AES_KEY *key);
+bool ll_AES_EncryptBlock(const uint8_t in[AES_BLOCK_SIZE], uint8_t out[AES_BLOCK_SIZE], const AES_KEY *key);
+bool ll_AES_DecryptBlock(const uint8_t in[AES_BLOCK_SIZE], uint8_t out[AES_BLOCK_SIZE], const AES_KEY *key);
+
+#ifdef __cplusplus
+}
+#endif
+
+
+#endif // AES_CORE_H
