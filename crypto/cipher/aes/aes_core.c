@@ -294,8 +294,10 @@ static void InvCipher(const uint32_t *rk, uint32_t Nr, const uint8_t in[AES_BLOC
             out[c*4 + r] = state[r][c];
 }
 
-
-bool ll_AES_Init(const uint8_t *userKey, size_t UserkeySize, AES_KEY *key) {
+/*
+ * Initialize AES encryption key schedule.
+ */
+bool ll_AES_SetEncryptKey(AES_KEY *key, const uint8_t *userKey, size_t UserkeySize) {
     if (!key || !userKey) return false;
 
     // Determine number of rounds
@@ -310,14 +312,22 @@ bool ll_AES_Init(const uint8_t *userKey, size_t UserkeySize, AES_KEY *key) {
     return true;
 }
 
-bool ll_AES_EncryptBlock(const uint8_t in[AES_BLOCK_SIZE], uint8_t out[AES_BLOCK_SIZE], const AES_KEY *key) {
+/*
+ * Initialize AES decryption key schedule.
+ * (Same expansion, inverse order handled by InvCipher)
+ */
+bool ll_AES_SetDecryptKey(AES_KEY *key, const uint8_t *userKey, size_t UserkeySize) {
+    return ll_AES_SetEncryptKey(key, userKey, UserkeySize);
+}
+
+bool ll_AES_EncryptBlock(const AES_KEY *key, const uint8_t in[AES_BLOCK_SIZE], uint8_t out[AES_BLOCK_SIZE]) {
     if (!in || !out || !key) return false;
 
     Cipher(key->rk, key->Nr, in, out);
     return true;
 }
 
-bool ll_AES_DecryptBlock(const uint8_t in[AES_BLOCK_SIZE], uint8_t out[AES_BLOCK_SIZE], const AES_KEY *key) {
+bool ll_AES_DecryptBlock(const AES_KEY *key, const uint8_t in[AES_BLOCK_SIZE], uint8_t out[AES_BLOCK_SIZE]) {
     if (!in || !out || !key) return false;
 
     InvCipher(key->rk, key->Nr, in, out);
