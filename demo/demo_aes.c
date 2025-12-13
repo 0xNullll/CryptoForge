@@ -23,13 +23,13 @@ void test_aes128_fips197(void) {
     uint8_t ciphertext[AES_BLOCK_SIZE];
     uint8_t decrypted[AES_BLOCK_SIZE];
 
-    if (!ll_AES_Init(key, AES_128_KEY_SIZE, &ctx)) {
+    if (!ll_AES_SetEncryptKey(&ctx, key, AES_128_KEY_SIZE)) {
         printf("AES-128 init failed\n");
         return;
     }
 
-    ll_AES_EncryptBlock(plaintext, ciphertext, &ctx);
-    ll_AES_DecryptBlock(ciphertext, decrypted, &ctx);
+    ll_AES_EncryptBlock(&ctx, plaintext, ciphertext);
+    ll_AES_DecryptBlock(&ctx, ciphertext, decrypted);
 
     printf("AES-128 FIPS-197 Test:\n");
     printf("Key:       "); DEMO_print_hex(key, AES_BLOCK_SIZE);
@@ -69,13 +69,13 @@ void test_aes192_fips197(void) {
     uint8_t ciphertext[AES_BLOCK_SIZE];
     uint8_t decrypted[AES_BLOCK_SIZE];
 
-    if (!ll_AES_Init(key, AES_192_KEY_SIZE, &ctx)) {
+    if (!ll_AES_SetEncryptKey(&ctx, key, AES_192_KEY_SIZE)) {
         printf("AES-192 init failed\n");
         return;
     }
 
-    ll_AES_EncryptBlock(plaintext, ciphertext, &ctx);
-    ll_AES_DecryptBlock(ciphertext, decrypted, &ctx);
+    ll_AES_EncryptBlock(&ctx, plaintext, ciphertext);
+    ll_AES_DecryptBlock(&ctx, ciphertext, decrypted);
 
     printf("AES-192 FIPS-197 Test:\n");
     printf("Key:       "); DEMO_print_hex(key, AES_192_KEY_SIZE);
@@ -116,13 +116,13 @@ void test_aes256_fips197(void) {
     uint8_t ciphertext[AES_BLOCK_SIZE];
     uint8_t decrypted[AES_BLOCK_SIZE];
 
-    if (!ll_AES_Init(key, AES_256_KEY_SIZE, &ctx)) {
+    if (!ll_AES_SetEncryptKey(&ctx, key, AES_256_KEY_SIZE)) {
         printf("AES-256 init failed\n");
         return;
     }
 
-    ll_AES_EncryptBlock(plaintext, ciphertext, &ctx);
-    ll_AES_DecryptBlock(ciphertext, decrypted, &ctx);
+    ll_AES_EncryptBlock(&ctx, plaintext, ciphertext);
+    ll_AES_DecryptBlock(&ctx, ciphertext, decrypted);
 
     printf("AES-256 FIPS-197 Test:\n");
     printf("Key:       "); DEMO_print_hex(key, AES_256_KEY_SIZE);

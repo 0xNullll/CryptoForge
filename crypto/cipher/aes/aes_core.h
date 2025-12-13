@@ -25,9 +25,11 @@ typedef struct {
     uint32_t Nr;                           // number of rounds
 } AES_KEY;
 
-bool ll_AES_Init(const uint8_t *userKey, size_t UserkeySize, AES_KEY *key);
-bool ll_AES_EncryptBlock(const uint8_t in[AES_BLOCK_SIZE], uint8_t out[AES_BLOCK_SIZE], const AES_KEY *key);
-bool ll_AES_DecryptBlock(const uint8_t in[AES_BLOCK_SIZE], uint8_t out[AES_BLOCK_SIZE], const AES_KEY *key);
+bool ll_AES_SetEncryptKey(AES_KEY *key, const uint8_t *userKey, size_t UserkeySize);
+bool ll_AES_SetDecryptKey( AES_KEY *key, const uint8_t *userKey, size_t UserkeySize);
+
+bool ll_AES_EncryptBlock(const AES_KEY *key, const uint8_t in[AES_BLOCK_SIZE], uint8_t out[AES_BLOCK_SIZE]);
+bool ll_AES_DecryptBlock(const AES_KEY *key, const uint8_t in[AES_BLOCK_SIZE], uint8_t out[AES_BLOCK_SIZE]);
 
 #ifdef __cplusplus
 }
