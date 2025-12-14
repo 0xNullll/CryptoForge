@@ -58,7 +58,7 @@ Utilities for encoding and decoding data to facilitate testing and real-world us
 Provide **confidentiality** via block and stream ciphers.
 
 - [x] **AES Core** – block cipher implementation (AES-128 / AES-192 / AES-256)
-- [ ] **AES-ECB** – basic block mode (testing only; insecure for real use)
+- [x] **AES-ECB** – basic block mode (testing only; insecure for real use)
 - [ ] **AES-CBC** – Cipher Block Chaining mode with padding support
 - [ ] **AES-CTR** – Counter mode, stream-like, encryption = decryption
 - [ ] **AES-GCM** – Galois/Counter Mode, AEAD with authentication tag
@@ -160,7 +160,8 @@ Small, reusable helpers that make your library more **robust, convenient, and de
 ├─ /crypto
 │   ├─ /cipher
 │   │   ├─ /aes
-│   │   │   └─ aes_core.{c,h}
+│   │   │   ├─ aes_core.{c,h}
+│   │   │   └─ aes_modes.{c,h}
 │   │   └─ /chacha
 │   ├─ /hash
 │   │   ├─ hash_common.h     <-- padding, endian helpers, round macros
