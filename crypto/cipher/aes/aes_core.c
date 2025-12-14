@@ -258,19 +258,19 @@ static void Cipher(const uint32_t *rk, uint32_t Nr, const uint8_t in[AES_BLOCK_S
     ShiftRows(state);
     AddRoundKey(state, &rk[Nr*4]);
 
-    // Copy state back to output (raw-major)
-    for (int r = 0; r < 4; r++)
-        for (int c = 0; c < 4; c++)
-            out[r*4 + c] = state[r][c];
+    // Copy state back to output (column-major)
+    for (int c = 0; c < 4; c++)
+        for (int r = 0; r < 4; r++)
+            out[c*4 + r] = state[r][c];
 }
 
 static void InvCipher(const uint32_t *rk, uint32_t Nr, const uint8_t in[AES_BLOCK_SIZE], uint8_t out[AES_BLOCK_SIZE]) {
     uint8_t state[4][4];
 
-    // Load input bytes into state (raw-major)
-    for (int r = 0; r < 4; r++)
-        for (int c = 0; c < 4; c++)
-            state[r][c] = in[r*4 + c];
+    // Load input bytes into state (column-major)
+    for (int c = 0; c < 4; c++)
+        for (int r = 0; r < 4; r++)
+            state[r][c] = in[c*4 + r];
 
     // --- Initial AddRoundKey (last round key) ---
     AddRoundKey(state, &rk[Nr*4]);
