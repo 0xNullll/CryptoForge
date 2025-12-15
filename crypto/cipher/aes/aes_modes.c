@@ -102,7 +102,7 @@ bool ll_AES_CBC_Decrypt(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const ui
 }
 
 
-bool ll_AES_CFB1_Process(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len_bits, uint8_t *out, bool enc) {
+static bool ll_AES_CFB1_Process(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len_bits, uint8_t *out, bool enc) {
     if (!key || !iv || !in || !out) return false;
 
     uint8_t feedback[AES_BLOCK_SIZE];
@@ -146,16 +146,7 @@ bool ll_AES_CFB1_Process(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const u
     return true;
 }
 
-bool ll_AES_CFB1_Encrypt(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len, uint8_t *out) {
-    return _ll_AES_CFB1_Process(key, iv, in, in_len * 8, out, true);
-}
-
-bool ll_AES_CFB1_Decrypt(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len, uint8_t *out) {
-    return _ll_AES_CFB1_Process(key, iv, in, in_len * 8, out, false);
-}
-
-
-bool ll_AES_CFB8_Process( const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len_bytes, uint8_t *out, bool enc) {
+static bool ll_AES_CFB8_Process( const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len_bytes, uint8_t *out, bool enc) {
     if (!key || !iv || !in || !out) return false;
 
     uint8_t feedback[AES_BLOCK_SIZE];
@@ -189,16 +180,7 @@ bool ll_AES_CFB8_Process( const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const 
     return true;
 }
 
-bool ll_AES_CFB8_Encrypt(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len, uint8_t *out) {
-    return ll_AES_CFB8_Process(key, iv, in, in_len, out, true);
-}
-
-bool ll_AES_CFB8_Decrypt(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len, uint8_t *out) {
-    return ll_AES_CFB8_Process(key, iv, in, in_len, out, false);
-}
-
-
-bool ll_AES_CFB128_Process(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len_bytes, uint8_t *out, bool enc) {
+static bool ll_AES_CFB128_Process(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len_bytes, uint8_t *out, bool enc) {
     if (!key || !iv || !in || !out) return false;
 
     uint8_t feedback[AES_BLOCK_SIZE];
@@ -232,10 +214,153 @@ bool ll_AES_CFB128_Process(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const
     return true;
 }
 
-bool ll_AES_CFB128_Encrypt(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len, uint8_t *out) {
+bool ll_AES_CFB1_Encrypt(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len, uint8_t *out) {
+        return ll_AES_CFB1_Process(key, iv, in, in_len, out, true);
+}
+
+bool ll_AES_CFB1_Decrypt(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len, uint8_t *out) {
+        return ll_AES_CFB1_Process(key, iv, in, in_len, out, false);
+}
+
+bool ll_AES_CFB_Encrypt(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len, uint8_t *out) {
+    if (!key || !iv || !in || !out) return false;
+    if (in_len == 0) return true;
+
+    if (in_len < AES_BLOCK_SIZE) {
+        return ll_AES_CFB8_Process(key, iv, in, in_len, out, true);
+    }
+
     return ll_AES_CFB128_Process(key, iv, in, in_len, out, true);
 }
 
-bool ll_AES_CFB128_Decrypt(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len, uint8_t *out) {
+bool ll_AES_CFB_Decrypt(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len, uint8_t *out) {
+    if (!key || !iv || !in || !out) return false;
+    if (in_len == 0) return true;
+
+    if (in_len < AES_BLOCK_SIZE) {
+        return ll_AES_CFB8_Process(key, iv, in, in_len, out, false);
+    }
+
     return ll_AES_CFB128_Process(key, iv, in, in_len, out, false);
+}
+
+
+static bool ll_AES_OFB1_Process(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len_bits, uint8_t *out) {
+    if (!key || !iv || !in || !out) return false;
+
+    uint8_t state[AES_BLOCK_SIZE];
+    uint8_t block[AES_BLOCK_SIZE];
+    SECURE_MEMCPY(state, iv, AES_BLOCK_SIZE);
+
+    for (size_t bit_idx = 0; bit_idx < in_len_bits; bit_idx++) {
+
+        // Generate AES block if needed
+        if (bit_idx % 8 == 0) {
+            if (!ll_AES_EncryptBlock(key, state, block)) return false;
+
+            // OFB feedback = AES output
+            SECURE_MEMCPY(state, block, AES_BLOCK_SIZE);
+        }
+
+        // Extract the next plaintext bit (MSB first)
+        uint8_t in_byte = in[bit_idx / 8];
+        uint8_t in_bit  = (in_byte >> (7 - (bit_idx % 8))) & 1;
+
+        // Take the MSB of current keystream block
+        uint8_t ks_bit  = (block[0] >> 7) & 1;
+
+        // XOR to get output bit
+        uint8_t out_bit = in_bit ^ ks_bit;
+
+        // Write the bit into output byte (MSB first)
+        out[bit_idx / 8] &= ~(1 << (7 - (bit_idx % 8)));    // clear bit
+        out[bit_idx / 8] |= out_bit << (7 - (bit_idx % 8));
+
+        // Shift state left by 1 bit, append keystream bit
+        for (int i = 0; i < AES_BLOCK_SIZE; i++) {
+            uint8_t next = (i + 1 < AES_BLOCK_SIZE) ? (state[i + 1] >> 7) : 0;
+            state[i] = (state[i] << 1) | next;
+        }
+        state[AES_BLOCK_SIZE - 1] |= ks_bit;
+    }
+
+    return true;
+}
+
+static bool ll_AES_OFB8_Process(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len_bytes, uint8_t *out) {
+    if (!key || !iv || !in || !out) return false;
+
+    uint8_t state[AES_BLOCK_SIZE];
+    uint8_t keystream[AES_BLOCK_SIZE];
+    SECURE_MEMCPY(state, iv, AES_BLOCK_SIZE);
+
+    for (size_t i = 0; i < in_len_bytes; i++) {
+        // Encrypt current state to produce keystream block
+        if (!ll_AES_EncryptBlock(key, state, keystream)) return false;
+
+        // XOR next byte
+        out[i] = in[i] ^ keystream[0];
+
+        // Shift state left by 1 byte and append keystream byte
+        for (int j = 0; j < AES_BLOCK_SIZE - 1; j++) {
+            state[j] = state[j + 1];
+        }
+        state[AES_BLOCK_SIZE - 1] = keystream[0];
+    }
+
+    return true;
+}
+
+static bool ll_AES_OFB128_Process(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len_bytes, uint8_t *out) {
+    if (!key || !iv || !in || !out) return false;
+
+    uint8_t state[AES_BLOCK_SIZE];
+    uint8_t keystream[AES_BLOCK_SIZE];
+    size_t used = 0;
+
+    SECURE_MEMCPY(state, iv, AES_BLOCK_SIZE);
+
+    for (size_t i = 0; i < in_len_bytes; i++) {
+        // Generate AES block if needed
+        if (used == 0) {
+            if (!ll_AES_EncryptBlock(key, state, keystream)) return false;
+            SECURE_MEMCPY(state, keystream, AES_BLOCK_SIZE);  // OFB feedback
+        }
+
+        // XOR one byte
+        out[i] = in[i] ^ keystream[used];
+        used = (used + 1) % AES_BLOCK_SIZE;
+    }
+
+    return true;
+}
+
+bool ll_AES_OFB1_Encrypt(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len_bits, uint8_t *out) {
+    return ll_AES_OFB1_Process(key, iv, in, in_len_bits, out);
+}
+
+bool ll_AES_OFB1_Decrypt(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len_bits, uint8_t *out) {
+    return ll_AES_OFB1_Process(key, iv, in, in_len_bits, out);
+}
+
+bool ll_AES_OFB_Encrypt(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len, uint8_t *out) {
+    if (!key || !iv || !in || !out) return false;
+    if (in_len == 0) return true;
+
+    if (in_len < AES_BLOCK_SIZE) {
+        return ll_AES_OFB8_Process(key, iv, in, in_len, out);
+    }
+
+    return ll_AES_OFB128_Process(key, iv, in, in_len, out);
+}
+
+bool ll_AES_OFB_Decrypt(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len, uint8_t *out) {
+    if (!key || !iv || !in || !out) return false;
+    if (in_len == 0) return true;
+
+    if (in_len < AES_BLOCK_SIZE) {
+        return ll_AES_OFB8_Process(key, iv, in, in_len, out);
+    }
+
+    return ll_AES_OFB128_Process(key, iv, in, in_len, out);
 }
