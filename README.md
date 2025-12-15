@@ -64,7 +64,7 @@ Provide **confidentiality** via block and stream ciphers.
 - [ ] **AES-GCM** – Galois/Counter Mode, AEAD with authentication tag
 - [ ] **AES-CCM** – Counter with CBC-MAC, AEAD mode for embedded systems
 - [ ] **AES-XTS** – disk/sector encryption with tweak support
-- [-] **AES-CFB** – Cipher Feedback mode (optional / legacy)
+- [~] **AES-CFB** – Cipher Feedback mode (optional / legacy)
 - [ ] **AES-OFB** – Output Feedback mode (optional / legacy)
 - [ ] **AES-KW (RFC 3394 / SP 800-38F)** – AES Key Wrap, fixed-length key wrapping
 - [ ] **AES-KWP (RFC 5649 / SP 800-38F)** – AES Key Wrap with padding, arbitrary key lengths
@@ -141,9 +141,9 @@ Stretch and derive keys securely.
 Small, reusable helpers that make your library more **robust, convenient, and developer-friendly**.
 
 - [ ] **Input normalization** – trim whitespace, remove null bytes, convert line endings.
-- [-] **Length calculation helpers** – compute required buffer size for encodings or cipher output.
-- [-] **Safe memory operations** – secure zeroing, constant-time comparison, copy helpers.
-- [-] **Validation helpers** – check input sizes, valid character ranges, or padding correctness.
+- [~] **Length calculation helpers** – compute required buffer size for encodings or cipher output.
+- [~] **Safe memory operations** – secure zeroing, constant-time comparison, copy helpers.
+- [~] **Validation helpers** – check input sizes, valid character ranges, or padding correctness.
 - [ ] **Flexible padding helpers** – add/remove PKCS#7, zero padding, or custom padding schemes.
 - [x] **Extended Base85 flags** – optional whitespace ignoring, ‘y’ extension, or fixed-length padding.
 - [-] **Debug / hex dump functions** – for printing binary data safely and clearly.
