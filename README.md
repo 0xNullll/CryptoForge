@@ -146,7 +146,7 @@ Small, reusable helpers that make your library more **robust, convenient, and de
 - [ ] **Validation helpers** – check input sizes, valid character ranges, or padding correctness.
 - [ ] **Flexible padding helpers** – add/remove PKCS#7, zero padding, or custom padding schemes.
 - [x] **Extended Base85 flags** – optional whitespace ignoring, ‘y’ extension, or fixed-length padding.
-- [-] **Debug / hex dump functions** – for printing binary data safely and clearly.
+- [ ] **Debug / hex dump functions** – for printing binary data safely and clearly.
 - [ ] **File I/O helpers** – load/save buffers safely for test vectors or demo purposes.
 - [ ] **Vector testing utilities** – compare output against test vectors automatically.
 
