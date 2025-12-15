@@ -89,7 +89,23 @@ Provide **key exchange, digital signatures, and encryption** using public/privat
 
 ---
 
-### 6. RNG / DRBG
+### 6. Padding Utilities
+Handle **block alignment** for block ciphers. Padding is a structural operation, not cryptography.
+
+- [ ] **PKCS#7 Padding** – standard block padding used with AES-CBC and PBES2; appends `N` bytes of value `N`.
+- [ ] **ISO/IEC 7816-4 Padding** – `0x80` followed by zero bytes; unambiguous and byte-oriented.
+- [ ] **ANSI X9.23 Padding** – zero-filled padding ending with a length byte (legacy).
+- [ ] **Zero Padding** – fills with `0x00`; unsafe when plaintext may end in zero bytes.
+- [ ] **No Padding (Block-aligned)** – caller guarantees input length is a multiple of block size.
+
+**Notes:**
+- Padding is required only for block modes (ECB, CBC).
+- Stream modes and AEAD modes do not use padding.
+- PKCS#7 is the recommended default for general-purpose use.
+
+---
+
+### 7. RNG / DRBG
 Random number generation for keys, nonces, and salts.
 
 - [ ] **Fast PRNG (Xorshift128+, PCG)** – software-efficient, non-crypto use.
@@ -100,7 +116,7 @@ Random number generation for keys, nonces, and salts.
 
 ---
 
-### 7. Salts / Nonces
+### 8. Salts / Nonces
 Stretch and derive keys securely. Turn passwords or shared secrets into cryptographically strong keys.
 
 - [ ] **Salt generator (RNG)** – for hashing, KDFs, and MACs.
@@ -108,7 +124,7 @@ Stretch and derive keys securely. Turn passwords or shared secrets into cryptogr
 
 ---
 
-### 8. Key Derivation Functions (KDFs)
+### 9. Key Derivation Functions (KDFs)
 Stretch and derive keys securely.
 
 - [ ] **scrypt** – memory-hard KDF designed to derive strong keys from low-entropy inputs
@@ -117,18 +133,8 @@ Stretch and derive keys securely.
 
 ---
 
-### 9. Padding Utilities
-Required for block ciphers to handle plaintext not aligned to block size.
-
-- [ ] **PKCS#7 padding** – standard padding scheme.
-- [ ] **Zero padding** – simple, less recommended for variable-length messages.
-
----
-
 ### 10. Optional / Future Enhancements
-- Additional AES modes (CFB, OFB, CCM) and ChaCha variants.
 - TRNGs (jitter, thermal noise, hardware-based) for high-quality entropy.
-- Unit tests using RFC/NIST test vectors.
 - Integrated authenticated encryption pipelines combining MACs and ciphers.
 
 ---
