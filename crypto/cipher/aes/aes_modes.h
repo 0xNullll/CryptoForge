@@ -47,9 +47,49 @@ bool ll_AES_CBC_Decrypt(
 );
 
 // ------------------------
-// CFB Mode
+// CFB1 Mode (bitwise)
 // ------------------------
-bool ll_AES_CFB_Encrypt(
+
+// Internal helper for CFB1
+bool ll_AES_CFB1_Process(
+    const AES_KEY *key,
+    uint8_t iv[AES_BLOCK_SIZE],
+    const uint8_t *in,
+    size_t in_len_bits,
+    uint8_t *out,
+    bool enc
+);
+
+bool ll_AES_CFB1_Encrypt(
+    const AES_KEY *key,
+    uint8_t iv[AES_BLOCK_SIZE],
+    const uint8_t *in,
+    size_t in_len_bytes,
+    uint8_t *out
+);
+
+bool ll_AES_CFB1_Decrypt(
+    const AES_KEY *key,
+    uint8_t iv[AES_BLOCK_SIZE],
+    const uint8_t *in,
+    size_t in_len_bytes,
+    uint8_t *out
+);
+
+// ------------------------
+// CFB8 Mode (bytewise)
+// ------------------------
+
+// Internal helper for CFB8
+bool ll_AES_CFB8_Process(
+    const AES_KEY *key,
+    uint8_t iv[AES_BLOCK_SIZE],
+    const uint8_t *in, size_t in_len_bytes,
+    uint8_t *out,
+    bool enc
+);
+
+bool ll_AES_CFB8_Encrypt(
     const AES_KEY *key,
     uint8_t iv[AES_BLOCK_SIZE],
     const uint8_t *in,
@@ -57,7 +97,36 @@ bool ll_AES_CFB_Encrypt(
     uint8_t *out
 );
 
-bool ll_AES_CFB_Decrypt(
+bool ll_AES_CFB8_Decrypt(
+    const AES_KEY *key,
+    uint8_t iv[AES_BLOCK_SIZE],
+    const uint8_t *in,
+    size_t in_len,
+    uint8_t *out
+);
+
+// ------------------------
+// CFB128 Mode (full block)
+// ------------------------
+
+// Internal helper for CFB128
+bool ll_AES_CFB128_Process(
+    const AES_KEY *key,
+    uint8_t iv[AES_BLOCK_SIZE],
+    const uint8_t *in, size_t in_len_bytes,
+    uint8_t *out,
+    bool enc
+);
+
+bool ll_AES_CFB128_Encrypt(
+    const AES_KEY *key,
+    uint8_t iv[AES_BLOCK_SIZE],
+    const uint8_t *in,
+    size_t in_len,
+    uint8_t *out
+);
+
+bool ll_AES_CFB128_Decrypt(
     const AES_KEY *key,
     uint8_t iv[AES_BLOCK_SIZE],
     const uint8_t *in,

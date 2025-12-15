@@ -109,7 +109,9 @@ CF_API void test_all_encoders_high(const uint8_t *input, size_t input_len);
 CF_API void test_aes128_fips197(void);
 CF_API void test_aes192_fips197(void);
 CF_API void test_aes256_fips197(void);
+
 CF_API void test_aes_ecb_fist800_38a(void);
+CF_API void test_aes_cbc_fips800_38a(void);
 
 #ifdef __cplusplus
 }
