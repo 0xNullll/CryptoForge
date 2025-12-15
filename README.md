@@ -73,8 +73,6 @@ Provide **confidentiality** via block and stream ciphers.
 - [ ] **ChaCha20 (+ Poly1305)** – stream cipher with AEAD support
 - [ ] **PBES2 (optional-advanced)** – PBKDF2 + AES encryption scheme for password-based encryption
 
-**Notes:** Start with simple modes (CBC/CTR), then implement authenticated encryption (GCM/Poly1305).
-
 ---
 
 ### 5. Asymmetric Ciphers
