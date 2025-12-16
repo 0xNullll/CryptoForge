@@ -64,8 +64,8 @@ Provide **confidentiality** via block and stream ciphers.
 - [ ] **AES-GCM** – Galois/Counter Mode, AEAD with authentication tag
 - [ ] **AES-CCM** – Counter with CBC-MAC, AEAD mode for embedded systems
 - [ ] **AES-XTS** – disk/sector encryption with tweak support
-- [ ] **AES-CFB** – Cipher Feedback mode (optional / legacy)
-- [ ] **AES-OFB** – Output Feedback mode (optional / legacy)
+- [ ] **AES-CFB8 & AES-CFB128** – Cipher Feedback mode (optional / legacy)
+- [ ] **AES-OFB8 & AES-OFB128** – Output Feedback mode (optional / legacy)
 - [ ] **AES-KW (RFC 3394 / SP 800-38F)** – AES Key Wrap, fixed-length key wrapping
 - [ ] **AES-KWP (RFC 5649 / SP 800-38F)** – AES Key Wrap with padding, arbitrary key lengths
 - [ ] **AES-FF1** – Format-Preserving Encryption with Feistel network
@@ -134,6 +134,7 @@ Stretch and derive keys securely.
 ### 10. Optional / Future Enhancements
 - TRNGs (jitter, thermal noise, hardware-based) for high-quality entropy.
 - Integrated authenticated encryption pipelines combining MACs and ciphers.
+- EVP stack-only mode (optional/advanced) – alternate init and struct versions for fully stack-based operation without malloc or OS dependencies
 
 ---
 
@@ -149,6 +150,7 @@ Small, reusable helpers that make your library more **robust, convenient, and de
 - [ ] **Debug / hex dump functions** – for printing binary data safely and clearly.
 - [ ] **File I/O helpers** – load/save buffers safely for test vectors or demo purposes.
 - [ ] **Vector testing utilities** – compare output against test vectors automatically.
+- [ ] **Big-endian testing** – verify all algorithms produce correct outputs, simulate if hardware is little-endian
 
 **Notes:** Utilities don’t add new crypto primitives but make the library **polished, safe, and easier to use** for demos, testing, or practical applications.
 
@@ -165,7 +167,11 @@ Small, reusable helpers that make your library more **robust, convenient, and de
 │   ├─ /cipher
 │   │   ├─ /aes
 │   │   │   ├─ aes_core.{c,h}
-│   │   │   └─ aes_modes.{c,h}
+│   │   │   ├─ ecb_mode.{c,h}
+│   │   │   ├─ cbc_mode.{c,h}
+│   │   │   ├─ cfb_mode.{c,h}
+│   │   │   ├─ ofb_mode.{c,h}
+│   │   │   └─ ctr_mode.{c,h}
 │   │   └─ /chacha
 │   ├─ /hash
 │   │   ├─ hash_common.h     <-- padding, endian helpers, round macros

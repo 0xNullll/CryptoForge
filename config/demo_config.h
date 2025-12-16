@@ -39,7 +39,11 @@
 #include "../crypto/enc/base85.h"
 
 #include "../crypto/cipher/aes/aes_core.h"
-#include "../crypto/cipher/aes/aes_modes.h"
+#include "../crypto/cipher/aes/ecb_mode.h"
+#include "../crypto/cipher/aes/cbc_mode.h"
+#include "../crypto/cipher/aes/cfb_mode.h"
+#include "../crypto/cipher/aes/ofb_mode.h"
+#include "../crypto/cipher/aes/ctr_mode.h"
 
 #include "../crypto/evp/evp_defs.h"
 #include "../crypto/evp/evp_flags.h"
@@ -112,6 +116,7 @@ CF_API void test_aes256_fips197(void);
 
 CF_API void test_aes_ecb_fist800_38a(void);
 CF_API void test_aes_cbc_fips800_38a(void);
+CF_API void test_aes_cfb8_fips800_38a(void);
 
 #ifdef __cplusplus
 }
