@@ -117,6 +117,7 @@ CF_API void test_aes256_fips197(void);
 CF_API void test_aes_ecb_fist800_38a(void);
 CF_API void test_aes_cbc_fips800_38a(void);
 CF_API void test_aes_cfb8_fips800_38a(void);
+CF_API void test_aes_cfb128_fips800_38a(void);
 
 #ifdef __cplusplus
 }
