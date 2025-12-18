@@ -10,6 +10,10 @@
 extern "C" {
 #endif
 
+//
+// IV must be UNPREDICTABLE, no padding needed. Converts block cipher to stream; first block sensitive to IV.
+//
+
 bool ll_AES_CFB8_Encrypt(
     const AES_KEY *key,
     uint8_t iv[AES_BLOCK_SIZE],

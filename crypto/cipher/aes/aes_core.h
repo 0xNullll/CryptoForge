@@ -21,7 +21,7 @@ extern "C" {
 #define AES_MAX_ROUND 14
 
 // Round up length to next AES_BLOCK_SIZE multiple
-#define AES_CIPHER_TEXT_SIZE(len) (((len) + AES_BLOCK_SIZE - 1) / AES_BLOCK_SIZE * AES_BLOCK_SIZE)
+#define AES_CIPHER_SIZE(len) (((len) + AES_BLOCK_SIZE - 1) / AES_BLOCK_SIZE * AES_BLOCK_SIZE)
 
 typedef struct {
     uint32_t rk[4 * (AES_MAX_ROUND + 1)];  // max size for AES-256
