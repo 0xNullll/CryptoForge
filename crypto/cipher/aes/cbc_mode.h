@@ -10,6 +10,10 @@
 extern "C" {
 #endif
 
+//
+// IV must be UNPREDICTABLE, padding needed. C[i] = E(P[i] XOR C[i-1]); first block leaks if IV predictable.
+//
+
 bool ll_AES_CBC_Encrypt(
     const AES_KEY *key,
     uint8_t iv[AES_BLOCK_SIZE],

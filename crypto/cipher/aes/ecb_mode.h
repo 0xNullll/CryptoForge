@@ -10,6 +10,10 @@
 extern "C" {
 #endif
 
+//
+// No IV, padding needed if plaintext not multiple of block. Independent blocks, patterns leak.
+//
+
 bool ll_AES_ECB_Encrypt(
     const AES_KEY *key,
     const uint8_t *in,

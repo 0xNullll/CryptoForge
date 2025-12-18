@@ -10,6 +10,10 @@
 extern "C" {
 #endif
 
+//
+// IV/nonce must be UNIQUE, randomness optional, no padding. Counter produces keystream; repeating IV/counter leaks plaintext.
+//
+
 bool ll_AES_CTR_Encrypt(
     const AES_KEY *key,
     uint8_t counter[AES_BLOCK_SIZE],
