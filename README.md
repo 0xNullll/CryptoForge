@@ -74,7 +74,11 @@ Provide **confidentiality** via block and stream ciphers.
 - [x] **AES-CTR** – Counter mode, stream-like, encryption = decryption
 - [x] **AES-CFB8 & AES-CFB128** – Cipher Feedback mode (optional / legacy)
 - [x] **AES-OFB8 & AES-OFB128** – Output Feedback mode (optional / legacy)
-- [ ] **ChaCha20 (+ Poly1305)** – stream cipher with AEAD support
+- [ ] **ChaCha20** – standard 256-bit key stream cipher with 20 rounds; fast and secure
+- [ ] **ChaCha12** – reduced-round variant (12 rounds) for faster performance with slightly lower security
+- [ ] **ChaCha8** – reduced-round variant (8 rounds); very fast but minimal security
+- [ ] **XChaCha20** – extended-nonce (192-bit) variant of ChaCha20; prevents nonce reuse in long-lived streams
+- [ ] **ChaCha20-Poly1305** – AEAD construction combining ChaCha20 stream cipher with Poly1305 MAC for authenticated encryption
 - [ ] **PBES2 (optional-advanced)** – PBKDF2 + AES encryption scheme for password-based encryption
 
 ---
