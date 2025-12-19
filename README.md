@@ -57,19 +57,23 @@ Utilities for encoding and decoding data to facilitate testing and real-world us
 ### 4. Symmetric Ciphers
 Provide **confidentiality** via block and stream ciphers.
 
+#### Block Ciphers
 - [x] **AES Core** – block cipher implementation (AES-128 / AES-192 / AES-256)
 - [x] **AES-ECB** – basic block mode (testing only; insecure for real use)
 - [x] **AES-CBC** – Cipher Block Chaining mode with padding support
-- [x] **AES-CTR** – Counter mode, stream-like, encryption = decryption
 - [ ] **AES-GCM** – Galois/Counter Mode, AEAD with authentication tag
 - [ ] **AES-CCM** – Counter with CBC-MAC, AEAD mode for embedded systems
 - [ ] **AES-XTS** – disk/sector encryption with tweak support
-- [x] **AES-CFB8 & AES-CFB128** – Cipher Feedback mode (optional / legacy)
-- [x] **AES-OFB8 & AES-OFB128** – Output Feedback mode (optional / legacy)
 - [ ] **AES-KW (RFC 3394 / SP 800-38F)** – AES Key Wrap, fixed-length key wrapping
 - [ ] **AES-KWP (RFC 5649 / SP 800-38F)** – AES Key Wrap with padding, arbitrary key lengths
 - [ ] **AES-FF1** – Format-Preserving Encryption with Feistel network
 - [ ] **AES-FF3 / FF3-1** – Optional FPE variant, faster and lighter
+- [ ] **Blowfish** – classic 64-bit block cipher, symmetric key
+
+#### Stream Ciphers
+- [x] **AES-CTR** – Counter mode, stream-like, encryption = decryption
+- [x] **AES-CFB8 & AES-CFB128** – Cipher Feedback mode (optional / legacy)
+- [x] **AES-OFB8 & AES-OFB128** – Output Feedback mode (optional / legacy)
 - [ ] **ChaCha20 (+ Poly1305)** – stream cipher with AEAD support
 - [ ] **PBES2 (optional-advanced)** – PBKDF2 + AES encryption scheme for password-based encryption
 

@@ -244,35 +244,29 @@ CF_STATUS ll_HMAC_CloneCtx(ll_HMAC_CTX *ctx_dest, const ll_HMAC_CTX *ctx_src) {
     // Copy MD pointer
     ctx_dest->md = ctx_src->md;
 
-    // Copy the inner and outer contexts as raw memory
+    // Allocate and copy inner/outer contexts
     if (ctx_src->md && ctx_src->md->ctx_size > 0) {
-        // Free existing destination buffers if allocated
-        if (ctx_dest->ipad_ctx) {
-            SECURE_FREE(ctx_dest->ipad_ctx, ctx_src->md->ctx_size);
-            ctx_dest->ipad_ctx = NULL;
-        }
-        if (ctx_dest->opad_ctx) {
-            SECURE_FREE(ctx_dest->opad_ctx, ctx_src->md->ctx_size);
-            ctx_dest->opad_ctx = NULL;
-        }
-
-        // Allocate new memory for destination
         ctx_dest->ipad_ctx = SECURE_ALLOC(ctx_src->md->ctx_size);
         ctx_dest->opad_ctx = SECURE_ALLOC(ctx_src->md->ctx_size);
+
         if (!ctx_dest->ipad_ctx || !ctx_dest->opad_ctx)
             return CF_ERR_ALLOC_FAILED;
 
-        // Copy the memory from source
         SECURE_MEMCPY(ctx_dest->ipad_ctx, ctx_src->ipad_ctx, ctx_src->md->ctx_size);
         SECURE_MEMCPY(ctx_dest->opad_ctx, ctx_src->opad_ctx, ctx_src->md->ctx_size);
+    } else {
+        ctx_dest->ipad_ctx = NULL;
+        ctx_dest->opad_ctx = NULL;
     }
 
-    // Copy simple fields
-    SECURE_MEMCPY(ctx_dest->key, ctx_src->key, ctx_src->key_len);
+    // Copy key and metadata
+    if (ctx_src->key_len > 0)
+        SECURE_MEMCPY(ctx_dest->key, ctx_src->key, ctx_src->key_len);
+
     ctx_dest->key_len     = ctx_src->key_len;
     ctx_dest->out_len     = ctx_src->out_len;
     ctx_dest->isFinalized = ctx_src->isFinalized;
-    ctx_dest->isHeapAlloc = 0; // pre-allocated, no dynamic memory inside
+    ctx_dest->isHeapAlloc = 0; // dst is “new”, caller owns it
 
     return CF_SUCCESS;
 }

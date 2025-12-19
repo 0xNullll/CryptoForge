@@ -22,6 +22,7 @@
 #define MISC_UTILS_H
 
 #include "../config/crypto_config.h"
+#include "../config/libs.h"
 
 // ======================
 // 1. Platform / DLL / Compiler Macros
