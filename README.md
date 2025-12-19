@@ -250,7 +250,8 @@ Evaluate behavior under hostile or constrained execution environments.
 │   │   │   ├─ cbc_mode.{c,h}
 │   │   │   ├─ cfb_mode.{c,h}
 │   │   │   ├─ ofb_mode.{c,h}
-│   │   │   └─ ctr_mode.{c,h}
+│   │   │   ├─ ctr_mode.{c,h}
+│   │   │   └─ gcm_mode.{c,h}
 │   │   └─ /chacha
 │   ├─ /hash
 │   │   ├─ hash_common.h     <-- padding, endian helpers, round macros
@@ -265,6 +266,8 @@ Evaluate behavior under hostile or constrained execution environments.
 │   │   ├─ /md
 │   │   │   └─ md5.{c,h}
 │   ├─ /mac
+│   │   ├─ ghash.{c,h}
+│   │   ├─ gmac.{c,h}
 │   │   ├─ hmac.{c,h}
 │   │   └─ kmac.{c,h}
 │   ├─ /kdf
