@@ -899,8 +899,24 @@ CF_STATUS EVP_ComputeHashXof(
     return status;
 }
 
+int EVP_HashEqual(const uint8_t *a, const uint8_t *b, size_t len) {
+    if (!a || !b)
+        return CF_ERR_NULL_PTR;
 
-int EVP_HashCompare(const uint8_t *a, const uint8_t *b, size_t len) {
+    if (len == 0)
+        return CF_ERR_INVALID_LEN;
+
+    uint8_t diff = 0;
+
+    for (size_t i = 0; i < len; ++i) {
+        diff |= a[i] ^ b[i];
+    }
+
+    /* return 1 if equal, 0 if not equal */
+    return (diff == 0);
+}
+
+int EVP_HashCompareLex(const uint8_t *a, const uint8_t *b, size_t len) {
     if (!a || !b)
         return CF_ERR_NULL_PTR;
 
