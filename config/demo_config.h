@@ -44,6 +44,7 @@
 #include "../crypto/cipher/aes/cfb_mode.h"
 #include "../crypto/cipher/aes/ofb_mode.h"
 #include "../crypto/cipher/aes/ctr_mode.h"
+#include "../crypto/cipher/aes/gcm_mode.h"
 
 #include "../crypto/evp/evp_defs.h"
 #include "../crypto/evp/evp_flags.h"

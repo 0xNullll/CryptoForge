@@ -16,7 +16,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * Project repository: https://github.com/0xNullll/CryptoForge
- */
+*/
 
 #include "base58.h"
 
@@ -27,44 +27,87 @@ static const char BASE58_ENC_TABLE[] = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefg
 bool ll_BASE58_Encode(const uint8_t *data, size_t data_len, char *out, size_t *out_len) {
     if (!data || data_len == 0 || !out || !out_len) return false;
 
-    size_t zcount = 0; // count leading zeros
-    while (zcount < data_len && data[zcount] == 0) zcount++;
+    // Count leading zero bytes
+    size_t zcount = 0;
+    while (zcount < data_len && data[zcount] == 0)
+        zcount++;
 
-    // Approx max size: log(256)/log(58) ≈ 1.38
-    size_t size = BASE58_ENC_LEN(data_len - zcount);
-    uint8_t buf[size];
-    SECURE_ZERO(buf, size);
+    // All-zero input -> only '1's
+    if (zcount == data_len) {
+        if (*out_len <= zcount) {
+            *out_len = zcount + 1;
+            return false;
+        }
+        for (size_t i = 0; i < zcount; ++i)
+            out[i] = BASE58_LEADING_ZERO;
+        out[zcount] = '\0';
+        *out_len = zcount;
+        return true;
+    }
 
-    size_t i, j, high;
-    for (i = zcount, high = size - 1; i < data_len; ++i, high = j) {
+    size_t required_size = BASE58_ENC_LEN(data_len - zcount + 2);
+    if (required_size == 0) return false; // defensive
+
+    uint8_t stack_buf[BASE58_MAX_STACK_BUF];
+    uint8_t *buf = stack_buf;
+    bool heap_used = false;
+
+    if (data_len > BASE58_MAX_STACK_INPUT) {
+        buf = malloc(required_size);
+        if (!buf) return false;
+        heap_used = true;
+    }
+
+    SECURE_ZERO(buf, required_size);
+
+    size_t high = required_size - 1;
+
+    for (size_t i = zcount; i < data_len; ++i) {
         int val = data[i];
-        for (j = size - 1; (j > high) || val; --j) {
+
+        for (size_t j = required_size - 1; ; --j) {
             val += 256 * buf[j];
             buf[j] = (uint8_t)(val % 58);
             val /= 58;
-            if (!j) break;
+
+            if (j <= high && val == 0)
+                break;
+
+            if (j == 0)
+                break;
         }
+
+        /* update highest non-zero digit */
+        while (high > 0 && buf[high] == 0)
+            high--;
     }
 
-    // skip leading zeros in buf
-    for (j = 0; j < size && buf[j] == 0; ++j);
+    // Skip leading zero digits
+    size_t j = 0;
+    while (j < required_size && buf[j] == 0)
+        j++;
 
-    // check output buffer size
-    if (*out_len <= zcount + size - j) {
-        *out_len = zcount + size - j + 1; // required size
+    size_t enc_len = zcount + (required_size - j);
+
+    if (*out_len <= enc_len) {
+        *out_len = enc_len + 1;
         return false;
+        if (heap_used) SECURE_FREE(buf, required_size);
     }
 
-    // leading '1's for zeros
-    for (i = 0; i < zcount; ++i) out[i] = BASE58_LEADING_ZERO;
+    // Leading '1's
+    size_t out_i = 0;
+    for (; out_i < zcount; ++out_i)
+        out[out_i] = BASE58_LEADING_ZERO;
 
-    // convert buf -> chars
-    for (; j < size; ++i, ++j) {
-        out[i] = BASE58_ENC_TABLE[buf[j]];
-    }
+    // Convert digits to characters
+    for (; j < required_size; ++j)
+        out[out_i++] = BASE58_ENC_TABLE[buf[j]];
 
-    out[i] = '\0';
-    *out_len = i;
+    out[out_i] = '\0';
+    *out_len = out_i;
+
+    if (heap_used) SECURE_FREE(buf, required_size);
     return true;
 }
 
@@ -81,41 +124,90 @@ bool ll_BASE58_Decode(const char *data, size_t data_len, uint8_t *out, size_t *o
     }
 #endif // BASE_TRUNCATE_ON_NULL
 
-    // Count leading '1's -> map to leading zeros
+    if (data_len == 0) {
+        *out_len = 0;
+        return true;
+    }
+
+    // Count leading '1's → leading zero bytes
     size_t zcount = 0;
-    while (zcount < data_len && data[zcount] == BASE58_LEADING_ZERO) zcount++;
+    while (zcount < data_len && data[zcount] == BASE58_LEADING_ZERO)
+        zcount++;
 
-    // Approx max size: 0.733 * digits + 8, gives enough room for intermediate carry/overflow handling.
-    size_t size = BASE58_DEC_LEN(data_len - zcount);
-    uint8_t buf[size];
-    SECURE_ZERO(buf, size);
+    // Compute max decoded size
+    size_t required_size = BASE58_DEC_LEN(data_len - zcount + 2);
 
-    // Convert Base58 digits to big integer in buf
+    // No room to decode anything
+    if (required_size == 0) {
+        if (*out_len < zcount) return false;
+        SECURE_ZERO(out, zcount);
+        *out_len = zcount;
+        return true;
+    }
+
+    uint8_t stack_buf[BASE58_MAX_STACK_BUF];
+    uint8_t *buf = stack_buf;
+    bool heap_used = false;
+
+    if (data_len > BASE58_MAX_STACK_INPUT) {
+        buf = malloc(required_size);
+        if (!buf) return false;
+        heap_used = true;
+    }
+
+    SECURE_ZERO(buf, required_size);
+
+    // Base58 -> big integer
     for (size_t i = zcount; i < data_len; ++i) {
         int val = -1;
-        char c = data[i];
-        if (c >= BASE58_MIN && c <= BASE58_MAX) val = BASE58_REV_TABLE[c - BASE58_MIN]; // reverse lookup
-        if (val < 0) return false; // invalid char
+        unsigned char c = (unsigned char)data[i];
 
-        for (size_t j = size - 1; j != (size_t)-1; --j) {
+        if (c >= BASE58_MIN && c <= BASE58_MAX)
+            val = BASE58_REV_TABLE[c - BASE58_MIN];
+
+        if (val < 0) {
+            if (heap_used) SECURE_FREE(buf, required_size);
+            return false; // invalid character
+        }
+
+        for (size_t j = required_size; j-- > 0; ) {
             val += 58 * buf[j];
-            buf[j] = (uint8_t)(val & 0xFF);
+            buf[j] = (uint8_t)val;
             val >>= 8;
+        }
+
+        // overflow means input doesn't fit in allocated size
+        if (val != 0) {
+            if (heap_used) SECURE_FREE(buf, required_size);
+            return false;
         }
     }
 
-    // Skip leading zeros in buf
+    // Skip leading zeros in big integer
     size_t j = 0;
-    while (j < size && buf[j] == 0) j++;
+    while (j < required_size && buf[j] == 0)
+        j++;
+
+    size_t decoded_len = zcount + (required_size - j);
+
+    // Output buffer check
+    if (*out_len < decoded_len) {
+        if (heap_used) SECURE_FREE(buf, required_size);
+        return false;
+    }
 
     size_t out_index = 0;
 
     // Leading zeros from '1's
-    for (size_t i = 0; i < zcount; ++i) out[out_index++] = 0;
+    for (size_t i = 0; i < zcount; ++i)
+        out[out_index++] = 0;
 
-    // Copy remaining bytes
-    for (; j < size; ++j) out[out_index++] = buf[j];
+    // Remaining bytes
+    for (; j < required_size; ++j)
+        out[out_index++] = buf[j];
 
     *out_len = out_index;
+
+    if (heap_used) SECURE_FREE(buf, required_size);
     return true;
 }
