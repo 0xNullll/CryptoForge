@@ -7,4 +7,3 @@ static FORCE_INLINE void Inc32(uint8_t counter[AES_BLOCK_SIZE]) {
             break;  
     }
 }
-
