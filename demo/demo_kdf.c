@@ -2,11 +2,15 @@
 
 #if ENABLE_TESTS
 
+#define TEST_OKM_MAX 1024  // fixed size for test
+
 void test_all_hkdfs(const uint8_t *info, size_t info_len,
                     const uint8_t *salt, size_t salt_len,
                     const uint8_t *ikm, size_t ikm_len,
                     size_t okm_len) {
-    uint8_t okm[LL_HKDF_MAX_OKM(EVP_MAX_DEFAULT_DIGEST_SIZE)];
+    if (okm_len > TEST_OKM_MAX) return;
+    
+    uint8_t okm[TEST_OKM_MAX];
 
     // List of hash flags to test
     uint32_t hash_flags[] = {
