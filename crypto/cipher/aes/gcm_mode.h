@@ -6,7 +6,6 @@
 #include "../../../config/libs.h"
 
 #include "../aes/aes_core.h"
-#include "../../mac/ghash.h"
 
 #ifdef __cplusplus
 extern "C" {
