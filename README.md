@@ -139,14 +139,7 @@ Stretch and derive keys securely.
 
 ---
 
-### 10. Optional / Future Enhancements
-- TRNGs (jitter, thermal noise, hardware-based) for high-quality entropy.
-- Integrated authenticated encryption pipelines combining MACs and ciphers.
-- EVP stack-only mode (optional/advanced) – alternate init and struct versions for fully stack-based operation without malloc or OS dependencies
-
----
-
-### 11. Utilities / Helper Functions
+### 10. Utilities / Helper Functions
 Small, reusable helpers that make your library more **robust, convenient, and developer-friendly**.
 
 - [ ] **Input normalization** – trim whitespace, remove null bytes, convert line endings.
@@ -161,6 +154,84 @@ Small, reusable helpers that make your library more **robust, convenient, and de
 - [ ] **Big-endian testing** – verify all algorithms produce correct outputs, simulate if hardware is little-endian
 
 **Notes:** Utilities don’t add new crypto primitives but make the library **polished, safe, and easier to use** for demos, testing, or practical applications.
+
+---
+
+### 11. Optional / Future Enhancements
+
+These features are **not required for initial correctness**, but aim to harden the library
+against real-world misuse, adversarial inputs, and advanced attack models.
+
+- **TRNGs**
+  - Jitter-based entropy
+  - Thermal noise sources
+  - Hardware-based RNGs (where available)
+  - Used to seed DRBGs securely in constrained or embedded environments
+
+- **Integrated AE Pipelines**
+  - High-level authenticated encryption workflows
+  - Combine cipher + MAC correctly (e.g. Encrypt-then-MAC)
+  - Reduce API misuse by providing safe defaults
+  - Optional: user-controlled low-level primitives remain exposed
+
+- **EVP Stack-only Mode (Advanced)**
+  - Fully stack-based operation
+  - No `malloc`, no OS dependency
+  - Suitable for bare-metal or highly constrained embedded systems
+  - Alternate init paths and structs for deterministic memory usage
+
+---
+
+### 12. Fuzzing & Robustness Testing (Advanced)
+
+Stress-test the library against malformed, adversarial, and unexpected inputs.
+
+- **Coverage-guided fuzzing**
+  - Target encoders/decoders, padding, MAC verification, AEAD APIs
+  - Validate graceful failure (no crashes, no UB, no leaks)
+
+- **Boundary & Limit Testing**
+  - Extremely large inputs
+  - Zero-length and near-limit buffers
+  - Invalid IV, nonce, tag, and key sizes
+
+- **Error-path fuzzing**
+  - Ensure all error conditions are handled deterministically
+  - No memory leaks or partial state exposure on failure
+
+---
+
+### 13. Reverse Engineering & Binary Analysis (Advanced)
+
+Use the compiled library itself as a reverse-engineering target.
+
+- **Self-RE practice**
+  - Analyze compiled binaries to verify assumptions made in C
+  - Ensure constant-time logic survives compiler optimizations
+  - Inspect memory layout, call flow, and symbol boundaries
+
+- **Compiler behavior validation**
+  - Confirm secure zeroing is not optimized away
+  - Validate constant-time comparisons at assembly level
+  - Identify unexpected instruction patterns or data-dependent branches
+
+---
+
+### 14. Sandbox & Isolation Testing (Advanced)
+
+Evaluate behavior under hostile or constrained execution environments.
+
+- **VM-based testing**
+  - Run under different OS versions and configurations
+  - Simulate low-memory and restricted execution environments
+
+- **Sandbox execution**
+  - Test behavior under debuggers, emulators, and monitoring tools
+  - Observe memory access patterns and failure modes
+
+- **Crash containment**
+  - Ensure failures do not corrupt external memory
+  - Validate clean teardown and state reset after errors
 
 ---
 
@@ -240,6 +311,14 @@ Small, reusable helpers that make your library more **robust, convenient, and de
    - Supports streaming, piping, and user-facing APIs
    - Enforces security policies (e.g., minimum key lengths)
    - Handles memory management and zeroization
+
+---
+
+## Security Disclaimer
+
+This library is intended for educational, experimental, and embedded use.
+It has not undergone formal verification or professional security audits.
+Do not use for protecting high‑value secrets without independent review.
 
 ---
 
