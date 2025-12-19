@@ -287,3 +287,77 @@ CF_STATUS ll_HKDF_FreeAlloc(ll_HKDF_CTX **p_ctx) {
 
     return CF_SUCCESS;
 }
+
+// typedef struct _ll_HKDF_CTX {
+//     const EVP_MD *md;         // Low-level hash descriptor
+
+//     uint8_t *prk;             // Pseudorandom key from Extract (constant HMAC key)
+//     size_t prk_len;           // Length of PRK (HashLen)
+
+//     uint8_t prev_block[EVP_MAX_DEFAULT_DIGEST_SIZE]; // Last HMAC output (Ti), max hash size
+//     uint8_t counter;                                 // Block counter (1..255)
+
+//     uint8_t *info;             // Optional context info
+//     size_t info_len;           // Length of info
+
+//     int isHeapAlloc;           // 1 if allocated by library (heap), 0 if user stack
+// } ll_HKDF_CTX;
+
+CF_STATUS ll_HKDF_CloneCtx(ll_HKDF_CTX *ctx_dest, const ll_HKDF_CTX *ctx_src) {
+    if (!ctx_dest || !ctx_src) return CF_ERR_NULL_PTR;
+
+    // Copy top-level context first (fixed-size parts only)
+    ll_HKDF_CTX tmp = *ctx_src; // shallow copy
+    SECURE_ZERO(ctx_dest, sizeof(*ctx_dest));
+    SECURE_MEMCPY(ctx_dest, &tmp, sizeof(*ctx_dest));
+
+    ctx_dest->isHeapAlloc = 0; // cloned context will not own heap allocations by default
+
+    // Clone PRK if exists
+    if (ctx_src->prk && ctx_src->prk_len > 0) {
+        ctx_dest->prk = (uint8_t *)SECURE_ALLOC(ctx_src->prk_len);
+        if (!ctx_dest->prk) return CF_ERR_ALLOC_FAILED;
+        SECURE_MEMCPY(ctx_dest->prk, ctx_src->prk, ctx_src->prk_len);
+        ctx_dest->prk_len = ctx_src->prk_len;
+    }
+
+    // Clone info if exists
+    if (ctx_src->info && ctx_src->info_len > 0) {
+        ctx_dest->info = (uint8_t *)SECURE_ALLOC(ctx_src->info_len);
+        if (!ctx_dest->info) {
+            SECURE_FREE(ctx_dest->prk, ctx_dest->prk_len);
+            ctx_dest->prk = NULL;
+            return CF_ERR_ALLOC_FAILED;
+        }
+        SECURE_MEMCPY(ctx_dest->info, ctx_src->info, ctx_src->info_len);
+        ctx_dest->info_len = ctx_src->info_len;
+    }
+
+    return CF_SUCCESS;
+}
+
+ll_HKDF_CTX *ll_HKDF_CloneCtxAlloc(const ll_HKDF_CTX *ctx_src, CF_STATUS *status) {
+    if (!ctx_src) {
+        if (status) *status = CF_ERR_NULL_PTR;
+        return NULL;
+    }
+
+    // Allocate top-level context
+    ll_HKDF_CTX *dst = (ll_HKDF_CTX *)SECURE_ALLOC(sizeof(ll_HKDF_CTX));
+    if (!dst) {
+        if (status) *status = CF_ERR_ALLOC_FAILED;
+        return NULL;
+    }
+
+    // Initialize clone
+    CF_STATUS st = ll_HKDF_CloneCtx(dst, ctx_src);
+    if (status) *status = st;
+    
+    if (st != CF_SUCCESS) {
+        SECURE_FREE(dst, sizeof(*dst));
+        return NULL;
+    }
+
+    dst->isHeapAlloc = 1; // library owns this memory
+    return dst;
+}

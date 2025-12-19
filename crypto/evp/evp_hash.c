@@ -946,17 +946,12 @@ int EVP_HashCompare(const uint8_t *a, const uint8_t *b, size_t len) {
 CF_STATUS EVP_CloneHashCtx(EVP_HASH_CTX *dst, const EVP_HASH_CTX *src) {
     if (!dst || !src) return CF_ERR_NULL_PTR;
 
-    // Free existing low-level digest context if present
-    if (dst->digest_ctx) {
-        SECURE_FREE(dst->digest_ctx, dst->md ? dst->md->ctx_size : 0);
-        dst->digest_ctx = NULL;
-    }
+    // Copy top-level struct fields (shallow copy)
+    SECURE_ZERO(dst, sizeof(*dst));
+    SECURE_MEMCPY(dst, src, sizeof(*dst));
 
-    // Copy the top-level context
-    SECURE_MEMCPY(dst, src, sizeof(EVP_HASH_CTX));
-
-    // Allocate and copy low-level digest context if needed
-    if (src->digest_ctx) {
+    // Allocate and copy low-level digest context if present
+    if (src->digest_ctx && src->md) {
         dst->digest_ctx = SECURE_ALLOC(src->md->ctx_size);
         if (!dst->digest_ctx) return CF_ERR_ALLOC_FAILED;
         SECURE_MEMCPY(dst->digest_ctx, src->digest_ctx, src->md->ctx_size);
@@ -964,13 +959,14 @@ CF_STATUS EVP_CloneHashCtx(EVP_HASH_CTX *dst, const EVP_HASH_CTX *src) {
         dst->digest_ctx = NULL;
     }
 
-    dst->opts = src->opts;      // just point to the same EVP_XOF_OPTS
-    dst->isHeapAllocOpts = 0;   // do not free later, caller owns it
+    // Shallow copy XOF options pointer (caller owns memory)
+    dst->opts = src->opts;
+    dst->isHeapAllocOpts = 0;
 
-    // For XOFs, copy output length if applicable
+    // Copy remaining flags
     dst->out_len = src->out_len;
     dst->isFinalized = src->isFinalized;
-    dst->isHeapAlloc = 0; // since caller owns dst
+    dst->isHeapAlloc = 0; // dst is caller-owned
 
     return CF_SUCCESS;
 }

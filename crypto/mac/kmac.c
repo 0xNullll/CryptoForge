@@ -318,13 +318,12 @@ CF_STATUS ll_KMAC_CloneCtx(ll_KMAC_CTX *ctx_dest, const ll_KMAC_CTX *ctx_src) {
     if (!ctx_dest || !ctx_src)
         return CF_ERR_NULL_PTR;
 
-    // Clone CSHAKE context
+    SECURE_ZERO(ctx_dest, sizeof(*ctx_dest)); // optional: zero dest before copy
+
+    // Clone CSHAKE context if present
     if (ctx_src->cshake_ctx) {
         size_t cshake_ctx_size = LL_KMAC_IS_128(ctx_src->type) ? CSHAKE128_BLOCK_SIZE : CSHAKE256_BLOCK_SIZE;
 
-        if (ctx_dest->cshake_ctx) {
-            SECURE_FREE(ctx_dest->cshake_ctx, cshake_ctx_size);
-        }
         ctx_dest->cshake_ctx = SECURE_ALLOC(cshake_ctx_size);
         if (!ctx_dest->cshake_ctx)
             return CF_ERR_ALLOC_FAILED;
@@ -334,12 +333,14 @@ CF_STATUS ll_KMAC_CloneCtx(ll_KMAC_CTX *ctx_dest, const ll_KMAC_CTX *ctx_src) {
         ctx_dest->cshake_ctx = NULL;
     }
 
-    // Copy key and customization
+    // Copy key and customization arrays
     ctx_dest->key_len = ctx_src->key_len;
-    SECURE_MEMCPY(ctx_dest->key, ctx_src->key, ctx_src->key_len);
+    if (ctx_dest->key_len)
+        SECURE_MEMCPY(ctx_dest->key, ctx_src->key, ctx_dest->key_len);
 
     ctx_dest->S_len = ctx_src->S_len;
-    SECURE_MEMCPY(ctx_dest->S, ctx_src->S, ctx_src->S_len);
+    if (ctx_dest->S_len)
+        SECURE_MEMCPY(ctx_dest->S, ctx_src->S, ctx_dest->S_len);
 
     // Copy output length
     ctx_dest->out_len = ctx_src->out_len;
@@ -349,7 +350,7 @@ CF_STATUS ll_KMAC_CloneCtx(ll_KMAC_CTX *ctx_dest, const ll_KMAC_CTX *ctx_src) {
     ctx_dest->customAbsorbed   = ctx_src->customAbsorbed;
     ctx_dest->emptyNameCustom  = ctx_src->emptyNameCustom;
     ctx_dest->isXOF            = ctx_src->isXOF;
-    ctx_dest->isHeapAlloc      = 0;
+    ctx_dest->isHeapAlloc      = 0; // always caller-managed
 
     // Copy KMAC type
     ctx_dest->type = ctx_src->type;
@@ -381,7 +382,7 @@ ll_KMAC_CTX *ll_KMAC_CloneCtxAlloc(const ll_KMAC_CTX *ctx_src, CF_STATUS *status
         return NULL;
     }
 
-    ctx_dest->isHeapAlloc = 1; // mark as heap-allocated
+    ctx_dest->isHeapAlloc = 1; // library owns this memory
 
     if (status) *status = CF_SUCCESS;
     return ctx_dest;

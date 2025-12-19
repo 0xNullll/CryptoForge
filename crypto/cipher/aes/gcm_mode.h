@@ -26,7 +26,7 @@ extern "C" {
  */
 
 /* Recommended IV size (per NIST SP 800-38D) */
-#define AES_GCM_IV_MIN   12
+#define AES_GCM_IV_M 12
 
 #define AES_GCM_TAG_SIZE_4   4    // 32-bit tag
 #define AES_GCM_TAG_SIZE_8   8    // 64-bit tag
@@ -55,9 +55,9 @@ bool ll_AES_GCM_Decrypt(
     size_t aad_len,
     const uint8_t *in,
     size_t in_len,
+    uint8_t *out,
     const uint8_t *tag,
-    size_t tag_len,
-    uint8_t *out
+    size_t tag_len
 );
 
 #ifdef __cplusplus
