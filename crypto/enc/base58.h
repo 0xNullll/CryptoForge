@@ -55,6 +55,14 @@ static const int8_t BASE58_REV_TABLE[] = {
 // ceil(str_len * log(58)/log(256)) +8 bytes gives enough room for intermediate carry/overflow handling.
 #define BASE58_DEC_LEN(str_len)  ((size_t)((str_len) * 733 / 1000 + 8))
 
+//
+// Maximum input size to use stack buffer
+//
+#define BASE58_MAX_STACK_INPUT 128
+
+// Maximum output buffer needed for that input
+#define BASE58_MAX_STACK_BUF (BASE58_ENC_LEN(BASE58_MAX_STACK_INPUT) + 4)
+
 // Encode input buffer to Base58.
 // 'out' must be large enough to hold the result
 // 'out_len' will be set to the actual number of characters written.

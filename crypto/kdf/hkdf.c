@@ -220,6 +220,9 @@ CF_STATUS ll_HKDF_Expand(
         if (st != CF_SUCCESS)
             goto cleanup;
 
+        // clean internal buffers
+        ll_HMAC_Free(hmac_ctx);
+
         // Copy required bytes to output
         size_t to_copy = (okm_len - generated > hash_len) ? hash_len : (okm_len - generated);
         SECURE_MEMCPY(okm + generated, block, to_copy);
