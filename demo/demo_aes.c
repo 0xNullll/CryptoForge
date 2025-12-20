@@ -1243,5 +1243,100 @@ void test_aes_ctr_fips800_38a(void) {
         ((memcmp(expected_ct256, ct, sizeof(expected_ct256)) == 0 && memcmp(plain_text, dec, sizeof(plain_text)) == 0)) ? "PASSED" : "FAILED");
 }
 
+#define MAX_LINE 2048
+#define MAX_KEY 64
+#define MAX_IV 64
+#define MAX_PT 1240
+#define MAX_CT 1240
+#define MAX_AAD 1240
+#define MAX_TAG 32
+
+// Convert hex string to bytes
+size_t hex2bytes(const char *hex, unsigned char *out) {
+    size_t len = strlen(hex);
+    size_t i;
+    for (i = 0; i < len / 2; i++)
+        sscanf(hex + 2*i, "%2hhx", &out[i]);
+    return len / 2;
+}
+
+// Read a value like Key = ..., PT = ... etc
+int read_value(FILE *f, const char *label, unsigned char *out, size_t *len) {
+    char line[MAX_LINE];
+    long long prev_pos = _ftelli64(f);
+
+    while (fgets(line, sizeof(line), f)) {
+        // remove trailing newline
+        line[strcspn(line, "\r\n")] = 0;
+
+        // if line starts with the label
+        if (strncmp(line, label, strlen(label)) == 0) {
+            const char *hex = line + strlen(label);
+            while (isspace(*hex) || *hex == '=') hex++;  // skip spaces or '='
+            *len = hex2bytes(hex, out);
+            return 1;
+        }
+
+        // stop reading if next Count or header comes, but don't fseek
+        if (strncmp(line, "Count", 5) == 0 || line[0] == '[') {
+            // rewind one line logically by storing previous position
+            _fseeki64(f, prev_pos, SEEK_SET); // safe because we store prev_pos
+            return 0; // signal no match, next iteration will handle new header
+        }
+
+        prev_pos = ftell(f); // store position at start of line
+    }
+
+    return 0; // EOF reached
+}
+
+// Process a single .rsp file
+void process_rsp_file(const char *filepath) {
+    FILE *f = fopen(filepath, "r");
+    if (!f) {
+        printf("Failed to open: %s\n", filepath);
+        return;
+    }
+
+    unsigned char key[MAX_KEY], iv[MAX_IV], pt[MAX_PT], ct[MAX_CT], aad[MAX_AAD], tag[MAX_TAG];
+    size_t key_len, iv_len, pt_len, ct_len, aad_len, tag_len;
+    char line[MAX_LINE];
+    int mode;
+
+    while (fgets(line, sizeof(line), f)) {
+        if (strncmp(line, "Count", 5) == 0) {
+            // Read test vectors
+            read_value(f, "Key", key, &key_len);
+            read_value(f, "IV", iv, &iv_len);
+            read_value(f, "PT", pt, &pt_len);
+            read_value(f, "CT", ct, &ct_len);
+            read_value(f, "AAD", aad, &aad_len);
+            read_value(f, "Tag", tag, &tag_len);
+
+            // check for FAIL line
+            mode = 0; // default
+            if (fgets(line, sizeof(line), f)) {
+                line[strcspn(line, "\r\n")] = 0; // remove newline
+                if (strcmp(line, "FAIL") == 0)
+                    mode = 3;
+            }
+
+            // if not FAIL, determine mode
+            if (mode == 0) {
+                mode = pt_len > 0 ? 1 : 2;
+            }
+
+            // Output two lines per test
+            if (mode == 1)
+                printf("AES_GCM_Encrypt(key, key_len, iv, iv_len, aad, aad_len, pt, pt_len, ct, tag, tag_len);\n");
+            else if (mode == 2)
+                printf("AES_GCM_Decrypt(key, key_len, iv, iv_len, aad, aad_len, ct, ct_len, tag, pt, tag_len);\n");
+            else
+                printf("AES_GCM_DecryptFail(key, key_len, iv, iv_len, aad, aad_len, ct, ct_len, tag, pt, tag_len);\n");
+        }
+    }
+
+    fclose(f);
+}
 
 #endif // ENABLE_TESTS
