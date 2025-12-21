@@ -33,6 +33,13 @@ extern "C" {
 #define AES_GCM_TAG_SIZE_16 16    // 128-bit tag (maximum)
 #define AES_GCM_TAG_SIZE_DEFAULT AES_GCM_TAG_SIZE_16  // default tag size
 
+// macro to check if a tag length is valid
+#define IS_VALID_GCM_TAG_SIZE(len) \
+    ((len) == AES_GCM_TAG_SIZE_4  || \
+     (len) == AES_GCM_TAG_SIZE_8  || \
+     (len) == AES_GCM_TAG_SIZE_12 || \
+     (len) == AES_GCM_TAG_SIZE_16)
+
 bool ll_AES_GCM_Encrypt(
     const AES_KEY *key,
     const uint8_t *iv,

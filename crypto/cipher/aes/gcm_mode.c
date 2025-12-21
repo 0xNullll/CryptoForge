@@ -1,16 +1,25 @@
 #include "gcm_mode.h"
 
+/*
+ * Platform Endianness Neutralizing Load and Store Macro definitions
+ * GCM wants platform-neutral Big Endian (BE) byte ordering
+ */
+#define GET_UINT32_BE(n,b,i) {                      \
+    (n) = ( (uint32_t) (b)[(i)    ] << 24 )         \
+        | ( (uint32_t) (b)[(i) + 1] << 16 )         \
+        | ( (uint32_t) (b)[(i) + 2] <<  8 )         \
+        | ( (uint32_t) (b)[(i) + 3]       ); }
+
+#define PUT_UINT32_BE(n,b,i) {                      \
+    (b)[(i)    ] = (uint8_t) ( (n) >> 24 );   \
+    (b)[(i) + 1] = (uint8_t) ( (n) >> 16 );   \
+    (b)[(i) + 2] = (uint8_t) ( (n) >>  8 );   \
+    (b)[(i) + 3] = (uint8_t) ( (n)       ); }
+
 typedef struct {
     uint64_t hi;
     uint64_t lo;
 } uint128_t;
-
-static const uint8_t R[AES_BLOCK_SIZE] = {
-    0xe1, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00
-};
 
 static uint128_t load_uint128(const uint8_t b[AES_BLOCK_SIZE]) {
     uint128_t x;
@@ -32,36 +41,32 @@ static void store_uint128(uint8_t out[AES_BLOCK_SIZE], uint128_t x) {
     out[12] = (uint8_t)(x.lo >> 24); out[13] = (uint8_t)(x.lo >> 16); out[14] = (uint8_t)(x.lo >> 8);  out[15] = (uint8_t)(x.lo & 0xFF);
 }
 
-static void GFmul128(uint8_t Z[AES_BLOCK_SIZE],
-    const uint8_t X[AES_BLOCK_SIZE],
-    const uint8_t Y[AES_BLOCK_SIZE]) {
+static void gcm_mult(uint8_t Z[AES_BLOCK_SIZE], const uint8_t X[AES_BLOCK_SIZE], const uint8_t Y[AES_BLOCK_SIZE]) {
+    uint128_t x = load_uint128(X);   // load 128-bit input X
+    uint128_t y = load_uint128(Y);   // load 128-bit input Y
+    uint128_t z = {0, 0};            // initialize result to 0
 
-    uint128_t z = {0, 0};
-    uint128_t v = load_uint128(Y);
-    uint128_t r = load_uint128(R);
-    uint128_t x = load_uint128(X);
+    // Split y into two 64-bit halves
+    uint64_t yh = y.hi;
+    uint64_t yl = y.lo;
 
     for (int i = 0; i < 128; i++) {
-        // MSB of X determines addition
         uint64_t bit = (x.hi >> 63) & 1;
         if (bit) {
-            z.hi ^= v.hi;
-            z.lo ^= v.lo;
+            z.hi ^= yh;
+            z.lo ^= yl;
         }
 
-        // Shift V right by 1 and reduce if needed
-        uint8_t lsb = v.lo & 1;
-
-        v.hi = v.hi >> 1;
-        v.hi |= (v.lo & 1) << 63;   // carry LSB from lo to hi
-        v.lo = v.lo >> 1;
+        // Shift y right by 1, apply reduction if LSB is set
+        uint8_t lsb = yl & 1;
+        yl = (yl >> 1) | ((yh & 1) << 63);
+        yh = yh >> 1;
 
         if (lsb) {
-            v.hi ^= r.hi;
-            v.lo ^= r.lo;
+            yh ^= 0xe100000000000000ULL;
         }
 
-        // Shift X left to move next bit into MSB
+        // Shift x left for next bit
         x.hi = (x.hi << 1) | (x.lo >> 63);
         x.lo <<= 1;
     }
@@ -69,58 +74,30 @@ static void GFmul128(uint8_t Z[AES_BLOCK_SIZE],
     store_uint128(Z, z);
 }
 
-static void GHASH(uint8_t H[AES_BLOCK_SIZE], uint8_t *aad, size_t aad_len,
-           uint8_t *ct, size_t ct_len, uint8_t X_out[AES_BLOCK_SIZE]) {
+static void GHASH_Process(
+    const uint8_t H[AES_BLOCK_SIZE],    // GHASH key (H = AES(K,0^128))
+    const uint8_t *in, size_t in_len,   // data to GHASH
+    uint8_t out[AES_BLOCK_SIZE]         // accumulator (X), updated in-place
+) {
+    uint8_t block[AES_BLOCK_SIZE];
 
-    uint8_t X[AES_BLOCK_SIZE] = {0};
-    uint8_t block[AES_BLOCK_SIZE] = {0};
+    size_t offset = 0;
+    while (offset < in_len) {
+        size_t blk_len = (in_len - offset > AES_BLOCK_SIZE) ? AES_BLOCK_SIZE : (in_len - offset);
 
-    size_t len = 0;
-    size_t num_blocks;
+        // Copy bytes from input and zero-pad if partial block
+        for (int i = 0; i < AES_BLOCK_SIZE; i++)
+            block[i] = (i < blk_len) ? in[offset + i] : 0;
 
-    // --- Process AAD ---
-    if (aad) {
-        num_blocks = (aad_len + AES_BLOCK_SIZE - 1) / AES_BLOCK_SIZE;
-        len = 0;
-        for (size_t i = 0; i < num_blocks; i++) {
-            SECURE_ZERO(block, AES_BLOCK_SIZE);
-            for (int j = 0; j < AES_BLOCK_SIZE && len < aad_len; j++) {
-                block[j] = aad[len++];
-            }
-            GFmul128(X, block, H);
-        }
+        // XOR into current accumulator
+        for (int i = 0; i < AES_BLOCK_SIZE; i++)
+            out[i] ^= block[i];
+
+        // Multiply in GF(2^128)
+        gcm_mult(out, out, H);
+
+        offset += blk_len;
     }
-
-    // --- Process Ciphertext ---
-    if (ct) {
-        num_blocks = (ct_len + AES_BLOCK_SIZE - 1) / AES_BLOCK_SIZE;
-        len = 0;
-        for (size_t i = 0; i < num_blocks; i++) {
-            SECURE_ZERO(block, AES_BLOCK_SIZE);
-            for (int j = 0; j < AES_BLOCK_SIZE && len < ct_len; j++) {
-                block[j] = ct[len++];
-            }
-            GFmul128(X, block, H);
-        }
-    }
-
-    // --- Length block ---
-    SECURE_ZERO(block, AES_BLOCK_SIZE);
-    // Encode lengths in bits: high 64 bits = AAD in big-endian
-    uint64_t aad_bits = aad_len * 8;
-    for (int i = 0; i < 8; i++) {
-        block[i] = (aad_bits >> (56 - i * 8)) & 0xFF;
-    }
-
-    // Encode length in bits: low 64 bits = CT in big-endian
-    uint64_t ct_bits = ct_len * 8;
-    for (int i = 0; i < 8; i++) {
-        block[8 + i] = (ct_bits >> (56 - i * 8)) & 0xFF;
-    }
-
-    GFmul128(X, block, H);
-
-    SECURE_MEMCPY(X_out, X, AES_BLOCK_SIZE);
 }
 
 static FORCE_INLINE void Inc32(uint8_t counter[AES_BLOCK_SIZE]) {
@@ -131,7 +108,7 @@ static FORCE_INLINE void Inc32(uint8_t counter[AES_BLOCK_SIZE]) {
     }
 }
 
-static bool GCTR(const AES_KEY *key, uint8_t ICB[AES_BLOCK_SIZE], const uint8_t *X, size_t X_len, uint8_t *Y) {
+static bool ll_AES_GCTR_Process(const AES_KEY *key, uint8_t ICB[AES_BLOCK_SIZE], const uint8_t *X, size_t X_len, uint8_t *Y) {
     uint8_t CB[AES_BLOCK_SIZE], encrypted[AES_BLOCK_SIZE];
     SECURE_MEMCPY(CB, ICB, AES_BLOCK_SIZE);
 
@@ -150,5 +127,84 @@ static bool GCTR(const AES_KEY *key, uint8_t ICB[AES_BLOCK_SIZE], const uint8_t 
 
         offset += block_len;
     }
+    return true;
+}
+
+bool ll_AES_GCM_Encrypt(
+    const AES_KEY *key,
+    const uint8_t *iv,
+    size_t iv_len,
+    const uint8_t *aad,
+    size_t aad_len,
+    const uint8_t *in,
+    size_t in_len,
+    uint8_t *out,
+    uint8_t *tag,
+    size_t tag_len
+) {
+    if (!key || !iv || !out || !tag) return false;
+    if (!IS_VALID_GCM_TAG_SIZE(tag_len)) return false;
+
+    uint8_t zero_block[AES_BLOCK_SIZE] = {0};
+    uint8_t H[AES_BLOCK_SIZE] = {0};
+    uint8_t J0[AES_BLOCK_SIZE] = {0};
+
+    // 1. Compute H = AES_K(0^128)
+    if (!ll_AES_EncryptBlock(key, zero_block, H)) return false;
+
+    // 2. Prepare initial counter block J0
+    if (iv_len == 12) { // 12-byte IV (most common)
+        SECURE_MEMCPY(J0, iv, 12);
+        J0[12] = 0x00;
+        J0[13] = 0x00;
+        J0[14] = 0x00;
+        J0[15] = 0x01;
+    } else { // arbitrary IV length
+        uint8_t X[AES_BLOCK_SIZE] = {0};
+        GHASH_Process(H, iv, iv_len, X);
+
+        // Append IV length (64-bit) in bits as last 8 bytes
+        uint8_t len_block[AES_BLOCK_SIZE] = {0};
+        uint64_t iv_bits = iv_len * 8;
+        for (int i = 0; i < 8; i++)
+            len_block[8 + i] = (uint8_t)((iv_bits >> (56 - i*8)) & 0xFF);
+
+        GHASH_Process(H, len_block, AES_BLOCK_SIZE, X);
+        SECURE_MEMCPY(J0, X, AES_BLOCK_SIZE);
+    }
+
+    // 3. Prepare GCTR counter block
+    uint8_t ctr[AES_BLOCK_SIZE];
+    SECURE_MEMCPY(ctr, J0, AES_BLOCK_SIZE);
+    Inc32(ctr);  // start from J0 + 1
+
+    // 4. Encrypt plaintext
+    if (!ll_AES_GCTR_Process(key, ctr, in, in_len, out)) return false;
+
+    // 5. Compute GHASH over AAD + ciphertext
+    uint8_t X[AES_BLOCK_SIZE] = {0};
+    if (aad && aad_len > 0) GHASH_Process(H, aad, aad_len, X);
+    if (in  && in_len  > 0) GHASH_Process(H, out, in_len, X);
+
+    // 6. Append lengths of AAD and ciphertext in bits
+    uint8_t len_block[AES_BLOCK_SIZE] = {0};
+    uint64_t aad_bits = aad_len * 8;
+    uint64_t ct_bits  = in_len  * 8;
+
+    for (int i = 0; i < 8; i++)      len_block[i]     = (uint8_t)((aad_bits >> (56 - i*8)) & 0xFF);
+    for (int i = 0; i < 8; i++)      len_block[8 + i] = (uint8_t)((ct_bits  >> (56 - i*8)) & 0xFF);
+
+    for (int i = 0; i < AES_BLOCK_SIZE; i++)
+        X[i] ^= len_block[i];
+
+    gcm_mult(X, X, H);  // multiply by H in GF(2^128)
+
+    // 7. Compute tag: T = AES_K(J0) XOR GHASH
+    uint8_t EK0[AES_BLOCK_SIZE] = {0};
+    if (!ll_AES_EncryptBlock(key, J0, EK0)) return false;
+
+    for (size_t i = 0; i < tag_len && i < AES_BLOCK_SIZE; i++)
+        tag[i] = EK0[i] ^ X[i];
+
     return true;
 }
