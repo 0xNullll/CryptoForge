@@ -87,7 +87,7 @@ static void GHASH_Process(
 
         // Copy bytes from input and zero-pad if partial block
         for (int i = 0; i < AES_BLOCK_SIZE; i++)
-            block[i] = (i < blk_len) ? in[offset + i] : 0;
+            block[i] = ((size_t)i < blk_len) ? in[offset + (size_t)i] : 0;
 
         // XOR into current accumulator
         for (int i = 0; i < AES_BLOCK_SIZE; i++)
