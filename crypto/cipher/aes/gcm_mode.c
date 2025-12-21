@@ -61,8 +61,7 @@ static void gcm_mult(uint8_t Z[AES_BLOCK_SIZE], const uint8_t X[AES_BLOCK_SIZE],
 static void GHASH_Process(
     const uint8_t H[AES_BLOCK_SIZE],    // GHASH key (H = AES(K,0^128))
     const uint8_t *in, size_t in_len,   // data to GHASH
-    uint8_t out[AES_BLOCK_SIZE]         // accumulator (X), updated in-place
-) {
+    uint8_t out[AES_BLOCK_SIZE]) {      // accumulator (X), updated in-place
     uint8_t block[AES_BLOCK_SIZE];
 
     size_t offset = 0;
@@ -124,8 +123,7 @@ bool ll_AES_GCM_Encrypt(
     size_t in_len,
     uint8_t *out,
     uint8_t *tag,
-    size_t tag_len
-) {
+    size_t tag_len) {
     if (!key || !iv || !out || !tag) return false;
     if (!IS_VALID_GCM_TAG_SIZE(tag_len)) return false;
 
