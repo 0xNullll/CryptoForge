@@ -1243,6 +1243,199 @@ void test_aes_ctr_fips800_38a(void) {
         ((memcmp(expected_ct256, ct, sizeof(expected_ct256)) == 0 && memcmp(plain_text, dec, sizeof(plain_text)) == 0)) ? "PASSED" : "FAILED");
 }
 
+void test_aes_gcm_fips_style(void) {
+    uint8_t plain_text[4 * AES_BLOCK_SIZE] = {
+        0x6b, 0xc1, 0xbe, 0xe2,
+        0x2e, 0x40, 0x9f, 0x96,
+        0xe9, 0x3d, 0x7e, 0x11,
+        0x73, 0x93, 0x17, 0x2a,
+
+        0xae, 0x2d, 0x8a, 0x57,
+        0x1e, 0x03, 0xac, 0x9c,
+        0x9e, 0xb7, 0x6f, 0xac,
+        0x45, 0xaf, 0x8e, 0x51,
+
+        0x30, 0xc8, 0x1c, 0x46,
+        0xa3, 0x5c, 0xe4, 0x11,
+        0xe5, 0xfb, 0xc1, 0x19,
+        0x1a, 0x0a, 0x52, 0xef,
+
+        0xf6, 0x9f, 0x24, 0x45,
+        0xdf, 0x4f, 0x9b, 0x17,
+        0xad, 0x2b, 0x41, 0x7b,
+        0xe6, 0x6c, 0x37, 0x10
+    };
+
+    uint8_t aad[AES_BLOCK_SIZE] = {
+        0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
+        0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f
+    };
+
+    uint8_t iv[AES_BLOCK_SIZE] = {
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
+    };
+
+    AES_KEY ctx;
+    uint8_t ct[AES_BLOCK_SIZE * 4], tag[AES_BLOCK_SIZE];
+
+    // ---------------- AES-128 ----------------
+    uint8_t key128[AES_BLOCK_SIZE] = {
+        0x2b,0x7e,0x15,0x16,0x28,0xae,0xd2,0xa6,
+        0xab,0xf7,0x15,0x88,0x09,0xcf,0x4f,0x3c
+    };
+
+    uint8_t expected_ct128[AES_BLOCK_SIZE * 4] = {
+        0x26, 0xdc, 0x83, 0x71,
+        0xa5, 0xff, 0x7b, 0x69,
+        0x7d, 0x60, 0x4f, 0x8b,
+        0x95, 0x5e, 0x73, 0x3b,
+
+        0x7a, 0x5d, 0x98, 0x03,
+        0x03, 0x88, 0xdd, 0x96,
+        0xb9, 0xc9, 0x6e, 0xad,
+        0xd6, 0xe7, 0xe1, 0xa4,
+
+        0x2a, 0x08, 0x16, 0x12,
+        0x49, 0x91, 0xbc, 0x6b,
+        0x29, 0x8b, 0xa8, 0x2e,
+        0x1b, 0x51, 0x75, 0x04,
+
+        0x30, 0xea, 0x7a, 0x54,
+        0x02, 0xe8, 0x4e, 0xb2,
+        0x10, 0x4e, 0xce, 0x03,
+        0xfd, 0x11, 0xae, 0x7a
+    };
+
+    uint8_t expected_tag128[AES_BLOCK_SIZE] = {
+        0x50, 0x5e, 0xb0, 0x76, 0x20, 0x26, 0x32, 0xc5,
+        0x37, 0x8c, 0x74, 0x70, 0x2d, 0x89, 0x23, 0x81
+    };
+
+    if (!ll_AES_SetEncryptKey(&ctx, key128, sizeof(key128))) { 
+        printf("AES-128 init failed\n"); return; 
+    }
+
+    if (!ll_AES_GCM_Encrypt(&ctx, iv, sizeof(iv), aad, sizeof(aad),
+                            plain_text, sizeof(plain_text), ct, tag, sizeof(tag))) {
+        printf("AES-128 GCM encryption failed\n"); return;
+    }
+
+    printf("AES-128 GCM Test:\n");
+    printf("Plaintext: "); DEMO_print_hex(plain_text, sizeof(plain_text));
+    printf("Ciphertext: "); DEMO_print_hex(ct, sizeof(ct));
+    printf("Expected CT: "); DEMO_print_hex(expected_ct128, sizeof(expected_ct128));
+    printf("Tag: "); DEMO_print_hex(tag, sizeof(tag));
+    printf("Expected Tag: "); DEMO_print_hex(expected_tag128, sizeof(expected_tag128));
+    printf("AES-128 GCM test %s\n\n", 
+           (memcmp(ct, expected_ct128, sizeof(ct)) == 0 && 
+            memcmp(tag, expected_tag128, sizeof(tag)) == 0) ? "PASSED" : "FAILED");
+
+    // ---------------- AES-192 ----------------
+    uint8_t key192[24] = {
+        0x8e,0x73,0xb0,0xf7,0xda,0x0e,0x64,0x52,
+        0xc8,0x10,0xf3,0x2b,0x80,0x90,0x79,0xe5,
+        0x62,0xf8,0xea,0xd2,0x52,0x2c,0x6b,0x7b
+    };
+    uint8_t expected_ct192[AES_BLOCK_SIZE * 4] = {
+        0xfa, 0x91, 0x42, 0x90,
+        0x7e, 0xa1, 0xab, 0x3b,
+        0x76, 0x90, 0x96, 0x9f,
+        0x64, 0x43, 0x5b, 0x5e,
+        
+        0xe6, 0xdb, 0x63, 0xf0,
+        0x12, 0x78, 0x84, 0x00,
+        0x52, 0xda, 0x39, 0x7d,
+        0x87, 0x98, 0x64, 0x5c,
+        
+        0xcc, 0x05, 0xbb, 0x49,
+        0x07, 0x5c, 0x5d, 0x4b,
+        0x41, 0x02, 0xf3, 0x5a,
+        0x8f, 0x7a, 0x01, 0xbb,
+        
+        0x05, 0x76, 0xce, 0x3a,
+        0xf0, 0x92, 0x3b, 0xfc,
+        0xe0, 0xa7, 0x77, 0xbe,
+        0xfb, 0x84, 0xd6, 0xea
+    };
+
+    uint8_t expected_tag192[AES_BLOCK_SIZE] = {
+        0x18, 0x52, 0xdd, 0xc4, 0x55, 0x24, 0x87, 0x5f,
+        0x2e, 0xd4, 0xfa, 0x31, 0x4a, 0x05, 0xea, 0x98
+    };
+
+    if (!ll_AES_SetEncryptKey(&ctx, key192, sizeof(key192))) { 
+        printf("AES-192 init failed\n"); return; 
+    }
+
+    if (!ll_AES_GCM_Encrypt(&ctx, iv, sizeof(iv), aad, sizeof(aad),
+                            plain_text, sizeof(plain_text), ct, tag, sizeof(tag))) {
+        printf("AES-192 GCM encryption failed\n"); return;
+    }
+
+    printf("AES-192 GCM Test:\n");
+    printf("Plaintext: "); DEMO_print_hex(plain_text, sizeof(plain_text));
+    printf("Ciphertext: "); DEMO_print_hex(ct, sizeof(ct));
+    printf("Expected CT: "); DEMO_print_hex(expected_ct192, sizeof(expected_ct192));
+    printf("Tag: "); DEMO_print_hex(tag, sizeof(tag));
+    printf("Expected Tag: "); DEMO_print_hex(expected_tag192, sizeof(expected_tag192));
+    printf("AES-192 GCM test %s\n\n", 
+           (memcmp(ct, expected_ct192, sizeof(ct)) == 0 && 
+            memcmp(tag, expected_tag192, sizeof(tag)) == 0) ? "PASSED" : "FAILED");
+
+    // ---------------- AES-256 ----------------
+    uint8_t key256[32] = {
+        0x60,0x3d,0xeb,0x10,0x15,0xca,0x71,0xbe,
+        0x2b,0x73,0xae,0xf0,0x85,0x7d,0x77,0x81,
+        0x1f,0x35,0x2c,0x07,0x3b,0x61,0x08,0xd7,
+        0x2d,0x98,0x10,0xa3,0x09,0x14,0xdf,0xf4
+    };
+    uint8_t expected_ct256[AES_BLOCK_SIZE * 4] = {
+        0x95, 0x4e, 0xab, 0x0d,
+        0x28, 0x3b, 0x03, 0x99,
+        0x75, 0x42, 0xe9, 0x94,
+        0x0a, 0xa8, 0x26, 0x49,
+        
+        0xe7, 0x7b, 0xe3, 0xaa,
+        0x13, 0x2e, 0xc5, 0xb3,
+        0xc4, 0x90, 0x03, 0x33,
+        0xe0, 0xd6, 0x84, 0x16,
+        
+        0x07, 0x3e, 0xa7, 0x63,
+        0x19, 0x5c, 0xee, 0x50,
+        0x76, 0x15, 0x35, 0xc1,
+        0xd4, 0xe1, 0x28, 0xa6,
+        
+        0x80, 0x1d, 0x4b, 0x09,
+        0xd8, 0xee, 0x6e, 0x82,
+        0x64, 0xc8, 0x76, 0xd8,
+        0xa9, 0x79, 0xfb, 0xec
+    };
+    uint8_t expected_tag256[AES_BLOCK_SIZE] = {
+        0x6f, 0x38, 0x48, 0x8e, 0xe7, 0x3b, 0x78, 0xe0,
+        0x6c, 0xba, 0x37, 0xf0, 0x9b, 0x25, 0xd3, 0x86
+    };
+
+    if (!ll_AES_SetEncryptKey(&ctx, key256, sizeof(key256))) { 
+        printf("AES-256 init failed\n"); return; 
+    }
+
+    if (!ll_AES_GCM_Encrypt(&ctx, iv, sizeof(iv), aad, sizeof(aad),
+                            plain_text, sizeof(plain_text), ct, tag, sizeof(tag))) {
+        printf("AES-256 GCM encryption failed\n"); return;
+    }
+
+    printf("AES-256 GCM Test:\n");
+    printf("Plaintext: "); DEMO_print_hex(plain_text, sizeof(plain_text));
+    printf("Ciphertext: "); DEMO_print_hex(ct, sizeof(ct));
+    printf("Expected CT: "); DEMO_print_hex(expected_ct256, sizeof(expected_ct256));
+    printf("Tag: "); DEMO_print_hex(tag, sizeof(tag));
+    printf("Expected Tag: "); DEMO_print_hex(expected_tag256, sizeof(expected_tag256));
+    printf("AES-256 GCM test %s\n", 
+           (memcmp(ct, expected_ct256, sizeof(ct)) == 0 && 
+            memcmp(tag, expected_tag256, sizeof(tag)) == 0) ? "PASSED" : "FAILED");
+}
+
 #define MAX_LINE 2048
 #define MAX_KEY 64
 #define MAX_IV 64
@@ -1290,6 +1483,37 @@ int read_value(FILE *f, const char *label, unsigned char *out, size_t *len) {
     return 0; // EOF reached
 }
 
+// Parse the batch header for lengths
+void read_batch_header(FILE *f,
+                       size_t *key_len,
+                       size_t *iv_len,
+                       size_t *pt_len,
+                       size_t *aad_len,
+                       size_t *tag_len) {
+    char line[MAX_LINE];
+
+    while (fgets(line, sizeof(line), f)) {
+        // Remove newline
+        line[strcspn(line, "\r\n")] = 0;
+
+        if (strncmp(line, "[Keylen", 7) == 0) {
+            sscanf(line, "[Keylen = %zu]", key_len);
+        } else if (strncmp(line, "[IVlen", 6) == 0) {
+            sscanf(line, "[IVlen = %zu]", iv_len);
+        } else if (strncmp(line, "[PTlen", 6) == 0) {
+            sscanf(line, "[PTlen = %zu]", pt_len);
+        } else if (strncmp(line, "[AADlen", 7) == 0) {
+            sscanf(line, "[AADlen = %zu]", aad_len);
+        } else if (strncmp(line, "[Taglen", 7) == 0) {
+            sscanf(line, "[Taglen = %zu]", tag_len);
+        } else if (strncmp(line, "Count", 5) == 0) {
+            // Rewind one line so the outer loop sees this Count line
+            fseek(f, -strlen(line)-1, SEEK_CUR); 
+            break;
+        }
+    }
+}
+
 // Process a single .rsp file
 void process_rsp_file(const char *filepath) {
     FILE *f = fopen(filepath, "r");
@@ -1298,14 +1522,27 @@ void process_rsp_file(const char *filepath) {
         return;
     }
 
-    unsigned char key[MAX_KEY], iv[MAX_IV], pt[MAX_PT], ct[MAX_CT], aad[MAX_AAD], tag[MAX_TAG];
-    size_t key_len, iv_len, pt_len, ct_len, aad_len, tag_len;
+    uint8_t key[MAX_KEY], iv[MAX_IV], pt[MAX_PT], ct[MAX_CT], aad[MAX_AAD], tag[MAX_TAG];
+    uint8_t test_ct[MAX_CT], test_tag[MAX_TAG];
+
+    size_t key_len = 0, iv_len = 0, pt_len = 0, ct_len = 0, aad_len = 0, tag_len = 0;
+    size_t test_ct_len = 0, test_tag_len = 0;
+
     char line[MAX_LINE];
     int mode;
 
     while (fgets(line, sizeof(line), f)) {
+        line[strcspn(line, "\r\n")] = 0; // remove newline
+
+        // Check for batch header
+        if (strncmp(line, "[Keylen", 7) == 0) {
+            fseek(f, -strlen(line)-1, SEEK_CUR); // rewind for header parser
+            read_batch_header(f, &key_len, &iv_len, &pt_len, &aad_len, &tag_len);
+            continue;
+        }
+
         if (strncmp(line, "Count", 5) == 0) {
-            // Read test vectors
+            // Read all fields for this test
             read_value(f, "Key", key, &key_len);
             read_value(f, "IV", iv, &iv_len);
             read_value(f, "PT", pt, &pt_len);
@@ -1313,26 +1550,43 @@ void process_rsp_file(const char *filepath) {
             read_value(f, "AAD", aad, &aad_len);
             read_value(f, "Tag", tag, &tag_len);
 
-            // check for FAIL line
+            // check for optional FAIL line
             mode = 0; // default
             if (fgets(line, sizeof(line), f)) {
-                line[strcspn(line, "\r\n")] = 0; // remove newline
+                line[strcspn(line, "\r\n")] = 0;
                 if (strcmp(line, "FAIL") == 0)
                     mode = 3;
             }
 
-            // if not FAIL, determine mode
-            if (mode == 0) {
+            // Determine mode if not FAIL
+            if (mode == 0)
                 mode = pt_len > 0 ? 1 : 2;
-            }
 
-            // Output two lines per test
-            if (mode == 1)
-                printf("AES_GCM_Encrypt(key, key_len, iv, iv_len, aad, aad_len, pt, pt_len, ct, tag, tag_len);\n");
-            else if (mode == 2)
+            if (mode == 1) { // Encryption test
+                AES_KEY aes_key;
+                if (!ll_AES_SetEncryptKey(&aes_key, key, key_len)) {
+                    printf("Failed to set key\n");
+                    continue;
+                }
+
+                if (!ll_AES_GCM_Encrypt(&aes_key, iv, iv_len, aad, aad_len, pt, pt_len, test_ct, test_tag, tag_len / 8)) {
+                    printf("FAILED TO COMPUTE CIPHER\n");
+                    continue;
+                }
+                printf("------------------------------------------------------------------------------------\n");
+                printf("OUTPUT RESULT:\n");
+                printf("Ciphertext: "); DEMO_print_hex(test_ct, pt_len);
+                printf("Tag: ");        DEMO_print_hex(test_tag, tag_len / 8);
+
+                printf("EXPECTED RESULT:\n");
+                printf("Ciphertext: "); DEMO_print_hex(ct, ct_len);
+                printf("Tag: ");        DEMO_print_hex(tag, tag_len / 8);
+
+            } else if (mode == 2) { // Decrypt test
                 printf("AES_GCM_Decrypt(key, key_len, iv, iv_len, aad, aad_len, ct, ct_len, tag, pt, tag_len);\n");
-            else
+            } else { // FAIL test
                 printf("AES_GCM_DecryptFail(key, key_len, iv, iv_len, aad, aad_len, ct, ct_len, tag, pt, tag_len);\n");
+            }
         }
     }
 

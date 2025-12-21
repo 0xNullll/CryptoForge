@@ -211,6 +211,8 @@ int main(void) {
     printf("**************************************\n");
     test_aes_ctr_fips800_38a();
     printf("**************************************\n");
+    test_aes_gcm_fips_style();
+    printf("**************************************\n");
 
     // // Folder containing all 6 .rsp files
     // const char *folder = "C:\\Users\\agent\\Downloads\\gcmtestvectors";
