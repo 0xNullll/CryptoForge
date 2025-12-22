@@ -133,15 +133,6 @@ CF_API CF_STATUS EVP_ComputeHashXof(
 );
 
 // ==========================
-// Hash comparison
-// ==========================
-// Performs constant-time equality only (crypto safe)
-int EVP_HashEqual(const uint8_t *a, const uint8_t *b, size_t len);
-
-// Performs constant-time comparison to resist timing attacks
-int EVP_HashCompareLex(const uint8_t *a, const uint8_t *b, size_t len);
-
-// ==========================
 // Hash utility functions
 // ==========================
 CF_API CF_STATUS EVP_CloneHashCtx(EVP_HASH_CTX *dst, const EVP_HASH_CTX *src);

@@ -278,10 +278,11 @@ bool ll_AES_GCM_Decrypt(
         computed_tag[i] = EK0[i] ^ X[i];
 
     // 6. Constant-time tag comparison
-    uint8_t diff = 0;
-    for (size_t i = 0; i < tag_len; i++)
-        diff |= tag[i] ^ computed_tag[i];
-    if (diff != 0) return false; // tag mismatch
+    if (!SECURE_MEM_EQUAL(tag, computed_tag, tag_len)) return false; // tag mismatch
+    // uint8_t diff = 0;
+    // for (size_t i = 0; i < tag_len; i++)
+    //     diff |= tag[i] ^ computed_tag[i];
+    // if (diff != 0) return false; // tag mismatch
 
     // 7. Decrypt ciphertext using GCTR
     uint8_t ctr[AES_BLOCK_SIZE];

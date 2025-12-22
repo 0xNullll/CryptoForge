@@ -61,3 +61,46 @@ void secure_free(void *ptr, size_t size) {
     free(ptr);
     ptr = NULL;
 }
+
+int secure_mem_equal(const uint8_t *a, const uint8_t *b, size_t len) {
+    if (!a || !b) return 0;
+    if (len == 0) return 0;
+
+    uint8_t diff = 0;
+    for (size_t i = 0; i < len; ++i) {
+        diff |= a[i] ^ b[i];
+    }
+
+    // return 1 if equal, 0 if not equal
+    return (diff == 0);
+}
+
+int secure_mem_compare_lex(const uint8_t *a, const uint8_t *b, size_t len) {
+    if (!a || !b) return 0;
+    if (len == 0) return 0;
+
+    uint32_t lt = 0;
+    uint32_t gt = 0;
+    uint32_t seen = 0;
+
+    for (size_t i = 0; i < len; ++i) {
+        uint16_t ai = (uint16_t)a[i];
+        uint16_t bi = (uint16_t)b[i];
+
+        uint16_t d1 = (uint16_t)(ai - bi);  // top bit set if ai < bi
+        uint16_t d2 = (uint16_t)(bi - ai);  // top bit set if bi < ai
+
+        uint32_t is_lt = (uint32_t)(d1 >> 15); // 1 if ai < bi
+        uint32_t is_gt = (uint32_t)(d2 >> 15); // 1 if ai > bi
+
+        uint32_t diff = is_lt | is_gt;             // 1 if bytes differ
+        uint32_t new_diff_mask = (~seen) & diff;   // first differing byte only
+
+        lt |= is_lt & new_diff_mask;
+        gt |= is_gt & new_diff_mask;
+
+        seen |= diff;
+    }
+
+    return (int)gt - (int)lt;
+}
