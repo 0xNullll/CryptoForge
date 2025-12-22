@@ -11,18 +11,14 @@
 extern "C" {
 #endif
 
-/*
- * AES-GCM (Galois/Counter Mode)
- *
- * - AEAD mode: encryption + authentication
- * - IV must be UNIQUE per key (96-bit recommended)
- * - No padding (CTR-based)
- * - Tag verification MUST be constant-time
- *
- * Security notes:
- *  - IV reuse is catastrophic
- *  - Tag verification failure MUST invalidate plaintext
- */
+//
+// AES-GCM main input validation
+// - Key, IV, output, and tag must be non-NULL
+// - IV length >= 12 bytes
+// - Tag size within valid range
+// - Input and AAD lengths within NIST limits
+// - Prevent NULL pointers for non-zero inputs
+//
 
 /* Recommended IV size (per NIST SP 800-38D) */
 #define AES_GCM_IV_MIN 12
