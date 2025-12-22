@@ -340,4 +340,4 @@ Do not use for protecting high‑value secrets without independent review.
 
 ## License
 
-This project is released under the **GPL-3.0 License**. See '[LICENSE](LICENSE)' for full text.
+This project is released under the **MIT License**. See '[LICENSE](LICENSE)' for full text.
