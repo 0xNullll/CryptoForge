@@ -214,28 +214,6 @@ int main(void) {
     test_aes_gcm_fips_style();
     printf("**************************************\n");
 
-    // // Folder containing all 6 .rsp files
-    // const char *folder = "C:\\Users\\agent\\Downloads\\gcmtestvectors";
-    
-    // WIN32_FIND_DATA findFileData;
-    // HANDLE hFind;
-    // char search_path[2048];
-
-    // sprintf(search_path, "%s\\*.rsp", folder);
-    // hFind = FindFirstFile(search_path, &findFileData);
-    // if (hFind == INVALID_HANDLE_VALUE) {
-    //     printf("No .rsp files found in folder: %s\n", folder);
-    //     return 1;
-    // }
-
-    // do {
-    //     char filepath[2048];
-    //     sprintf(filepath, "%s\\%s", folder, findFileData.cFileName);
-    //     printf("\nProcessing %s...\n", filepath);
-    //     process_rsp_file(filepath);
-    // } while (FindNextFile(hFind, &findFileData) != 0);
-
-    // FindClose(hFind);
 
 #endif // ENABLE_TESTS
 
