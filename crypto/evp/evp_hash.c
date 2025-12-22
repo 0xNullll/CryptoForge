@@ -899,66 +899,6 @@ CF_STATUS EVP_ComputeHashXof(
     return status;
 }
 
-int EVP_HashEqual(const uint8_t *a, const uint8_t *b, size_t len) {
-    if (!a || !b)
-        return CF_ERR_NULL_PTR;
-
-    if (len == 0)
-        return CF_ERR_INVALID_LEN;
-
-    uint8_t diff = 0;
-
-    for (size_t i = 0; i < len; ++i) {
-        diff |= a[i] ^ b[i];
-    }
-
-    /* return 1 if equal, 0 if not equal */
-    return (diff == 0);
-}
-
-int EVP_HashCompareLex(const uint8_t *a, const uint8_t *b, size_t len) {
-    if (!a || !b)
-        return CF_ERR_NULL_PTR;
-
-    if (len == 0)
-        return CF_ERR_INVALID_LEN;
-
-    // this function record whether it already seen a difference (seen),
-    // and record whether that first difference indicated a<b (lt)
-    // or a>b (gt).  At the end result = gt - lt -> {1,0,-1}.
-    uint32_t lt = 0;
-    uint32_t gt = 0;
-    uint32_t seen = 0;
-
-    for (size_t i = 0; i < len; ++i) {
-        // Work with zero extended 16-bit values to compute borrow on subtraction:
-        // If ai < bi then (uint16_t)(ai - bi) will underflow and its top bit (bit 15)
-        // will be 1.
-        uint16_t ai = (uint16_t)a[i];
-        uint16_t bi = (uint16_t)b[i];
-
-        uint16_t d1 = (uint16_t)(ai - bi); // top bit 1 if ai < bi
-        uint16_t d2 = (uint16_t)(bi - ai); // top bit 1 if bi < ai
-
-        uint32_t is_lt = (uint32_t)(d1 >> 15); // 1 if ai < bi else 0
-        uint32_t is_gt = (uint32_t)(d2 >> 15); // 1 if ai > bi else 0
-
-        uint32_t diff = is_lt | is_gt;         // 1 iff bytes differ at this position
-        uint32_t new_diff_mask = (~seen) & diff; // 1 iff this is the first differing byte
-
-        // Only set lt/gt from the first differing byte; subsequent bytes ignored.
-        lt |= is_lt & new_diff_mask;
-        gt |= is_gt & new_diff_mask;
-
-        // mark we have seen a difference (once set it stays set)
-        seen |= diff;
-    }
-
-    // result: 1 if gt set, -1 if lt set, 0 otherwise.
-    // Compute without branching.
-    return (int)gt - (int)lt;
-}
-
 CF_STATUS EVP_CloneHashCtx(EVP_HASH_CTX *dst, const EVP_HASH_CTX *src) {
     if (!dst || !src) return CF_ERR_NULL_PTR;
 

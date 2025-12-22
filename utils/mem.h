@@ -92,6 +92,36 @@ void secure_memset(void *dst, int val, size_t len);
 // Secure free: zero memory before freeing
 void secure_free(void *ptr, size_t size);
 
+/**
+ * @brief Constant-time memory equality check
+ * 
+ * Compares two memory buffers of length `len` in constant time.
+ * Returns 1 if equal, 0 if not equal, or CF_ERR_* on invalid input.
+ * 
+ * @param a Pointer to first buffer
+ * @param b Pointer to second buffer
+ * @param len Length of buffers in bytes
+ * @return int 1 if equal, 0 if unequal, CF_ERR_NULL_PTR or CF_ERR_INVALID_LEN
+ */
+int secure_mem_equal(const uint8_t *a, const uint8_t *b, size_t len);
+
+/**
+ * @brief Constant-time lexicographical comparison
+ * 
+ * Compares two memory buffers in lexicographical order without branching on secret data.
+ * Returns:
+ *   -  1 if a > b
+ *   -  0 if a == b
+ *   - -1 if a < b
+ *   - CF_ERR_NULL_PTR or CF_ERR_INVALID_LEN on invalid input
+ * 
+ * @param a Pointer to first buffer
+ * @param b Pointer to second buffer
+ * @param len Length of buffers in bytes
+ * @return int Comparison result
+ */
+int secure_mem_compare_lex(const uint8_t *a, const uint8_t *b, size_t len);
+
 // -----------------------------------------------------------------------------
 // Convenience macros
 // -----------------------------------------------------------------------------
@@ -107,5 +137,8 @@ void secure_free(void *ptr, size_t size);
 #endif
 
 #define SECURE_FREE(ptr, size)  secure_free((ptr), (size))
+
+#define SECURE_MEM_EQUAL(a, b, len)     (secure_mem_equal((a), (b), (len)) == 1)
+#define SECURE_MEM_CMP_LEX(a, b, len)   (secure_mem_compare_lex((a), (b), (len)))
 
 #endif // MEM_H
