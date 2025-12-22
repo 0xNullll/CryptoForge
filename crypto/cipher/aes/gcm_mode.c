@@ -1,61 +1,48 @@
 #include "gcm_mode.h"
 
-typedef struct {
-    uint64_t hi;
-    uint64_t lo;
-} uint128_t;
-
-static uint128_t load_uint128(const uint8_t b[AES_BLOCK_SIZE]) {
-    uint128_t x;
-    x.hi = ((uint64_t)b[0] << 56)  | ((uint64_t)b[1] << 48) |
-           ((uint64_t)b[2] << 40)  | ((uint64_t)b[3] << 32) |
-           ((uint64_t)b[4] << 24)  | ((uint64_t)b[5] << 16) |
-           ((uint64_t)b[6] << 8)   | ((uint64_t)b[7]);
-    x.lo = ((uint64_t)b[8] << 56)  | ((uint64_t)b[9] << 48) |
-           ((uint64_t)b[10] << 40) | ((uint64_t)b[11] << 32) |
-           ((uint64_t)b[12] << 24) | ((uint64_t)b[13] << 16) |
-           ((uint64_t)b[14] << 8)  | ((uint64_t)b[15]);
-    return x;
+static FORCE_INLINE uint64_t load_uint64_be(const uint8_t *b) {
+    return ((uint64_t)b[0] << 56) |
+           ((uint64_t)b[1] << 48) |
+           ((uint64_t)b[2] << 40) |
+           ((uint64_t)b[3] << 32) |
+           ((uint64_t)b[4] << 24) |
+           ((uint64_t)b[5] << 16) |
+           ((uint64_t)b[6] << 8)  |
+           ((uint64_t)b[7]);
 }
 
-static void store_uint128(uint8_t out[AES_BLOCK_SIZE], uint128_t x) {
-    out[0]  = (uint8_t)(x.hi >> 56); out[1]  = (uint8_t)(x.hi >> 48); out[2]  = (uint8_t)(x.hi >> 40); out[3]  = (uint8_t)(x.hi >> 32);
-    out[4]  = (uint8_t)(x.hi >> 24); out[5]  = (uint8_t)(x.hi >> 16); out[6]  = (uint8_t)(x.hi >> 8);  out[7]  = (uint8_t)(x.hi & 0xFF);
-    out[8]  = (uint8_t)(x.lo >> 56); out[9]  = (uint8_t)(x.lo >> 48); out[10] = (uint8_t)(x.lo >> 40); out[11] = (uint8_t)(x.lo >> 32);
-    out[12] = (uint8_t)(x.lo >> 24); out[13] = (uint8_t)(x.lo >> 16); out[14] = (uint8_t)(x.lo >> 8);  out[15] = (uint8_t)(x.lo & 0xFF);
+static FORCE_INLINE void store_uint64_be(uint8_t *out, uint64_t x) {
+    out[0] = (uint8_t)(x >> 56);
+    out[1] = (uint8_t)(x >> 48);
+    out[2] = (uint8_t)(x >> 40);
+    out[3] = (uint8_t)(x >> 32);
+    out[4] = (uint8_t)(x >> 24);
+    out[5] = (uint8_t)(x >> 16);
+    out[6] = (uint8_t)(x >> 8);
+    out[7] = (uint8_t)(x);
 }
 
-static void gcm_mult(uint8_t Z[AES_BLOCK_SIZE], const uint8_t X[AES_BLOCK_SIZE], const uint8_t Y[AES_BLOCK_SIZE]) {
-    uint128_t x = load_uint128(X);   // load 128-bit input X
-    uint128_t y = load_uint128(Y);   // load 128-bit input Y
-    uint128_t z = {0, 0};            // initialize result to 0
-
-    // Split y into two 64-bit halves
-    uint64_t yh = y.hi;
-    uint64_t yl = y.lo;
+static void gcm_mult(uint8_t Z[AES_BLOCK_SIZE],
+                     const uint8_t X[AES_BLOCK_SIZE],
+                     const uint8_t Y[AES_BLOCK_SIZE]) {
+    uint64_t zh = 0, zl = 0;
+    uint64_t yh = load_uint64_be(Y);
+    uint64_t yl = load_uint64_be(Y + 8);
 
     for (int i = 0; i < 128; i++) {
-        uint64_t bit = (x.hi >> 63) & 1;
-        if (bit) {
-            z.hi ^= yh;
-            z.lo ^= yl;
-        }
+        uint8_t bit = (X[i >> 3] >> (7 - (i & 7))) & 1;
+        uint64_t mask = -(uint64_t)bit;
 
-        // Shift y right by 1, apply reduction if LSB is set
-        uint8_t lsb = yl & 1;
-        yl = (yl >> 1) | ((yh & 1) << 63);
-        yh = yh >> 1;
+        zh ^= yh & mask;
+        zl ^= yl & mask;
 
-        if (lsb) {
-            yh ^= 0xe100000000000000ULL;
-        }
-
-        // Shift x left for next bit
-        x.hi = (x.hi << 1) | (x.lo >> 63);
-        x.lo <<= 1;
+        uint64_t lsb = yl & 1;
+        yl = (yl >> 1) | (yh << 63);
+        yh = (yh >> 1) ^ (U64(0xe100000000000000) & ((uint64_t)0 - lsb));
     }
 
-    store_uint128(Z, z);
+    store_uint64_be(Z, zh);
+    store_uint64_be(Z + 8, zl);
 }
 
 static void GHASH_Process(
@@ -78,7 +65,6 @@ static void GHASH_Process(
 
         // Multiply in GF(2^128)
         gcm_mult(out, out, H);
-
         offset += blk_len;
     }
 }
@@ -279,10 +265,6 @@ bool ll_AES_GCM_Decrypt(
 
     // 6. Constant-time tag comparison
     if (!SECURE_MEM_EQUAL(tag, computed_tag, tag_len)) return false; // tag mismatch
-    // uint8_t diff = 0;
-    // for (size_t i = 0; i < tag_len; i++)
-    //     diff |= tag[i] ^ computed_tag[i];
-    // if (diff != 0) return false; // tag mismatch
 
     // 7. Decrypt ciphertext using GCTR
     uint8_t ctr[AES_BLOCK_SIZE];
