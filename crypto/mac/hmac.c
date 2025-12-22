@@ -260,7 +260,6 @@ CF_STATUS ll_HMAC_Verify(
     ll_HMAC_Free(&ctx);
     if (status != CF_SUCCESS) return status;
 
-    // Map SECURE_MEM_EQUAL result to CF_STATUS
     return SECURE_MEM_EQUAL(computed, expected_hmac, expected_len) ? CF_SUCCESS : CF_ERR_MAC_VERIFY;
 }
 
