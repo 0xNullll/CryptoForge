@@ -75,6 +75,15 @@ typedef enum {
     CF_ERR_HASH_BAD_BLOCK_SIZE,                     // block misalignment
 } HASH_CF_STATUS;
 
+// ==========================
+// 3. MAC/HMAC-specific errors
+// ==========================
+typedef enum {
+    CF_ERR_MAC_BASE_ERROR      = CF_ERR_MAC_BASE,   // base for MAC errors
+    CF_ERR_MAC_VERIFY,                               // HMAC verification failed
+    CF_ERR_MAC_STATE_INVALID,                        // internal context/state invalid
+} MAC_CF_STATUS;
+
 static FORCE_INLINE const char* CF_status_str(CF_STATUS status) {
     switch (status) {
         case CF_SUCCESS: return "CF_SUCCESS";

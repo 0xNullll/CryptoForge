@@ -103,6 +103,16 @@ CF_STATUS ll_KMAC_Free(ll_KMAC_CTX *ctx);
 // Frees the ll_KMAC_CTX and its internal buffers.
 CF_STATUS ll_KMAC_FreeAlloc(ll_KMAC_CTX **p_ctx);
 
+// Verifies a standard fixed-length KMAC (KMAC128 or KMAC256) against expected output.
+// Returns CF_SUCCESS if the output matches, CF_ERR_KMAC_VERIFY if not.
+// XOF variants are not allowed.
+CF_STATUS ll_KMAC_Verify(
+    const uint8_t *key, size_t key_len,
+    const uint8_t *S, size_t S_len,
+    const uint8_t *data, size_t data_len,
+    const uint8_t *expected_mac, size_t expected_len,
+    ll_KMAC_TYPE type);
+
 // Clones a KMAC context into an existing destination context.
 CF_STATUS ll_KMAC_CloneCtx(
     ll_KMAC_CTX *ctx_dest,

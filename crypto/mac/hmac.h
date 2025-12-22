@@ -74,6 +74,15 @@ CF_STATUS ll_HMAC_Free(ll_HMAC_CTX *ctx);
 // Frees internal buffers + the heap-allocated context
 CF_STATUS ll_HMAC_FreeAlloc(ll_HMAC_CTX **p_ctx);
 
+// Verifies if the provided HMAC matches the computed HMAC for the given data.
+// Returns CF_SUCCESS if valid, CF_ERR if invalid.
+CF_STATUS ll_HMAC_Verify(
+    const EVP_MD *md, 
+    const uint8_t *key, size_t key_len,
+    const uint8_t *data, size_t data_len,
+    const uint8_t *expected_hmac, size_t expected_len
+);
+
 // Clone HMAC context into an existing destination context
 CF_STATUS ll_HMAC_CloneCtx(ll_HMAC_CTX *ctx_dest, const ll_HMAC_CTX *ctx_src);
 

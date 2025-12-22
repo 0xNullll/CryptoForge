@@ -237,6 +237,34 @@ CF_STATUS ll_HMAC_FreeAlloc(ll_HMAC_CTX **p_ctx) {
     return CF_SUCCESS;
 }
 
+CF_STATUS ll_HMAC_Verify(
+    const EVP_MD *md,
+    const uint8_t *key, size_t key_len,
+    const uint8_t *data, size_t data_len,
+    const uint8_t *expected_hmac, size_t expected_len) {
+        
+    if (!md || !key || !data || !expected_hmac) return CF_ERR_NULL_PTR;
+
+    ll_HMAC_CTX ctx;
+    CF_STATUS status = ll_HMAC_Init(&ctx, md, key, key_len);
+    if (status != CF_SUCCESS) return status;
+
+    status = ll_HMAC_Update(&ctx, data, data_len);
+    if (status != CF_SUCCESS) {
+        ll_HMAC_Free(&ctx);
+        return status;
+    }
+
+    uint8_t computed[EVP_MAX_DEFAULT_DIGEST_SIZE] = {0};
+    status = ll_HMAC_Final(&ctx, computed, expected_len);
+    ll_HMAC_Free(&ctx);
+    if (status != CF_SUCCESS) return status;
+
+    // Map SECURE_MEM_EQUAL result to CF_STATUS
+    return SECURE_MEM_EQUAL(computed, expected_hmac, expected_len) ? CF_SUCCESS : CF_ERR_MAC_VERIFY;
+}
+
+
 CF_STATUS ll_HMAC_CloneCtx(ll_HMAC_CTX *ctx_dest, const ll_HMAC_CTX *ctx_src) {
     if (!ctx_dest || !ctx_src)
         return CF_ERR_NULL_PTR;
