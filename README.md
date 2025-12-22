@@ -280,6 +280,7 @@ Evaluate behavior under hostile or constrained execution environments.
 │   └─ /evp
 │       ├─ evp_defs.h
 │       ├─ evp_flags.h
+│       ├─ evp_utils.{c,h}
 │       ├─ evp_hash.{c,h}
 │       ├─ evp_mac.{c,h}
 │       ├─ evp_kdf.{c,h}
