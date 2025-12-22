@@ -287,32 +287,34 @@ CF_STATUS ll_KMAC_FreeAlloc(ll_KMAC_CTX **p_ctx) {
     return CF_SUCCESS;
 }
 
-// typedef struct _ll_KMAC_CTX {
-//     // Core CSHAKE sponge context
-//     void *cshake_ctx;
+CF_STATUS ll_KMAC_Verify(
+    const uint8_t *key, size_t key_len,
+    const uint8_t *S, size_t S_len,
+    const uint8_t *data, size_t data_len,
+    const uint8_t *expected_mac, size_t expected_len,
+    ll_KMAC_TYPE type) {
 
-//     // Key (raw bytes) and length
-//     uint8_t key[MAX_KEY_SIZE];
-//     size_t  key_len;
+    if (!key || !data || !expected_mac) return CF_ERR_NULL_PTR;
+    if (!LL_KMAC_TYPE_IS_VALID(type)) return CF_ERR_INVALID_PARAM;
+    if (LL_KMAC_IS_XOF(type)) return CF_ERR_UNSUPPORTED;  // XOF not allowed
 
-//     // Requested output length in bytes (L in the spec)
-//     size_t out_len;
+    ll_KMAC_CTX ctx;
+    CF_STATUS status = ll_KMAC_Init(&ctx, key, key_len, S, S_len, type);
+    if (status != CF_SUCCESS) return status;
 
-//     // Customization strings
-//     uint8_t S[MAX_CUSTOMIZATION]; // Customization string (can be empty)
-//     size_t  S_len;
+    status = ll_KMAC_Update(&ctx, data, data_len);
+    if (status != CF_SUCCESS) {
+        ll_KMAC_Free(&ctx);
+        return status;
+    }
 
-//     // Bookkeeping flags
-//     int isFinalized;        // 1 if finalization done
-//     int customAbsorbed;     // 1 if N||S absorbed
-//     int emptyNameCustom;    // 1 if S are empty
+    uint8_t computed[EVP_MAX_DEFAULT_DIGEST_SIZE] = {0};
+    status = ll_KMAC_Final(&ctx, computed, expected_len);
+    ll_KMAC_Free(&ctx);
+    if (status != CF_SUCCESS) return status;
 
-//     int isXOF;
-//     int isHeapAlloc;        // 1 if allocated on heap, 0 if stack
-
-//     // KMAC variant
-//     ll_KMAC_TYPE type;      // e.g., KMAC128, KMAC256, KMACXOF128, KMACXOF256
-// } ll_KMAC_CTX;
+    return SECURE_MEM_EQUAL(computed, expected_mac, expected_len) ? CF_SUCCESS : CF_ERR_MAC_VERIFY;
+}
 
 CF_STATUS ll_KMAC_CloneCtx(ll_KMAC_CTX *ctx_dest, const ll_KMAC_CTX *ctx_src) {
     if (!ctx_dest || !ctx_src)
