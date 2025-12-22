@@ -121,9 +121,8 @@ CF_API void test_aes_cfb8_fips800_38a(void);
 CF_API void test_aes_cfb128_fips800_38a(void);
 CF_API void test_aes_ofb_fips800_38a(void);
 CF_API void test_aes_ctr_fips800_38a(void);
-void test_aes_gcm_fips_style(void);
+CF_API void test_aes_gcm_fips_style(void);
 
-void process_rsp_file(const char *filepath);
 
 #ifdef __cplusplus
 }

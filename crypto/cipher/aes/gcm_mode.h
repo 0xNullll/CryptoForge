@@ -25,7 +25,7 @@ extern "C" {
  */
 
 /* Recommended IV size (per NIST SP 800-38D) */
-#define AES_GCM_IV_M 12
+#define AES_GCM_IV_MIN 12
 
 #define AES_GCM_TAG_SIZE_4   4    // 32-bit tag
 #define AES_GCM_TAG_SIZE_8   8    // 64-bit tag
