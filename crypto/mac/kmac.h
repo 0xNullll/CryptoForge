@@ -3,17 +3,14 @@
  * Copyright (C) 2025 0xNullll
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published
- * by the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * it under the terms of the MIT License.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the MIT License along with this program.
+ * If not, see <https://opensource.org/licenses/MIT>.
  *
  * Project repository: https://github.com/0xNullll/CryptoForge
  */
@@ -104,7 +101,7 @@ CF_STATUS ll_KMAC_Free(ll_KMAC_CTX *ctx);
 CF_STATUS ll_KMAC_FreeAlloc(ll_KMAC_CTX **p_ctx);
 
 // Verifies a standard fixed-length KMAC (KMAC128 or KMAC256) against expected output.
-// Returns CF_SUCCESS if the output matches, CF_ERR_KMAC_VERIFY if not.
+// Returns CF_SUCCESS if the output matches, CF_ERR_MAC_VERIFY if invalid.
 // XOF variants are not allowed.
 CF_STATUS ll_KMAC_Verify(
     const uint8_t *key, size_t key_len,
