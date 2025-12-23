@@ -120,7 +120,6 @@ CF_API void test_aes_ofb_fips800_38a(void);
 CF_API void test_aes_ctr_fips800_38a(void);
 CF_API void test_aes_gcm_fips_style(void);
 
-
 #ifdef __cplusplus
 }
 #endif
