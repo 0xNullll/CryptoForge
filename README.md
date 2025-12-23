@@ -325,6 +325,7 @@ Do not use for protecting high‑value secrets without independent review.
 ---
 
 ## Sources / References
+- [SP 800-38D – Recommendation for Block Cipher Modes of Operation: Galois/Counter Mode (GCM), November 2007](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38d.pdf)
 - [SP 800-38A – Recommendation for Block Cipher Modes of Operation: Methods and Techniques, December 2001](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38a.pdf)
 - [FIPS 197 – Advanced Encryption Standard (AES), November 2001](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197-upd1.pdf)
 - [RFC 6234 – US Secure Hash Algorithms (SHA and SHA-based HMAC and HKDF), May 2011](https://datatracker.ietf.org/doc/html/rfc6234)

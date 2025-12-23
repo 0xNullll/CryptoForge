@@ -29,7 +29,7 @@ static const uint8_t rhotates[5][5] = {
 };
 
 // Precomputed round constants for the ι (iota) step of Keccak-f[1600].
-// Each entry iotas[round] corresponds to the round constant RC for that round.
+// Each entry iotas[round] corresponds to the round constant RC for that round. 
 // Derived from Section 3.2.5 of FIPS PUB 202, expressed as 64-bit unsigned integers.
 // Precomputing the values improves clarity and runtime efficiency.
 static const uint64_t iotas[24] = {

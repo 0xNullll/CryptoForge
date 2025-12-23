@@ -214,7 +214,6 @@ int main(void) {
     test_aes_gcm_fips_style();
     printf("**************************************\n");
 
-
 #endif // ENABLE_TESTS
 
     return 0;
