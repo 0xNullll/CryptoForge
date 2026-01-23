@@ -36,7 +36,7 @@ void test_all_hashes(const uint8_t *input, size_t input_len, const EVP_XOF_OPTS 
 
         void *ctx = malloc(md->ctx_size);
         if (!ctx) {
-            printf("%s: failed to allocate context\n", EVP_HashName(md));
+            printf("%s: failed to allocate context\n", EVP_HashGetName(md));
             continue;
         }
 
@@ -47,13 +47,13 @@ void test_all_hashes(const uint8_t *input, size_t input_len, const EVP_XOF_OPTS 
         }
 
         if (!md->hash_init_fn(ctx, init_opts)) {
-            printf("%s init failed\n", EVP_HashName(md));
+            printf("%s init failed\n", EVP_HashGetName(md));
             free(ctx);
             continue;
         }
 
         if (!md->hash_update_fn(ctx, input, input_len)) {
-            printf("%s update failed\n", EVP_HashName(md));
+            printf("%s update failed\n", EVP_HashGetName(md));
             free(ctx);
             continue;
         }
@@ -62,7 +62,7 @@ void test_all_hashes(const uint8_t *input, size_t input_len, const EVP_XOF_OPTS 
 
         // Finalize hash
         if (!md->hash_final_fn(ctx, digest, out_len)) {
-            printf("%s final failed\n", EVP_HashName(md));
+            printf("%s final failed\n", EVP_HashGetName(md));
             free(ctx);
             continue;
         }
@@ -70,14 +70,14 @@ void test_all_hashes(const uint8_t *input, size_t input_len, const EVP_XOF_OPTS 
         // Optional squeeze for XOF hashes
         if (md->hash_squeeze_fn) {
             if (!md->hash_squeeze_fn(ctx, digest, out_len)) {
-                printf("%s squeeze failed\n", EVP_HashName(md));
+                printf("%s squeeze failed\n", EVP_HashGetName(md));
                 free(ctx);
                 continue;
             }
         }
 
         // Print digest
-        printf("%s digest: ", EVP_HashName(md));
+        printf("%s digest: ", EVP_HashGetName(md));
         DEMO_print_hex(digest, out_len);
         printf("\n");
 
@@ -144,12 +144,12 @@ void test_all_hashes_high(const uint8_t *input, size_t input_len, const EVP_XOF_
 
         if (status != CF_SUCCESS) {
             printf("%s failed (status=%d)\n",
-                   EVP_HashName(md),
+                   EVP_HashGetName(md),
                    status);
             continue;
         }
 
-        printf("%s digest: ", EVP_HashName(md));
+        printf("%s digest: ", EVP_HashGetName(md));
         DEMO_print_hex(digest, out_len);
         printf("\n");
     }
