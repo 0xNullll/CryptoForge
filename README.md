@@ -273,7 +273,6 @@ Evaluate behavior under hostile or constrained execution environments.
 │   ├─ /enc
 │   │   ├─ base16.{c,h}
 │   │   ├─ base32.{c,h}
-│   │   ├─ base64.{c,h}
 │   │   ├─ base58.{c,h}
 │   │   ├─ base64.{c,h}
 │   │   └─ base85.{c,h}
