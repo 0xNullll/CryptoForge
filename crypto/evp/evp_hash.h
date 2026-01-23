@@ -20,7 +20,7 @@
 
 #include "../../utils/misc_utils.h"
 #include "../../utils/mem.h"
-#include "../../utils/CF_status.h"
+#include "../../utils/cf_status.h"
 
 #include "../../config/crypto_config.h"
 #include "../../config/libs.h"
@@ -135,9 +135,9 @@ CF_API CF_STATUS EVP_ComputeHashXof(
 CF_API CF_STATUS EVP_CloneHashCtx(EVP_HASH_CTX *dst, const EVP_HASH_CTX *src);
 CF_API EVP_HASH_CTX *EVP_CloneHashCtxAlloc(const EVP_HASH_CTX *src, CF_STATUS *status);
 
-CF_API size_t EVP_HashDigestSize(const EVP_HASH_CTX *ctx);  // fixed-output hashes
-CF_API size_t EVP_HashBlockSize(const EVP_HASH_CTX *ctx);
-CF_API const char* EVP_HashName(const EVP_MD *md);
+CF_API size_t EVP_HashGetDigestSize(const EVP_HASH_CTX *ctx);  // fixed-output hashes
+CF_API size_t EVP_HashGetBlockSize(const EVP_HASH_CTX *ctx);
+CF_API const char* EVP_HashGetName(const EVP_MD *md);
 
 // ==========================
 // XOF options initialization / cleanup

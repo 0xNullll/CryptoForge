@@ -429,7 +429,7 @@ size_t EVP_DecodeRequiredLen(uint32_t dec_flags, size_t input_len) {
 }
 
 
-bool EVP_IsValidEncoded(uint32_t dec_flags, const char *src, size_t len) {
+bool EVP_EncodedIsValid(uint32_t dec_flags, const char *src, size_t len) {
     if (!EVP_IS_DEC(dec_flags) || !src || len == 0)
         return false;
 

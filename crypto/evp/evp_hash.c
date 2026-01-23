@@ -950,15 +950,15 @@ EVP_HASH_CTX *EVP_CloneHashCtxAlloc(const EVP_HASH_CTX *src, CF_STATUS *status) 
     return dst;
 }
 
-size_t EVP_HashDigestSize(const EVP_HASH_CTX *ctx) {
+size_t EVP_HashGetDigestSize(const EVP_HASH_CTX *ctx) {
     return ctx ? (ctx->md ? ctx->md->digest_size : 0) : 0;
 }
 
-size_t EVP_HashBlockSize(const EVP_HASH_CTX *ctx) {
+size_t EVP_HashGetBlockSize(const EVP_HASH_CTX *ctx) {
     return ctx ? (ctx->md ? ctx->md->block_size : 0) : 0;
 }
 
-const char* EVP_HashName(const EVP_MD *md) {
+const char* EVP_HashGetName(const EVP_MD *md) {
     if (!md) return NULL;
 
     switch (md->id) {

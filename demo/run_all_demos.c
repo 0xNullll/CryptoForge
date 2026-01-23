@@ -48,8 +48,8 @@ int main(void) {
     status = EVP_HashFinal(&ctx, digest, out_len);
     if (status != CF_SUCCESS) { printf("EVP_HashFinal failed\n"); return 1; }
 
-    printf("Digest %s: ", EVP_HashName(md));
-    for (size_t i = 0; i < EVP_HashDigestSize(&ctx); i++)
+    printf("Digest %s: ", EVP_HashGetName(md));
+    for (size_t i = 0; i < EVP_HashGetDigestSize(&ctx); i++)
         printf("%02x", digest[i]);
     printf("\n");
 

@@ -134,7 +134,7 @@ CF_API EVP_ENCODER_CTX* EVP_CloneEncCtxAlloc(const EVP_ENCODER_CTX *src, CF_STAT
 CF_API size_t EVP_EncodeRequiredLen(uint32_t enc_flags, size_t input_len);
 CF_API size_t EVP_DecodeRequiredLen(uint32_t dec_flags, size_t input_len);
 
-CF_API bool EVP_IsValidEncoded(uint32_t dec_flags, const char *src, size_t len);
+CF_API bool EVP_EncodedIsValid(uint32_t dec_flags, const char *src, size_t len);
 
 CF_API const char* EVP_EncName(EVP_ENCODER_CTX *ctx);
 

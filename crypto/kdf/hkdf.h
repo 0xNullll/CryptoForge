@@ -25,7 +25,7 @@
 #include "../evp/evp_flags.h"
 
 #include "../../utils/mem.h"
-#include "../../utils/CF_status.h"
+#include "../../utils/cf_status.h"
 
 #include "../../config/libs.h"
 
