@@ -143,14 +143,14 @@ Stretch and derive keys securely.
 Small, reusable helpers that make your library more **robust, convenient, and developer-friendly**.
 
 - [ ] **Input normalization** – trim whitespace, remove null bytes, convert line endings.
-- [-] **Length calculation helpers** – compute required buffer size for encodings or cipher output.
-- [-] **Safe memory operations** – secure zeroing, constant-time comparison, copy helpers.
-- [-] **Validation helpers** – check input sizes, valid character ranges, or padding correctness.
+- [ ] **Length calculation helpers** – compute required buffer size for encodings or cipher output.
+- [ ] **Safe memory operations** – secure zeroing, constant-time comparison, copy helpers.
+- [ ] **Validation helpers** – check input sizes, valid character ranges, or padding correctness.
 - [ ] **Flexible padding helpers** – add/remove PKCS#7, zero padding, or custom padding schemes.
 - [x] **Extended Base85 flags** – optional whitespace ignoring, ‘y’ extension, or fixed-length padding.
 - [-] **Debug / hex dump functions** – for printing binary data safely and clearly.
 - [ ] **File I/O helpers** – load/save buffers safely for test vectors or demo purposes.
-- [-] **Vector testing utilities** – compare output against test vectors automatically.
+- [ ] **Vector testing utilities** – compare output against test vectors automatically.
 - [ ] **Big-endian testing** – verify all algorithms produce correct outputs, simulate if hardware is little-endian
 
 **Notes:** Utilities don’t add new crypto primitives but make the library **polished, safe, and easier to use** for demos, testing, or practical applications.
