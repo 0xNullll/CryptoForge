@@ -55,9 +55,9 @@ bool ll_BASE58_Encode(const uint8_t *data, size_t data_len, char *out, size_t *o
     // Process input bytes
     for (size_t i = zeros; i < data_len; i++) {
         uint32_t carry = data[i];
-        for (int64_t j = size - 1; j >= 0; j--) {
+        for (int64_t j = (int64_t)size - 1; j >= 0; j--) {
             carry += 256u * buf[j];
-            buf[j] = carry % 58;
+            buf[j] = (uint8_t)(carry % 58);
             carry /= 58;
         }
         // If carry != 0 here, size was too small (should not happen with base58_enc_len)
@@ -119,14 +119,14 @@ bool ll_BASE58_Decode(const char *data, size_t data_len, uint8_t *out, size_t *o
 
     // Base58 -> big integer in bytes
     for (size_t i = zcount; i < data_len; ++i) {
-        uint32_t rev = BASE58_REV_TABLE[(uint8_t)data[i] - BASE58_MIN];
+        int8_t  rev = BASE58_REV_TABLE[(uint8_t)data[i] - BASE58_MIN];
         if (rev < 0) {
             if (heap_used) SECURE_FREE(buf, max_dec);
             return false;
         }
 
-        uint32_t carry = rev;
-        for (int64_t j = max_dec - 1; j >= 0; --j) {
+        uint32_t carry = (uint32_t)rev;
+        for (int64_t j = (int64_t)max_dec - 1; j >= 0; --j) {
             carry += 58u * buf[j];
             buf[j] = carry & 0xFF;
             carry >>= 8;

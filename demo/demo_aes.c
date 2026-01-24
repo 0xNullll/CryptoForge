@@ -1464,4 +1464,150 @@ void test_aes_gcm_fips_style(void) {
             memcmp(dec, plain_text, sizeof(dec)) == 0) ? "PASSED" : "FAILED");
 }
 
+
+void test_aes_gcm_empty_plaintext(void) {
+    uint8_t zero_string[AES_BLOCK_SIZE * 4] = {
+        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+
+        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+
+        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+
+        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+    };
+
+
+    uint8_t aad[AES_BLOCK_SIZE] = {
+        0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
+        0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f
+    };
+
+    uint8_t iv[AES_BLOCK_SIZE] = {
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
+    };
+
+    // uint8_t iv[12] = {
+    //     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+    //     0x08, 0x09, 0x0a, 0x0b
+    // };
+
+    uint8_t tag[AES_BLOCK_SIZE];
+
+    AES_KEY ctx;
+
+    // ---------------- AES-128 ----------------
+    uint8_t key128[AES_BLOCK_SIZE] = {
+        0x2b,0x7e,0x15,0x16,0x28,0xae,0xd2,0xa6,
+        0xab,0xf7,0x15,0x88,0x09,0xcf,0x4f,0x3c
+    };
+
+    uint8_t expected_tag128[AES_BLOCK_SIZE] = {
+        0x68, 0x16, 0xf5, 0x8a, 0x62, 0xc8, 0xf5, 0xff,
+        0xbc, 0x2f, 0xf0, 0x92, 0xee, 0x29, 0xa1, 0x12
+    };
+
+    if (!ll_AES_SetEncryptKey(&ctx, key128, sizeof(key128))) { 
+        printf("AES-128 init failed\n"); return; 
+    }
+
+    if (!ll_AES_GCM_Encrypt(&ctx, iv, sizeof(iv), aad, sizeof(aad),
+                            NULL, 0, NULL, tag, sizeof(tag))) {
+        printf("AES-128 GCM encryption failed\n"); return;
+    }
+
+    if (!ll_AES_GCM_Decrypt(&ctx, iv, sizeof(iv), aad, sizeof(aad),
+                            NULL, 0, NULL, tag, sizeof(tag))) {
+        printf("AES-128 GCM decryption failed\n"); return;
+    }
+
+    printf("AES-128 No Plaintext GCM Test:\n");
+    printf("Plaintext: "); DEMO_print_hex(zero_string, sizeof(zero_string));
+    printf("Ciphertext: "); DEMO_print_hex(zero_string, sizeof(zero_string));
+    printf("Expected CT: "); DEMO_print_hex(zero_string, sizeof(zero_string));
+    printf("Tag: "); DEMO_print_hex(tag, sizeof(tag));
+    printf("Expected Tag: "); DEMO_print_hex(expected_tag128, sizeof(expected_tag128));
+    printf("Decrypted: "); DEMO_print_hex(zero_string, sizeof(zero_string));
+    printf("AES-128 No Plaintext GCM test %s\n\n", 
+           (memcmp(tag, expected_tag128, sizeof(tag)) == 0) ? "PASSED" : "FAILED");
+
+
+    // ---------------- AES-192 ----------------
+    uint8_t key192[24] = {
+        0x8e,0x73,0xb0,0xf7,0xda,0x0e,0x64,0x52,
+        0xc8,0x10,0xf3,0x2b,0x80,0x90,0x79,0xe5,
+        0x62,0xf8,0xea,0xd2,0x52,0x2c,0x6b,0x7b
+    };
+
+    uint8_t expected_tag192[AES_BLOCK_SIZE] = {
+        0xc4, 0x89, 0xfb, 0xf4, 0xf6, 0x0e, 0x70, 0x68,
+        0xf0, 0x9d, 0x4f, 0x0e, 0xb5, 0x58, 0xe1, 0xb3
+    };
+
+    if (!ll_AES_SetEncryptKey(&ctx, key192, sizeof(key192))) { 
+        printf("AES-192 init failed\n"); return; 
+    }
+
+    if (!ll_AES_GCM_Encrypt(&ctx, iv, sizeof(iv), aad, sizeof(aad),
+                            NULL, 0, NULL, tag, sizeof(tag))) {
+        printf("AES-192 GCM encryption failed\n"); return;
+    }
+
+    if (!ll_AES_GCM_Decrypt(&ctx, iv, sizeof(iv), aad, sizeof(aad),
+                            NULL, 0, NULL, tag, sizeof(tag))) {
+        printf("AES-192 GCM decryption failed\n"); return;
+    }
+
+    printf("AES-192 No Plaintext GCM Test:\n");
+    printf("Plaintext: "); DEMO_print_hex(zero_string, sizeof(zero_string));
+    printf("Ciphertext: "); DEMO_print_hex(zero_string, sizeof(zero_string));
+    printf("Expected CT: "); DEMO_print_hex(zero_string, sizeof(zero_string));
+    printf("Tag: "); DEMO_print_hex(tag, sizeof(tag));
+    printf("Expected Tag: "); DEMO_print_hex(expected_tag192, sizeof(expected_tag192));
+    printf("Decrypted: "); DEMO_print_hex(zero_string, sizeof(zero_string));
+    printf("AES-192 No Plaintext GCM test %s\n\n", 
+           (memcmp(tag, expected_tag192, sizeof(tag)) == 0) ? "PASSED" : "FAILED");
+
+    // ---------------- AES-256 ----------------
+    uint8_t key256[32] = {
+        0x60,0x3d,0xeb,0x10,0x15,0xca,0x71,0xbe,
+        0x2b,0x73,0xae,0xf0,0x85,0x7d,0x77,0x81,
+        0x1f,0x35,0x2c,0x07,0x3b,0x61,0x08,0xd7,
+        0x2d,0x98,0x10,0xa3,0x09,0x14,0xdf,0xf4
+    };
+    
+    uint8_t expected_tag256[AES_BLOCK_SIZE] = {
+        0xf6, 0xd9, 0x36, 0x9d, 0x0f, 0xec, 0xd0, 0x30,
+        0xa1, 0x2d, 0x24, 0x7e, 0x2c, 0xca, 0x3d, 0x3d
+    };
+
+    if (!ll_AES_SetEncryptKey(&ctx, key256, sizeof(key256))) { 
+        printf("AES-256 init failed\n"); return; 
+    }
+
+    if (!ll_AES_GCM_Encrypt(&ctx, iv, sizeof(iv), aad, sizeof(aad),
+                            NULL, 0, NULL, tag, sizeof(tag))) {
+        printf("AES-256 GCM encryption failed\n"); return;
+    }
+
+    if (!ll_AES_GCM_Decrypt(&ctx, iv, sizeof(iv), aad, sizeof(aad),
+                            NULL, 0, NULL, tag, sizeof(tag))) {
+        printf("AES-256 GCM decryption failed\n"); return;
+    }
+
+    printf("AES-256 No Plaintext GCM Test:\n");
+    printf("Plaintext: "); DEMO_print_hex(zero_string, sizeof(zero_string));
+    printf("Ciphertext: "); DEMO_print_hex(zero_string, sizeof(zero_string));
+    printf("Expected CT: "); DEMO_print_hex(zero_string, sizeof(zero_string));
+    printf("Tag: "); DEMO_print_hex(tag, sizeof(tag));
+    printf("Expected Tag: "); DEMO_print_hex(expected_tag256, sizeof(expected_tag256));
+    printf("Decrypted: "); DEMO_print_hex(zero_string, sizeof(zero_string));
+    printf("AES-256 No Plaintext GCM test %s\n", 
+           (memcmp(tag, expected_tag256, sizeof(tag)) == 0) ? "PASSED" : "FAILED");
+}
+
 #endif // ENABLE_TESTS

@@ -120,4 +120,162 @@ void test_all_kmacs(
     }
 }
 
-#endif // ENABLE_TESTS && ENABLE_HMAC
+
+void test_all_gmacs(void) {
+    uint8_t aad[AES_BLOCK_SIZE] = {
+        0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
+        0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f
+    };
+
+    uint8_t iv[AES_BLOCK_SIZE] = {
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
+    };
+
+    // uint8_t iv[12] = {
+    //     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+    //     0x08, 0x09, 0x0a, 0x0b
+    // };
+
+    uint8_t tag[AES_BLOCK_SIZE];
+
+    AES_KEY kctx;
+    ll_GMAC_CTX gctx;
+
+    // ---------------- AES-128 ----------------
+    uint8_t key128[AES_BLOCK_SIZE] = {
+        0x2b,0x7e,0x15,0x16,0x28,0xae,0xd2,0xa6,
+        0xab,0xf7,0x15,0x88,0x09,0xcf,0x4f,0x3c
+    };
+
+    uint8_t expected_tag128[AES_BLOCK_SIZE] = {
+        0x68, 0x16, 0xf5, 0x8a, 0x62, 0xc8, 0xf5, 0xff,
+        0xbc, 0x2f, 0xf0, 0x92, 0xee, 0x29, 0xa1, 0x12
+    };
+
+    if (!ll_AES_SetEncryptKey(&kctx, key128, sizeof(key128))) { 
+        printf("AES-128 init failed\n"); 
+        return; 
+    }
+
+    if (ll_GMAC_Init(&gctx, &kctx, iv, sizeof(iv)) != CF_SUCCESS) {
+        printf("GMAC init failed\n");
+        return;
+    }
+
+    if (ll_GMAC_Update(&gctx, aad, sizeof(aad)) != CF_SUCCESS) {
+        printf("GMAC update failed\n");
+        ll_GMAC_Free(&gctx);
+        return;
+    }
+
+    if (ll_GMAC_Final(&gctx, tag, sizeof(tag)) != CF_SUCCESS) {
+        printf("GMAC finalize failed\n");
+        ll_GMAC_Free(&gctx);
+        return;
+    }
+
+    printf("AES-128 GMAC Test:\n");
+    printf("Tag: "); DEMO_print_hex(tag, sizeof(tag));
+    printf("Expected Tag: "); DEMO_print_hex(expected_tag128, sizeof(expected_tag128));
+    if (ll_GMAC_Verify(&gctx, expected_tag128, sizeof(expected_tag128)) != CF_SUCCESS) {
+        printf("GMAC tag verification failed\n");
+    } else {
+        printf("GMAC tag verified successfully\n");
+    }
+
+    ll_GMAC_Free(&gctx);
+
+    // ---------------- AES-192 ----------------
+    uint8_t key192[24] = {
+        0x8e,0x73,0xb0,0xf7,0xda,0x0e,0x64,0x52,
+        0xc8,0x10,0xf3,0x2b,0x80,0x90,0x79,0xe5,
+        0x62,0xf8,0xea,0xd2,0x52,0x2c,0x6b,0x7b
+    };
+
+    uint8_t expected_tag192[AES_BLOCK_SIZE] = {
+        0xc4, 0x89, 0xfb, 0xf4, 0xf6, 0x0e, 0x70, 0x68,
+        0xf0, 0x9d, 0x4f, 0x0e, 0xb5, 0x58, 0xe1, 0xb3
+    };
+
+    if (!ll_AES_SetEncryptKey(&kctx, key192, sizeof(key192))) { 
+        printf("AES-192 init failed\n"); 
+        return; 
+    }
+
+    if (ll_GMAC_Init(&gctx, &kctx, iv, sizeof(iv)) != CF_SUCCESS) {
+        printf("GMAC init failed\n");
+        return;
+    }
+
+    if (ll_GMAC_Update(&gctx, aad, sizeof(aad)) != CF_SUCCESS) {
+        printf("GMAC update failed\n");
+        ll_GMAC_Free(&gctx);
+        return;
+    }
+
+    if (ll_GMAC_Final(&gctx, tag, sizeof(tag)) != CF_SUCCESS) {
+        printf("GMAC finalize failed\n");
+        ll_GMAC_Free(&gctx);
+        return;
+    }
+
+    printf("AES-192 GMAC Test:\n");
+    printf("Tag: "); DEMO_print_hex(tag, sizeof(tag));
+    printf("Expected Tag: "); DEMO_print_hex(expected_tag192, sizeof(expected_tag192));
+    if (ll_GMAC_Verify(&gctx, expected_tag192, sizeof(expected_tag192)) != CF_SUCCESS) {
+        printf("GMAC tag verification failed\n");
+    } else {
+        printf("GMAC tag verified successfully\n");
+    }
+
+    ll_GMAC_Free(&gctx);
+
+    // ---------------- AES-256 ----------------
+    uint8_t key256[32] = {
+        0x60,0x3d,0xeb,0x10,0x15,0xca,0x71,0xbe,
+        0x2b,0x73,0xae,0xf0,0x85,0x7d,0x77,0x81,
+        0x1f,0x35,0x2c,0x07,0x3b,0x61,0x08,0xd7,
+        0x2d,0x98,0x10,0xa3,0x09,0x14,0xdf,0xf4
+    };
+    
+    uint8_t expected_tag256[AES_BLOCK_SIZE] = {
+        0xf6, 0xd9, 0x36, 0x9d, 0x0f, 0xec, 0xd0, 0x30,
+        0xa1, 0x2d, 0x24, 0x7e, 0x2c, 0xca, 0x3d, 0x3d
+    };
+
+    if (!ll_AES_SetEncryptKey(&kctx, key256, sizeof(key256))) { 
+        printf("AES-256 init failed\n"); 
+        return; 
+    }
+
+    if (ll_GMAC_Init(&gctx, &kctx, iv, sizeof(iv)) != CF_SUCCESS) {
+        printf("GMAC init failed\n");
+        return;
+    }
+
+    if (ll_GMAC_Update(&gctx, aad, sizeof(aad)) != CF_SUCCESS) {
+        printf("GMAC update failed\n");
+        ll_GMAC_Free(&gctx);
+        return;
+    }
+
+    if (ll_GMAC_Final(&gctx, tag, sizeof(tag)) != CF_SUCCESS) {
+        printf("GMAC finalize failed\n");
+        ll_GMAC_Free(&gctx);
+        return;
+    }
+
+    printf("AES-256 GMAC Test:\n");
+    printf("Tag: "); DEMO_print_hex(tag, sizeof(tag));
+    printf("Expected Tag: "); DEMO_print_hex(expected_tag256, sizeof(expected_tag256));
+    if (ll_GMAC_Verify(&gctx, expected_tag256, sizeof(expected_tag256)) != CF_SUCCESS) {
+        printf("GMAC tag verification failed\n");
+    } else {
+        printf("GMAC tag verified successfully\n");
+    }
+
+    ll_GMAC_Free(&gctx);
+}
+
+#endif // ENABLE_TESTS

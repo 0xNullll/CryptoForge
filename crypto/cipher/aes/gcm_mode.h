@@ -36,6 +36,21 @@ extern "C" {
      (len) == AES_GCM_TAG_SIZE_12 || \
      (len) == AES_GCM_TAG_SIZE_16)
 
+// ============================================================================
+// Internal low-level functions exposed here solely for GMAC to use internally.
+// These are not meant for general public API usage.
+// ============================================================================
+void gcm_mult(uint8_t Z[AES_BLOCK_SIZE],
+            const uint8_t X[AES_BLOCK_SIZE],
+            const uint8_t Y[AES_BLOCK_SIZE]);
+
+void GHASH_Process(
+    const uint8_t H[AES_BLOCK_SIZE],
+    const uint8_t *in, size_t in_len,
+    uint8_t out[AES_BLOCK_SIZE]);
+
+bool ll_AES_GCTR_Process(const AES_KEY *key, uint8_t ICB[AES_BLOCK_SIZE], const uint8_t *X, size_t X_len, uint8_t *Y);
+
 bool ll_AES_GCM_Encrypt(
     const AES_KEY *key,
     const uint8_t *iv,

@@ -28,7 +28,10 @@
 
 #include "../crypto/mac/hmac.h"
 #include "../crypto/mac/kmac.h"
+#include "../crypto/mac/gmac.h"
+
 #include "../crypto/kdf/hkdf.h"
+
 #include "../crypto/enc/base16.h"
 #include "../crypto/enc/base32.h"
 #include "../crypto/enc/base58.h"
@@ -85,6 +88,8 @@ CF_API void test_all_kmacs(
     const uint8_t *input, size_t input_len,
     const uint8_t *S, size_t S_len);
 
+CF_API void test_all_gmacs(void);
+
 CF_API void test_all_hkdfs(
     const uint8_t *info, size_t info_len,
     const uint8_t *salt, size_t salt_len,
@@ -119,6 +124,7 @@ CF_API void test_aes_cfb128_fips800_38a(void);
 CF_API void test_aes_ofb_fips800_38a(void);
 CF_API void test_aes_ctr_fips800_38a(void);
 CF_API void test_aes_gcm_fips_style(void);
+CF_API void test_aes_gcm_empty_plaintext(void);
 
 #ifdef __cplusplus
 }
