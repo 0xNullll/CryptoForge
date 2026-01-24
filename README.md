@@ -30,7 +30,7 @@ Message Authentication Codes ensure **data integrity and authenticity**.
 - [x] **KMAC** – SHA-3 based MAC, flexible key and output size.
 - [x] **KMAC-XOF** – SHA-3 based MAC with extendable output, flexible key and output size.
 - [ ] **CMAC** - block-cipher based MAC, widely used with AES.
-- [ ] **GMAC** – Galois/Counter Mode based MAC for authenticated encryption.
+- [x] **GMAC** – Galois/Counter Mode based MAC for authenticated encryption.
 - [ ] **Poly1305** - fast, one-time-key MAC, good for stream-like usage.
 - [ ] **PBMAC1 (optional-advanced)** – password-based MAC: PBKDF2 + HMAC.
 
