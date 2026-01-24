@@ -115,36 +115,6 @@ CF_STATUS ll_GMAC_Final(ll_GMAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
     return CF_SUCCESS;
 }
 
-CF_STATUS ll_GMAC_Verify(const ll_GMAC_CTX *ctx, const uint8_t *expected_tag, size_t tag_len) {
-    if (!ctx || !expected_tag || !IS_VALID_GCM_TAG_SIZE(tag_len))
-        return CF_ERR_INVALID_PARAM;
-
-    uint8_t tag[AES_BLOCK_SIZE];
-    CF_STATUS st = ll_GMAC_Final((ll_GMAC_CTX *)ctx, tag, tag_len); // cast safe, final does not modify key
-    if (st != CF_SUCCESS) return st;
-
-    // Constant-time compare
-    return SECURE_MEM_EQUAL(tag, expected_tag, tag_len) ? CF_SUCCESS : CF_ERR_MAC_VERIFY;
-}
-
-CF_STATUS ll_GMAC_OneShot(
-    const AES_KEY *key,
-    const uint8_t *iv, size_t iv_len,
-    const uint8_t *aad, size_t aad_len,
-    uint8_t *tag, size_t tag_len) {
-
-    ll_GMAC_CTX ctx;
-    CF_STATUS status = ll_GMAC_Init(&ctx, key, iv, iv_len);
-    if (status != CF_SUCCESS) return status;
-
-    if (aad && aad_len) {
-        status = ll_GMAC_Update(&ctx, aad, aad_len);
-        if (status != CF_SUCCESS) return status;
-    }
-
-    return ll_GMAC_Final(&ctx, tag, tag_len);
-}
-
 CF_STATUS ll_GMAC_Free(ll_GMAC_CTX *ctx) {
     if (!ctx || !ctx->key)
         return CF_ERR_NULL_PTR;
@@ -182,4 +152,16 @@ CF_STATUS ll_GMAC_FreeAlloc(ll_GMAC_CTX **p_ctx) {
     }
 
     return CF_SUCCESS;
+}
+
+CF_STATUS ll_GMAC_Verify(const ll_GMAC_CTX *ctx, const uint8_t *expected_tag, size_t tag_len) {
+    if (!ctx || !expected_tag || !IS_VALID_GCM_TAG_SIZE(tag_len))
+        return CF_ERR_INVALID_PARAM;
+
+    uint8_t tag[AES_BLOCK_SIZE];
+    CF_STATUS st = ll_GMAC_Final((ll_GMAC_CTX *)ctx, tag, tag_len); // cast safe, final does not modify key
+    if (st != CF_SUCCESS) return st;
+
+    // Constant-time compare
+    return SECURE_MEM_EQUAL(tag, expected_tag, tag_len) ? CF_SUCCESS : CF_ERR_MAC_VERIFY;
 }
