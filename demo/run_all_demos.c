@@ -67,6 +67,10 @@ int main(void) {
 
     printf("\n------------------------------------------------------\n");
 
+    test_all_gmacs();
+
+    printf("\n------------------------------------------------------\n");
+
     // Input parameters
     uint8_t ikm[] = {
         0x0b,0x0b,0x0b,0x0b,0x0b,0x0b,0x0b,0x0b,
@@ -212,6 +216,8 @@ int main(void) {
     test_aes_ctr_fips800_38a();
     printf("**************************************\n");
     test_aes_gcm_fips_style();
+    printf("**************************************\n");
+    test_aes_gcm_empty_plaintext();
     printf("**************************************\n");
 
 #endif // ENABLE_TESTS

@@ -22,16 +22,16 @@ static FORCE_INLINE void store_uint64_be(uint8_t *out, uint64_t x) {
     out[7] = (uint8_t)(x);
 }
 
-static void gcm_mult(uint8_t Z[AES_BLOCK_SIZE],
-                     const uint8_t X[AES_BLOCK_SIZE],
-                     const uint8_t Y[AES_BLOCK_SIZE]) {
+void gcm_mult(uint8_t Z[AES_BLOCK_SIZE],
+            const uint8_t X[AES_BLOCK_SIZE],
+            const uint8_t Y[AES_BLOCK_SIZE]) {
     uint64_t zh = 0, zl = 0;
     uint64_t yh = load_uint64_be(Y);
     uint64_t yl = load_uint64_be(Y + 8);
 
     for (int i = 0; i < 128; i++) {
         uint8_t bit = (X[i >> 3] >> (7 - (i & 7))) & 1;
-        uint64_t mask = -(uint64_t)bit;
+        uint64_t mask = -(int64_t)bit;
 
         zh ^= yh & mask;
         zl ^= yl & mask;
@@ -45,7 +45,7 @@ static void gcm_mult(uint8_t Z[AES_BLOCK_SIZE],
     store_uint64_be(Z + 8, zl);
 }
 
-static void GHASH_Process(
+void GHASH_Process(
     const uint8_t H[AES_BLOCK_SIZE],    // GHASH key (H = AES(K,0^128))
     const uint8_t *in, size_t in_len,   // data to GHASH
     uint8_t out[AES_BLOCK_SIZE]) {      // accumulator (X), updated in-place
@@ -77,7 +77,7 @@ static FORCE_INLINE void Inc32(uint8_t counter[AES_BLOCK_SIZE]) {
     }
 }
 
-static bool ll_AES_GCTR_Process(const AES_KEY *key, uint8_t ICB[AES_BLOCK_SIZE], const uint8_t *X, size_t X_len, uint8_t *Y) {
+bool ll_AES_GCTR_Process(const AES_KEY *key, uint8_t ICB[AES_BLOCK_SIZE], const uint8_t *X, size_t X_len, uint8_t *Y) {
     uint8_t CB[AES_BLOCK_SIZE], encrypted[AES_BLOCK_SIZE];
     SECURE_MEMCPY(CB, ICB, AES_BLOCK_SIZE);
 
@@ -111,7 +111,7 @@ bool ll_AES_GCM_Encrypt(
     uint8_t *tag,
     size_t tag_len) {
 
-    if (!key || !iv || iv_len < AES_GCM_IV_MIN || !out || !tag) return false;
+    if (!key || !iv || iv_len < AES_GCM_IV_MIN || !tag) return false;
     if (!IS_VALID_GCM_TAG_SIZE(tag_len)) return false;
 
     // Length limits (from NIST SP 800‑38D)
@@ -119,8 +119,8 @@ bool ll_AES_GCM_Encrypt(
     if (in_len  > ((U64(0x1) << 36) - 32)) return false;
 
     // Prevent NULL misuse
-    if (in_len && !in) return false;
-    if (aad_len && !aad) return false;
+    if (in_len != 0 && !in) return false;
+    if (aad_len != 0 && !aad) return false;
 
     uint8_t zero_block[AES_BLOCK_SIZE] = {0};
     uint8_t H[AES_BLOCK_SIZE] = {0};
@@ -156,12 +156,13 @@ bool ll_AES_GCM_Encrypt(
     Inc32(ctr);  // start from J0 + 1
 
     // 4. Encrypt plaintext
-    if (!ll_AES_GCTR_Process(key, ctr, in, in_len, out)) return false;
+    if (in_len > 0 && out && !ll_AES_GCTR_Process(key, ctr, in, in_len, out))
+        return false;
 
     // 5. Compute GHASH over AAD + ciphertext
     uint8_t X[AES_BLOCK_SIZE] = {0};
-    if (aad && aad_len > 0) GHASH_Process(H, aad, aad_len, X);
-    if (in  && in_len  > 0) GHASH_Process(H, out, in_len, X);
+    if (aad_len > 0) GHASH_Process(H, aad, aad_len, X);
+    if (in_len  > 0 && out) GHASH_Process(H, out, in_len, X);
 
     // 6. Append lengths of AAD and ciphertext in bits
     uint8_t len_block[AES_BLOCK_SIZE] = {0};
@@ -198,16 +199,16 @@ bool ll_AES_GCM_Decrypt(
     const uint8_t *tag,
     size_t tag_len) {
 
-    if (!key || !iv || iv_len < AES_GCM_IV_MIN || !out || !tag) return false;
+    if (!key || !iv || iv_len < AES_GCM_IV_MIN || !tag) return false;
     if (!IS_VALID_GCM_TAG_SIZE(tag_len)) return false;
+
+    // Prevent NULL misuse
+    if (in_len != 0 && !in) return false;
+    if (aad_len != 0 && !aad) return false;
 
     // Length limits (from NIST SP 800‑38D)
     if (aad_len > ((U64(0x1) << 61) - 1)) return false;
     if (in_len  > ((U64(0x1) << 36) - 32)) return false;
-
-    // Prevent NULL misuse
-    if (in_len && !in) return false;
-    if (aad_len && !aad) return false;
 
     uint8_t zero_block[AES_BLOCK_SIZE] = {0};
     uint8_t H[AES_BLOCK_SIZE] = {0};
@@ -239,8 +240,8 @@ bool ll_AES_GCM_Decrypt(
 
     // 3. Compute GHASH over AAD + ciphertext
     uint8_t X[AES_BLOCK_SIZE] = {0};
-    if (aad && aad_len > 0) GHASH_Process(H, aad, aad_len, X);
-    if (in  && in_len  > 0) GHASH_Process(H, in, in_len, X);
+    if (aad_len > 0) GHASH_Process(H, aad, aad_len, X);
+    if (in_len  > 0) GHASH_Process(H, in, in_len, X);
 
     // 4. Append lengths of AAD and ciphertext in bits
     uint8_t len_block[AES_BLOCK_SIZE] = {0};
@@ -267,10 +268,13 @@ bool ll_AES_GCM_Decrypt(
     if (!SECURE_MEM_EQUAL(tag, computed_tag, tag_len)) return false; // tag mismatch
 
     // 7. Decrypt ciphertext using GCTR
-    uint8_t ctr[AES_BLOCK_SIZE];
-    SECURE_MEMCPY(ctr, J0, AES_BLOCK_SIZE);
-    Inc32(ctr);  // start from J0 + 1
-    if (!ll_AES_GCTR_Process(key, ctr, in, in_len, out)) return false;
+    if (in_len > 0 && out) {
+        uint8_t ctr[AES_BLOCK_SIZE];
+        SECURE_MEMCPY(ctr, J0, AES_BLOCK_SIZE);
+        Inc32(ctr);  // start from J0 + 1
+        if (!ll_AES_GCTR_Process(key, ctr, in, in_len, out))
+            return false;
+    }
 
     return true;
 }

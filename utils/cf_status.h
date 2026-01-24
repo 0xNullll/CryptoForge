@@ -81,6 +81,19 @@ typedef enum {
     CF_ERR_MAC_STATE_INVALID,                        // internal context/state invalid
 } MAC_CF_STATUS;
 
+// ==========================
+// 4. Cipher/GCM/GMAC-specific errors
+// ==========================
+typedef enum {
+    CF_ERR_CIPHER_BASE_ERROR   = CF_ERR_CIPHER_BASE,    // base for ciphers errors
+    CF_ERR_CIPHER_KEY_SETUP,                            // error during key setup
+    CF_ERR_CIPHER_ENCRYPT,                              // encryption failed
+    CF_ERR_CIPHER_DECRYPT,                              // decryption failed
+    CF_ERR_CIPHER_STATE_INVALID,                        // internal state invalid
+    CF_ERR_CIPHER_TAG_VERIFY,                           // GCM/GMAC tag verification failed
+    CF_ERR_CIPHER_FINALIZED,                            // update called after finalize
+} CIPHER_CF_STATUS;
+
 static FORCE_INLINE const char* CF_status_str(CF_STATUS status) {
     switch (status) {
         case CF_SUCCESS: return "CF_SUCCESS";
