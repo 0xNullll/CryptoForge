@@ -62,28 +62,20 @@ CF_STATUS ll_GMAC_Update(ll_GMAC_CTX *ctx, const uint8_t *aad, size_t aad_len);
 // Finalize GMAC and output tag
 CF_STATUS ll_GMAC_Final(ll_GMAC_CTX *ctx, uint8_t *tag, size_t tag_len);
 
+// Free internal buffers of a pre-allocated GMAC context
+CF_STATUS ll_GMAC_Free(ll_GMAC_CTX *ctx);
+
+// Free internal buffers + heap-allocated GMAC context
+CF_STATUS ll_GMAC_FreeAlloc(ll_GMAC_CTX **p_ctx);
+
 // Verify a computed GMAC tag against an expected tag
 CF_STATUS ll_GMAC_Verify(const ll_GMAC_CTX *ctx, const uint8_t *expected_tag, size_t tag_len);
-
-// One-shot GMAC: process IV + AAD and return tag in a single call
-CF_STATUS ll_GMAC_OneShot(
-    const AES_KEY *key,
-    const uint8_t *iv, size_t iv_len,
-    const uint8_t *aad, size_t aad_len,
-    uint8_t *tag, size_t tag_len
-);
 
 // Clone a GMAC context into an existing destination
 CF_STATUS ll_GMAC_CloneCtx(ll_GMAC_CTX *ctx_dest, const ll_GMAC_CTX *ctx_src);
 
 // Clone and allocate a new heap GMAC context
 ll_GMAC_CTX* ll_GMAC_CloneCtxAlloc(const ll_GMAC_CTX *ctx_src, CF_STATUS *status);
-
-// Free internal buffers of a pre-allocated GMAC context
-CF_STATUS ll_GMAC_Free(ll_GMAC_CTX *ctx);
-
-// Free internal buffers + heap-allocated GMAC context
-CF_STATUS ll_GMAC_FreeAlloc(ll_GMAC_CTX **p_ctx);
 
 #ifdef __cplusplus
 }
