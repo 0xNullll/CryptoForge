@@ -61,12 +61,12 @@ typedef struct _ll_KMAC_CTX {
     size_t  S_len;
 
     // Bookkeeping flags
-    int isFinalized;        // 1 if finalization done
+    int isFinalized;
     int customAbsorbed;     // 1 if N||S absorbed
     int emptyNameCustom;    // 1 if S are empty
 
     int isXOF;
-    int isHeapAlloc;        // 1 if allocated on heap, 0 if stack
+    int isHeapAlloc;
 
     // KMAC variant
     ll_KMAC_TYPE type;      // e.g., KMAC128, KMAC256, KMACXOF128, KMACXOF256

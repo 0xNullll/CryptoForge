@@ -65,7 +65,7 @@ CF_STATUS ll_GMAC_Update(ll_GMAC_CTX *ctx, const uint8_t *aad, size_t aad_len) {
     if (!ctx || !aad || aad_len == 0)
         return CF_ERR_INVALID_PARAM;
 
-    if (ctx->phase == GMAC_PHASE_DATA || ctx->phase == GMAC_PHASE_FINAL)
+    if (ctx->phase == GMAC_PHASE_FINAL)
         return CF_ERR_CIPHER_FINALIZED;
 
     // Length limits (from NIST SP 800‑38D)

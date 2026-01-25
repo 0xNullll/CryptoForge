@@ -4,6 +4,7 @@
 #include "../../../utils/mem.h"
 #include "../../../utils/misc_utils.h"
 #include "../../../config/libs.h"
+
 #include "aes_core.h"
 
 #ifdef __cplusplus

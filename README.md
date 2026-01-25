@@ -245,6 +245,7 @@ Evaluate behavior under hostile or constrained execution environments.
 ├─ /crypto
 │   ├─ /cipher
 │   │   ├─ /aes
+│   │   │   ├─ aes_common.h     <-- endian helpers
 │   │   │   ├─ aes_core.{c,h}
 │   │   │   ├─ ecb_mode.{c,h}
 │   │   │   ├─ cbc_mode.{c,h}

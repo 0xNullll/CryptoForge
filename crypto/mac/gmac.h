@@ -45,7 +45,6 @@ typedef struct _ll_GMAC_CTX {
 typedef enum {
     GMAC_PHASE_INIT,     // just initialized, nothing processed
     GMAC_PHASE_AAD,      // processing AAD
-    GMAC_PHASE_DATA,     // processing ciphertext/data
     GMAC_PHASE_FINAL     // finalize has been called
 } ll_GMAC_PHASE;
 
