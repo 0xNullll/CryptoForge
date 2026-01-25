@@ -1,33 +1,11 @@
 #include "gcm_mode.h"
 
-static FORCE_INLINE uint64_t load_uint64_be(const uint8_t *b) {
-    return ((uint64_t)b[0] << 56) |
-           ((uint64_t)b[1] << 48) |
-           ((uint64_t)b[2] << 40) |
-           ((uint64_t)b[3] << 32) |
-           ((uint64_t)b[4] << 24) |
-           ((uint64_t)b[5] << 16) |
-           ((uint64_t)b[6] << 8)  |
-           ((uint64_t)b[7]);
-}
-
-static FORCE_INLINE void store_uint64_be(uint8_t *out, uint64_t x) {
-    out[0] = (uint8_t)(x >> 56);
-    out[1] = (uint8_t)(x >> 48);
-    out[2] = (uint8_t)(x >> 40);
-    out[3] = (uint8_t)(x >> 32);
-    out[4] = (uint8_t)(x >> 24);
-    out[5] = (uint8_t)(x >> 16);
-    out[6] = (uint8_t)(x >> 8);
-    out[7] = (uint8_t)(x);
-}
-
 void gcm_mult(uint8_t Z[AES_BLOCK_SIZE],
             const uint8_t X[AES_BLOCK_SIZE],
             const uint8_t Y[AES_BLOCK_SIZE]) {
     uint64_t zh = 0, zl = 0;
-    uint64_t yh = load_uint64_be(Y);
-    uint64_t yl = load_uint64_be(Y + 8);
+    uint64_t yh = AES_LOAD64(Y);
+    uint64_t yl = AES_LOAD64(Y + 8);
 
     for (int i = 0; i < 128; i++) {
         uint8_t bit = (X[i >> 3] >> (7 - (i & 7))) & 1;
@@ -41,8 +19,8 @@ void gcm_mult(uint8_t Z[AES_BLOCK_SIZE],
         yh = (yh >> 1) ^ (U64(0xe100000000000000) & ((uint64_t)0 - lsb));
     }
 
-    store_uint64_be(Z, zh);
-    store_uint64_be(Z + 8, zl);
+    AES_STORE64(Z, zh);
+    AES_STORE64(Z + 8, zl);
 }
 
 void GHASH_Process(
@@ -69,33 +47,52 @@ void GHASH_Process(
     }
 }
 
-static FORCE_INLINE void Inc32(uint8_t counter[AES_BLOCK_SIZE]) {
-    // Increment last 32 bits (big-endian) modulo 2^32
-    for (int i = 15; i >= 12; i--) {
-        if (++counter[i] != 0)
-            break;  
-    }
+// Increment last 32 bits of 16-byte block (GCM counter)
+static void Inc32(uint8_t CB[16]) {
+    uint32_t val = AES_LOAD32(CB + 12);
+    val++;
+    AES_STORE32(CB + 12, val);
 }
 
-bool ll_AES_GCTR_Process(const AES_KEY *key, uint8_t ICB[AES_BLOCK_SIZE], const uint8_t *X, size_t X_len, uint8_t *Y) {
-    uint8_t CB[AES_BLOCK_SIZE], encrypted[AES_BLOCK_SIZE];
-    SECURE_MEMCPY(CB, ICB, AES_BLOCK_SIZE);
+bool ll_AES_GCTR_Process(
+    const AES_KEY *key,
+    uint8_t ICB[16],
+    const uint8_t *X,
+    size_t X_len,
+    uint8_t *Y) {
+    uint8_t CB[16], encrypted[16];
+    SECURE_MEMCPY(CB, ICB, 16);
 
-    size_t num_blocks = (X_len + 16 - 1) / 16;
     size_t offset = 0;
 
-    for (size_t i = 0; i < num_blocks; i++) {
-        if (i > 0) Inc32(CB);
+    while (X_len >= 16) {
+        if (offset > 0) Inc32(CB);
 
         if (!ll_AES_EncryptBlock(key, CB, encrypted)) return false;
 
-        size_t block_len = (X_len - offset > 16) ? 16 : (X_len - offset);
-        for (size_t j = 0; j < block_len; j++) {
+        // XOR in 64-bit chunks
+        uint64_t x0 = AES_LOAD64(X + offset);
+        uint64_t x1 = AES_LOAD64(X + offset + 8);
+
+        uint64_t e0 = AES_LOAD64(encrypted);
+        uint64_t e1 = AES_LOAD64(encrypted + 8);
+
+        // XOR and store back in big-endian order
+        AES_STORE64(Y + offset, x0 ^ e0);
+        AES_STORE64(Y + offset + 8, x1 ^ e1);
+
+        offset += 16;
+        X_len -= 16;
+    }
+
+    // Handle remaining bytes if input not multiple of 16
+    if (X_len > 0) {
+        if (!ll_AES_EncryptBlock(key, CB, encrypted)) return false;
+        for (size_t j = 0; j < X_len; j++) {
             Y[offset + j] = X[offset + j] ^ encrypted[j];
         }
-
-        offset += block_len;
     }
+
     return true;
 }
 

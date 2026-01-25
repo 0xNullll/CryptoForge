@@ -44,7 +44,7 @@ typedef struct _ll_HMAC_CTX {
     size_t key_len;
 
     int isFinalized;
-    int isHeapAlloc; // 1 if allocated by library (heap), 0 if user stack    
+    int isHeapAlloc;
 } ll_HMAC_CTX;
 
 // ============================

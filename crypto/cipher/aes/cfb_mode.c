@@ -16,10 +16,8 @@ static bool ll_AES_CFB8_Process( const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE],
         uint8_t out_byte = in[i] ^ block[0];
         out[i] = out_byte;
 
-        // Shift feedback left by 1 byte manually
-        for (int j = 0; j < AES_BLOCK_SIZE - 1; j++) {
-            feedback[j] = feedback[j + 1];
-        }
+        // Shift feedback left by 1 byte
+        memmove(feedback, feedback + 1, AES_BLOCK_SIZE - 1);
 
         // Append ciphertext byte
         feedback[AES_BLOCK_SIZE - 1] = enc ? out_byte : in[i];

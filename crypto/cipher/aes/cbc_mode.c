@@ -1,42 +1,74 @@
 #include "cbc_mode.h"
 
-bool ll_AES_CBC_Encrypt(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len, uint8_t *out) {
-    if (!key || !iv || !in || (in_len % AES_BLOCK_SIZE) != 0 || !out) return false; 
+bool ll_AES_CBC_Encrypt(
+    const AES_KEY *key,
+    uint8_t iv[AES_BLOCK_SIZE],
+    const uint8_t *in,
+    size_t in_len,
+    uint8_t *out) {
+    if (!key || !iv || !in || !out || (in_len % AES_BLOCK_SIZE) != 0) return false;
 
-    uint8_t x[AES_BLOCK_SIZE];
+    // Split IV into two 64-bit words
+    uint64_t c0 = AES_LOAD64(iv);
+    uint64_t c1 = AES_LOAD64(iv + 8);
 
     for (size_t i = 0; i < in_len; i += AES_BLOCK_SIZE) {
-        for (int j = 0; j < AES_BLOCK_SIZE; j++) {
-            // XOR with previous ciphertext block (or IV for first block)
-            x[j] = in[i + (size_t)j] ^ (i == 0 ? iv[j] : out[i - AES_BLOCK_SIZE + (size_t)j]);
-        }
+        // Load plaintext block
+        uint64_t p0 = AES_LOAD64(in + i);
+        uint64_t p1 = AES_LOAD64(in + i + 8);
 
-        // Encrypt current ciphertext block
-        if (!ll_AES_EncryptBlock(key, x, out + i)) return false;
+        // XOR with previous ciphertext (CBC step)
+        uint64_t x0 = p0 ^ c0;
+        uint64_t x1 = p1 ^ c1;
+
+        // Pack x0/x1 into a temporary block
+        uint8_t block[AES_BLOCK_SIZE];
+        AES_STORE64(block, x0);
+        AES_STORE64(block + 8, x1);
+
+        // Encrypt the block
+        if (!ll_AES_EncryptBlock(key, block, out + i)) return false;
+
+        // Update c0/c1 for next round
+        c0 = AES_LOAD64(out + i);
+        c1 = AES_LOAD64(out + i + 8);
     }
 
     return true;
 }
 
-bool ll_AES_CBC_Decrypt(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len, uint8_t *out) {
-    if (!key || !iv || !in || (in_len % AES_BLOCK_SIZE) != 0 || !out) return false; 
+bool ll_AES_CBC_Decrypt(
+    const AES_KEY *key,
+    uint8_t iv[AES_BLOCK_SIZE],
+    const uint8_t *in,
+    size_t in_len,
+    uint8_t *out) {
+    if (!key || !iv || !in || !out || (in_len % AES_BLOCK_SIZE) != 0) return false;
 
-    uint8_t x[AES_BLOCK_SIZE];      // temporary buffer for decrypted block
-    uint8_t prev[AES_BLOCK_SIZE];   // previous ciphertext (or IV)
+    uint64_t prev0 = AES_LOAD64(iv);     // first 8 bytes of IV
+    uint64_t prev1 = AES_LOAD64(iv + 8); // last 8 bytes of IV
 
-    SECURE_MEMCPY(prev, iv, AES_BLOCK_SIZE);
+    uint8_t block[AES_BLOCK_SIZE]; // temporary decrypted block
 
     for (size_t i = 0; i < in_len; i += AES_BLOCK_SIZE) {
-        // Decrypt current ciphertext block
-        if (!ll_AES_DecryptBlock(key, in + i, x)) return false;
+        // Decrypt ciphertext block into temporary buffer
+        if (!ll_AES_DecryptBlock(key, in + i, block)) return false;
 
-        // XOR with previous ciphertext block (or IV for first block)
-        for (int j = 0; j < AES_BLOCK_SIZE; j++) {
-            out[i + (size_t)j] = x[j] ^ prev[j];
-        }
+        // Load decrypted block as two 64-bit words
+        uint64_t x0 = AES_LOAD64(block);
+        uint64_t x1 = AES_LOAD64(block + 8);
+
+        // XOR with previous ciphertext (CBC step)
+        x0 ^= prev0;
+        x1 ^= prev1;
+
+        // Store result to output
+        AES_STORE64(out + i, x0);
+        AES_STORE64(out + i + 8, x1);
 
         // Update prev for next block
-        SECURE_MEMCPY(prev, in + i, AES_BLOCK_SIZE);
+        prev0 = AES_LOAD64(in + i);
+        prev1 = AES_LOAD64(in + i + 8);
     }
 
     return true;
