@@ -17,46 +17,88 @@
 
 #include "mem.h"
 
-// - 'volatile' prevents compiler optimizations that might skip the loop.
-void secure_zero(void *ptr, size_t len) {
-    if (!ptr || len == 0) return;
+void secure_free(void *ptr, size_t size) {
+    if (!ptr || size == 0) return;
 
-    volatile uint8_t *p = (volatile uint8_t*)ptr;
-    while (len--) *p++ = 0;
-}
+    // Securely zero memory first
+#if defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 25))
+    explicit_bzero(ptr, size);
 
-#if USE_STRICT_SECURE_MEMORY
+#elif defined(__STDC_LIB_EXT1__) && !defined(__IAR_SYSTEMS_ICC__)
+    memset_s(ptr, size, 0, size);
 
-void strict_secure_memset(void *dst, const void *src, size_t len) {
-    // Level 2/3: OS-backed memory or locked memory copy
-}
-
-void strict_secure_memcpy(void *dst, int val, size_t len) {
-    // Level 2/3: OS-backed memory or locked memory copy
-}
+#elif defined(_WIN32)
+    SecureZeroMemory(ptr, size);
 
 #else
-
-// - Works like memset but guaranteed not to be optimized away.
-// - 'volatile' ensures the writes happen even if the compiler thinks they are unnecessary.
-void secure_memset(void *dst, int val, size_t len) {
-    if (!dst || len == 0) return;
-    volatile uint8_t *p = (volatile uint8_t *)dst;
-    while (len--) *p++ = (uint8_t)val;
-}
-
-#endif // USE_STRICT_SECURE_MEMORY
-
-// - Ensures sensitive data does not remain in memory after free.
-// - 'volatile' prevents compiler optimizations.
-void secure_free(void *ptr, size_t size) {
-    if (!ptr) return;
-
-    volatile uint8_t *p = (volatile uint8_t*)ptr;
+    volatile unsigned char *p = (volatile unsigned char *)ptr;
     while (size--) *p++ = 0;
 
+#if defined(__GNUC__) || defined(__clang__)
+    // Compiler barrier
+    asm volatile ("" : : "m" (*(char (*)[size]) ptr) : "memory");
+#endif
+#endif
+
+    // Free memory
     free(ptr);
-    ptr = NULL;
+    ptr = NULL; // has no effect outside the function but doesn't hurt :)
+}
+
+void secure_zero(void *buf, size_t len) {
+    if (!buf || len == 0) return;
+
+#if defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 25))
+    // Linux glibc >= 2.25
+    explicit_bzero(buf, len);
+
+#elif defined(__STDC_LIB_EXT1__) && !defined(__IAR_SYSTEMS_ICC__)
+    // C11 secure memset
+    memset_s(buf, len, 0, len);
+
+#elif defined(_WIN32)
+    // Windows
+    SecureZeroMemory(buf, len);
+
+#else
+    // Fallback: volatile pointer to prevent compiler optimization
+    volatile unsigned char *p = (volatile unsigned char *)buf;
+    while (len--) *p++ = 0;
+
+    // Compiler barrier: pretend memory was read
+#if defined(__GNUC__) || defined(__clang__)
+    asm volatile ("" : : "m" (*(char (*)[len]) buf) : "memory");
+#endif
+#endif
+}
+
+void secure_memset(void *dst, int val, size_t len) {
+    if (!dst || len == 0) return;
+
+    // For val == 0, use platform-optimized secure zeroing
+    if (val == 0) {
+        secure_zero(dst, len);
+    } else {
+        // Non-zero value — fallback to volatile write loop
+        volatile unsigned char *p = (volatile unsigned char*)dst;
+        while (len--) *p++ = (unsigned char)val;
+
+    #if defined(__GNUC__) || defined(__clang__)
+        asm volatile ("" : : "m" (*(char (*)[len]) dst) : "memory");
+    #endif
+    }
+}
+
+void secure_memcpy(void *dst, const void *src, size_t len) {
+    if (!dst || !src || len == 0) return;
+
+    // Use standard memcpy since copy itself is not secret-sensitive,
+    // but can optionally combine with compiler barrier if paranoid
+    memcpy(dst, src, len);
+
+#if defined(__GNUC__) || defined(__clang__)
+    asm volatile ("" : : "r,m"(dst), "r,m"(src) : "memory");
+#endif
 }
 
 int secure_mem_equal(const uint8_t *a, const uint8_t *b, size_t len) {

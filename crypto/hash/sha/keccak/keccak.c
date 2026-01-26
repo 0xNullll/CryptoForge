@@ -53,7 +53,7 @@ static const uint64_t iotas[24] = {
  * Hash and Extendible-Output Functions" as closely as possible. 
  */
 static void Theta(uint64_t A[5][5]) {
-    uint64_t C[5], D[5];
+    uint64_t C[5] = {0}, D[5] = {0};
 
     C[0] = A[0][0];
     C[1] = A[0][1];
@@ -82,6 +82,9 @@ static void Theta(uint64_t A[5][5]) {
         A[y][3] ^= D[3];
         A[y][4] ^= D[4];
     }
+
+    SECURE_ZERO(C, sizeof(C));
+    SECURE_ZERO(D, sizeof(D));
 }
 
 // /*
@@ -111,7 +114,7 @@ static void Rho(uint64_t A[5][5]) {
  * Loop is unrolled manually to avoid modulo operations and improve performance.
  */
 static void Pi(uint64_t A[5][5]) {
-    uint64_t T[5][5];
+    uint64_t T[5][5] = {0};
 
     // T = A
     SECURE_MEMCPY(T, A, sizeof(T));
@@ -146,6 +149,8 @@ static void Pi(uint64_t A[5][5]) {
     A[4][2] = T[2][4];
     A[4][3] = T[3][0];
     A[4][4] = T[4][1];
+
+    SECURE_ZERO(T, sizeof(T));
 }
 
 /*
@@ -158,7 +163,7 @@ static void Pi(uint64_t A[5][5]) {
  * Loop over rows; each row is processed with fully unrolled bitwise operations for clarity.
  */
 static void Chi(uint64_t A[5][5]) {
-    uint64_t C[5];
+    uint64_t C[5] = {0};
 
     for (int y = 0; y < 5; y++) {
         C[0] = A[y][0] ^ (~A[y][1] & A[y][2]);
@@ -173,6 +178,8 @@ static void Chi(uint64_t A[5][5]) {
         A[y][3] = C[3];
         A[y][4] = C[4];
     }
+
+    SECURE_ZERO(C, sizeof(C));
 }
 
 /*
@@ -241,7 +248,7 @@ static FORCE_INLINE void squeeze_block(uint64_t A[5][5], uint8_t *buf, size_t r)
 bool ll_keccak_p(uint64_t state[5][5], unsigned int w, unsigned int nr) {
     if (!state || nr > KECCAK_ROUNDS || (w != 64 && w != 32)) return false;
 
-    uint64_t mask = (w == 64) ? 0xFFFFFFFFFFFFFFFFULL : 0xFFFFFFFFULL;
+    uint64_t mask = (w == 64) ? U64(0xFFFFFFFFFFFFFFFF) : U64(0xFFFFFFFF);
 
     for (unsigned int i = 0; i < nr; i++) {
         Round(state, i , mask); // pass mask to Round so lane size is applied
@@ -254,8 +261,7 @@ bool ll_keccak_p(uint64_t state[5][5], unsigned int w, unsigned int nr) {
 // ll_KECCAK_CTX wrappers
 // =======================
 bool ll_keccak_sponge_init(ll_KECCAK_CTX *ctx, size_t rate, uint8_t suffix) {
-    SECURE_MEMSET(ctx->state, 0, sizeof(ctx->state));
-    SECURE_MEMSET(ctx->buf, 0, sizeof(ctx->buf));
+    SECURE_ZERO(ctx, sizeof(*ctx));
     ctx->buf_len = 0;
     ctx->rate = rate;
     ctx->suffix = suffix;
@@ -353,6 +359,8 @@ bool ll_keccak_sponge_squeeze(ll_KECCAK_CTX *ctx, uint8_t *output, size_t outlen
         if (outlen > 0)
             ll_keccak_p(ctx->state, 64, KECCAK_ROUNDS);
     }
+
+    SECURE_ZERO(tmp, sizeof(tmp));
 
     return true;
 }

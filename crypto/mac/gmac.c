@@ -1,3 +1,20 @@
+/*
+ * CryptoForge - gmac.c / GMAC (AES-GMAC) Implementation
+ * Copyright (C) 2025 0xNullll
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the MIT License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * You should have received a copy of the MIT License along with this program.
+ * If not, see <https://opensource.org/licenses/MIT>.
+ *
+ * Project repository: https://github.com/0xNullll/CryptoForge
+ */
+
 #include "gmac.h"
 
 CF_STATUS ll_GMAC_Init(ll_GMAC_CTX *ctx, const AES_KEY *key, const uint8_t *iv, size_t iv_len) {
@@ -29,6 +46,7 @@ CF_STATUS ll_GMAC_Init(ll_GMAC_CTX *ctx, const AES_KEY *key, const uint8_t *iv, 
 
         GHASH_Process(ctx->H, len_block, AES_BLOCK_SIZE, tmp);
         SECURE_MEMCPY(ctx->J0, tmp, AES_BLOCK_SIZE);
+        SECURE_ZERO(tmp, sizeof(tmp));
     }
 
     ctx->isHeapAlloc = 0;
@@ -94,7 +112,7 @@ CF_STATUS ll_GMAC_Final(ll_GMAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
     // Lower 64 bits remain zero for GMAC
 
     // XOR len_block into X
-    uint8_t tmp_X[AES_BLOCK_SIZE];
+    uint8_t tmp_X[AES_BLOCK_SIZE] = {0};
     SECURE_MEMCPY(tmp_X, ctx->X, AES_BLOCK_SIZE);
     for (int i = 0; i < AES_BLOCK_SIZE; i++)
         tmp_X[i] ^= len_block[i];
@@ -103,13 +121,17 @@ CF_STATUS ll_GMAC_Final(ll_GMAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
     gcm_mult(tmp_X, tmp_X, ctx->H);
 
     // Encrypt J0 to get EK0
-    uint8_t EK0[AES_BLOCK_SIZE];
+    uint8_t EK0[AES_BLOCK_SIZE] = {0};
     if (!ll_AES_EncryptBlock(ctx->key, ctx->J0, EK0))
         return CF_ERR_CIPHER_ENCRYPT;
 
     // Final GMAC tag = EK0 XOR GHASH output
     for (size_t i = 0; i < tag_len && i < AES_BLOCK_SIZE; i++)
         tag[i] = EK0[i] ^ tmp_X[i];
+
+    SECURE_ZERO(len_block, AES_BLOCK_SIZE);
+    SECURE_ZERO(tmp_X, AES_BLOCK_SIZE);
+    SECURE_ZERO(EK0, AES_BLOCK_SIZE);
 
     ctx->phase = GMAC_PHASE_FINAL;
     return CF_SUCCESS;

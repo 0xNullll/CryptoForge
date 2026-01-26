@@ -106,7 +106,7 @@ CF_STATUS ll_KMAC_Init(ll_KMAC_CTX *ctx,
     if (!ctx || !LL_KMAC_TYPE_IS_VALID(type)) return CF_ERR_NULL_PTR;
     if (key_len > MAX_KEY_SIZE || custom_len > MAX_CUSTOMIZATION) return CF_ERR_INVALID_LEN;
 
-    memset(ctx, 0, sizeof(*ctx));
+    SECURE_ZERO(ctx, sizeof(*ctx));
     ctx->type = type;
     ctx->isXOF = LL_KMAC_IS_XOF(ctx->type);
     ctx->out_len = LL_KMAC_IS_128(ctx->type) ? CSHAKE128_DEFAULT_OUT_LEN : CSHAKE256_DEFAULT_OUT_LEN; // 32 bytes = 256-bit, 64 bytes = 512-bit
@@ -132,6 +132,8 @@ CF_STATUS ll_KMAC_Init(ll_KMAC_CTX *ctx,
 
     // Step 3: absorb bytepadded key
     if (!ll_KMAC_ABSORB(ctx, padded_key, padded_len)) return CF_ERR_CTX_CORRUPT;
+
+    SECURE_ZERO(padded_key, sizeof(padded_key));
 
     ctx->customAbsorbed = 1;
     ctx->isHeapAlloc = 0;

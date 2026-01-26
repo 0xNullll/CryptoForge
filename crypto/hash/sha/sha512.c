@@ -76,7 +76,7 @@ static const uint64_t K512[80] = {
 // SHA-512 Low-level functions
 // ======================================
 bool ll_sha512_init(ll_SHA512_CTX *ctx) {
-    SECURE_MEMSET(ctx, 0, sizeof(*ctx));
+    SECURE_ZERO(ctx, sizeof(*ctx));
     ctx->state[0] = U64(0x6a09e667f3bcc908);
     ctx->state[1] = U64(0xbb67ae8584caa73b);
     ctx->state[2] = U64(0x3c6ef372fe94f82b);
@@ -92,6 +92,8 @@ bool ll_sha512_init(ll_SHA512_CTX *ctx) {
 
 static bool SHA512ProcessBlock(ll_SHA512_CTX *ctx, const uint8_t *block) {
     uint64_t W[80], a,b,c,d,e,f,g,h,T1,T2;
+
+    SECURE_ZERO(W, sizeof(W));
 
     for (int t=0; t<16; t++)
         W[t] = LOAD64(block + t*8);
@@ -111,6 +113,8 @@ static bool SHA512ProcessBlock(ll_SHA512_CTX *ctx, const uint8_t *block) {
 
     ctx->state[0]+=a; ctx->state[1]+=b; ctx->state[2]+=c; ctx->state[3]+=d;
     ctx->state[4]+=e; ctx->state[5]+=f; ctx->state[6]+=g; ctx->state[7]+=h;
+
+    SECURE_ZERO(W, sizeof(W));
 
     return true;
 }
@@ -168,7 +172,7 @@ bool ll_sha512_final(ll_SHA512_CTX *ctx, uint8_t digest[SHA512_DIGEST_SIZE]) {
 // SHA-384
 // ======================================
 bool ll_sha384_init(ll_SHA384_CTX *ctx) {
-    SECURE_MEMSET(ctx, 0, sizeof(*ctx));
+    SECURE_ZERO(ctx, sizeof(*ctx));
     ctx->state[0] = U64(0xcbbb9d5dc1059ed8);
     ctx->state[1] = U64(0x629a292a367cd507);
     ctx->state[2] = U64(0x9159015a3070dd17);
@@ -197,7 +201,7 @@ bool ll_sha384_final(ll_SHA384_CTX *ctx, uint8_t digest[SHA384_DIGEST_SIZE]) {
 // SHA-512/224
 // ======================================
 bool ll_sha512_224_init(ll_SHA512_224_CTX *ctx) {
-    SECURE_MEMSET(ctx, 0, sizeof(*ctx));
+    SECURE_ZERO(ctx, sizeof(*ctx));
     ctx->state[0] = U64(0x8c3d37c819544da2);
     ctx->state[1] = U64(0x73e1996689dcd4d6);
     ctx->state[2] = U64(0x1dfab7ae32ff9c82);
@@ -226,7 +230,7 @@ bool ll_sha512_224_final(ll_SHA512_224_CTX *ctx, uint8_t digest[SHA512_224_DIGES
 // SHA-512/256
 // ======================================
 bool ll_sha512_256_init(ll_SHA512_256_CTX *ctx) {
-    SECURE_MEMSET(ctx, 0, sizeof(*ctx));
+    SECURE_ZERO(ctx, sizeof(*ctx));
     ctx->state[0] = U64(0x22312194fc2bf72c);
     ctx->state[1] = U64(0x9f555fa3c84c64c2);
     ctx->state[2] = U64(0x2393b86b6f53b151);

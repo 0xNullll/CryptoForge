@@ -5,6 +5,8 @@
 #include "../../../utils/misc_utils.h"
 #include "../../../config/libs.h"
 
+#include "aes_common.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
