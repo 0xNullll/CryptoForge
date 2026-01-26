@@ -17,7 +17,6 @@
 
 #include "gmac.h"
 
-CF_STATUS ll_GMAC_Init(ll_GMAC_CTX *ctx, const AES_KEY *key, const uint8_t *iv, size_t iv_len) {
 CF_STATUS ll_GMAC_Init(ll_GMAC_CTX *ctx, const ll_AES_KEY *key, const uint8_t *iv, size_t iv_len) {
     if (!ctx || !key || !iv || iv_len < AES_GCM_IV_MIN)
         return CF_ERR_INVALID_PARAM;
