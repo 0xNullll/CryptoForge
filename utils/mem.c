@@ -17,34 +17,6 @@
 
 #include "mem.h"
 
-void secure_free(void *ptr, size_t size) {
-    if (!ptr || size == 0) return;
-
-    // Securely zero memory first
-#if defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 25))
-    explicit_bzero(ptr, size);
-
-#elif defined(__STDC_LIB_EXT1__) && !defined(__IAR_SYSTEMS_ICC__)
-    memset_s(ptr, size, 0, size);
-
-#elif defined(_WIN32)
-    SecureZeroMemory(ptr, size);
-
-#else
-    volatile unsigned char *p = (volatile unsigned char *)ptr;
-    while (size--) *p++ = 0;
-
-#if defined(__GNUC__) || defined(__clang__)
-    // Compiler barrier
-    asm volatile ("" : : "m" (*(char (*)[size]) ptr) : "memory");
-#endif
-#endif
-
-    // Free memory
-    free(ptr);
-    ptr = NULL; // has no effect outside the function but doesn't hurt :)
-}
-
 void secure_zero(void *buf, size_t len) {
     if (!buf || len == 0) return;
 
@@ -70,6 +42,17 @@ void secure_zero(void *buf, size_t len) {
     asm volatile ("" : : "m" (*(char (*)[len]) buf) : "memory");
 #endif
 #endif
+}
+
+void secure_free(void *ptr, size_t size) {
+    if (!ptr || size == 0) return;
+
+    // Securely zero memory first
+    secure_zero(ptr, size);
+
+    // Free memory
+    free(ptr);
+    ptr = NULL; // has no effect outside the function but doesn't hurt :)
 }
 
 void secure_memset(void *dst, int val, size_t len) {
