@@ -1,6 +1,6 @@
 #include "gcm_mode.h"
 
-void gcm_mult(uint8_t Z[AES_BLOCK_SIZE],
+void ll_gcm_mult(uint8_t Z[AES_BLOCK_SIZE],
             const uint8_t X[AES_BLOCK_SIZE],
             const uint8_t Y[AES_BLOCK_SIZE]) {
     uint64_t zh = 0, zl = 0;
@@ -23,7 +23,7 @@ void gcm_mult(uint8_t Z[AES_BLOCK_SIZE],
     AES_STORE64(Z + 8, zl);
 }
 
-void GHASH_Process(
+void ll_GHASH_Process(
     const uint8_t H[AES_BLOCK_SIZE],    // GHASH key (H = AES(K,0^128))
     const uint8_t *in, size_t in_len,   // data to GHASH
     uint8_t out[AES_BLOCK_SIZE]) {      // accumulator (X), updated in-place
@@ -42,7 +42,7 @@ void GHASH_Process(
             out[i] ^= block[i];
 
         // Multiply in GF(2^128)
-        gcm_mult(out, out, H);
+        ll_gcm_mult(out, out, H);
         offset += blk_len;
     }
 
@@ -57,8 +57,8 @@ static void Inc32(uint8_t CB[16]) {
 }
 
 bool ll_AES_GCTR_Process(
-    const AES_KEY *key,
-    uint8_t ICB[16],
+    const ll_AES_KEY *key,
+    uint8_t ICB[AES_BLOCK_SIZE],
     const uint8_t *X,
     size_t X_len,
     uint8_t *Y) {
@@ -102,7 +102,7 @@ bool ll_AES_GCTR_Process(
 }
 
 bool ll_AES_GCM_Encrypt(
-    const AES_KEY *key,
+    const ll_AES_KEY *key,
     const uint8_t *iv,
     size_t iv_len,
     const uint8_t *aad,
@@ -124,7 +124,7 @@ bool ll_AES_GCM_Encrypt(
     if (in_len != 0 && !in) return false;
     if (aad_len != 0 && !aad) return false;
 
-    uint8_t zero_block[AES_BLOCK_SIZE] = {0};
+    const uint8_t zero_block[AES_BLOCK_SIZE] = {0};
     uint8_t H[AES_BLOCK_SIZE] = {0};
     uint8_t J0[AES_BLOCK_SIZE] = {0};
 
@@ -140,7 +140,7 @@ bool ll_AES_GCM_Encrypt(
         J0[15] = 0x01;
     } else { // arbitrary IV length
         uint8_t X[AES_BLOCK_SIZE] = {0};
-        GHASH_Process(H, iv, iv_len, X);
+        ll_GHASH_Process(H, iv, iv_len, X);
 
         // Append IV length (64-bit) in bits as last 8 bytes
         uint8_t len_block[AES_BLOCK_SIZE] = {0};
@@ -148,7 +148,7 @@ bool ll_AES_GCM_Encrypt(
         for (int i = 0; i < 8; i++)
             len_block[8 + i] = (uint8_t)((iv_bits >> (56 - i*8)) & 0xFF);
 
-        GHASH_Process(H, len_block, AES_BLOCK_SIZE, X);
+        ll_GHASH_Process(H, len_block, AES_BLOCK_SIZE, X);
         SECURE_MEMCPY(J0, X, AES_BLOCK_SIZE);
         SECURE_ZERO(X, sizeof(X));
     }
@@ -164,8 +164,8 @@ bool ll_AES_GCM_Encrypt(
 
     // 5. Compute GHASH over AAD + ciphertext
     uint8_t X[AES_BLOCK_SIZE] = {0};
-    if (aad_len > 0) GHASH_Process(H, aad, aad_len, X);
-    if (in_len  > 0 && out) GHASH_Process(H, out, in_len, X);
+    if (aad_len > 0) ll_GHASH_Process(H, aad, aad_len, X);
+    if (in_len  > 0 && out) ll_GHASH_Process(H, out, in_len, X);
 
     // 6. Append lengths of AAD and ciphertext in bits
     uint8_t len_block[AES_BLOCK_SIZE] = {0};
@@ -178,7 +178,7 @@ bool ll_AES_GCM_Encrypt(
     for (int i = 0; i < AES_BLOCK_SIZE; i++)
         X[i] ^= len_block[i];
 
-    gcm_mult(X, X, H);  // multiply by H in GF(2^128)
+    ll_gcm_mult(X, X, H);  // multiply by H in GF(2^128)
 
     // 7. Compute tag: T = AES_K(J0) XOR GHASH
     uint8_t EK0[AES_BLOCK_SIZE] = {0};
@@ -187,7 +187,6 @@ bool ll_AES_GCM_Encrypt(
     for (size_t i = 0; i < tag_len && i < AES_BLOCK_SIZE; i++)
         tag[i] = EK0[i] ^ X[i];
 
-    SECURE_ZERO(zero_block, sizeof(zero_block));
     SECURE_ZERO(H, sizeof(H));
     SECURE_ZERO(J0, sizeof(J0));
     SECURE_ZERO(ctr, sizeof(ctr));
@@ -199,7 +198,7 @@ bool ll_AES_GCM_Encrypt(
 }
 
 bool ll_AES_GCM_Decrypt(
-    const AES_KEY *key,
+    const ll_AES_KEY *key,
     const uint8_t *iv,
     size_t iv_len,
     const uint8_t *aad,
@@ -221,7 +220,7 @@ bool ll_AES_GCM_Decrypt(
     if (aad_len > ((U64(0x1) << 61) - 1)) return false;
     if (in_len  > ((U64(0x1) << 36) - 32)) return false;
 
-    uint8_t zero_block[AES_BLOCK_SIZE] = {0};
+    const uint8_t zero_block[AES_BLOCK_SIZE] = {0};
     uint8_t H[AES_BLOCK_SIZE] = {0};
     uint8_t J0[AES_BLOCK_SIZE] = {0};
 
@@ -237,7 +236,7 @@ bool ll_AES_GCM_Decrypt(
         J0[15] = 0x01;
     } else { // arbitrary IV
         uint8_t X[AES_BLOCK_SIZE] = {0};
-        GHASH_Process(H, iv, iv_len, X);
+        ll_GHASH_Process(H, iv, iv_len, X);
 
         // Append IV length (64-bit) in bits
         uint8_t len_block[AES_BLOCK_SIZE] = {0};
@@ -245,7 +244,7 @@ bool ll_AES_GCM_Decrypt(
         for (int i = 0; i < 8; i++)
             len_block[8 + i] = (uint8_t)((iv_bits >> (56 - i*8)) & 0xFF);
 
-        GHASH_Process(H, len_block, AES_BLOCK_SIZE, X);
+        ll_GHASH_Process(H, len_block, AES_BLOCK_SIZE, X);
         SECURE_MEMCPY(J0, X, AES_BLOCK_SIZE);
         SECURE_ZERO(X, sizeof(X));
         SECURE_ZERO(len_block, sizeof(len_block));
@@ -253,8 +252,8 @@ bool ll_AES_GCM_Decrypt(
 
     // 3. Compute GHASH over AAD + ciphertext
     uint8_t X[AES_BLOCK_SIZE] = {0};
-    if (aad_len > 0) GHASH_Process(H, aad, aad_len, X);
-    if (in_len  > 0) GHASH_Process(H, in, in_len, X);
+    if (aad_len > 0) ll_GHASH_Process(H, aad, aad_len, X);
+    if (in_len  > 0) ll_GHASH_Process(H, in, in_len, X);
 
     // 4. Append lengths of AAD and ciphertext in bits
     uint8_t len_block[AES_BLOCK_SIZE] = {0};
@@ -267,7 +266,7 @@ bool ll_AES_GCM_Decrypt(
     for (int i = 0; i < AES_BLOCK_SIZE; i++)
         X[i] ^= len_block[i];
 
-    gcm_mult(X, X, H);  // multiply by H in GF(2^128)
+    ll_gcm_mult(X, X, H);  // multiply by H in GF(2^128)
 
     // 5. Compute expected tag: T' = AES_K(J0) XOR GHASH
     uint8_t EK0[AES_BLOCK_SIZE] = {0};
@@ -292,7 +291,6 @@ bool ll_AES_GCM_Decrypt(
         SECURE_ZERO(ctr, sizeof(ctr));
     }
 
-    SECURE_ZERO(zero_block, sizeof(zero_block));
     SECURE_ZERO(H, sizeof(H));
     SECURE_ZERO(J0, sizeof(J0));
     SECURE_ZERO(X, sizeof(X));

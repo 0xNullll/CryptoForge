@@ -18,10 +18,12 @@
 #ifndef CMAC_H
 #define CMAC_H
 
-#include "../cipher/aes/aes_core.h"
 #include "../../utils/mem.h"
 #include "../../utils/cf_status.h"
 #include "../../config/libs.h"
+
+#include "../cipher/aes/aes_core.h"
+#include "../cipher/aes/aes_common.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,28 +33,25 @@ extern "C" {
 // CMAC context structure
 // ============================
 typedef struct _ll_CMAC_CTX {
-    const AES_KEY *key;      // AES key
-    uint8_t K1[16];          // Subkey 1
-    uint8_t K2[16];          // Subkey 2
-    uint8_t X[16];           // Current MAC state
-    size_t msg_len;          // Total message length processed
-    int phase;               // Current processing phase
+    const ll_AES_KEY *key;       // AES key
+    uint8_t K1[AES_BLOCK_SIZE];  // Subkey 1
+    uint8_t K2[AES_BLOCK_SIZE];  // Subkey 2
+    uint8_t X[AES_BLOCK_SIZE];   // Current MAC state
 
-    int isHeapAlloc;         // Tracks if context was heap allocated
+    uint8_t buffer[AES_BLOCK_SIZE];      // Partial block buffer
+    size_t buffer_len;                   // Bytes currently in buffer
+    uint8_t last_block[AES_BLOCK_SIZE];  // XORed block state
+
+    int isFinalized;
+    int isHeapAlloc;
 } ll_CMAC_CTX;
-
-typedef enum {
-    CMAC_PHASE_INIT,         // just initialized, nothing processed
-    CMAC_PHASE_UPDATE,       // processing message
-    CMAC_PHASE_FINAL         // finalize has been called
-} ll_CMAC_PHASE;
 
 // ============================
 // CMAC low-level function prototypes
 // ============================
 
 // Initialize a CMAC context with AES key
-CF_STATUS ll_CMAC_Init(ll_CMAC_CTX *ctx, const AES_KEY *key);
+CF_STATUS ll_CMAC_Init(ll_CMAC_CTX *ctx, const ll_AES_KEY *key);
 
 // Update CMAC with message data
 CF_STATUS ll_CMAC_Update(ll_CMAC_CTX *ctx, const uint8_t *data, size_t data_len);

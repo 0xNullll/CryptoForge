@@ -28,13 +28,13 @@ extern "C" {
 typedef struct {
     uint32_t rk[4 * (AES_MAX_ROUND + 1)];  // max size for AES-256
     uint32_t Nr;                           // number of rounds
-} AES_KEY;
+} ll_AES_KEY;
 
-bool ll_AES_SetEncryptKey(AES_KEY *key, const uint8_t *userKey, size_t UserkeySize);
-bool ll_AES_SetDecryptKey( AES_KEY *key, const uint8_t *userKey, size_t UserkeySize);
+bool ll_AES_SetEncryptKey(ll_AES_KEY *key, const uint8_t *userKey, size_t UserkeySize);
+bool ll_AES_SetDecryptKey(ll_AES_KEY *key, const uint8_t *userKey, size_t UserkeySize);
 
-bool ll_AES_EncryptBlock(const AES_KEY *key, const uint8_t in[AES_BLOCK_SIZE], uint8_t out[AES_BLOCK_SIZE]);
-bool ll_AES_DecryptBlock(const AES_KEY *key, const uint8_t in[AES_BLOCK_SIZE], uint8_t out[AES_BLOCK_SIZE]);
+bool ll_AES_EncryptBlock(const ll_AES_KEY *key, const uint8_t in[AES_BLOCK_SIZE], uint8_t out[AES_BLOCK_SIZE]);
+bool ll_AES_DecryptBlock(const ll_AES_KEY *key, const uint8_t in[AES_BLOCK_SIZE], uint8_t out[AES_BLOCK_SIZE]);
 
 #ifdef __cplusplus
 }

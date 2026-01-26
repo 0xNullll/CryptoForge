@@ -120,6 +120,26 @@ void test_all_kmacs(
     }
 }
 
+void test_all_kmacs_verify_array(const uint8_t *key, size_t key_len,
+                                 const uint8_t *input, size_t input_len,
+                                 const uint8_t *S, size_t S_len,
+                                 const uint8_t *expected_digests[4],
+                                 const size_t expected_lens[4]) {
+    ll_KMAC_TYPE kmac_types[] = { KMAC128, KMACXOF128, KMAC256, KMACXOF256 };
+    const char *kmac_names[] = { "KMAC128", "KMACXOF128", "KMAC256", "KMACXOF256" };
+    size_t num_kmacs = sizeof(kmac_types) / sizeof(kmac_types[0]);
+
+    for (size_t i = 0; i < num_kmacs; i++) {
+        bool valid = ll_KMAC_Verify(key, key_len,
+                                    input, input_len,
+                                    S, S_len,
+                                    expected_digests[i],
+                                    expected_lens[i],
+                                    kmac_types[i]);
+
+        printf("%s: %s\n", kmac_names[i], valid ? "PASS" : "FAIL");
+    }
+}
 
 void test_all_gmacs(void) {
     uint8_t aad[AES_BLOCK_SIZE] = {
@@ -139,7 +159,7 @@ void test_all_gmacs(void) {
 
     uint8_t tag[AES_BLOCK_SIZE];
 
-    AES_KEY kctx;
+    ll_AES_KEY kctx;
     ll_GMAC_CTX gctx;
 
     // ---------------- AES-128 ----------------

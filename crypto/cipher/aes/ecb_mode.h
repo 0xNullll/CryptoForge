@@ -15,14 +15,14 @@ extern "C" {
 //
 
 bool ll_AES_ECB_Encrypt(
-    const AES_KEY *key,
+    const ll_AES_KEY *key,
     const uint8_t *in,
     size_t in_len,
     uint8_t *out
 );
 
 bool ll_AES_ECB_Decrypt(
-    const AES_KEY *key,
+    const ll_AES_KEY *key,
     const uint8_t *in,
     size_t in_len,
     uint8_t *out
