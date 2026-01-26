@@ -91,12 +91,12 @@ static bool ll_md5_process_block(ll_MD5_CTX *ctx, const uint8_t block[64]){
     II(c,d,a,b,x[2],15,0x2ad7d2bb);  II(b,c,d,a,x[9],21,0xeb86d391);
 
     ctx->state[0]+=a; ctx->state[1]+=b; ctx->state[2]+=c; ctx->state[3]+=d;
-    SECURE_MEMSET(x, 0, sizeof(x));
+    SECURE_ZERO(x, sizeof(x));
     return true;
 }
 
 bool ll_md5_init(ll_MD5_CTX *ctx){
-    if(!ctx) return false;
+    SECURE_ZERO(ctx, sizeof(*ctx));
     ctx->state[0]=0x67452301UL;
     ctx->state[1]=0xefcdab89UL;
     ctx->state[2]=0x98badcfeUL;
@@ -108,47 +108,41 @@ bool ll_md5_init(ll_MD5_CTX *ctx){
 }
 
 bool ll_md5_update(ll_MD5_CTX *ctx,const uint8_t *data,size_t len){
-    if(!ctx||!data) return false;
-    size_t i=0;
-    while(i<len){
-        size_t space=MD5_BLOCK_SIZE-ctx->buffer_len;
-        size_t to_copy=(len-i<space)?len-i:space;
-        SECURE_MEMCPY(ctx->buffer+ctx->buffer_len,data+ i,to_copy);
-        ctx->buffer_len+=to_copy;
-        ctx->bitlen+=to_copy*8;
-        i+=to_copy;
-        if(ctx->buffer_len==MD5_BLOCK_SIZE){
+    if(!ctx || !data) return false;
+    size_t i = 0;
+    while(i < len){
+        size_t space = MD5_BLOCK_SIZE-ctx->buffer_len;
+        size_t to_copy=(len - i < space) ? len-i:space;
+        SECURE_MEMCPY(ctx->buffer + ctx->buffer_len, data + i, to_copy);
+        ctx->buffer_len += to_copy;
+        ctx->bitlen += to_copy * 8;
+        i += to_copy;
+        if(ctx->buffer_len == MD5_BLOCK_SIZE){
             if(!ll_md5_process_block(ctx,ctx->buffer)) return false;
-            ctx->buffer_len=0;
+            ctx->buffer_len = 0;
         }
     }
     return true;
 }
 
 bool ll_md5_final(ll_MD5_CTX *ctx,uint8_t digest[MD5_DIGEST_SIZE]){
-    if(!ctx||!digest) return false;
+    if(!ctx || !digest) return false;
 
-    uint8_t block[MD5_BLOCK_SIZE]={0};
+    uint8_t block[MD5_BLOCK_SIZE] = {0};
     SECURE_MEMCPY(block, ctx->buffer, ctx->buffer_len);
-    block[ctx->buffer_len++]=0x80;
+    block[ctx->buffer_len++] = 0x80;
 
-    size_t padLen=(ctx->buffer_len>56) ? (120-ctx->buffer_len) : (56-ctx->buffer_len);
-    SECURE_MEMSET(block+ctx->buffer_len, 0, padLen);
-    ctx->buffer_len+=padLen;
+    size_t padLen = (ctx->buffer_len > 56) ? (120 - ctx->buffer_len) : (56 - ctx->buffer_len);
+    SECURE_MEMSET(block + ctx->buffer_len, 0, padLen);
+    ctx->buffer_len += padLen;
 
     // Append length in bits
-    block[56] = (uint8_t)(ctx->bitlen & 0xFF);
-    block[57] = (uint8_t)((ctx->bitlen >> 8) & 0xFF);
-    block[58] = (uint8_t)((ctx->bitlen >>16) & 0xFF);
-    block[59] = (uint8_t)((ctx->bitlen >>24) & 0xFF);
-    block[60] = (uint8_t)((ctx->bitlen >>32) & 0xFF);
-    block[61] = (uint8_t)((ctx->bitlen >>40) & 0xFF);
-    block[62] = (uint8_t)((ctx->bitlen >>48) & 0xFF);
-    block[63] = (uint8_t)((ctx->bitlen >>56) & 0xFF);
+    TWISTED_PUT64(block + 56 ,ctx->bitlen);
 
     if(!ll_md5_process_block(ctx,block)) return false;
     
-    HASH_PACK32(digest,ctx->state,MD5_DIGEST_SIZE);
-    SECURE_MEMSET(ctx, 0, sizeof(*ctx));
+    HASH_PACK32(digest, ctx->state, MD5_DIGEST_SIZE);
+
+    SECURE_ZERO(block, sizeof(*block));
     return true;
 }

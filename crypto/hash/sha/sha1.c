@@ -33,8 +33,7 @@
 // Low-level API functions
 // -------------------------
 bool ll_sha1_init(ll_SHA1_CTX *ctx) {
-    SECURE_MEMSET(ctx, 0, sizeof(*ctx));
-
+    SECURE_ZERO(ctx, sizeof(*ctx));
     ctx->h0 = 0x67452301UL;
     ctx->h1 = 0xefcdab89UL;
     ctx->h2 = 0x98badcfeUL;
@@ -46,6 +45,8 @@ bool ll_sha1_init(ll_SHA1_CTX *ctx) {
 static bool ll_sha1_process_block(ll_SHA1_CTX *ctx, const uint8_t *block) {
     uint32_t W[80];
     uint32_t A,B,C,D,E,TEMP;
+
+    SECURE_ZERO(W, sizeof(W));
 
     // Copy block to W[0..15] (big-endian)
     for(int i = 0; i < 16; i++)
@@ -85,6 +86,9 @@ static bool ll_sha1_process_block(ll_SHA1_CTX *ctx, const uint8_t *block) {
 
     // Update hash state
     ctx->h0 += A; ctx->h1 += B; ctx->h2 += C; ctx->h3 += D; ctx->h4 += E;
+
+    SECURE_ZERO(W, sizeof(W));
+
     return true;
 }
 
@@ -114,7 +118,8 @@ bool ll_sha1_update(ll_SHA1_CTX *ctx, const uint8_t *data, size_t len) {
 bool ll_sha1_final(ll_SHA1_CTX *ctx, uint8_t digest[SHA1_DIGEST_SIZE]) {
     if (!ctx || !digest) return false;
 
-    uint8_t block[SHA1_BLOCK_SIZE] = {0};
+    uint8_t block[SHA1_BLOCK_SIZE];
+    SECURE_ZERO(block, sizeof(block));
 
     // Copy leftover bytes and append 0x80
     SECURE_MEMCPY(block, ctx->buf, ctx->num);
@@ -141,6 +146,8 @@ bool ll_sha1_final(ll_SHA1_CTX *ctx, uint8_t digest[SHA1_DIGEST_SIZE]) {
     STORE32(digest + 8,  ctx->h2);
     STORE32(digest + 12, ctx->h3);
     STORE32(digest + 16, ctx->h4);
+
+    SECURE_ZERO(block, sizeof(block));
 
     return true;
 }

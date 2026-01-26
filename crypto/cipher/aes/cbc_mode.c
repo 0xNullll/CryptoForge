@@ -48,7 +48,7 @@ bool ll_AES_CBC_Decrypt(
     uint64_t prev0 = AES_LOAD64(iv);     // first 8 bytes of IV
     uint64_t prev1 = AES_LOAD64(iv + 8); // last 8 bytes of IV
 
-    uint8_t block[AES_BLOCK_SIZE]; // temporary decrypted block
+    uint8_t block[AES_BLOCK_SIZE] = {0}; // temporary decrypted block
 
     for (size_t i = 0; i < in_len; i += AES_BLOCK_SIZE) {
         // Decrypt ciphertext block into temporary buffer
@@ -70,6 +70,8 @@ bool ll_AES_CBC_Decrypt(
         prev0 = AES_LOAD64(in + i);
         prev1 = AES_LOAD64(in + i + 8);
     }
+
+    SECURE_ZERO(block, sizeof(block));
 
     return true;
 }

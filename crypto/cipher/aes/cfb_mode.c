@@ -4,8 +4,9 @@
 static bool ll_AES_CFB8_Process( const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len_bytes, uint8_t *out, bool enc) {
     if (!key || !iv || !in || !out) return false;
 
-    uint8_t feedback[AES_BLOCK_SIZE];
-    uint8_t block[AES_BLOCK_SIZE];
+    uint8_t feedback[AES_BLOCK_SIZE] = {0};
+    uint8_t block[AES_BLOCK_SIZE] = {0};
+
     SECURE_MEMCPY(feedback, iv, AES_BLOCK_SIZE);
 
     for (size_t i = 0; i < in_len_bytes; i++) {
@@ -23,14 +24,18 @@ static bool ll_AES_CFB8_Process( const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE],
         feedback[AES_BLOCK_SIZE - 1] = enc ? out_byte : in[i];
     }
 
+    SECURE_ZERO(feedback, sizeof(feedback));
+    SECURE_ZERO(block, sizeof(block));
+
     return true;
 }
 
 static bool ll_AES_CFB128_Process(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len_bytes, uint8_t *out, bool enc) {
     if (!key || !iv || !in || !out) return false;
 
-    uint8_t feedback[AES_BLOCK_SIZE];
-    uint8_t block[AES_BLOCK_SIZE];
+    uint8_t feedback[AES_BLOCK_SIZE] = {0};
+    uint8_t block[AES_BLOCK_SIZE] = {0};
+    
     SECURE_MEMCPY(feedback, iv, AES_BLOCK_SIZE);
 
     for (size_t i = 0; i < in_len_bytes; i += AES_BLOCK_SIZE) {
@@ -48,6 +53,9 @@ static bool ll_AES_CFB128_Process(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE]
             feedback[j] = enc ? c : in[i + j];  // update feedback inline
         }
     }
+
+    SECURE_ZERO(feedback, sizeof(feedback));
+    SECURE_ZERO(block, sizeof(block));
 
     return true;
 }

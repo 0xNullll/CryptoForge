@@ -78,20 +78,16 @@ static FORCE_INLINE uint32_t RotWord(uint32_t x) {
  * Used in the key expansion routine (SubWord operation).
  */
 static uint32_t SubWord(uint32_t w) {
-    uint8_t b0 = (uint8_t)((w >> 24) & 0xFF);
-    uint8_t b1 = (uint8_t)((w >> 16) & 0xFF);
-    uint8_t b2 = (uint8_t)((w >> 8)  & 0xFF);
-    uint8_t b3 = (uint8_t)(w & 0xFF);
+    uint8_t b[4] = {0};
 
-    b0 = sBox[b0];
-    b1 = sBox[b1];
-    b2 = sBox[b2];
-    b3 = sBox[b3];
+    AES_STORE32(b, w);
 
-    return ((uint32_t)b0 << 24) |
-           ((uint32_t)b1 << 16) |
-           ((uint32_t)b2 << 8)  |
-           ((uint32_t)b3);
+    b[0] = sBox[b[0]];
+    b[1] = sBox[b[1]];
+    b[2] = sBox[b[2]];
+    b[3] = sBox[b[3]];
+
+    return AES_LOAD32(b);
 }
 
 
@@ -198,6 +194,7 @@ static void InvMixColumns(uint8_t state[4][4]) {
 static void AddRoundKey(uint8_t state[4][4], const uint32_t roundKey[4]) {
     for (int c = 0; c < 4; c++) {
         uint32_t rk_word = roundKey[c];
+
         state[0][c] ^= (uint8_t)((rk_word >> 24) & 0xFF);
         state[1][c] ^= (uint8_t)((rk_word >> 16) & 0xFF);
         state[2][c] ^= (uint8_t)((rk_word >> 8) & 0xFF);
@@ -210,11 +207,7 @@ static void KeyExpansion(uint32_t *rk, const uint8_t *key, size_t keySize, uint3
     uint32_t Nk = (uint32_t)(keySize / 4); // 4, 6, or 8
 
     for (uint32_t i = 0; i < Nk; i++) {
-        rk[i] =
-            ((uint32_t)key[4*i    ] << 24) |
-            ((uint32_t)key[4*i + 1] << 16) |
-            ((uint32_t)key[4*i + 2] <<  8) |
-            ((uint32_t)key[4*i + 3]);
+        rk[i] = AES_LOAD32(key + 4*i);
     }
 
     for (uint32_t i = Nk; i < 4 * (rounds + 1); i++) {
@@ -234,7 +227,7 @@ static void KeyExpansion(uint32_t *rk, const uint8_t *key, size_t keySize, uint3
 
 
 static void Cipher(const uint32_t *rk, uint32_t Nr, const uint8_t in[AES_BLOCK_SIZE], uint8_t out[AES_BLOCK_SIZE]) {
-    uint8_t state[4][4];
+    uint8_t state[4][4] = {0};
 
     // Load input bytes into state (column-major)
     for (int c = 0; c < 4; c++)
@@ -262,10 +255,12 @@ static void Cipher(const uint32_t *rk, uint32_t Nr, const uint8_t in[AES_BLOCK_S
     for (int c = 0; c < 4; c++)
         for (int r = 0; r < 4; r++)
             out[c*4 + r] = state[r][c];
+
+    SECURE_ZERO(state, sizeof(state));
 }
 
 static void InvCipher(const uint32_t *rk, uint32_t Nr, const uint8_t in[AES_BLOCK_SIZE], uint8_t out[AES_BLOCK_SIZE]) {
-    uint8_t state[4][4];
+    uint8_t state[4][4] = {0};
 
     // Load input bytes into state (column-major)
     for (int c = 0; c < 4; c++)
@@ -292,6 +287,8 @@ static void InvCipher(const uint32_t *rk, uint32_t Nr, const uint8_t in[AES_BLOC
     for (int c = 0; c < 4; c++)
         for (int r = 0; r < 4; r++)
             out[c*4 + r] = state[r][c];
+
+    SECURE_ZERO(state, sizeof(state));
 }
 
 /*

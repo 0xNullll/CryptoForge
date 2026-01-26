@@ -53,7 +53,7 @@ static const uint32_t K256[64] = {
 // SHA-256 Low-level implementation
 // ======================================
 bool ll_sha256_init(ll_SHA256_CTX *ctx) {
-    SECURE_MEMSET(ctx, 0, sizeof(*ctx));
+    SECURE_ZERO(ctx, sizeof(*ctx));
     ctx->state[0] = 0x6a09e667UL;
     ctx->state[1] = 0xbb67ae85UL;
     ctx->state[2] = 0x3c6ef372UL;
@@ -67,6 +67,8 @@ bool ll_sha256_init(ll_SHA256_CTX *ctx) {
 
 static bool ll_sha256_process_block(ll_SHA256_CTX *ctx, const uint8_t *block) {
     uint32_t W[64], A,B,C,D,E,F,G,H,T1,T2;
+
+    SECURE_ZERO(W, sizeof(W));
 
     for(int t=0;t<16;t++)
         W[t] = LOAD32(block + t*4);
@@ -85,6 +87,8 @@ static bool ll_sha256_process_block(ll_SHA256_CTX *ctx, const uint8_t *block) {
 
     ctx->state[0]+=A; ctx->state[1]+=B; ctx->state[2]+=C; ctx->state[3]+=D;
     ctx->state[4]+=E; ctx->state[5]+=F; ctx->state[6]+=G; ctx->state[7]+=H;
+
+    SECURE_ZERO(W, sizeof(W));
 
     return true;
 }
@@ -118,7 +122,9 @@ bool ll_sha256_update(ll_SHA256_CTX *ctx, const uint8_t *data, size_t len) {
 bool ll_sha256_final(ll_SHA256_CTX *ctx, uint8_t digest[SHA256_DIGEST_SIZE]) {
     if(!ctx || !digest) return false;
 
-    uint8_t block[SHA256_BLOCK_SIZE] = {0};
+    uint8_t block[SHA256_BLOCK_SIZE];
+    SECURE_ZERO(block, sizeof(block));
+
     SECURE_MEMCPY(block, ctx->buf, ctx->buf_len);
     block[ctx->buf_len++] = 0x80;
 
@@ -131,12 +137,14 @@ bool ll_sha256_final(ll_SHA256_CTX *ctx, uint8_t digest[SHA256_DIGEST_SIZE]) {
     if(!ll_sha256_process_block(ctx, block)) return false;
 
     if(ctx->buf_len + pad_len + 8 > 64){
-        SECURE_MEMSET(block,0,SHA256_BLOCK_SIZE);
+        SECURE_MEMSET(block, 0, SHA256_BLOCK_SIZE);
         if(!ll_sha256_process_block(ctx, block)) return false;
     }
 
     for(size_t i=0;i<8;i++)
         STORE32(digest + i*4, ctx->state[i]);
+
+    SECURE_ZERO(block, sizeof(block));
 
     return true;
 }
@@ -145,7 +153,7 @@ bool ll_sha256_final(ll_SHA256_CTX *ctx, uint8_t digest[SHA256_DIGEST_SIZE]) {
 // SHA-224 Low-level implementation
 // ======================================
 bool ll_sha224_init(ll_SHA224_CTX *ctx) {
-    SECURE_MEMSET(ctx,0,sizeof(*ctx));
+    SECURE_ZERO(ctx, sizeof(*ctx));
     ctx->state[0] = 0xc1059ed8UL;
     ctx->state[1] = 0x367cd507UL;
     ctx->state[2] = 0x3070dd17UL;

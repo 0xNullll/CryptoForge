@@ -268,8 +268,9 @@ Evaluate behavior under hostile or constrained execution environments.
 │   │   │   └─ md5.{c,h}
 │   ├─ /mac
 │   │   ├─ hmac.{c,h}
-│   │   └─ kmac.{c,h}
-│   │   └─ gmac.{c,h}
+│   │   ├─ kmac.{c,h}
+│   │   ├─ gmac.{c,h}
+│   │   └─ cmac.{c,h}
 │   ├─ /kdf
 │   │   └─ hkdf.{c,h}
 │   ├─ /enc

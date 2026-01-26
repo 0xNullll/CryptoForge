@@ -21,6 +21,9 @@ static bool ll_AES_OFB_Process(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], c
         out[i] = in[i] ^ keystream[keystream_used++];
     }
 
+    SECURE_ZERO(state, sizeof(state));
+    SECURE_ZERO(keystream, sizeof(keystream));
+
     return true;
 }
 

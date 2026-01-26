@@ -230,6 +230,7 @@ CF_STATUS ll_HKDF_Expand(
         prev_block_len = hash_len;
     }
 
+    SECURE_ZERO(block, sizeof(block));
     st = CF_SUCCESS;
 
 cleanup:
@@ -284,21 +285,6 @@ CF_STATUS ll_HKDF_FreeAlloc(ll_HKDF_CTX **p_ctx) {
 
     return CF_SUCCESS;
 }
-
-// typedef struct _ll_HKDF_CTX {
-//     const EVP_MD *md;         // Low-level hash descriptor
-
-//     uint8_t *prk;             // Pseudorandom key from Extract (constant HMAC key)
-//     size_t prk_len;           // Length of PRK (HashLen)
-
-//     uint8_t prev_block[EVP_MAX_DEFAULT_DIGEST_SIZE]; // Last HMAC output (Ti), max hash size
-//     uint8_t counter;                                 // Block counter (1..255)
-
-//     uint8_t *info;             // Optional context info
-//     size_t info_len;           // Length of info
-
-//     int isHeapAlloc;           // 1 if allocated by library (heap), 0 if user stack
-// } ll_HKDF_CTX;
 
 CF_STATUS ll_HKDF_CloneCtx(ll_HKDF_CTX *ctx_dest, const ll_HKDF_CTX *ctx_src) {
     if (!ctx_dest || !ctx_src) return CF_ERR_NULL_PTR;

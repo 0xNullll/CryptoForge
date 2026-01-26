@@ -1,5 +1,5 @@
 /*
- * CryptoForge - libs.h / Standard Library Includes
+ * CryptoForge - cmac.c / CMAC (AES-CMAC) Implementation
  * Copyright (C) 2025 0xNullll
  *
  * This program is free software: you can redistribute it and/or modify
@@ -15,22 +15,4 @@
  * Project repository: https://github.com/0xNullll/CryptoForge
  */
 
-#ifndef LIBS_H
-#define LIBS_H
-
-#if defined(_WIN32)
-#include <windows.h>
-#else
-#include <unistd.h>
-#include <sys/mman.h>
-#endif
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <stddef.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdbool.h>
-
-#endif // LIBS_H
+#include "cmac.h"

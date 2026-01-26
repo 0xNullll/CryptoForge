@@ -27,7 +27,7 @@ void GHASH_Process(
     const uint8_t H[AES_BLOCK_SIZE],    // GHASH key (H = AES(K,0^128))
     const uint8_t *in, size_t in_len,   // data to GHASH
     uint8_t out[AES_BLOCK_SIZE]) {      // accumulator (X), updated in-place
-    uint8_t block[AES_BLOCK_SIZE];
+    uint8_t block[AES_BLOCK_SIZE] = {0};
 
     size_t offset = 0;
     while (offset < in_len) {
@@ -45,6 +45,8 @@ void GHASH_Process(
         gcm_mult(out, out, H);
         offset += blk_len;
     }
+
+    SECURE_ZERO(block, sizeof(block));
 }
 
 // Increment last 32 bits of 16-byte block (GCM counter)
@@ -60,7 +62,7 @@ bool ll_AES_GCTR_Process(
     const uint8_t *X,
     size_t X_len,
     uint8_t *Y) {
-    uint8_t CB[16], encrypted[16];
+    uint8_t CB[16] = {0}, encrypted[16] = {0};
     SECURE_MEMCPY(CB, ICB, 16);
 
     size_t offset = 0;
@@ -92,6 +94,9 @@ bool ll_AES_GCTR_Process(
             Y[offset + j] = X[offset + j] ^ encrypted[j];
         }
     }
+
+    SECURE_ZERO(CB, sizeof(CB));
+    SECURE_ZERO(encrypted, sizeof(encrypted));
 
     return true;
 }
@@ -145,10 +150,11 @@ bool ll_AES_GCM_Encrypt(
 
         GHASH_Process(H, len_block, AES_BLOCK_SIZE, X);
         SECURE_MEMCPY(J0, X, AES_BLOCK_SIZE);
+        SECURE_ZERO(X, sizeof(X));
     }
 
     // 3. Prepare GCTR counter block
-    uint8_t ctr[AES_BLOCK_SIZE];
+    uint8_t ctr[AES_BLOCK_SIZE] = {0};
     SECURE_MEMCPY(ctr, J0, AES_BLOCK_SIZE);
     Inc32(ctr);  // start from J0 + 1
 
@@ -180,6 +186,14 @@ bool ll_AES_GCM_Encrypt(
 
     for (size_t i = 0; i < tag_len && i < AES_BLOCK_SIZE; i++)
         tag[i] = EK0[i] ^ X[i];
+
+    SECURE_ZERO(zero_block, sizeof(zero_block));
+    SECURE_ZERO(H, sizeof(H));
+    SECURE_ZERO(J0, sizeof(J0));
+    SECURE_ZERO(ctr, sizeof(ctr));
+    SECURE_ZERO(X, sizeof(X));
+    SECURE_ZERO(len_block, sizeof(len_block));
+    SECURE_ZERO(EK0, sizeof(EK0));
 
     return true;
 }
@@ -233,6 +247,8 @@ bool ll_AES_GCM_Decrypt(
 
         GHASH_Process(H, len_block, AES_BLOCK_SIZE, X);
         SECURE_MEMCPY(J0, X, AES_BLOCK_SIZE);
+        SECURE_ZERO(X, sizeof(X));
+        SECURE_ZERO(len_block, sizeof(len_block));
     }
 
     // 3. Compute GHASH over AAD + ciphertext
@@ -266,12 +282,23 @@ bool ll_AES_GCM_Decrypt(
 
     // 7. Decrypt ciphertext using GCTR
     if (in_len > 0 && out) {
-        uint8_t ctr[AES_BLOCK_SIZE];
+        uint8_t ctr[AES_BLOCK_SIZE] = {0};
         SECURE_MEMCPY(ctr, J0, AES_BLOCK_SIZE);
+
         Inc32(ctr);  // start from J0 + 1
         if (!ll_AES_GCTR_Process(key, ctr, in, in_len, out))
             return false;
+
+        SECURE_ZERO(ctr, sizeof(ctr));
     }
+
+    SECURE_ZERO(zero_block, sizeof(zero_block));
+    SECURE_ZERO(H, sizeof(H));
+    SECURE_ZERO(J0, sizeof(J0));
+    SECURE_ZERO(X, sizeof(X));
+    SECURE_ZERO(len_block, sizeof(len_block));
+    SECURE_ZERO(EK0, sizeof(EK0));
+    SECURE_ZERO(computed_tag, sizeof(computed_tag));
 
     return true;
 }

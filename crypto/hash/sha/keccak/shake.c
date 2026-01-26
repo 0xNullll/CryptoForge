@@ -84,7 +84,7 @@ size_t ll_encode_string(const uint8_t *S, size_t S_len_bytes, uint8_t *out, size
     uint64_t bitlen = (uint64_t)S_len_bytes * 8;
 
     // Encode bit-length
-    uint8_t tmp[16];  // max bytes needed for ll_left_encode_uint64
+    uint8_t tmp[16] = {0};  // max bytes needed for ll_left_encode_uint64
     size_t n = ll_left_encode_uint64(bitlen, tmp);
 
     // Check if output buffer is large enough
@@ -119,7 +119,7 @@ size_t ll_byte_pad(const uint8_t *S, size_t S_len,
                    size_t w, uint8_t *out, size_t out_cap) {
     if (w == 0 || !out) return 0;
 
-    uint8_t le[9];
+    uint8_t le[9] = {0};
     size_t le_len = ll_left_encode_uint64(w, le);  // left-encode w (bytes)
 
     size_t n = le_len + S_len;                     // total length before padding
@@ -135,7 +135,7 @@ size_t ll_byte_pad(const uint8_t *S, size_t S_len,
     size_t pad = (w - (n % w)) % w;
     if (out_cap < n + pad) return 0;
     if (pad)
-        SECURE_MEMSET(out + n, 0, pad);
+        SECURE_ZERO(out + n, pad);
 
     return n + pad;
 }
@@ -240,7 +240,7 @@ static bool ll_cshake_absorb_custom(
         return true;  // nothing to absorb
 
     // Temporary buffer for encoded N + S
-    uint8_t tmp[2 * MAX_CUSTOMIZATION + MAX_ENCODED_HEADER_LEN * 8]; 
+    uint8_t tmp[2 * MAX_CUSTOMIZATION + MAX_ENCODED_HEADER_LEN * 8] = {0}; 
     size_t pos = 0;
 
     // Encode N in bits
@@ -248,11 +248,16 @@ static bool ll_cshake_absorb_custom(
     pos += ll_encode_string(S, S_len, tmp + pos, sizeof(tmp));
 
     // Bytepad to rate multiple
-    uint8_t padded[2 * KECCAK_BLOCK_SIZE]; // safe over-estimate
+    uint8_t padded[2 * KECCAK_BLOCK_SIZE] = {0}; // safe over-estimate
     size_t padded_len = ll_byte_pad(tmp, pos, sponge->rate, padded, sizeof(padded));
 
     // Absorb into sponge
-    return ll_keccak_sponge_absorb(sponge, padded, padded_len);
+    if (!ll_keccak_sponge_absorb(sponge, padded, padded_len)) return false;
+
+    SECURE_ZERO(tmp, sizeof(tmp));
+    SECURE_ZERO(padded, sizeof(padded));
+
+    return true;
 }
 
 // ==============================
@@ -264,7 +269,7 @@ bool ll_cshake128_init(ll_CSHAKE128_CTX *ctx,
     if (N_len > MAX_CUSTOMIZATION || S_len > MAX_CUSTOMIZATION)
         return false;
 
-    SECURE_MEMSET(ctx, 0, sizeof(*ctx));
+    SECURE_ZERO(ctx, sizeof(*ctx));
 
     // Copy N and S into the fixed arrays
     if (N && N_len > 0) {
@@ -331,7 +336,7 @@ bool ll_cshake256_init(ll_CSHAKE256_CTX *ctx,
     if (N_len > MAX_CUSTOMIZATION || S_len > MAX_CUSTOMIZATION)
         return false;
 
-    SECURE_MEMSET(ctx, 0, sizeof(*ctx));
+    SECURE_ZERO(ctx, sizeof(*ctx));
 
     // Copy N and S into the fixed arrays
     if (N && N_len > 0)
