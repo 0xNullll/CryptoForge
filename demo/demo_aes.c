@@ -16,7 +16,7 @@ void test_aes128_fips197(void) {
         0x39,0x25,0x84,0x1d,0x02,0xdc,0x09,0xfb,0xdc,0x11,0x85,0x97,0x19,0x6a,0x0b,0x32
     };
 
-    AES_KEY ctx;
+    ll_AES_KEY ctx;
     uint8_t ciphertext[AES_BLOCK_SIZE];
     uint8_t decrypted[AES_BLOCK_SIZE];
 
@@ -59,7 +59,7 @@ void test_aes192_fips197(void) {
         0x58,0x5e,0x9f,0xb6,0xc2,0x72,0x2b,0x9a,0xf4,0xf4,0x92,0xc1,0x2b,0xb0,0x24,0xc1
     };
 
-    AES_KEY ctx;
+    ll_AES_KEY ctx;
     uint8_t ciphertext[AES_BLOCK_SIZE];
     uint8_t decrypted[AES_BLOCK_SIZE];
 
@@ -103,7 +103,7 @@ void test_aes256_fips197(void) {
         0x30,0x21,0x61,0x3a,0x97,0x3e,0x58,0x2f,0x4a,0x29,0x23,0x41,0x37,0xae,0xc4,0x94
     };
 
-    AES_KEY ctx;
+    ll_AES_KEY ctx;
     uint8_t ciphertext[AES_BLOCK_SIZE];
     uint8_t decrypted[AES_BLOCK_SIZE];
 
@@ -183,7 +183,7 @@ void test_aes_ecb_fist800_38a(void) {
         0x04, 0x72, 0x5d, 0xd4
     };
 
-    AES_KEY ctx;
+    ll_AES_KEY ctx;
     uint8_t ct[4 * AES_BLOCK_SIZE];
     uint8_t dec[4 * AES_BLOCK_SIZE];
 
@@ -317,7 +317,7 @@ void test_aes_cbc_fips800_38a(void) {
         0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
     };
 
-    AES_KEY ctx;
+    ll_AES_KEY ctx;
     uint8_t ct[4 * AES_BLOCK_SIZE];
     uint8_t dec[4 * AES_BLOCK_SIZE];
 
@@ -506,7 +506,7 @@ void test_aes_cfb8_fips800_38a(void) {
         0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
     };
 
-    AES_KEY ctx;
+    ll_AES_KEY ctx;
     uint8_t ct[4 * AES_BLOCK_SIZE];
     uint8_t dec[4 * AES_BLOCK_SIZE];
 
@@ -695,7 +695,7 @@ void test_aes_cfb128_fips800_38a(void) {
         0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
     };
 
-    AES_KEY ctx;
+    ll_AES_KEY ctx;
     uint8_t ct[4 * AES_BLOCK_SIZE];
     uint8_t dec[4 * AES_BLOCK_SIZE];
 
@@ -884,7 +884,7 @@ void test_aes_ofb_fips800_38a(void) {
         0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
     };
 
-    AES_KEY ctx;
+    ll_AES_KEY ctx;
     uint8_t ct[4 * AES_BLOCK_SIZE];
     uint8_t dec[4 * AES_BLOCK_SIZE];
 
@@ -1077,7 +1077,7 @@ void test_aes_ctr_fips800_38a(void) {
     uint8_t enc_counter[AES_BLOCK_SIZE];
     memcpy(enc_counter, fixed_counter, AES_BLOCK_SIZE);
 
-    AES_KEY ctx;
+    ll_AES_KEY ctx;
     uint8_t ct[4 * AES_BLOCK_SIZE];
     uint8_t dec[4 * AES_BLOCK_SIZE];
 
@@ -1281,7 +1281,7 @@ void test_aes_gcm_fips_style(void) {
     //     0x08, 0x09, 0x0a, 0x0b
     // };
 
-    AES_KEY ctx;
+    ll_AES_KEY ctx;
     uint8_t ct[AES_BLOCK_SIZE * 4], tag[AES_BLOCK_SIZE], dec[AES_BLOCK_SIZE * 4];
 
     // ---------------- AES-128 ----------------
@@ -1498,7 +1498,7 @@ void test_aes_gcm_empty_plaintext(void) {
 
     uint8_t tag[AES_BLOCK_SIZE];
 
-    AES_KEY ctx;
+    ll_AES_KEY ctx;
 
     // ---------------- AES-128 ----------------
     uint8_t key128[AES_BLOCK_SIZE] = {

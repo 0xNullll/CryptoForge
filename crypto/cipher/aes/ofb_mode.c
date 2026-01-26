@@ -1,6 +1,6 @@
 #include "ofb_mode.h"
 
-static bool ll_AES_OFB_Process(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len_bytes, uint8_t *out) {
+static bool ll_AES_OFB_Process(const ll_AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len_bytes, uint8_t *out) {
     if (!key || !iv || !in || !out) return false;
 
     uint8_t state[AES_BLOCK_SIZE];
@@ -27,10 +27,10 @@ static bool ll_AES_OFB_Process(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], c
     return true;
 }
 
-bool ll_AES_OFB_Encrypt(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len, uint8_t *out) {
+bool ll_AES_OFB_Encrypt(const ll_AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len, uint8_t *out) {
     return ll_AES_OFB_Process(key, iv, in, in_len, out);
 }
 
-bool ll_AES_OFB_Decrypt(const AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len, uint8_t *out) {
+bool ll_AES_OFB_Decrypt(const ll_AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len, uint8_t *out) {
     return ll_AES_OFB_Process(key, iv, in, in_len, out);
 }

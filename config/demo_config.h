@@ -88,6 +88,12 @@ CF_API void test_all_kmacs(
     const uint8_t *input, size_t input_len,
     const uint8_t *S, size_t S_len);
 
+CF_API void test_all_kmacs_verify_array(const uint8_t *key, size_t key_len,
+                                 const uint8_t *input, size_t input_len,
+                                 const uint8_t *S, size_t S_len,
+                                 const uint8_t *expected_digests[4],
+                                 const size_t expected_lens[4]);
+
 CF_API void test_all_gmacs(void);
 
 CF_API void test_all_hkdfs(

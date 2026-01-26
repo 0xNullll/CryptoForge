@@ -65,12 +65,6 @@ CF_STATUS ll_HMAC_Update(ll_HMAC_CTX *ctx, const uint8_t *data, size_t data_len)
 // digest_len should be at least the hash's digest_size.
 CF_STATUS ll_HMAC_Final(ll_HMAC_CTX *ctx, uint8_t *digest, size_t digest_len);
 
-// Frees internal buffers of a pre-allocated context
-CF_STATUS ll_HMAC_Free(ll_HMAC_CTX *ctx);
-
-// Frees internal buffers + the heap-allocated context
-CF_STATUS ll_HMAC_FreeAlloc(ll_HMAC_CTX **p_ctx);
-
 // Verifies if the provided HMAC matches the computed HMAC for the given data.
 // Returns CF_SUCCESS if valid, CF_ERR_MAC_VERIFY if invalid.
 CF_STATUS ll_HMAC_Verify(
@@ -79,6 +73,12 @@ CF_STATUS ll_HMAC_Verify(
     const uint8_t *data, size_t data_len,
     const uint8_t *expected_hmac, size_t expected_len
 );
+
+// Frees internal buffers of a pre-allocated context
+CF_STATUS ll_HMAC_Free(ll_HMAC_CTX *ctx);
+
+// Frees internal buffers + the heap-allocated context
+CF_STATUS ll_HMAC_FreeAlloc(ll_HMAC_CTX **p_ctx);
 
 // Clone HMAC context into an existing destination context
 CF_STATUS ll_HMAC_CloneCtx(ll_HMAC_CTX *ctx_dest, const ll_HMAC_CTX *ctx_src);

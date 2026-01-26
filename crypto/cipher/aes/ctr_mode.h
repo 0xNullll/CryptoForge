@@ -17,7 +17,7 @@ extern "C" {
 //
 
 bool ll_AES_CTR_Encrypt(
-    const AES_KEY *key,
+    const ll_AES_KEY *key,
     uint8_t counter[AES_BLOCK_SIZE],
     const uint8_t *in,
     size_t in_len,
@@ -25,7 +25,7 @@ bool ll_AES_CTR_Encrypt(
 );
 
 bool ll_AES_CTR_Decrypt(
-    const AES_KEY *key,
+    const ll_AES_KEY *key,
     uint8_t counter[AES_BLOCK_SIZE],
     const uint8_t *in,
     size_t in_len,
