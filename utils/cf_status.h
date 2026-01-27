@@ -76,8 +76,10 @@ typedef enum {
 // 3. MAC/HMAC-specific errors
 // ==========================
 typedef enum {
-    CF_ERR_MAC_BASE_ERROR      = CF_ERR_MAC_BASE,   // base for MAC errors
+    CF_ERR_MAC_BASE_ERROR      = CF_ERR_MAC_BASE,    // base for MAC errors
     CF_ERR_MAC_VERIFY,                               // HMAC verification failed
+    CF_ERR_MAC_BAD_TAG_LEN,                          // tag length is not recommended and unsafe
+    CF_ERR_MAC_BAD_IV_LEN,                           // iv length is not recommended and unsafe
     CF_ERR_MAC_STATE_INVALID,                        // internal context/state invalid
 } MAC_CF_STATUS;
 
@@ -94,6 +96,7 @@ typedef enum {
     CF_ERR_CIPHER_FINALIZED,                            // update called after finalize
 } CIPHER_CF_STATUS;
 
+// not updated
 static FORCE_INLINE const char* CF_status_str(CF_STATUS status) {
     switch (status) {
         case CF_SUCCESS: return "CF_SUCCESS";

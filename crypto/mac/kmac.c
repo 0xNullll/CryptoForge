@@ -100,20 +100,21 @@ static size_t kmac_bytepad_encode_key(unsigned char *out, size_t out_max_len,
 
 CF_STATUS ll_KMAC_Init(ll_KMAC_CTX *ctx,
                           const uint8_t *key, size_t key_len,
-                          const uint8_t *custom, size_t custom_len,
+                          const uint8_t *S, size_t S_len,
                           ll_KMAC_TYPE type) {
-    if (!ctx || !LL_KMAC_TYPE_IS_VALID(type)) return CF_ERR_NULL_PTR;
-    if (key_len > MAX_KEY_SIZE || custom_len > MAX_CUSTOMIZATION) return CF_ERR_INVALID_LEN;
+    if (!ctx || !key)
+        return CF_ERR_NULL_PTR;
+
+    if ((key && key_len == 0) || (S && S_len == 0) || !LL_KMAC_TYPE_IS_VALID(type))
+        return CF_ERR_INVALID_PARAM;
+
+    if (key_len > MAX_KEY_SIZE || S_len > MAX_CUSTOMIZATION) 
+        return CF_ERR_INVALID_LEN;
 
     SECURE_ZERO(ctx, sizeof(*ctx));
     ctx->type = type;
     ctx->isXOF = LL_KMAC_IS_XOF(ctx->type);
-
-    if (ctx->isXOF) {
-        ctx->out_len = LL_KMAC_IS_128(ctx->type) ? CSHAKE128_DEFAULT_OUT_LEN : CSHAKE256_DEFAULT_OUT_LEN;
-    } else {
-        ctx->out_len = LL_KMAC_IS_128(ctx->type) ? 16 : 32;  // fixed-length per RFC
-    }
+    ctx->out_len = 0;  // left as zero; will be set in Final for non-XOF
 
     // Allocate cSHAKE context
     if (LL_KMAC_IS_128(ctx->type)) {
@@ -124,7 +125,7 @@ CF_STATUS ll_KMAC_Init(ll_KMAC_CTX *ctx,
     if (!ctx->cshake_ctx) return CF_ERR_ALLOC_FAILED;
 
     // Step 1: initialize cSHAKE with "KMAC" and customization
-    if (!ll_KMAC_INIT(ctx, (const uint8_t*)"KMAC", 4, custom, custom_len))
+    if (!ll_KMAC_INIT(ctx, (const uint8_t*)"KMAC", 4, S, S_len))
         return CF_ERR_CTX_CORRUPT;
 
     // Step 2: encode + bytepad the key
@@ -150,13 +151,18 @@ ll_KMAC_CTX *ll_KMAC_InitAlloc(
     const uint8_t *S, size_t S_len,
     ll_KMAC_TYPE type,
     CF_STATUS *status) {
-    if (key_len > MAX_KEY_SIZE || S_len > MAX_CUSTOMIZATION) {
-        if (status) *status = CF_ERR_INVALID_LEN;
+    if (!key) {
+        if (status) *status = CF_ERR_NULL_PTR;
+        return NULL;
+    }
+    
+    if ((key && key_len == 0) || (S && S_len == 0) || !LL_KMAC_TYPE_IS_VALID(type)) {
+        if (status) *status = CF_ERR_INVALID_PARAM;
         return NULL;
     }
 
-    if (!LL_KMAC_TYPE_IS_VALID(type)) {
-        if (status) *status = CF_ERR_UNSUPPORTED;
+        if (key_len > MAX_KEY_SIZE || S_len > MAX_CUSTOMIZATION) {
+        if (status) *status = CF_ERR_INVALID_LEN;
         return NULL;
     }
 
@@ -197,38 +203,62 @@ CF_STATUS ll_KMAC_Update(ll_KMAC_CTX *ctx, const uint8_t *data, size_t data_len)
 }
 
 CF_STATUS ll_KMAC_Final(ll_KMAC_CTX *ctx, uint8_t *digest, size_t digest_len) {
-    if (!ctx || !ctx->cshake_ctx || !digest) return CF_ERR_NULL_PTR;
+    if (!ctx || !ctx->cshake_ctx || !digest) 
+        return CF_ERR_NULL_PTR;
 
-    // XOF must have explicit output length
     if (digest_len == 0)
         return CF_ERR_INVALID_LEN;
 
-    // already finalized → just squeeze
+    // Use the user-provided length for both XOF and normal KMAC
+    size_t mac_len = digest_len;
+
+    // If not finalized yet, store output length for subsequent squeezes
+    if (!ctx->isFinalized) {
+        ctx->out_len = mac_len;
+    }
+
+    // Already finalized? Just squeeze again
     if (ctx->isFinalized) {
-        if (!ctx->isXOF && digest_len != ctx->out_len) return CF_ERR_INVALID_LEN;
-        if (!ll_KMAC_SQUEEZE(ctx, digest, digest_len)) return CF_ERR_CTX_CORRUPT;
+        if (digest_len != ctx->out_len)
+            return CF_ERR_INVALID_LEN;
+
+        if (!ll_KMAC_SQUEEZE(ctx, digest, digest_len))
+            return CF_ERR_CTX_CORRUPT;
+
         return CF_SUCCESS;
     }
 
     /* ---------- FIRST FINALIZATION PATH ---------- */
 
-    uint8_t tmp[MAX_CUSTOMIZATION + MAX_ENCODED_HEADER_LEN];
+    // Temporary buffer for right_encode
+    uint8_t tmp[MAX_CUSTOMIZATION + MAX_ENCODED_HEADER_LEN] = {0};
+    size_t tmp_len;
 
-    // right_encode(L) or right_encode(0)
-    size_t tmp_len = ctx->isXOF ? ll_right_encode_uint64(0, tmp)
-                                : ll_right_encode_uint64((uint64_t)digest_len * 8, tmp);
+    if (ctx->isXOF) {
+        // For XOF, right_encode(0) per KMAC spec
+        tmp_len = ll_right_encode_uint64(0, tmp);  // true XOF
+    } else {
+        // Multiply by 8 to convert bytes -> bits
+        if (digest_len > (UINT64_MAX / 8)) 
+            return CF_ERR_INVALID_LEN;  // prevent overflow
 
-    if (tmp_len == 0) return CF_ERR_INVALID_LEN;
+        tmp_len = ll_right_encode_uint64((uint64_t)digest_len * 8, tmp);
+    }
 
-    // Finalize underlying cSHAKE with encoded length
+    if (tmp_len == 0) 
+        return CF_ERR_INVALID_LEN;  // sanity check
+
+    // Finalize underlying cSHAKE with the encoded length
     if (!ll_KMAC_FINALIZE(ctx, tmp, tmp_len))
         return CF_ERR_CTX_CORRUPT;
 
-    // Now squeeze
+    // Now squeeze the digest
     if (!ll_KMAC_SQUEEZE(ctx, digest, digest_len))
         return CF_ERR_CTX_CORRUPT;
 
+    // Mark as finalized
     ctx->isFinalized = 1;
+
     return CF_SUCCESS;
 }
 
@@ -241,41 +271,48 @@ CF_STATUS ll_KMAC_Verify(
     const uint8_t *key, size_t key_len,
     const uint8_t *data, size_t data_len,
     const uint8_t *S, size_t S_len,
-    const uint8_t *expected_mac, size_t expected_len,
+    const uint8_t *expected_mac,
     ll_KMAC_TYPE type) {
+    if (!key || !data || !expected_mac)
+        return CF_ERR_NULL_PTR;
 
-    if (!key || !data || !expected_mac) return CF_ERR_NULL_PTR;
-    if (!LL_KMAC_TYPE_IS_VALID(type)) return CF_ERR_INVALID_PARAM;
-    if (LL_KMAC_IS_XOF(type)) return CF_ERR_UNSUPPORTED;  // XOF not allowed
+    if (!LL_KMAC_TYPE_IS_VALID(type))
+        return CF_ERR_INVALID_PARAM;
 
+    if (LL_KMAC_IS_XOF(type))  // verification only for fixed-length output
+        return CF_ERR_UNSUPPORTED;
+
+    CF_STATUS status = CF_SUCCESS;
     ll_KMAC_CTX ctx;
-    CF_STATUS status = ll_KMAC_Init(&ctx, key, key_len, S, S_len, type);
-    if (status != CF_SUCCESS) return status;
-
-    status = ll_KMAC_Update(&ctx, data, data_len);
-    if (status != CF_SUCCESS) {
-        ll_KMAC_Free(&ctx);
-        return status;
-    }
-
     uint8_t computed[EVP_MAX_DEFAULT_DIGEST_SIZE] = {0};
 
-    size_t expected_fixed_len;
-    switch (type) {
-        case KMAC128: expected_fixed_len = 16; break;   // 128-bit output
-        case KMAC256: expected_fixed_len = 32; break;   // 256-bit output
-        case KMACXOF128:
-        case KMACXOF256:
-            expected_fixed_len = expected_len;         // XOF can be arbitrary
-            break;
-        default: return CF_ERR_INVALID_PARAM;
+    SECURE_ZERO(&ctx, sizeof(ctx));
+
+    // Initialize
+    status = ll_KMAC_Init(&ctx, key, key_len, S, S_len, type);
+    if (status != CF_SUCCESS) goto cleanup;
+
+    // Update with message data
+    if (data_len > 0) {
+        status = ll_KMAC_Update(&ctx, data, data_len);
+        if (status != CF_SUCCESS) goto cleanup;
     }
 
-    status = ll_KMAC_Final(&ctx, computed, expected_fixed_len);
-    ll_KMAC_Free(&ctx);
-    if (status != CF_SUCCESS) return status;
+    // Determine MAC length based on type
+    size_t mac_len = (type == KMAC128) ? LL_KMAC_DEFAULT_OUTPUT_LEN_128
+                                       : LL_KMAC_DEFAULT_OUTPUT_LEN_256;
 
-    return SECURE_MEM_EQUAL(computed, expected_mac, expected_fixed_len) ? CF_SUCCESS : CF_ERR_MAC_VERIFY;
+    // Finalize
+    status = ll_KMAC_Final(&ctx, computed, mac_len);
+    if (status != CF_SUCCESS) goto cleanup;
+
+    // Constant-time comparison
+    status = SECURE_MEM_EQUAL(computed, expected_mac, mac_len) ? CF_SUCCESS : CF_ERR_MAC_VERIFY;
+
+cleanup:
+    SECURE_ZERO(&ctx, sizeof(ctx));
+    SECURE_ZERO(computed, sizeof(computed));
+    return status;
 }
 
 // Frees internal buffers of a pre-allocated KMAC context

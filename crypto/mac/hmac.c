@@ -192,25 +192,36 @@ CF_STATUS ll_HMAC_Verify(
     const uint8_t *key, size_t key_len,
     const uint8_t *data, size_t data_len,
     const uint8_t *expected_hmac, size_t expected_len) {
-        
-    if (!md || !key || !data || !expected_hmac) return CF_ERR_NULL_PTR;
+    if (!md || !key || !data || !expected_hmac)
+        return CF_ERR_NULL_PTR;
 
+    CF_STATUS status = CF_SUCCESS;
     ll_HMAC_CTX ctx;
-    CF_STATUS status = ll_HMAC_Init(&ctx, md, key, key_len);
-    if (status != CF_SUCCESS) return status;
+    uint8_t computed[EVP_MAX_DEFAULT_DIGEST_SIZE] = {0};
 
-    status = ll_HMAC_Update(&ctx, data, data_len);
-    if (status != CF_SUCCESS) {
-        ll_HMAC_Free(&ctx);
-        return status;
+    SECURE_ZERO(&ctx, sizeof(ctx));
+
+    // Initialize context
+    status = ll_HMAC_Init(&ctx, md, key, key_len);
+    if (status != CF_SUCCESS) goto cleanup;
+
+    // Update with data
+    if (data_len > 0) {
+        status = ll_HMAC_Update(&ctx, data, data_len);
+        if (status != CF_SUCCESS) goto cleanup;
     }
 
-    uint8_t computed[EVP_MAX_DEFAULT_DIGEST_SIZE] = {0};
+    // Finalize
     status = ll_HMAC_Final(&ctx, computed, expected_len);
-    ll_HMAC_Free(&ctx);
-    if (status != CF_SUCCESS) return status;
+    if (status != CF_SUCCESS) goto cleanup;
 
-    return SECURE_MEM_EQUAL(computed, expected_hmac, expected_len) ? CF_SUCCESS : CF_ERR_MAC_VERIFY;
+    // Constant-time comparison
+    status = SECURE_MEM_EQUAL(computed, expected_hmac, expected_len) ? CF_SUCCESS : CF_ERR_MAC_VERIFY;
+
+cleanup:
+    SECURE_ZERO(&ctx, sizeof(ctx));
+    SECURE_ZERO(computed, sizeof(computed));
+    return status;
 }
 
 CF_STATUS ll_HMAC_Free(ll_HMAC_CTX *ctx) {

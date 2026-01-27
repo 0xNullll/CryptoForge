@@ -29,17 +29,16 @@
 extern "C" {
 #endif
 
+#define LL_CMAC_TAG_LEN_AES_BLOCK 16   // AES block = 128 bits → CMAC tag 16 bytes
+
 // ============================
 // CMAC context structure
 // ============================
 typedef struct _ll_CMAC_CTX {
     const ll_AES_KEY *key;       // AES key
-    uint8_t K1[AES_BLOCK_SIZE];  // Subkey 1
-    uint8_t K2[AES_BLOCK_SIZE];  // Subkey 2
-    uint8_t X[AES_BLOCK_SIZE];   // Current MAC state
 
-    uint8_t buffer[AES_BLOCK_SIZE];      // Partial block buffer
-    size_t buffer_len;                   // Bytes currently in buffer
+    uint8_t unprocessed_block[AES_BLOCK_SIZE];
+    size_t unprocessed_len; // how many bytes currently in it
     uint8_t last_block[AES_BLOCK_SIZE];  // XORed block state
 
     int isFinalized;
@@ -66,7 +65,10 @@ CF_STATUS ll_CMAC_Free(ll_CMAC_CTX *ctx);
 CF_STATUS ll_CMAC_FreeAlloc(ll_CMAC_CTX **p_ctx);
 
 // Verify a computed CMAC tag against an expected tag
-CF_STATUS ll_CMAC_Verify(const ll_CMAC_CTX *ctx, const uint8_t *expected_tag, size_t tag_len);
+CF_STATUS ll_CMAC_Verify(
+    const ll_AES_KEY *key,
+    const uint8_t *data, size_t data_len,
+    const uint8_t *expected_tag, size_t tag_len);
 
 // Clone a CMAC context into an existing destination
 CF_STATUS ll_CMAC_CloneCtx(ll_CMAC_CTX *ctx_dest, const ll_CMAC_CTX *ctx_src);

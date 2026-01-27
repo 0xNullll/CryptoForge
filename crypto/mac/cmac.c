@@ -64,8 +64,8 @@ static bool ll_CMAC_GenerateSubKeys(const ll_AES_KEY *aes_key,
     //
     // Generate subkeys K1 and K2
     //
-    ll_AES_CMAC_MultiplyByU(K1, L);
-    ll_AES_CMAC_MultiplyByU(K2, K1);
+    ll_AES_CMAC_MultiplyByU(L, K1);
+    ll_AES_CMAC_MultiplyByU(K1, K2);
 
     SECURE_ZERO(L, sizeof(L));
     return true;
@@ -92,10 +92,12 @@ static void ll_CMAC_Pad(uint8_t padded_block[AES_BLOCK_SIZE], size_t padded_bloc
 CF_STATUS ll_CMAC_Init(ll_CMAC_CTX *ctx, const ll_AES_KEY *key) {
     if (!ctx || !key) return CF_ERR_NULL_PTR;
 
+    SECURE_ZERO(ctx, sizeof(*ctx));
+
     ctx->key = key;
-
-    if (!ll_CMAC_GenerateSubKeys(ctx->key, ctx->K1, ctx->K2)) return CF_ERR_CIPHER_KEY_SETUP;
-
+    SECURE_ZERO(ctx->last_block, sizeof(ctx->last_block));
+    SECURE_ZERO(ctx->unprocessed_block, sizeof(ctx->unprocessed_block));
+    
     ctx->isFinalized = 0;
     ctx->isHeapAlloc = 0;
 
@@ -103,36 +105,186 @@ CF_STATUS ll_CMAC_Init(ll_CMAC_CTX *ctx, const ll_AES_KEY *key) {
 }
 
 CF_STATUS ll_CMAC_Update(ll_CMAC_CTX *ctx, const uint8_t *data, size_t data_len) {
-    if (!ctx || !ctx->key || !data)
+        if (!ctx || !ctx->key || !data)
         return CF_ERR_NULL_PTR;
 
-    if (data && data_len == 0)
-        return CF_ERR_INVALID_LEN; 
+    size_t offset = 0;
 
-    while (data_len > 0) {
-        size_t to_copy = AES_BLOCK_SIZE - ctx->buffer_len;
+    // If we have leftover bytes from previous update, fill unprocessed_block
+    if (ctx->unprocessed_len > 0) {
+        size_t to_copy = AES_BLOCK_SIZE - ctx->unprocessed_len;
         if (to_copy > data_len) to_copy = data_len;
 
-        SECURE_MEMCPY(&ctx->buffer[ctx->buffer_len], data, to_copy);
-        ctx->buffer_len += to_copy;
-        data += to_copy;
+        SECURE_MEMCPY(ctx->unprocessed_block + ctx->unprocessed_len, data + offset, to_copy);
+        ctx->unprocessed_len += to_copy;
+        offset += to_copy;
         data_len -= to_copy;
 
-        if (ctx->buffer_len == AES_BLOCK_SIZE) {
+        if (ctx->unprocessed_len == AES_BLOCK_SIZE) {
             // XOR with last_block
             for (int i = 0; i < AES_BLOCK_SIZE; i++)
-                ctx->buffer[i] ^= ctx->last_block[i];
+                ctx->unprocessed_block[i] ^= ctx->last_block[i];
 
-            // Encrypt and store in last_block
-            if (!ll_AES_EncryptBlock(ctx->key, ctx->buffer, ctx->last_block)) return CF_ERR_CIPHER_ENCRYPT;
+            // Encrypt
+            if (!ll_AES_EncryptBlock(ctx->key, ctx->unprocessed_block, ctx->last_block))
+                return CF_ERR_CIPHER_ENCRYPT;
 
-            ctx->buffer_len = 0;
+            ctx->unprocessed_len = 0;
         }
+    }
+
+    // Process all full blocks except the last one
+    while (data_len > AES_BLOCK_SIZE) {
+        uint8_t block[AES_BLOCK_SIZE];
+        SECURE_MEMCPY(block, data + offset, AES_BLOCK_SIZE);
+
+        for (int i = 0; i < AES_BLOCK_SIZE; i++)
+            block[i] ^= ctx->last_block[i];
+
+        if (!ll_AES_EncryptBlock(ctx->key, block, ctx->last_block)) {
+            return CF_ERR_CIPHER_ENCRYPT;
+        }
+
+        offset += AES_BLOCK_SIZE;
+        data_len -= AES_BLOCK_SIZE;
+    }
+
+    // Store remaining bytes in unprocessed_block
+    if (data_len > 0) {
+        SECURE_MEMCPY(ctx->unprocessed_block, data + offset, data_len);
+        ctx->unprocessed_len = data_len;
     }
 
     return CF_SUCCESS;
 }
 
 CF_STATUS ll_CMAC_Final(ll_CMAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
+    if (!ctx || !ctx->key || !tag)
+        return CF_ERR_NULL_PTR;
 
+    if (tag_len < 4 || tag_len > AES_BLOCK_SIZE)
+        return CF_ERR_MAC_BAD_TAG_LEN;
+
+    uint8_t K1[AES_BLOCK_SIZE] = {0};
+    uint8_t K2[AES_BLOCK_SIZE] = {0};
+    uint8_t M_last[AES_BLOCK_SIZE] = {0};
+    CF_STATUS ret = CF_SUCCESS;
+
+    if (!ll_CMAC_GenerateSubKeys(ctx->key, K1, K2)) {
+        ret = CF_ERR_CIPHER_KEY_SETUP;
+        goto cleanup;
+    }
+
+    // Always treat unprocessed_block as last block
+    if (ctx->unprocessed_len == AES_BLOCK_SIZE) {
+        // Full last block → XOR with K1
+        for (int i = 0; i < AES_BLOCK_SIZE; i++)
+            M_last[i] = ctx->unprocessed_block[i] ^ K1[i];
+    } else {
+        // Partial last block -> pad and XOR with K2
+        ll_CMAC_Pad(M_last, AES_BLOCK_SIZE, ctx->unprocessed_block, ctx->unprocessed_len);
+        for (int i = 0; i < AES_BLOCK_SIZE; i++)
+            M_last[i] ^= K2[i];
+    }
+
+    // XOR with running state (last_block)
+    for (int i = 0; i < AES_BLOCK_SIZE; i++)
+        M_last[i] ^= ctx->last_block[i];
+
+    // Encrypt final block → tag
+    if (!ll_AES_EncryptBlock(ctx->key, M_last, M_last)) {
+        ret = CF_ERR_CIPHER_ENCRYPT;
+        goto cleanup;
+    }
+
+    SECURE_MEMCPY(tag, M_last, tag_len);
+
+    ctx->isFinalized = 1;
+    ctx->unprocessed_len = 0;
+    SECURE_ZERO(ctx->unprocessed_block, sizeof(ctx->unprocessed_block));
+
+cleanup:
+    SECURE_ZERO(K1, sizeof(K1));
+    SECURE_ZERO(K2, sizeof(K2));
+    SECURE_ZERO(M_last, sizeof(M_last));
+
+    return ret;
+}
+
+CF_STATUS ll_CMAC_Verify(
+    const ll_AES_KEY *key,
+    const uint8_t *data, size_t data_len,
+    const uint8_t *expected_tag, size_t tag_len) {
+    if (!key || !expected_tag)
+        return CF_ERR_NULL_PTR;
+
+    if (tag_len < 4 || tag_len > AES_BLOCK_SIZE)
+        return CF_ERR_MAC_BAD_TAG_LEN;
+
+    CF_STATUS st = CF_SUCCESS;
+    uint8_t tag[AES_BLOCK_SIZE];
+    SECURE_ZERO(tag, sizeof(tag));
+
+    ll_CMAC_CTX ctx;
+    SECURE_ZERO(&ctx, sizeof(ctx));
+
+    // Initialize context with key
+    st = ll_CMAC_Init(&ctx, key);
+    if (st != CF_SUCCESS) goto cleanup;
+
+    // Update with message data
+    if (data_len > 0) {
+        st = ll_CMAC_Update(&ctx, data, data_len);
+        if (st != CF_SUCCESS) goto cleanup;
+    }
+
+    // Finalize and compute tag
+    st = ll_CMAC_Final(&ctx, tag, tag_len);
+    if (st != CF_SUCCESS) goto cleanup;
+
+    // Constant-time comparison
+    st = SECURE_MEM_EQUAL(tag, expected_tag, tag_len) ? CF_SUCCESS : CF_ERR_MAC_VERIFY;
+
+cleanup:
+    SECURE_ZERO(&ctx, sizeof(ctx));
+    SECURE_ZERO(tag, sizeof(tag));
+
+    return st;
+}
+
+CF_STATUS ll_CMAC_Free(ll_CMAC_CTX *ctx) {
+    if (!ctx || !ctx->key)
+        return CF_ERR_NULL_PTR;
+
+    // Zero all sensitive internal data
+    SECURE_ZERO(ctx->unprocessed_block, sizeof(ctx->unprocessed_block));
+    SECURE_ZERO(ctx->last_block, sizeof(ctx->last_block));
+
+    // Reset lengths and state
+    ctx->isFinalized = 0;
+
+    // Key pointer is not freed, assumed managed externally
+    ctx->key = NULL;
+
+    return CF_SUCCESS;
+}
+
+CF_STATUS ll_CMAC_FreeAlloc(ll_CMAC_CTX **p_ctx) {
+    if (!p_ctx || !*p_ctx)
+        return CF_ERR_NULL_PTR;
+
+    ll_CMAC_CTX *ctx = *p_ctx;
+    int wasHeapAlloc = ctx->isHeapAlloc;  // save flag
+
+    // Reuse Free to clean internals
+    ll_CMAC_Free(ctx);
+
+    // Free the outer struct if heap-allocated
+    if (wasHeapAlloc) {
+        SECURE_ZERO(ctx, sizeof(ll_CMAC_CTX));
+        SECURE_FREE(ctx, sizeof(ll_CMAC_CTX));
+        *p_ctx = NULL;
+    }
+
+    return CF_SUCCESS;
 }
