@@ -236,7 +236,7 @@ CF_STATUS ll_HKDF_Expand(
 cleanup:
     ll_HMAC_Free(hmac_ctx);
     SECURE_FREE(hmac_ctx, sizeof(hmac_ctx));
-    SECURE_FREE(block, sizeof(block));
+    SECURE_ZERO(block, sizeof(block));
     return st;
 }
 
@@ -247,16 +247,12 @@ CF_STATUS ll_HKDF_Free(ll_HKDF_CTX *ctx) {
     if (ctx->prk) {
         if (ctx->prk_len == 0)
             return CF_ERR_CTX_CORRUPT;
-
-        SECURE_ZERO(ctx->prk, ctx->prk_len);
         SECURE_FREE(ctx->prk, ctx->prk_len);
     }
 
     if (ctx->info) {
         if (ctx->info_len == 0)
             return CF_ERR_CTX_CORRUPT;
-
-        SECURE_ZERO(ctx->info, ctx->info_len);
         SECURE_FREE(ctx->info, ctx->info_len);
     }
 

@@ -137,10 +137,10 @@ CF_STATUS ll_GMAC_Final(ll_GMAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
     ctx->isFinalized = 1;
 
 cleanup:
-    SECURE_ZERO(len_block, AES_BLOCK_SIZE);
-    SECURE_ZERO(tmp_X, AES_BLOCK_SIZE);
-    SECURE_ZERO(EK0, AES_BLOCK_SIZE);
-    return CF_SUCCESS;
+    SECURE_ZERO(len_block, sizeof(len_block));
+    SECURE_ZERO(tmp_X, sizeof(tmp_X));
+    SECURE_ZERO(EK0, sizeof(EK0));
+    return ret;
 }
 
 CF_STATUS ll_GMAC_Verify(

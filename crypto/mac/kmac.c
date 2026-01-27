@@ -264,10 +264,10 @@ CF_STATUS ll_KMAC_Final(ll_KMAC_CTX *ctx, uint8_t *digest, size_t digest_len) {
         goto cleanup;
     }
 
-cleanup:
     // Mark as finalized
     ctx->isFinalized = 1;
 
+cleanup:
     SECURE_ZERO(tmp, sizeof(tmp));
     return ret;
 }

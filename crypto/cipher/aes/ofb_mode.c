@@ -3,6 +3,8 @@
 static bool ll_AES_OFB_Process(const ll_AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len_bytes, uint8_t *out) {
     if (!key || !iv || !in || !out) return false;
 
+    bool ok = false;
+
     uint8_t state[AES_BLOCK_SIZE];
     uint8_t keystream[AES_BLOCK_SIZE];
     size_t keystream_used = AES_BLOCK_SIZE; // force first block generation
@@ -12,7 +14,9 @@ static bool ll_AES_OFB_Process(const ll_AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE]
     for (size_t i = 0; i < in_len_bytes; i++) {
         // Generate new keystream block if all bytes used
         if (keystream_used == AES_BLOCK_SIZE) {
-            if (!ll_AES_EncryptBlock(key, state, keystream)) return false;
+            if (!ll_AES_EncryptBlock(key, state, keystream)) 
+                goto cleanup;
+
             SECURE_MEMCPY(state, keystream, AES_BLOCK_SIZE); // update OFB feedback
             keystream_used = 0;
         }
@@ -21,10 +25,14 @@ static bool ll_AES_OFB_Process(const ll_AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE]
         out[i] = in[i] ^ keystream[keystream_used++];
     }
 
+    ok = true;
+
+cleanup:
     SECURE_ZERO(state, sizeof(state));
     SECURE_ZERO(keystream, sizeof(keystream));
+    keystream_used = 0; // not secret, but avoids reuse bugs
 
-    return true;
+    return ok;
 }
 
 bool ll_AES_OFB_Encrypt(const ll_AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len, uint8_t *out) {

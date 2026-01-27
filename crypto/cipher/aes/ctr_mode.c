@@ -8,13 +8,15 @@ bool ll_AES_CTR_Process(
     uint8_t *out) {
     if (!key || !counter || !in || !out) return false;
 
+    bool ok = false;
+
     uint8_t keystream[AES_BLOCK_SIZE] = {0};
     size_t keystream_used = AES_BLOCK_SIZE; // force first block generation
 
     for (size_t i = 0; i < in_len_bytes; ) {
         // Generate new keystream block if all bytes used
         if (keystream_used == AES_BLOCK_SIZE) {
-            if (!ll_AES_EncryptBlock(key, counter, keystream)) return false;
+            if (!ll_AES_EncryptBlock(key, counter, keystream)) goto cleanup;
 
             // 16-byte counter increment (big-endian)
             uint64_t val_hi = AES_LOAD64(counter);
@@ -51,9 +53,13 @@ bool ll_AES_CTR_Process(
         keystream_used += chunk;
     }
 
-    SECURE_ZERO(keystream, sizeof(keystream));
+    ok = true;
 
-    return true;
+cleanup:
+    SECURE_ZERO(keystream, sizeof(keystream));
+    keystream_used = 0;
+
+    return ok;
 }
 
 bool ll_AES_CTR_Encrypt(const ll_AES_KEY *key, uint8_t counter[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len, uint8_t *out) {

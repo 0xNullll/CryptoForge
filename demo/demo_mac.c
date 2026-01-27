@@ -208,6 +208,7 @@ void test_all_gmacs(void) {
         printf("GMAC tag verified successfully\n");
     }
 
+    ll_AES_ClearKey(&kctx);
     ll_GMAC_Free(&gctx);
 
     // ---------------- AES-192 ----------------
@@ -253,6 +254,7 @@ void test_all_gmacs(void) {
         printf("GMAC tag verified successfully\n");
     }
 
+    ll_AES_ClearKey(&kctx);
     ll_GMAC_Free(&gctx);
 
     // ---------------- AES-256 ----------------
@@ -299,6 +301,7 @@ void test_all_gmacs(void) {
         printf("GMAC tag verified successfully\n");
     }
 
+    ll_AES_ClearKey(&kctx);
     ll_GMAC_Free(&gctx);
 }
 
@@ -487,6 +490,7 @@ void test_aes_cmac_fips800_38b(void) {
         printf("CMAC tag verified successfully\n");
     }
 
+    ll_AES_ClearKey(&kctx);
     ll_CMAC_Free(&cctx);
 
     printf("--------------------------------\n");
@@ -643,6 +647,7 @@ void test_aes_cmac_fips800_38b(void) {
         printf("CMAC tag verified successfully\n");
     }
 
+    ll_AES_ClearKey(&kctx);
     ll_CMAC_Free(&cctx);
 
     printf("--------------------------------\n");
@@ -800,6 +805,7 @@ void test_aes_cmac_fips800_38b(void) {
         printf("CMAC tag verified successfully\n");
     }
 
+    ll_AES_ClearKey(&kctx);
     ll_CMAC_Free(&cctx);
 }
 

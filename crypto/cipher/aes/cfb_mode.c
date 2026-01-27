@@ -4,6 +4,8 @@
 static bool ll_AES_CFB8_Process( const ll_AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len_bytes, uint8_t *out, bool enc) {
     if (!key || !iv || !in || !out) return false;
 
+    bool ok = false;
+
     uint8_t feedback[AES_BLOCK_SIZE] = {0};
     uint8_t block[AES_BLOCK_SIZE] = {0};
 
@@ -12,7 +14,7 @@ static bool ll_AES_CFB8_Process( const ll_AES_KEY *key, uint8_t iv[AES_BLOCK_SIZ
     for (size_t i = 0; i < in_len_bytes; i++) {
         // Encrypt current feedback block
         if (!ll_AES_EncryptBlock(key, feedback, block))
-            return false;
+            goto cleanup;
 
         uint8_t out_byte = in[i] ^ block[0];
         out[i] = out_byte;
@@ -24,14 +26,19 @@ static bool ll_AES_CFB8_Process( const ll_AES_KEY *key, uint8_t iv[AES_BLOCK_SIZ
         feedback[AES_BLOCK_SIZE - 1] = enc ? out_byte : in[i];
     }
 
+    ok = true;
+
+cleanup: 
     SECURE_ZERO(feedback, sizeof(feedback));
     SECURE_ZERO(block, sizeof(block));
 
-    return true;
+    return ok;
 }
 
 static bool ll_AES_CFB128_Process(const ll_AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len_bytes, uint8_t *out, bool enc) {
     if (!key || !iv || !in || !out) return false;
+
+    bool ok = false;
 
     uint8_t feedback[AES_BLOCK_SIZE] = {0};
     uint8_t block[AES_BLOCK_SIZE] = {0};
@@ -41,7 +48,7 @@ static bool ll_AES_CFB128_Process(const ll_AES_KEY *key, uint8_t iv[AES_BLOCK_SI
     for (size_t i = 0; i < in_len_bytes; i += AES_BLOCK_SIZE) {
         // Encrypt feedback block
         if (!ll_AES_EncryptBlock(key, feedback, block))
-            return false;
+            goto cleanup;
 
         // Determine how many bytes to process
         size_t chunk = (in_len_bytes - i >= AES_BLOCK_SIZE) ? AES_BLOCK_SIZE : in_len_bytes - i;
@@ -54,10 +61,13 @@ static bool ll_AES_CFB128_Process(const ll_AES_KEY *key, uint8_t iv[AES_BLOCK_SI
         }
     }
 
+    ok = true;
+
+cleanup:
     SECURE_ZERO(feedback, sizeof(feedback));
     SECURE_ZERO(block, sizeof(block));
 
-    return true;
+    return ok;
 }
 
 bool ll_AES_CFB8_Encrypt(const ll_AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len, uint8_t *out) {
