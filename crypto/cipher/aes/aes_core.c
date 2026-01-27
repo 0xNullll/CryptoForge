@@ -297,6 +297,8 @@ static void InvCipher(const uint32_t *rk, uint32_t Nr, const uint8_t in[AES_BLOC
 bool ll_AES_SetEncryptKey(ll_AES_KEY *key, const uint8_t *userKey, size_t UserkeySize) {
     if (!key || !userKey) return false;
 
+    SECURE_ZERO(key, sizeof(*key));
+
     // Determine number of rounds
     switch (UserkeySize) {
         case AES_128_KEY_SIZE: key->Nr = AES_128_ROUNDS; break;

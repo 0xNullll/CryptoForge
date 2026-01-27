@@ -8,9 +8,13 @@ bool ll_AES_CBC_Encrypt(
     uint8_t *out) {
     if (!key || !iv || !in || !out || (in_len % AES_BLOCK_SIZE) != 0) return false;
 
+    bool ok = false;
+
     // Split IV into two 64-bit words
     uint64_t c0 = AES_LOAD64(iv);
     uint64_t c1 = AES_LOAD64(iv + 8);
+
+    uint8_t block[AES_BLOCK_SIZE] = {0}; // temporary encrypt block
 
     for (size_t i = 0; i < in_len; i += AES_BLOCK_SIZE) {
         // Load plaintext block
@@ -22,19 +26,24 @@ bool ll_AES_CBC_Encrypt(
         uint64_t x1 = p1 ^ c1;
 
         // Pack x0/x1 into a temporary block
-        uint8_t block[AES_BLOCK_SIZE];
         AES_STORE64(block, x0);
         AES_STORE64(block + 8, x1);
 
         // Encrypt the block
-        if (!ll_AES_EncryptBlock(key, block, out + i)) return false;
+        if (!ll_AES_EncryptBlock(key, block, out + i)) goto cleanup;
+        
 
         // Update c0/c1 for next round
         c0 = AES_LOAD64(out + i);
         c1 = AES_LOAD64(out + i + 8);
     }
 
-    return true;
+    ok = true;
+
+cleanup:
+    SECURE_ZERO(block, sizeof(block));
+
+    return ok;
 }
 
 bool ll_AES_CBC_Decrypt(
@@ -45,14 +54,17 @@ bool ll_AES_CBC_Decrypt(
     uint8_t *out) {
     if (!key || !iv || !in || !out || (in_len % AES_BLOCK_SIZE) != 0) return false;
 
-    uint64_t prev0 = AES_LOAD64(iv);     // first 8 bytes of IV
-    uint64_t prev1 = AES_LOAD64(iv + 8); // last 8 bytes of IV
+    bool ok = false;
+
+    // Split IV into two 64-bit words
+    uint64_t prev0 = AES_LOAD64(iv);     
+    uint64_t prev1 = AES_LOAD64(iv + 8); 
 
     uint8_t block[AES_BLOCK_SIZE] = {0}; // temporary decrypted block
 
     for (size_t i = 0; i < in_len; i += AES_BLOCK_SIZE) {
         // Decrypt ciphertext block into temporary buffer
-        if (!ll_AES_DecryptBlock(key, in + i, block)) return false;
+        if (!ll_AES_DecryptBlock(key, in + i, block)) goto cleanup;
 
         // Load decrypted block as two 64-bit words
         uint64_t x0 = AES_LOAD64(block);
@@ -71,7 +83,10 @@ bool ll_AES_CBC_Decrypt(
         prev1 = AES_LOAD64(in + i + 8);
     }
 
+    ok = true;
+
+cleanup:
     SECURE_ZERO(block, sizeof(block));
 
-    return true;
+    return ok;
 }

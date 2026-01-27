@@ -197,8 +197,7 @@ CF_STATUS ll_HMAC_Final(ll_HMAC_CTX *ctx, uint8_t *digest, size_t digest_len) {
 
 cleanup:
     SECURE_ZERO(inner_hash, sizeof(inner_hash));
-
-    return CF_SUCCESS;
+    return ret;
 }
 
 CF_STATUS ll_HMAC_Verify(

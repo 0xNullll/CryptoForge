@@ -220,12 +220,14 @@ bool ll_AES_GCM_Decrypt(
     if (aad_len > ((U64(0x1) << 61) - 1)) return false;
     if (in_len  > ((U64(0x1) << 36) - 32)) return false;
 
+    bool ok = false;
+
     const uint8_t zero_block[AES_BLOCK_SIZE] = {0};
     uint8_t H[AES_BLOCK_SIZE] = {0};
     uint8_t J0[AES_BLOCK_SIZE] = {0};
 
     // 1. Compute H = AES_K(0^128)
-    if (!ll_AES_EncryptBlock(key, zero_block, H)) return false;
+    if (!ll_AES_EncryptBlock(key, zero_block, H)) goto cleanup;
 
     // 2. Prepare initial counter block J0
     if (iv_len == 12) { // 12-byte IV (fast path)
@@ -270,14 +272,14 @@ bool ll_AES_GCM_Decrypt(
 
     // 5. Compute expected tag: T' = AES_K(J0) XOR GHASH
     uint8_t EK0[AES_BLOCK_SIZE] = {0};
-    if (!ll_AES_EncryptBlock(key, J0, EK0)) return false;
+    if (!ll_AES_EncryptBlock(key, J0, EK0)) goto cleanup;
 
     uint8_t computed_tag[AES_BLOCK_SIZE] = {0};
     for (size_t i = 0; i < tag_len && i < AES_BLOCK_SIZE; i++)
         computed_tag[i] = EK0[i] ^ X[i];
 
     // 6. Constant-time tag comparison
-    if (!SECURE_MEM_EQUAL(tag, computed_tag, tag_len)) return false; // tag mismatch
+    if (!SECURE_MEM_EQUAL(tag, computed_tag, tag_len)) goto cleanup; // tag mismatch
 
     // 7. Decrypt ciphertext using GCTR
     if (in_len > 0 && out) {
@@ -286,10 +288,14 @@ bool ll_AES_GCM_Decrypt(
 
         Inc32(ctr);  // start from J0 + 1
         if (!ll_AES_GCTR_Process(key, ctr, in, in_len, out))
-            return false;
+            goto cleanup;
 
         SECURE_ZERO(ctr, sizeof(ctr));
     }
+
+    ok = true;
+
+cleanup:
 
     SECURE_ZERO(H, sizeof(H));
     SECURE_ZERO(J0, sizeof(J0));
@@ -298,5 +304,5 @@ bool ll_AES_GCM_Decrypt(
     SECURE_ZERO(EK0, sizeof(EK0));
     SECURE_ZERO(computed_tag, sizeof(computed_tag));
 
-    return true;
+    return ok;
 }

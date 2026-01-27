@@ -27,6 +27,7 @@ void test_aes128_fips197(void) {
 
     ll_AES_EncryptBlock(&ctx, plaintext, ciphertext);
     ll_AES_DecryptBlock(&ctx, ciphertext, decrypted);
+    ll_AES_ClearKey(&ctx);
 
     printf("AES-128 FIPS-197 Test:\n");
     printf("Key:       "); DEMO_print_hex(key, AES_BLOCK_SIZE);
@@ -70,6 +71,7 @@ void test_aes192_fips197(void) {
 
     ll_AES_EncryptBlock(&ctx, plaintext, ciphertext);
     ll_AES_DecryptBlock(&ctx, ciphertext, decrypted);
+    ll_AES_ClearKey(&ctx);
 
     printf("AES-192 FIPS-197 Test:\n");
     printf("Key:       "); DEMO_print_hex(key, AES_192_KEY_SIZE);
@@ -114,6 +116,7 @@ void test_aes256_fips197(void) {
 
     ll_AES_EncryptBlock(&ctx, plaintext, ciphertext);
     ll_AES_DecryptBlock(&ctx, ciphertext, decrypted);
+    ll_AES_ClearKey(&ctx);
 
     printf("AES-256 FIPS-197 Test:\n");
     printf("Key:       "); DEMO_print_hex(key, AES_256_KEY_SIZE);
@@ -191,6 +194,7 @@ void test_aes_ecb_fist800_38a(void) {
     if (!ll_AES_SetEncryptKey(&ctx, key128, AES_128_KEY_SIZE)) { printf("AES-128 init failed\n"); return; }
     ll_AES_ECB_Encrypt(&ctx, plain_text, 4 * AES_BLOCK_SIZE, ct);
     ll_AES_ECB_Decrypt(&ctx, ct, 4 * AES_BLOCK_SIZE, dec);
+    ll_AES_ClearKey(&ctx);
 
     printf("AES-128 ECB Test:\n");
     printf("Plaintext: "); DEMO_print_hex(plain_text, sizeof(plain_text));
@@ -234,6 +238,7 @@ void test_aes_ecb_fist800_38a(void) {
     if (!ll_AES_SetEncryptKey(&ctx, key192, AES_192_KEY_SIZE)) { printf("AES-192 init failed\n"); return; }
     ll_AES_ECB_Encrypt(&ctx, plain_text, 4 * AES_BLOCK_SIZE, ct);
     ll_AES_ECB_Decrypt(&ctx, ct, 4 * AES_BLOCK_SIZE, dec);
+    ll_AES_ClearKey(&ctx);
 
     printf("AES-192 ECB Test:\n");
     printf("Plaintext: "); DEMO_print_hex(plain_text, sizeof(plain_text));
@@ -279,6 +284,7 @@ void test_aes_ecb_fist800_38a(void) {
     if (!ll_AES_SetEncryptKey(&ctx, key256, AES_256_KEY_SIZE)) { printf("AES-256 init failed\n"); return; }
     ll_AES_ECB_Encrypt(&ctx, plain_text, 4 * AES_BLOCK_SIZE, ct);
     ll_AES_ECB_Decrypt(&ctx, ct, 4 * AES_BLOCK_SIZE, dec);
+    ll_AES_ClearKey(&ctx);
 
     printf("AES-256 ECB Test:\n");
     printf("Plaintext: "); DEMO_print_hex(plain_text, sizeof(plain_text));
@@ -364,6 +370,7 @@ void test_aes_cbc_fips800_38a(void) {
     if (!ll_AES_CBC_Decrypt(&ctx, iv_dec, ct, sizeof(ct), dec)) {
         printf("AES-128 CBC decryption failed\n"); return;
     }
+    ll_AES_ClearKey(&ctx);
 
     printf("AES-128 CBC Test:\n");
     printf("Plaintext: "); DEMO_print_hex(plain_text, sizeof(plain_text));
@@ -415,6 +422,7 @@ void test_aes_cbc_fips800_38a(void) {
     if (!ll_AES_CBC_Decrypt(&ctx, iv_dec, ct, sizeof(ct), dec)) {
         printf("AES-192 CBC decryption failed\n"); return;
     }
+    ll_AES_ClearKey(&ctx);
 
     printf("AES-192 CBC Test:\n");
     printf("Plaintext: "); DEMO_print_hex(plain_text, sizeof(plain_text));
@@ -467,6 +475,7 @@ void test_aes_cbc_fips800_38a(void) {
     if (!ll_AES_CBC_Decrypt(&ctx, iv_dec, ct, sizeof(ct), dec)) {
         printf("AES-256 CBC-8 decryption failed\n"); return;
     }
+    ll_AES_ClearKey(&ctx);
 
     printf("AES-256 CBC Test:\n");
     printf("Plaintext: "); DEMO_print_hex(plain_text, sizeof(plain_text));
@@ -553,6 +562,7 @@ void test_aes_cfb8_fips800_38a(void) {
     if (!ll_AES_CFB8_Decrypt(&ctx, iv_dec, ct, sizeof(ct), dec)) {
         printf("AES-128 CFB-8 decryption failed\n"); return;
     }
+    ll_AES_ClearKey(&ctx);
 
     printf("AES-128 CFB-8 Test:\n");
     printf("Plaintext: "); DEMO_print_hex(plain_text, sizeof(plain_text));
@@ -604,6 +614,7 @@ void test_aes_cfb8_fips800_38a(void) {
     if (!ll_AES_CFB8_Decrypt(&ctx, iv_dec, ct, sizeof(ct), dec)) {
         printf("AES-192 CFB-8 decryption failed\n"); return;
     }
+    ll_AES_ClearKey(&ctx);
 
     printf("AES-192 CFB-8 Test:\n");
     printf("Plaintext: "); DEMO_print_hex(plain_text, sizeof(plain_text));
@@ -656,6 +667,7 @@ void test_aes_cfb8_fips800_38a(void) {
     if (!ll_AES_CFB8_Decrypt(&ctx, iv_dec, ct, sizeof(ct), dec)) {
         printf("AES-256 CFB-8 decryption failed\n"); return;
     }
+    ll_AES_ClearKey(&ctx);
 
     printf("AES-256 CFB-8 Test:\n");
     printf("Plaintext: "); DEMO_print_hex(plain_text, sizeof(plain_text));
@@ -742,6 +754,7 @@ void test_aes_cfb128_fips800_38a(void) {
     if (!ll_AES_CFB128_Decrypt(&ctx, iv_dec, ct, sizeof(ct), dec)) {
         printf("AES-128 CFB-128 decryption failed\n"); return;
     }
+    ll_AES_ClearKey(&ctx);
 
     printf("AES-128 CFB-128 Test:\n");
     printf("Plaintext: "); DEMO_print_hex(plain_text, sizeof(plain_text));
@@ -793,6 +806,7 @@ void test_aes_cfb128_fips800_38a(void) {
     if (!ll_AES_CFB128_Decrypt(&ctx, iv_dec, ct, sizeof(ct), dec)) {
         printf("AES-192 CFB-128 decryption failed\n"); return;
     }
+    ll_AES_ClearKey(&ctx);
 
     printf("AES-192 CFB-128 Test:\n");
     printf("Plaintext: "); DEMO_print_hex(plain_text, sizeof(plain_text));
@@ -845,6 +859,7 @@ void test_aes_cfb128_fips800_38a(void) {
     if (!ll_AES_CFB128_Decrypt(&ctx, iv_dec, ct, sizeof(ct), dec)) {
         printf("AES-256 CFB-128 decryption failed\n"); return;
     }
+    ll_AES_ClearKey(&ctx);
 
     printf("AES-256 CFB-128 Test:\n");
     printf("Plaintext: "); DEMO_print_hex(plain_text, sizeof(plain_text));
@@ -931,6 +946,7 @@ void test_aes_ofb_fips800_38a(void) {
     if (!ll_AES_OFB_Decrypt(&ctx, iv_dec, ct, sizeof(ct), dec)) {
         printf("AES-128 OFB decryption failed\n"); return;
     }
+    ll_AES_ClearKey(&ctx);
 
     printf("AES-128 OFB Test:\n");
     printf("Plaintext: "); DEMO_print_hex(plain_text, sizeof(plain_text));
@@ -982,6 +998,7 @@ void test_aes_ofb_fips800_38a(void) {
     if (!ll_AES_OFB_Decrypt(&ctx, iv_dec, ct, sizeof(ct), dec)) {
         printf("AES-192 OFB decryption failed\n"); return;
     }
+    ll_AES_ClearKey(&ctx);
 
     printf("AES-192 OFB Test:\n");
     printf("Plaintext: "); DEMO_print_hex(plain_text, sizeof(plain_text));
@@ -1034,6 +1051,7 @@ void test_aes_ofb_fips800_38a(void) {
     if (!ll_AES_OFB_Decrypt(&ctx, iv_dec, ct, sizeof(ct), dec)) {
         printf("AES-256 OFB decryption failed\n"); return;
     }
+    ll_AES_ClearKey(&ctx);
 
     printf("AES-256 OFB Test:\n");
     printf("Plaintext: "); DEMO_print_hex(plain_text, sizeof(plain_text));
@@ -1124,6 +1142,7 @@ void test_aes_ctr_fips800_38a(void) {
     if (!ll_AES_CTR_Decrypt(&ctx, counter_dec, ct, sizeof(ct), dec)) {
         printf("AES-128 CTR decryption failed\n"); return;
     }
+    ll_AES_ClearKey(&ctx);
 
     printf("AES-128 CTR Test:\n");
     printf("Plaintext: "); DEMO_print_hex(plain_text, sizeof(plain_text));
@@ -1179,6 +1198,7 @@ void test_aes_ctr_fips800_38a(void) {
     if (!ll_AES_CTR_Decrypt(&ctx, counter_dec, ct, sizeof(ct), dec)) {
         printf("AES-192 CTR decryption failed\n"); return;
     }
+    ll_AES_ClearKey(&ctx);
 
     printf("AES-192 CTR Test:\n");
     printf("Plaintext: "); DEMO_print_hex(plain_text, sizeof(plain_text));
@@ -1233,6 +1253,7 @@ void test_aes_ctr_fips800_38a(void) {
     if (!ll_AES_CTR_Decrypt(&ctx, counter_dec, ct, sizeof(ct), dec)) {
         printf("AES-256 CTR decryption failed\n"); return;
     }
+    ll_AES_ClearKey(&ctx);
 
     printf("AES-256 CTR Test:\n");
     printf("Plaintext: "); DEMO_print_hex(plain_text, sizeof(plain_text));
@@ -1330,6 +1351,7 @@ void test_aes_gcm_fips_style(void) {
                             ct, sizeof(ct), dec, tag, sizeof(tag))) {
         printf("AES-128 GCM decryption failed\n"); return;
     }
+    ll_AES_ClearKey(&ctx);
 
     printf("AES-128 GCM Test:\n");
     printf("Plaintext: "); DEMO_print_hex(plain_text, sizeof(plain_text));
@@ -1390,6 +1412,7 @@ void test_aes_gcm_fips_style(void) {
                             ct, sizeof(ct), dec, tag, sizeof(tag))) {
         printf("AES-192 GCM decryption failed\n"); return;
     }
+    ll_AES_ClearKey(&ctx);
 
     printf("AES-192 GCM Test:\n");
     printf("Plaintext: "); DEMO_print_hex(plain_text, sizeof(plain_text));
@@ -1450,6 +1473,7 @@ void test_aes_gcm_fips_style(void) {
                             ct, sizeof(ct), dec, tag, sizeof(tag))) {
         printf("AES-256 GCM decryption failed\n"); return;
     }
+    ll_AES_ClearKey(&ctx);
 
     printf("AES-256 GCM Test:\n");
     printf("Plaintext: "); DEMO_print_hex(plain_text, sizeof(plain_text));
@@ -1524,6 +1548,7 @@ void test_aes_gcm_empty_plaintext(void) {
                             NULL, 0, NULL, tag, sizeof(tag))) {
         printf("AES-128 GCM decryption failed\n"); return;
     }
+    ll_AES_ClearKey(&ctx);
 
     printf("AES-128 No Plaintext GCM Test:\n");
     printf("Plaintext: "); DEMO_print_hex(zero_string, sizeof(zero_string));
@@ -1598,6 +1623,7 @@ void test_aes_gcm_empty_plaintext(void) {
                             NULL, 0, NULL, tag, sizeof(tag))) {
         printf("AES-256 GCM decryption failed\n"); return;
     }
+    ll_AES_ClearKey(&ctx);
 
     printf("AES-256 No Plaintext GCM Test:\n");
     printf("Plaintext: "); DEMO_print_hex(zero_string, sizeof(zero_string));
