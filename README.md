@@ -279,8 +279,8 @@ Evaluate behavior under hostile or constrained execution environments.
 │   │   │   ├─ sha256.{c,h}
 │   │   │   ├─ sha512.{c,h}
 │   │   │   └─ /keccak
-│   │   │       ├─ sha3.{c,h}
 │   │   │       ├─ keccak_core.{c,h}
+│   │   │       ├─ sha3.{c,h}
 │   │   │       └─ shake.{c,h}
 │   │   ├─ /md
 │   │   │   └─ md5.{c,h}
