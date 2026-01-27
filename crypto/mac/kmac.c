@@ -209,6 +209,8 @@ CF_STATUS ll_KMAC_Final(ll_KMAC_CTX *ctx, uint8_t *digest, size_t digest_len) {
     if (digest_len == 0)
         return CF_ERR_INVALID_LEN;
 
+    CF_STATUS ret = CF_SUCCESS;
+
     // Use the user-provided length for both XOF and normal KMAC
     size_t mac_len = digest_len;
 
@@ -245,21 +247,29 @@ CF_STATUS ll_KMAC_Final(ll_KMAC_CTX *ctx, uint8_t *digest, size_t digest_len) {
         tmp_len = ll_right_encode_uint64((uint64_t)digest_len * 8, tmp);
     }
 
-    if (tmp_len == 0) 
-        return CF_ERR_INVALID_LEN;  // sanity check
+    if (tmp_len == 0) {
+        ret = CF_ERR_INVALID_LEN;
+        goto cleanup;
+    }
 
     // Finalize underlying cSHAKE with the encoded length
-    if (!ll_KMAC_FINALIZE(ctx, tmp, tmp_len))
-        return CF_ERR_CTX_CORRUPT;
+    if (!ll_KMAC_FINALIZE(ctx, tmp, tmp_len)) {
+        ret = CF_ERR_CTX_CORRUPT;
+        goto cleanup;
+    }
 
     // Now squeeze the digest
-    if (!ll_KMAC_SQUEEZE(ctx, digest, digest_len))
-        return CF_ERR_CTX_CORRUPT;
+    if (!ll_KMAC_SQUEEZE(ctx, digest, digest_len)) {
+        ret = CF_ERR_CTX_CORRUPT;
+        goto cleanup;
+    }
 
+cleanup:
     // Mark as finalized
     ctx->isFinalized = 1;
 
-    return CF_SUCCESS;
+    SECURE_ZERO(tmp, sizeof(tmp));
+    return ret;
 }
 
 #undef ll_KMAC_INIT
