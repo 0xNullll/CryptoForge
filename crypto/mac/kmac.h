@@ -39,6 +39,9 @@ extern "C" {
 #define LL_KMAC_IS_256(type) ((type) == KMAC256 || (type) == KMACXOF256)
 #define LL_KMAC_IS_XOF(type) ((type) == KMACXOF128 || (type) == KMACXOF256)
 
+#define LL_KMAC_DEFAULT_OUTPUT_LEN_128 16  // RFC fixed-length output for KMAC128
+#define LL_KMAC_DEFAULT_OUTPUT_LEN_256 32  // RFC fixed-length output for KMAC256
+
 typedef enum {
     KMAC128      = EVP_CAT_MAC | 0x0002,
     KMAC256      = EVP_CAT_MAC | 0x0003,
@@ -102,7 +105,7 @@ CF_STATUS ll_KMAC_Verify(
     const uint8_t *key, size_t key_len,
     const uint8_t *data, size_t data_len,
     const uint8_t *S, size_t S_len,
-    const uint8_t *expected_mac, size_t expected_len,
+    const uint8_t *expected_mac,
     ll_KMAC_TYPE type);
 
 // Resets a KMAC context to its initial state with the same key and customization strings.

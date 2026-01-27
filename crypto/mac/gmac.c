@@ -18,8 +18,11 @@
 #include "gmac.h"
 
 CF_STATUS ll_GMAC_Init(ll_GMAC_CTX *ctx, const ll_AES_KEY *key, const uint8_t *iv, size_t iv_len) {
-    if (!ctx || !key || !iv || iv_len < AES_GCM_IV_MIN)
-        return CF_ERR_INVALID_PARAM;
+    if (!ctx || !key || !iv)
+        return CF_ERR_NULL_PTR;
+
+    if (iv_len < AES_GCM_IV_MIN)
+        return CF_ERR_MAC_BAD_IV_LEN;
 
     uint8_t zero[AES_BLOCK_SIZE] = {0};
 
@@ -134,17 +137,70 @@ CF_STATUS ll_GMAC_Final(ll_GMAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
     return CF_SUCCESS;
 }
 
-CF_STATUS ll_GMAC_Verify(const ll_GMAC_CTX *ctx, const uint8_t *expected_tag, size_t tag_len) {
-    if (!ctx || !expected_tag || !IS_VALID_GCM_TAG_SIZE(tag_len))
+// CF_STATUS ll_GMAC_Verify(const ll_GMAC_CTX *ctx,
+//                          const uint8_t *expected_tag,
+//                          size_t tag_len) {
+
+//     if (!ctx || !expected_tag || !IS_VALID_GCM_TAG_SIZE(tag_len))
+//         return CF_ERR_INVALID_PARAM;
+
+//     CF_STATUS st = CF_SUCCESS;
+//     uint8_t tag[AES_BLOCK_SIZE];
+//     SECURE_ZERO(tag, sizeof(tag)); // initialize to avoid garbage
+
+//     // Cast safe: ll_GMAC_Final only modifies internal state, not the key
+//     st = ll_GMAC_Final((ll_GMAC_CTX *)ctx, tag, tag_len);
+//     if (st != CF_SUCCESS) goto cleanup;
+
+//     // Constant-time comparison
+//     st = SECURE_MEM_EQUAL(tag, expected_tag, tag_len) ? CF_SUCCESS : CF_ERR_MAC_VERIFY;
+
+// cleanup:
+//     SECURE_ZERO(tag, sizeof(tag));
+//     return st;
+// }
+
+CF_STATUS ll_GMAC_Verify(
+    const ll_AES_KEY *key,
+    const uint8_t *iv, size_t iv_len,
+    const uint8_t *aad, size_t aad_len,
+    const uint8_t *expected_tag, size_t tag_len) {
+    if (!key || !iv || !aad || !expected_tag)
+        return CF_ERR_NULL_PTR;
+
+    if (iv_len < AES_GCM_IV_MIN || !IS_VALID_GCM_TAG_SIZE(tag_len))
         return CF_ERR_INVALID_PARAM;
 
     uint8_t tag[AES_BLOCK_SIZE];
-    CF_STATUS st = ll_GMAC_Final((ll_GMAC_CTX *)ctx, tag, tag_len); // cast safe, final does not modify key
-    if (st != CF_SUCCESS) return st;
+    SECURE_ZERO(tag, sizeof(tag));
 
+    CF_STATUS st = CF_SUCCESS;
+    ll_GMAC_CTX ctx;
+    SECURE_ZERO(&ctx, sizeof(ctx));
+
+    // Initialize context
+    st = ll_GMAC_Init(&ctx, key, iv, iv_len);
+    if (st != CF_SUCCESS) goto cleanup;
+
+    // Process AAD
+    if (aad_len > 0) {
+        st = ll_GMAC_Update(&ctx, aad, aad_len);
+        if (st != CF_SUCCESS) goto cleanup;
+    }
+
+    // Finalize
+    st = ll_GMAC_Final(&ctx, tag, tag_len);
+    if (st != CF_SUCCESS) goto cleanup;
+    
     // Constant-time compare
-    return SECURE_MEM_EQUAL(tag, expected_tag, tag_len) ? CF_SUCCESS : CF_ERR_MAC_VERIFY;
+    st = SECURE_MEM_EQUAL(tag, expected_tag, tag_len) ? CF_SUCCESS : CF_ERR_MAC_VERIFY;
+
+cleanup:
+    SECURE_ZERO(&ctx, sizeof(ctx));
+    SECURE_ZERO(tag, sizeof(tag));
+    return st;
 }
+
 
 CF_STATUS ll_GMAC_Free(ll_GMAC_CTX *ctx) {
     if (!ctx || !ctx->key)

@@ -56,7 +56,11 @@ CF_STATUS ll_GMAC_Update(ll_GMAC_CTX *ctx, const uint8_t *aad, size_t aad_len);
 CF_STATUS ll_GMAC_Final(ll_GMAC_CTX *ctx, uint8_t *tag, size_t tag_len);
 
 // Verify a computed GMAC tag against an expected tag
-CF_STATUS ll_GMAC_Verify(const ll_GMAC_CTX *ctx, const uint8_t *expected_tag, size_t tag_len);
+CF_STATUS ll_GMAC_Verify(
+    const ll_AES_KEY *key,
+    const uint8_t *iv, size_t iv_len,
+    const uint8_t *aad, size_t aad_len,
+    const uint8_t *expected_tag, size_t tag_len);
 
 // Free internal buffers of a pre-allocated GMAC context
 CF_STATUS ll_GMAC_Free(ll_GMAC_CTX *ctx);

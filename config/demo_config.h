@@ -29,6 +29,7 @@
 #include "../crypto/mac/hmac.h"
 #include "../crypto/mac/kmac.h"
 #include "../crypto/mac/gmac.h"
+#include "../crypto/mac/cmac.h"
 
 #include "../crypto/kdf/hkdf.h"
 
@@ -78,23 +79,19 @@ FORCE_INLINE void DEMO_print_str(const char *label, const char *data, size_t len
 
 // Test helper (for dev)
 CF_API void test_all_hashes(const uint8_t *input, size_t input_len, const EVP_XOF_OPTS *opts);
-
 CF_API void test_all_hashes_high(const uint8_t *input, size_t input_len, const EVP_XOF_OPTS *opts);
 
 CF_API void test_all_hmacs(const uint8_t *key, size_t key_len, const uint8_t *input, size_t input_len);
-
 CF_API void test_all_kmacs(
     const uint8_t *key, size_t key_len,
     const uint8_t *input, size_t input_len,
     const uint8_t *S, size_t S_len);
-
 CF_API void test_all_kmacs_verify_array(const uint8_t *key, size_t key_len,
                                  const uint8_t *input, size_t input_len,
                                  const uint8_t *S, size_t S_len,
-                                 const uint8_t *expected_digests[4],
-                                 const size_t expected_lens[4]);
-
+                                 const uint8_t *expected_digests[4]);
 CF_API void test_all_gmacs(void);
+CF_API void test_aes_cmac_fips800_38b(void);
 
 CF_API void test_all_hkdfs(
     const uint8_t *info, size_t info_len,
@@ -104,19 +101,14 @@ CF_API void test_all_hkdfs(
 
 CF_API void test_base16(const char *label, const uint8_t *input, size_t len, uint32_t mode);
 CF_API void test_hex_base16(const char *label, const uint8_t *input, size_t len, uint32_t mode);
-
 CF_API void test_base32(const char *label, const uint8_t *input, size_t len, uint32_t enc_mode, uint32_t dec_mod);
 CF_API void test_hex_base32(const char *label, const uint8_t *input, size_t len, uint32_t enc_mode, uint32_t dec_mod);
-
 CF_API void test_base58(const char *label, const uint8_t *input, size_t len);
 CF_API void test_hex_base58(const char *label, const uint8_t *input, size_t len);
-
 CF_API void test_base64(const char *label, const uint8_t *input, size_t len, uint32_t enc_mode, uint32_t dec_mode);
 CF_API void test_hex_base64(const char *label, const uint8_t *input, size_t len, uint32_t enc_mode, uint32_t dec_mode);
-
 CF_API void test_base85(const char *label, const uint8_t *input, size_t len, uint32_t enc_mode, uint32_t dec_mode);
 CF_API void test_hex_base85(const char *label, const uint8_t *input, size_t len, uint32_t enc_mode, uint32_t dec_mode);
-
 CF_API void test_all_encoders_high(const uint8_t *input, size_t input_len);
 
 CF_API void test_aes128_fips197(void);

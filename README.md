@@ -157,16 +157,9 @@ Small, reusable helpers that make your library more **robust, convenient, and de
 
 ---
 
-### 11. Optional / Future Enhancements
+### 11. Advanced Security & Hardening Features
 
-These features are **not required for initial correctness**, but aim to harden the library
-against real-world misuse, adversarial inputs, and advanced attack models.
-
-- **TRNGs**
-  - Jitter-based entropy
-  - Thermal noise sources
-  - Hardware-based RNGs (where available)
-  - Used to seed DRBGs securely in constrained or embedded environments
+These features go beyond initial correctness to protect the library against real-world misuse, adversarial inputs, and advanced attack scenarios.
 
 - **Integrated AE Pipelines**
   - High-level authenticated encryption workflows
@@ -174,11 +167,36 @@ against real-world misuse, adversarial inputs, and advanced attack models.
   - Reduce API misuse by providing safe defaults
   - Optional: user-controlled low-level primitives remain exposed
 
-- **EVP Stack-only Mode (Advanced)**
-  - Fully stack-based operation
-  - No `malloc`, no OS dependency
-  - Suitable for bare-metal or highly constrained embedded systems
-  - Alternate init paths and structs for deterministic memory usage
+- **EVP Stack-Only & Explicit Memory Ownership (Advanced)**
+  - High-level API supports fully stack-based operation with caller-provided memory, avoiding any hidden malloc or OS dependencies
+  - Suitable for bare-metal or highly constrained embedded systems where deterministic memory usage is required
+  - Contexts require explicit memory ownership, enabling safe stack allocation and full zeroization
+  - Alternate init paths and structs ensure auditable lifetimes and consistent behavior across embedded and standard environments
+
+- **Runtime Legacy / Optional Feature Control**
+  - Centralized configuration module tracks which algorithms or features are enabled at runtime
+  - Weak or legacy algorithms (DES, MD5, etc.) are disabled by default and must be explicitly enabled
+  - High-level API functions check this central configuration before executing
+  - Supports safe opt-in for backward compatibility without compromising default security
+  - Can be extended to track padding schemes, experimental primitives, or debugging hooks
+
+- **Context Lifetime & Auto-Zeroing Policy**
+  - Finalization functions securely wipe and invalidate cryptographic contexts by default
+  - Advanced users may opt into “keep-state” APIs or per-context flags to disable automatic wiping
+  - When keep-state is used, the caller is responsible for explicit context cleanup via provided free/wipe functions
+
+
+- **Optional Debug / Audit Hooks**
+  - Hooks can provide trace or memory audit features for development
+  - Disabled in production builds to avoid exposing sensitive data
+  - Supports testing and static analysis without compromising runtime security
+
+- **Unified XOR Utility (Advanced)**
+  - Provides a single function to XOR two buffers of arbitrary length
+  - Handles alignment and architecture differences safely (e.g., 8-bit, 32-bit, 64-bit, or vectorized)
+  - Enables optimized block operations (AES, CMAC, Poly1305, etc.) without duplicating code
+  - Reduces risk of mistakes from manual loops or repeated byte-wise XORs
+  - Can optionally include safe fallbacks for unaligned or small buffers
 
 ---
 
@@ -328,6 +346,7 @@ Do not use for protecting high‑value secrets without independent review.
 
 ## Sources / References
 - [SP 800-38D – Recommendation for Block Cipher Modes of Operation: Galois/Counter Mode (GCM), November 2007](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38d.pdf)
+- [SP 800-38B - Recommendation for Block Cipher Modes of Operation: The CMAC Mode for Authentication, May 2005](https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-38b.pdf)
 - [SP 800-38A – Recommendation for Block Cipher Modes of Operation: Methods and Techniques, December 2001](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38a.pdf)
 - [FIPS 197 – Advanced Encryption Standard (AES), November 2001](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197-upd1.pdf)
 - [RFC 6234 – US Secure Hash Algorithms (SHA and SHA-based HMAC and HKDF), May 2011](https://datatracker.ietf.org/doc/html/rfc6234)
