@@ -235,7 +235,8 @@ CF_STATUS ll_HKDF_Expand(
 
 cleanup:
     ll_HMAC_Free(hmac_ctx);
-    SECURE_FREE(hmac_ctx, sizeof(ll_HMAC_CTX));
+    SECURE_FREE(hmac_ctx, sizeof(hmac_ctx));
+    SECURE_FREE(block, sizeof(block));
     return st;
 }
 

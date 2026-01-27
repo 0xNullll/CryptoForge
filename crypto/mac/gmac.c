@@ -102,8 +102,13 @@ CF_STATUS ll_GMAC_Final(ll_GMAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
     if (!ctx || !tag || !IS_VALID_GCM_TAG_SIZE(tag_len))
         return CF_ERR_INVALID_PARAM;
 
+    CF_STATUS ret = CF_SUCCESS;
+
     // Prepare length block: [aad_bits | 0] because GMAC has no plaintext
     uint8_t len_block[AES_BLOCK_SIZE] = {0};
+    uint8_t tmp_X[AES_BLOCK_SIZE] = {0};
+    uint8_t EK0[AES_BLOCK_SIZE] = {0};
+
     uint64_t aad_bits = ctx->aad_len * 8;
 
     // Big-endian encoding of AAD length
@@ -112,7 +117,6 @@ CF_STATUS ll_GMAC_Final(ll_GMAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
     // Lower 64 bits remain zero for GMAC
 
     // XOR len_block into X
-    uint8_t tmp_X[AES_BLOCK_SIZE] = {0};
     SECURE_MEMCPY(tmp_X, ctx->X, AES_BLOCK_SIZE);
     for (int i = 0; i < AES_BLOCK_SIZE; i++)
         tmp_X[i] ^= len_block[i];
@@ -121,44 +125,23 @@ CF_STATUS ll_GMAC_Final(ll_GMAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
     ll_gcm_mult(tmp_X, tmp_X, ctx->H);
 
     // Encrypt J0 to get EK0
-    uint8_t EK0[AES_BLOCK_SIZE] = {0};
-    if (!ll_AES_EncryptBlock(ctx->key, ctx->J0, EK0))
-        return CF_ERR_CIPHER_ENCRYPT;
+    if (!ll_AES_EncryptBlock(ctx->key, ctx->J0, EK0)) {
+        ret = CF_ERR_CIPHER_ENCRYPT;
+        goto cleanup;
+    }
 
     // Final GMAC tag = EK0 XOR GHASH output
     for (size_t i = 0; i < tag_len && i < AES_BLOCK_SIZE; i++)
         tag[i] = EK0[i] ^ tmp_X[i];
 
+    ctx->isFinalized = 1;
+
+cleanup:
     SECURE_ZERO(len_block, AES_BLOCK_SIZE);
     SECURE_ZERO(tmp_X, AES_BLOCK_SIZE);
     SECURE_ZERO(EK0, AES_BLOCK_SIZE);
-
-    ctx->isFinalized = 1;
     return CF_SUCCESS;
 }
-
-// CF_STATUS ll_GMAC_Verify(const ll_GMAC_CTX *ctx,
-//                          const uint8_t *expected_tag,
-//                          size_t tag_len) {
-
-//     if (!ctx || !expected_tag || !IS_VALID_GCM_TAG_SIZE(tag_len))
-//         return CF_ERR_INVALID_PARAM;
-
-//     CF_STATUS st = CF_SUCCESS;
-//     uint8_t tag[AES_BLOCK_SIZE];
-//     SECURE_ZERO(tag, sizeof(tag)); // initialize to avoid garbage
-
-//     // Cast safe: ll_GMAC_Final only modifies internal state, not the key
-//     st = ll_GMAC_Final((ll_GMAC_CTX *)ctx, tag, tag_len);
-//     if (st != CF_SUCCESS) goto cleanup;
-
-//     // Constant-time comparison
-//     st = SECURE_MEM_EQUAL(tag, expected_tag, tag_len) ? CF_SUCCESS : CF_ERR_MAC_VERIFY;
-
-// cleanup:
-//     SECURE_ZERO(tag, sizeof(tag));
-//     return st;
-// }
 
 CF_STATUS ll_GMAC_Verify(
     const ll_AES_KEY *key,
@@ -191,7 +174,7 @@ CF_STATUS ll_GMAC_Verify(
     // Finalize
     st = ll_GMAC_Final(&ctx, tag, tag_len);
     if (st != CF_SUCCESS) goto cleanup;
-    
+
     // Constant-time compare
     st = SECURE_MEM_EQUAL(tag, expected_tag, tag_len) ? CF_SUCCESS : CF_ERR_MAC_VERIFY;
 

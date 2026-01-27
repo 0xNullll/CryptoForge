@@ -154,35 +154,49 @@ CF_STATUS ll_HMAC_Final(ll_HMAC_CTX *ctx, uint8_t *digest, size_t digest_len) {
     if (ctx->isFinalized) 
         return CF_ERR_HASH_FINALIZED;
 
+    CF_STATUS ret = CF_SUCCESS;
+
     const size_t hash_len = ctx->md->digest_size;
-    uint8_t inner_hash[EVP_MAX_DEFAULT_DIGEST_SIZE];
+    uint8_t inner_hash[EVP_MAX_DEFAULT_DIGEST_SIZE] = {0};
 
     // compute inner hash
-    if (!ctx->md->hash_final_fn(ctx->ipad_ctx, inner_hash, ctx->md->digest_size))
-        return CF_ERR_CTX_CORRUPT;
+    if (!ctx->md->hash_final_fn(ctx->ipad_ctx, inner_hash, ctx->md->digest_size)) {
+        ret = CF_ERR_CTX_CORRUPT;
+        goto cleanup;
+    }
 
     // For SHA3 variants that require squeezing
     if (ctx->md->hash_squeeze_fn && IS_KECCAK_BASED(ctx->md->id)) {
-        if (!ctx->md->hash_squeeze_fn(ctx->ipad_ctx, inner_hash, ctx->md->digest_size))
-            return CF_ERR_CTX_CORRUPT;
+        if (!ctx->md->hash_squeeze_fn(ctx->ipad_ctx, inner_hash, ctx->md->digest_size)) {
+            ret = CF_ERR_CTX_CORRUPT;
+            goto cleanup;
+        }
     }
 
     // feed inner hash into opad context
-    if (!ctx->md->hash_update_fn(ctx->opad_ctx, inner_hash, ctx->md->digest_size))
-        return CF_ERR_CTX_CORRUPT;
+    if (!ctx->md->hash_update_fn(ctx->opad_ctx, inner_hash, ctx->md->digest_size)) {
+        ret = CF_ERR_CTX_CORRUPT;
+        goto cleanup;
+    }
 
     // compute final HMAC
-    if (!ctx->md->hash_final_fn(ctx->opad_ctx, digest, hash_len))
-        return CF_ERR_CTX_CORRUPT;
+    if (!ctx->md->hash_final_fn(ctx->opad_ctx, digest, hash_len)) {
+        ret = CF_ERR_CTX_CORRUPT;
+        goto cleanup;
+    }
 
     // For SHA3 variants that require squeezing
     if (ctx->md->hash_squeeze_fn && IS_KECCAK_BASED(ctx->md->id)) {
-        if (!ctx->md->hash_squeeze_fn(ctx->opad_ctx, digest, hash_len))
-            return CF_ERR_CTX_CORRUPT;
+        if (!ctx->md->hash_squeeze_fn(ctx->opad_ctx, digest, hash_len)) {
+            ret = CF_ERR_CTX_CORRUPT;
+            goto cleanup;
+        }
     }
 
-    SECURE_ZERO(inner_hash, sizeof(inner_hash));
     ctx->isFinalized = 1;
+
+cleanup:
+    SECURE_ZERO(inner_hash, sizeof(inner_hash));
 
     return CF_SUCCESS;
 }
