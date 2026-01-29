@@ -15,7 +15,7 @@
  * Project repository: https://github.com/0xNullll/CryptoForge
  */
 
-#include "base16.h"
+#include "../../include/crypto/base16.h"
 
 // Hex encoding table
 static const char BASE16_ENC_TABLE_UPPER[] = "0123456789ABCDEF";

@@ -15,7 +15,7 @@
  * Project repository: https://github.com/0xNullll/CryptoForge
  */
 
-#include "mem.h"
+#include "../include/utils/mem.h"
 
 void secure_zero(void *buf, size_t len) {
     if (!buf || len == 0) return;

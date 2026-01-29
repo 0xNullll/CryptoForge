@@ -15,7 +15,7 @@
  * Project repository: https://github.com/0xNullll/CryptoForge
  */
 
-#include "sha3.h"
+#include "../../../../include/crypto/sha3.h"
 
 // ======================================
 // SHA3-224 (Low-level)

@@ -1,4 +1,4 @@
-#include "../config/demo_config.h"
+#include "../include/config/demo_config.h"
 
 #if ENABLE_TESTS
 
@@ -281,7 +281,7 @@ void test_base85(const char *label, const uint8_t *input, size_t len, uint32_t e
     size_t enc_len = 0, dec_len = 0;
 
     // Check Z85 input length before encoding
-    if ((dec_mode & EVP_BASE85_Z85_ENC) && (enc_len % 4 != 0)) {
+    if ((dec_mode & CF_BASE85_Z85_ENC) && (enc_len % 4 != 0)) {
         printf("[%s] Cannot encode Z85:  input length %zu is not a multiple of 4\n", label, enc_len);
         return;
     }
@@ -293,7 +293,7 @@ void test_base85(const char *label, const uint8_t *input, size_t len, uint32_t e
     }
 
     // Check Z85 input length before decoding
-    if ((dec_mode & EVP_BASE85_Z85_DEC) && (enc_len % 5 != 0)) {
+    if ((dec_mode & CF_BASE85_Z85_DEC) && (enc_len % 5 != 0)) {
         printf("[%s] Cannot decode Z85: encoded length %zu is not a multiple of 5\n", label, enc_len);
         return;
     }
@@ -329,7 +329,7 @@ void test_hex_base85(const char *label, const uint8_t *input, size_t len, uint32
     size_t enc_len = 0, dec_len = 0;
 
     // Check Z85 input length before encoding
-    if ((dec_mode & EVP_BASE85_Z85_ENC) && (enc_len % 4 != 0)) {
+    if ((dec_mode & CF_BASE85_Z85_ENC) && (enc_len % 4 != 0)) {
         printf("[%s] Cannot encode Z85:  input length %zu is not a multiple of 4\n", label, enc_len);
         return;
     }
@@ -341,7 +341,7 @@ void test_hex_base85(const char *label, const uint8_t *input, size_t len, uint32
     }
 
     // Check Z85 input length before decoding
-    if ((dec_mode & EVP_BASE85_Z85_DEC) && (enc_len % 5 != 0)) {
+    if ((dec_mode & CF_BASE85_Z85_DEC) && (enc_len % 5 != 0)) {
         printf("[%s] Cannot decode Z85: encoded length %zu is not a multiple of 5\n", label, enc_len);
         return;
     }
@@ -371,18 +371,18 @@ void test_hex_base85(const char *label, const uint8_t *input, size_t len, uint32
 void test_all_encoders_high(const uint8_t *input, size_t input_len) {
     // Each entry: encode_flags, decode_flags, optional description
     DEMO_ENC_TEST encoder_tests[] = {
-        { EVP_BASE16_UPPER, EVP_BASE16_DEC, "Base16 Upper" },
-        { EVP_BASE16_LOWER, EVP_BASE16_DEC, "Base16 Lower" },
-        { EVP_BASE32_ENC, EVP_BASE32_DEC, "Base32 Standard" },
-        { EVP_BASE32_ENC | EVP_BASE32_ENC_NOPAD, EVP_BASE32_DEC | EVP_BASE32_DEC_NOPAD, "Base32 NoPad" },
-        { EVP_BASE58_ENC, EVP_BASE58_DEC, "Base58" },
-        { EVP_BASE64_STD_ENC, EVP_BASE64_STD_DEC, "Base64 Std" },
-        { EVP_BASE64_URL_ENC, EVP_BASE64_URL_DEC, "Base64 URL" },
-        { EVP_BASE64_STD_ENC | EVP_BASE64_NOPAD_ENC, EVP_BASE64_STD_DEC | EVP_BASE64_NOPAD_DEC, "Base64 Std NoPad" },
-        { EVP_BASE64_URL_ENC | EVP_BASE64_NOPAD_ENC, EVP_BASE64_URL_DEC | EVP_BASE64_NOPAD_DEC, "Base64 URL NoPad" },
-        { EVP_BASE85_STD_ENC, EVP_BASE85_STD_DEC, "Base85 ASCII85" },
-        { EVP_BASE85_STD_ENC | EVP_BASE85_EXT_ENC, EVP_BASE85_STD_DEC | EVP_BASE85_EXT_DEC, "Base85 ASCII85 Extended" },
-        { EVP_BASE85_Z85_ENC, EVP_BASE85_Z85_DEC, "Base85 Z85" }
+        { CF_BASE16_UPPER, CF_BASE16_DEC, "Base16 Upper" },
+        { CF_BASE16_LOWER, CF_BASE16_DEC, "Base16 Lower" },
+        { CF_BASE32_ENC, CF_BASE32_DEC, "Base32 Standard" },
+        { CF_BASE32_ENC | CF_BASE32_ENC_NOPAD, CF_BASE32_DEC | CF_BASE32_DEC_NOPAD, "Base32 NoPad" },
+        { CF_BASE58_ENC, CF_BASE58_DEC, "Base58" },
+        { CF_BASE64_STD_ENC, CF_BASE64_STD_DEC, "Base64 Std" },
+        { CF_BASE64_URL_ENC, CF_BASE64_URL_DEC, "Base64 URL" },
+        { CF_BASE64_STD_ENC | CF_BASE64_NOPAD_ENC, CF_BASE64_STD_DEC | CF_BASE64_NOPAD_DEC, "Base64 Std NoPad" },
+        { CF_BASE64_URL_ENC | CF_BASE64_NOPAD_ENC, CF_BASE64_URL_DEC | CF_BASE64_NOPAD_DEC, "Base64 URL NoPad" },
+        { CF_BASE85_STD_ENC, CF_BASE85_STD_DEC, "Base85 ASCII85" },
+        { CF_BASE85_STD_ENC | CF_BASE85_EXT_ENC, CF_BASE85_STD_DEC | CF_BASE85_EXT_DEC, "Base85 ASCII85 Extended" },
+        { CF_BASE85_Z85_ENC, CF_BASE85_Z85_DEC, "Base85 Z85" }
     };
 
     size_t num_tests = sizeof(encoder_tests) / sizeof(encoder_tests[0]);
@@ -393,45 +393,45 @@ void test_all_encoders_high(const uint8_t *input, size_t input_len) {
         CF_STATUS status;
 
         // Allocate encoder context
-        EVP_ENCODER_CTX *ctx = EVP_EncInitAlloc(t.enc, t.dec, &status);
+        CF_ENCODER_CTX *ctx = CF_EncInitAlloc(t.enc, t.dec, &status);
         if (!ctx || status != CF_SUCCESS) {
             printf("[FAIL] %s: Failed to init context\n", t.desc);
             continue;
         }
 
         // Prepare output buffer
-        size_t out_len = EVP_EncodeRequiredLen(t.enc, input_len);
+        size_t out_len = CF_EncodeRequiredLen(t.enc, input_len);
         char *enc_buf = (char *)SECURE_ALLOC(out_len);
         if (!enc_buf) {
             printf("[FAIL] %s: Failed to allocate buffer\n", t.desc);
-            EVP_EncFreeAlloc(&ctx);
+            CF_EncFree(&ctx);
             continue;
         }
         memset(enc_buf, 0, out_len);
 
         // Encode
-        status = EVP_Encode(ctx, input, input_len, enc_buf, &out_len);
+        status = CF_Encode(ctx, input, input_len, enc_buf, &out_len);
         if (status != CF_SUCCESS) {
             printf("[FAIL] %s: Encoding failed\n", t.desc);
             free(enc_buf);
-            EVP_EncFreeAlloc(&ctx);
+            CF_EncFree(&ctx);
             continue;
         }
 
         DEMO_print_str(t.desc, enc_buf, out_len);
 
         // Decode
-        size_t dec_len = EVP_DecodeRequiredLen(t.dec, out_len);
+        size_t dec_len = CF_DecodeRequiredLen(t.dec, out_len);
         uint8_t *dec_buf = (uint8_t *)SECURE_ALLOC(dec_len);
         if (!dec_buf) {
             printf("[FAIL] %s: Failed to allocate decode buffer\n", t.desc);
             free(enc_buf);
-            EVP_EncFreeAlloc(&ctx);
+            CF_EncFree(&ctx);
             continue;
         }
         memset(dec_buf, 0, dec_len);
 
-        status = EVP_Decode(ctx, enc_buf, out_len, dec_buf, &dec_len);
+        status = CF_Decode(ctx, enc_buf, out_len, dec_buf, &dec_len);
         if (status != CF_SUCCESS) {
             printf("[FAIL] %s: Decoding failed\n", t.desc);
         } else if (dec_len != input_len || memcmp(dec_buf, input, input_len) != 0) {
@@ -444,7 +444,7 @@ void test_all_encoders_high(const uint8_t *input, size_t input_len) {
         SECURE_FREE(dec_buf, dec_len);
 
 
-        EVP_EncFreeAlloc(&ctx);
+        CF_EncFree(&ctx);
     }
 }
 

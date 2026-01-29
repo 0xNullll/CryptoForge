@@ -15,7 +15,7 @@
  * Project repository: https://github.com/0xNullll/CryptoForge
  */
 
-#include "gmac.h"
+#include "../../include/crypto/gmac.h"
 
 CF_STATUS ll_GMAC_Init(ll_GMAC_CTX *ctx, const ll_AES_KEY *key, const uint8_t *iv, size_t iv_len) {
     if (!ctx || !key || !iv)
@@ -24,11 +24,11 @@ CF_STATUS ll_GMAC_Init(ll_GMAC_CTX *ctx, const ll_AES_KEY *key, const uint8_t *i
     if (iv_len < AES_GCM_IV_MIN)
         return CF_ERR_MAC_BAD_IV_LEN;
 
-    uint8_t zero[AES_BLOCK_SIZE] = {0};
+    ll_GMAC_Reset(ctx);
 
     ctx->key = key;
-    ctx->aad_len  = 0;
-    SECURE_ZERO(ctx->X, AES_BLOCK_SIZE);
+
+    uint8_t zero[AES_BLOCK_SIZE] = {0};
 
     // H = AES_K(0)
     if (!ll_AES_EncryptBlock(key, zero, ctx->H))
@@ -52,8 +52,6 @@ CF_STATUS ll_GMAC_Init(ll_GMAC_CTX *ctx, const ll_AES_KEY *key, const uint8_t *i
         SECURE_ZERO(tmp, sizeof(tmp));
     }
 
-    ctx->isFinalized = 0;
-    ctx->isHeapAlloc = 0;
     return CF_SUCCESS;
 }
 
@@ -185,9 +183,11 @@ cleanup:
 }
 
 
-CF_STATUS ll_GMAC_Free(ll_GMAC_CTX *ctx) {
+CF_STATUS ll_GMAC_Reset(ll_GMAC_CTX *ctx) {
     if (!ctx || !ctx->key)
         return CF_ERR_NULL_PTR;
+
+    int wasHeapAlloc = ctx->isHeapAlloc;
 
     // Zero all sensitive internal data
     SECURE_ZERO(ctx->H, sizeof(ctx->H));
@@ -201,18 +201,19 @@ CF_STATUS ll_GMAC_Free(ll_GMAC_CTX *ctx) {
     // Key pointer is not freed, assumed managed externally
     ctx->key = NULL;
 
+    ctx->isHeapAlloc = wasHeapAlloc;
+
     return CF_SUCCESS;
 }
 
-CF_STATUS ll_GMAC_FreeAlloc(ll_GMAC_CTX **p_ctx) {
+CF_STATUS ll_GMAC_Free(ll_GMAC_CTX **p_ctx) {
     if (!p_ctx || !*p_ctx)
         return CF_ERR_NULL_PTR;
 
     ll_GMAC_CTX *ctx = *p_ctx;
-    int wasHeapAlloc = ctx->isHeapAlloc;  // save flag
+    int wasHeapAlloc = ctx->isHeapAlloc;
 
-    // Reuse Free to clean internals
-    ll_GMAC_Free(ctx);
+    ll_GMAC_Reset(ctx);
 
     // Free the outer struct if heap-allocated
     if (wasHeapAlloc) {

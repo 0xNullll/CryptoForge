@@ -15,7 +15,7 @@
  * Project repository: https://github.com/0xNullll/CryptoForge
  */
 
-#include "sha512.h"
+#include "../../../include/crypto/sha512.h"
 
 // SHA-512 constants
 static const uint64_t K512[80] = {
@@ -120,7 +120,7 @@ static bool SHA512ProcessBlock(ll_SHA512_CTX *ctx, const uint8_t *block) {
 }
 
 bool ll_sha512_update(ll_SHA512_CTX *ctx, const uint8_t *data, size_t len) {
-    if (!data || !len) return false;
+    if (!data) return false;
 
     size_t i = 0;
     uint64_t nbits = ((uint64_t)len) << 3;

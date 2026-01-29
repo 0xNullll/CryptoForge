@@ -15,7 +15,7 @@
  * Project repository: https://github.com/0xNullll/CryptoForge
  */
 
-#include "cmac.h"
+#include "../../include/crypto/cmac.h"
 
 /*
  * Multiplication by u in the Galois field for AES (GF(2^128))
@@ -92,14 +92,9 @@ static void ll_CMAC_Pad(uint8_t padded_block[AES_BLOCK_SIZE], size_t padded_bloc
 CF_STATUS ll_CMAC_Init(ll_CMAC_CTX *ctx, const ll_AES_KEY *key) {
     if (!ctx || !key) return CF_ERR_NULL_PTR;
 
-    SECURE_ZERO(ctx, sizeof(*ctx));
+    ll_CMAC_Reset(ctx);
 
     ctx->key = key;
-    SECURE_ZERO(ctx->last_block, sizeof(ctx->last_block));
-    SECURE_ZERO(ctx->unprocessed_block, sizeof(ctx->unprocessed_block));
-    
-    ctx->isFinalized = 0;
-    ctx->isHeapAlloc = 0;
 
     return CF_SUCCESS;
 }
@@ -246,15 +241,17 @@ CF_STATUS ll_CMAC_Verify(
     st = SECURE_MEM_EQUAL(tag, expected_tag, tag_len) ? CF_SUCCESS : CF_ERR_MAC_VERIFY;
 
 cleanup:
-    SECURE_ZERO(&ctx, sizeof(ctx));
+    ll_CMAC_Reset(&ctx);
     SECURE_ZERO(tag, sizeof(tag));
 
     return st;
 }
 
-CF_STATUS ll_CMAC_Free(ll_CMAC_CTX *ctx) {
+CF_STATUS ll_CMAC_Reset(ll_CMAC_CTX *ctx) {
     if (!ctx || !ctx->key)
         return CF_ERR_NULL_PTR;
+
+    int wasHeapAlloc = ctx->isHeapAlloc;
 
     // Zero all sensitive internal data
     SECURE_ZERO(ctx->unprocessed_block, sizeof(ctx->unprocessed_block));
@@ -262,24 +259,25 @@ CF_STATUS ll_CMAC_Free(ll_CMAC_CTX *ctx) {
 
     // Reset lengths and state
     ctx->isFinalized = 0;
+    ctx->unprocessed_len = 0;
 
     // Key pointer is not freed, assumed managed externally
     ctx->key = NULL;
 
+    ctx->isHeapAlloc = wasHeapAlloc;
+
     return CF_SUCCESS;
 }
 
-CF_STATUS ll_CMAC_FreeAlloc(ll_CMAC_CTX **p_ctx) {
+CF_STATUS ll_CMAC_Free(ll_CMAC_CTX **p_ctx) {
     if (!p_ctx || !*p_ctx)
         return CF_ERR_NULL_PTR;
 
     ll_CMAC_CTX *ctx = *p_ctx;
-    int wasHeapAlloc = ctx->isHeapAlloc;  // save flag
+    int wasHeapAlloc = ctx->isHeapAlloc;
 
-    // Reuse Free to clean internals
-    ll_CMAC_Free(ctx);
+    ll_CMAC_Reset(ctx);
 
-    // Free the outer struct if heap-allocated
     if (wasHeapAlloc) {
         SECURE_ZERO(ctx, sizeof(ll_CMAC_CTX));
         SECURE_FREE(ctx, sizeof(ll_CMAC_CTX));

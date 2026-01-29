@@ -257,64 +257,26 @@ Evaluate behavior under hostile or constrained execution environments.
 
 ```c
 /CryptoForge
-├─ /config
-│   ├─ crypto_config.h      <-- DLL/export, PREFIX_T, compile flags
-│   └─ demo_config.h
+├─ /include
+│   ├─ cf.h                 <-- umbrella header
+│   ├─ cf_api/              <-- top-level API headers
+│   ├─ utils/               <-- utility headers (mem, status, misc)
+│   ├─ config/              <-- config headers (crypto_config, demo_config)
+│   └─ crypto/              <-- all low-level crypto headers
 ├─ /crypto
 │   ├─ /cipher
 │   │   ├─ /aes
-│   │   │   ├─ aes_common.h     <-- endian helpers
-│   │   │   ├─ aes_core.{c,h}
-│   │   │   ├─ ecb_mode.{c,h}
-│   │   │   ├─ cbc_mode.{c,h}
-│   │   │   ├─ cfb_mode.{c,h}
-│   │   │   ├─ ofb_mode.{c,h}
-│   │   │   ├─ ctr_mode.{c,h}
-│   │   │   └─ gcm_mode.{c,h}
 │   │   └─ /chacha
 │   ├─ /hash
-│   │   ├─ hash_common.h     <-- padding, endian helpers, round macros
 │   │   ├─ /sha
-│   │   │   ├─ sha1.{c,h}
-│   │   │   ├─ sha256.{c,h}
-│   │   │   ├─ sha512.{c,h}
 │   │   │   └─ /keccak
-│   │   │       ├─ keccak_core.{c,h}
-│   │   │       ├─ sha3.{c,h}
-│   │   │       └─ shake.{c,h}
-│   │   ├─ /md
-│   │   │   └─ md5.{c,h}
+│   │   └─ /md
 │   ├─ /mac
-│   │   ├─ hmac.{c,h}
-│   │   ├─ kmac.{c,h}
-│   │   ├─ gmac.{c,h}
-│   │   └─ cmac.{c,h}
 │   ├─ /kdf
-│   │   └─ hkdf.{c,h}
-│   ├─ /enc
-│   │   ├─ base16.{c,h}
-│   │   ├─ base32.{c,h}
-│   │   ├─ base58.{c,h}
-│   │   ├─ base64.{c,h}
-│   │   └─ base85.{c,h}
-│   └─ /evp
-│       ├─ evp_defs.h
-│       ├─ evp_flags.h
-│       ├─ evp_utils.{c,h}
-│       ├─ evp_hash.{c,h}
-│       ├─ evp_mac.{c,h}
-│       ├─ evp_kdf.{c,h}
-│       └─ evp_enc.{c,h}
+│   └─ /enc
 ├─ /utils
-│   ├─ mem.{c,h}        <-- secure memory helpers
-│   ├─ misc_utils.h     <-- force_inline, generic macros
-│   └─ cf_status.h
+├─ /config
 └─ /demo
-    ├─ demo_hash.c
-    ├─ demo_mac.c
-    ├─ demo_kdf.c
-    ├─ demo_enc.c
-    └─ run_all_demos.c
 ```
 
 ---
@@ -328,7 +290,7 @@ Evaluate behavior under hostile or constrained execution environments.
    - Fully deterministic, no user-facing key checks or policy enforcement
    - Some `ll_*` may call other lower-level `ll_*` functions
 
-2. **Envelope Layer / User-Facing Layer (`evp_*`)**
+2. **Facade  Layer / User-Facing Layer (`cf_*`)**
    - Dispatcher by enum/macro for algorithm selection
    - Supports streaming, piping, and user-facing APIs
    - Enforces security policies (e.g., minimum key lengths)
