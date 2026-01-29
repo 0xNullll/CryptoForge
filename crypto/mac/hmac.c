@@ -1,16 +1,17 @@
 /*
  * CryptoForge - hmac.c / HMAC (HMAC-SHA-1, HMAC-SHA-2, and HMAC-SHA-3) Implementation
- * Copyright (C) 2025 0xNullll
+ * Copyright (C) 2026 0xNullll
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the MIT License.
+ * Licensed under the Apache License, Version 2.0 (the "License").
+ * You may not use this file except in compliance with the License.
+ * You may obtain a copy of the License in the file LICENSE in the
+ * source distribution or at:
+ * https://www.apache.org/licenses/LICENSE-2.0
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *
- * You should have received a copy of the MIT License along with this program.
- * If not, see <https://opensource.org/licenses/MIT>.
+ * This software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES
+ * OR CONDITIONS OF ANY KIND, either express or implied. See the License
+ * for the specific language governing permissions and limitations under
+ * the License.
  *
  * Project repository: https://github.com/0xNullll/CryptoForge
  */
