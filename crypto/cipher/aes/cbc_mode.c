@@ -1,4 +1,4 @@
-#include "cbc_mode.h"
+#include "../../../include/crypto/cbc_mode.h"
 
 bool ll_AES_CBC_Encrypt(
     const ll_AES_KEY *key,
@@ -10,37 +10,27 @@ bool ll_AES_CBC_Encrypt(
 
     bool ok = false;
 
-    // Split IV into two 64-bit words
-    uint64_t c0 = AES_LOAD64(iv);
-    uint64_t c1 = AES_LOAD64(iv + 8);
+    uint8_t prev[AES_BLOCK_SIZE] = {0};
+    SECURE_MEMCPY(prev, iv, AES_BLOCK_SIZE);
 
-    uint8_t block[AES_BLOCK_SIZE] = {0}; // temporary encrypt block
+    uint8_t block[AES_BLOCK_SIZE]; // temporary encrypt block
 
     for (size_t i = 0; i < in_len; i += AES_BLOCK_SIZE) {
-        // Load plaintext block
-        uint64_t p0 = AES_LOAD64(in + i);
-        uint64_t p1 = AES_LOAD64(in + i + 8);
-
         // XOR with previous ciphertext (CBC step)
-        uint64_t x0 = p0 ^ c0;
-        uint64_t x1 = p1 ^ c1;
-
-        // Pack x0/x1 into a temporary block
-        AES_STORE64(block, x0);
-        AES_STORE64(block + 8, x1);
+        for (size_t j = 0; j < AES_BLOCK_SIZE; j++)
+            block[j] = in[i + j] ^ prev[j];
 
         // Encrypt the block
         if (!ll_AES_EncryptBlock(key, block, out + i)) goto cleanup;
         
-
-        // Update c0/c1 for next round
-        c0 = AES_LOAD64(out + i);
-        c1 = AES_LOAD64(out + i + 8);
+        // Update prev to current ciphertext
+        SECURE_MEMCPY(prev, out + i, AES_BLOCK_SIZE);
     }
 
     ok = true;
 
 cleanup:
+    SECURE_ZERO(prev, sizeof(prev));
     SECURE_ZERO(block, sizeof(block));
 
     return ok;
@@ -56,9 +46,8 @@ bool ll_AES_CBC_Decrypt(
 
     bool ok = false;
 
-    // Split IV into two 64-bit words
-    uint64_t prev0 = AES_LOAD64(iv);     
-    uint64_t prev1 = AES_LOAD64(iv + 8); 
+    uint8_t prev[AES_BLOCK_SIZE] = {0};
+    SECURE_MEMCPY(prev, iv, AES_BLOCK_SIZE);
 
     uint8_t block[AES_BLOCK_SIZE] = {0}; // temporary decrypted block
 
@@ -66,26 +55,18 @@ bool ll_AES_CBC_Decrypt(
         // Decrypt ciphertext block into temporary buffer
         if (!ll_AES_DecryptBlock(key, in + i, block)) goto cleanup;
 
-        // Load decrypted block as two 64-bit words
-        uint64_t x0 = AES_LOAD64(block);
-        uint64_t x1 = AES_LOAD64(block + 8);
-
         // XOR with previous ciphertext (CBC step)
-        x0 ^= prev0;
-        x1 ^= prev1;
-
-        // Store result to output
-        AES_STORE64(out + i, x0);
-        AES_STORE64(out + i + 8, x1);
-
-        // Update prev for next block
-        prev0 = AES_LOAD64(in + i);
-        prev1 = AES_LOAD64(in + i + 8);
+        for (size_t j = 0; j < AES_BLOCK_SIZE; j++)
+            out[i + j] = block[j] ^ prev[j];
+    
+        // Update prev to current ciphertext
+        SECURE_MEMCPY(prev, in + i, AES_BLOCK_SIZE);
     }
 
     ok = true;
 
 cleanup:
+    SECURE_ZERO(prev, sizeof(prev));
     SECURE_ZERO(block, sizeof(block));
 
     return ok;

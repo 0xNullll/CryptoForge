@@ -15,7 +15,7 @@
  * Project repository: https://github.com/0xNullll/CryptoForge
  */
 
-#include "base58.h"
+#include "../../include/crypto/base58.h"
 
 #define BASE58_LEADING_ZERO '1'
 

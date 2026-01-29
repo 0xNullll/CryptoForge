@@ -1,4 +1,4 @@
-#include "../config/demo_config.h"
+#include "../include/config/demo_config.h"
 
 #if ENABLE_TESTS
 
@@ -17,6 +17,8 @@ void test_aes128_fips197(void) {
     };
 
     ll_AES_KEY ctx;
+    SECURE_ZERO(&ctx, sizeof(ctx));
+
     uint8_t ciphertext[AES_BLOCK_SIZE];
     uint8_t decrypted[AES_BLOCK_SIZE];
 
@@ -61,6 +63,8 @@ void test_aes192_fips197(void) {
     };
 
     ll_AES_KEY ctx;
+    SECURE_ZERO(&ctx, sizeof(ctx));
+
     uint8_t ciphertext[AES_BLOCK_SIZE];
     uint8_t decrypted[AES_BLOCK_SIZE];
 
@@ -106,6 +110,8 @@ void test_aes256_fips197(void) {
     };
 
     ll_AES_KEY ctx;
+    SECURE_ZERO(&ctx, sizeof(ctx));
+
     uint8_t ciphertext[AES_BLOCK_SIZE];
     uint8_t decrypted[AES_BLOCK_SIZE];
 
@@ -187,6 +193,8 @@ void test_aes_ecb_fist800_38a(void) {
     };
 
     ll_AES_KEY ctx;
+    SECURE_ZERO(&ctx, sizeof(ctx));
+
     uint8_t ct[4 * AES_BLOCK_SIZE];
     uint8_t dec[4 * AES_BLOCK_SIZE];
 
@@ -324,6 +332,8 @@ void test_aes_cbc_fips800_38a(void) {
     };
 
     ll_AES_KEY ctx;
+    SECURE_ZERO(&ctx, sizeof(ctx));
+
     uint8_t ct[4 * AES_BLOCK_SIZE];
     uint8_t dec[4 * AES_BLOCK_SIZE];
 
@@ -516,6 +526,8 @@ void test_aes_cfb8_fips800_38a(void) {
     };
 
     ll_AES_KEY ctx;
+    SECURE_ZERO(&ctx, sizeof(ctx));
+
     uint8_t ct[4 * AES_BLOCK_SIZE];
     uint8_t dec[4 * AES_BLOCK_SIZE];
 
@@ -708,6 +720,8 @@ void test_aes_cfb128_fips800_38a(void) {
     };
 
     ll_AES_KEY ctx;
+    SECURE_ZERO(&ctx, sizeof(ctx));
+
     uint8_t ct[4 * AES_BLOCK_SIZE];
     uint8_t dec[4 * AES_BLOCK_SIZE];
 
@@ -900,6 +914,8 @@ void test_aes_ofb_fips800_38a(void) {
     };
 
     ll_AES_KEY ctx;
+    SECURE_ZERO(&ctx, sizeof(ctx));
+
     uint8_t ct[4 * AES_BLOCK_SIZE];
     uint8_t dec[4 * AES_BLOCK_SIZE];
 
@@ -1096,6 +1112,8 @@ void test_aes_ctr_fips800_38a(void) {
     memcpy(enc_counter, fixed_counter, AES_BLOCK_SIZE);
 
     ll_AES_KEY ctx;
+    SECURE_ZERO(&ctx, sizeof(ctx));
+
     uint8_t ct[4 * AES_BLOCK_SIZE];
     uint8_t dec[4 * AES_BLOCK_SIZE];
 
@@ -1303,6 +1321,8 @@ void test_aes_gcm_fips_style(void) {
     // };
 
     ll_AES_KEY ctx;
+    SECURE_ZERO(&ctx, sizeof(ctx));
+
     uint8_t ct[AES_BLOCK_SIZE * 4], tag[AES_BLOCK_SIZE], dec[AES_BLOCK_SIZE * 4];
 
     // ---------------- AES-128 ----------------
@@ -1523,6 +1543,7 @@ void test_aes_gcm_empty_plaintext(void) {
     uint8_t tag[AES_BLOCK_SIZE];
 
     ll_AES_KEY ctx;
+    SECURE_ZERO(&ctx, sizeof(ctx));
 
     // ---------------- AES-128 ----------------
     uint8_t key128[AES_BLOCK_SIZE] = {

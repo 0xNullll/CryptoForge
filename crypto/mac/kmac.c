@@ -15,7 +15,7 @@
  * Project repository: https://github.com/0xNullll/CryptoForge
  */
 
-#include "kmac.h"
+#include "../../include/crypto/kmac.h"
 
 // Helper macros
 #define ll_KMAC_INIT(ctx, name, name_len, S, S_len)                        \
@@ -111,16 +111,16 @@ CF_STATUS ll_KMAC_Init(ll_KMAC_CTX *ctx,
     if (key_len > MAX_KEY_SIZE || S_len > MAX_CUSTOMIZATION) 
         return CF_ERR_INVALID_LEN;
 
-    SECURE_ZERO(ctx, sizeof(*ctx));
+    ll_KMAC_Reset(ctx);
+    
     ctx->type = type;
     ctx->isXOF = LL_KMAC_IS_XOF(ctx->type);
-    ctx->out_len = 0;  // left as zero; will be set in Final for non-XOF
 
     // Allocate cSHAKE context
     if (LL_KMAC_IS_128(ctx->type)) {
-        if (!ctx->cshake_ctx) ctx->cshake_ctx = malloc(sizeof(ll_CSHAKE128_CTX));
+        if (!ctx->cshake_ctx) ctx->cshake_ctx = SECURE_ALLOC(sizeof(ll_CSHAKE128_CTX));
     } else {
-        if (!ctx->cshake_ctx) ctx->cshake_ctx = malloc(sizeof(ll_CSHAKE256_CTX));
+        if (!ctx->cshake_ctx) ctx->cshake_ctx = SECURE_ALLOC(sizeof(ll_CSHAKE256_CTX));
     }
     if (!ctx->cshake_ctx) return CF_ERR_ALLOC_FAILED;
 
@@ -137,11 +137,6 @@ CF_STATUS ll_KMAC_Init(ll_KMAC_CTX *ctx,
 
     // Step 3: absorb bytepadded key
     if (!ll_KMAC_ABSORB(ctx, padded_key, padded_len)) return CF_ERR_CTX_CORRUPT;
-
-    SECURE_ZERO(padded_key, sizeof(padded_key));
-
-    ctx->customAbsorbed = 1;
-    ctx->isHeapAlloc = 0;
 
     return CF_SUCCESS;
 }
@@ -294,7 +289,7 @@ CF_STATUS ll_KMAC_Verify(
 
     CF_STATUS status = CF_SUCCESS;
     ll_KMAC_CTX ctx;
-    uint8_t computed[EVP_MAX_DEFAULT_DIGEST_SIZE] = {0};
+    uint8_t computed[CF_MAX_DEFAULT_DIGEST_SIZE] = {0};
 
     SECURE_ZERO(&ctx, sizeof(ctx));
 
@@ -326,9 +321,11 @@ cleanup:
 }
 
 // Frees internal buffers of a pre-allocated KMAC context
-CF_STATUS ll_KMAC_Free(ll_KMAC_CTX *ctx) {
+CF_STATUS ll_KMAC_Reset(ll_KMAC_CTX *ctx) {
     if (!ctx) return CF_ERR_NULL_PTR;
     if (!LL_KMAC_TYPE_IS_VALID(ctx->type)) return CF_ERR_UNSUPPORTED;
+
+    int wasHeapAlloc = ctx->isHeapAlloc;
 
     // Free underlying CSHAKE context
     if (ctx->cshake_ctx) {
@@ -350,21 +347,19 @@ CF_STATUS ll_KMAC_Free(ll_KMAC_CTX *ctx) {
     ctx->isFinalized = 0;
     ctx->customAbsorbed = 0;
     ctx->emptyNameCustom = 1;
-    ctx->isHeapAlloc = 0;
+    ctx->isHeapAlloc = wasHeapAlloc;
 
     return CF_SUCCESS;
 }
 
-CF_STATUS ll_KMAC_FreeAlloc(ll_KMAC_CTX **p_ctx) {
+CF_STATUS ll_KMAC_Free(ll_KMAC_CTX **p_ctx) {
     if (!p_ctx || !*p_ctx) return CF_ERR_NULL_PTR;
 
     ll_KMAC_CTX *ctx = *p_ctx;
-    int wasHeapAlloc = ctx->isHeapAlloc;  // save flag
+    int wasHeapAlloc = ctx->isHeapAlloc;
 
-    // Reuse Free to clean internals
-    ll_KMAC_Free(ctx);
+    ll_KMAC_Reset(ctx);
 
-    // Free the outer struct if heap-allocated
     if (wasHeapAlloc) {
         SECURE_ZERO(ctx, sizeof(ll_KMAC_CTX));
         SECURE_FREE(ctx, sizeof(ll_KMAC_CTX));
@@ -378,7 +373,7 @@ CF_STATUS ll_KMAC_CloneCtx(ll_KMAC_CTX *ctx_dest, const ll_KMAC_CTX *ctx_src) {
     if (!ctx_dest || !ctx_src)
         return CF_ERR_NULL_PTR;
 
-    SECURE_ZERO(ctx_dest, sizeof(*ctx_dest)); // optional: zero dest before copy
+    SECURE_ZERO(ctx_dest, sizeof(*ctx_dest));
 
     // Clone CSHAKE context if present
     if (ctx_src->cshake_ctx) {

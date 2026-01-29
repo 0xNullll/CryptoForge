@@ -1,4 +1,4 @@
-#include "ecb_mode.h"
+#include "../../../include/crypto/ecb_mode.h"
 
 bool ll_AES_ECB_Encrypt(const ll_AES_KEY *key, const uint8_t *in, size_t in_len, uint8_t *out) {
     if (!key || !in || (in_len % AES_BLOCK_SIZE) != 0 || !out) return false; 

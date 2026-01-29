@@ -15,7 +15,7 @@
  * Project repository: https://github.com/0xNullll/CryptoForge
  */
 
-#include "md5.h"
+#include "../../../include/crypto/md5.h"
 
 // MD5 constants
 #define F(x,y,z) (((x)&(y)) | ((~(x)) & (z)))
@@ -137,7 +137,7 @@ bool ll_md5_final(ll_MD5_CTX *ctx,uint8_t digest[MD5_DIGEST_SIZE]){
     ctx->buffer_len += padLen;
 
     // Append length in bits
-    TWISTED_PUT64(block + 56 ,ctx->bitlen);
+    TWISTED_STORE64(block + 56 ,ctx->bitlen);
 
     if(!ll_md5_process_block(ctx,block)) return false;
     

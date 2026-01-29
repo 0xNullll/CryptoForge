@@ -15,7 +15,7 @@
  * Project repository: https://github.com/0xNullll/CryptoForge
  */
 
-#include "shake.h"
+#include "../../../../include/crypto/shake.h"
 
 /*
  * ================= FIPS 800-185 Helpers =================

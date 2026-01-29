@@ -1,61 +1,63 @@
-#include "../config/demo_config.h"
+#include "../include/config/demo_config.h"
 
 #if ENABLE_TESTS
 
 void test_all_hmacs(const uint8_t *key, size_t key_len, const uint8_t *input, size_t input_len) {
-    uint8_t digest[EVP_MAX_DEFAULT_DIGEST_SIZE];
+    uint8_t digest[CF_MAX_DEFAULT_DIGEST_SIZE];
 
     // List of hash flags to test
     uint32_t hash_flags[] = {
-        EVP_SHA1,
-        EVP_SHA224,
-        EVP_SHA256,
-        EVP_SHA384,
-        EVP_SHA512,
-        EVP_SHA512_224,
-        EVP_SHA512_256,
-        EVP_SHA3_224,
-        EVP_SHA3_256,
-        EVP_SHA3_384,
-        EVP_SHA3_512
+        CF_SHA1,
+        CF_SHA224,
+        CF_SHA256,
+        CF_SHA384,
+        CF_SHA512,
+        CF_SHA512_224,
+        CF_SHA512_256,
+        CF_SHA3_224,
+        CF_SHA3_256,
+        CF_SHA3_384,
+        CF_SHA3_512
     };
 
     size_t num_hashes = sizeof(hash_flags)/sizeof(hash_flags[0]);
 
     for (size_t i = 0; i < num_hashes; i++) {
-        const EVP_MD *md = EVP_MDByFlag(hash_flags[i]);
+        const CF_MD *md = CF_MDByFlag(hash_flags[i]);
         if (!md) { 
             printf("Unknown hash flag %u\n", hash_flags[i]); 
             continue; 
         }
 
         ll_HMAC_CTX hmac_ctx;
+        SECURE_ZERO(&hmac_ctx, sizeof(hmac_ctx));
+
         CF_STATUS status = ll_HMAC_Init(&hmac_ctx, md, key, key_len);
         if (status != CF_SUCCESS) { 
-            printf("ll_HMAC_Init failed for %s\n", EVP_HashGetName(hmac_ctx.md)); 
+            printf("ll_HMAC_Init failed for %s\n", CF_HashGetName(hmac_ctx.md)); 
             continue; 
         }
 
         status = ll_HMAC_Update(&hmac_ctx, input, input_len);
         if (status != CF_SUCCESS) { 
-            printf("ll_HMAC_Update failed for %s\n", EVP_HashGetName(hmac_ctx.md)); 
-            ll_HMAC_Free(&hmac_ctx); 
+            printf("ll_HMAC_Update failed for %s\n", CF_HashGetName(hmac_ctx.md)); 
+            ll_HMAC_Reset(&hmac_ctx); 
             continue; 
         }
 
         size_t out_len = hmac_ctx.out_len;
         status = ll_HMAC_Final(&hmac_ctx, digest, out_len);
         if (status != CF_SUCCESS) { 
-            printf("ll_HMAC_Final failed for %s\n", EVP_HashGetName(hmac_ctx.md)); 
-            ll_HMAC_Free(&hmac_ctx); 
+            printf("ll_HMAC_Final failed for %s\n", CF_HashGetName(hmac_ctx.md)); 
+            ll_HMAC_Reset(&hmac_ctx); 
             continue; 
         }
 
-        printf("%s HMAC: ", EVP_HashGetName(hmac_ctx.md));
+        printf("%s HMAC: ", CF_HashGetName(hmac_ctx.md));
         DEMO_print_hex(digest, out_len);
         printf("\n");
 
-        ll_HMAC_Free(&hmac_ctx);
+        ll_HMAC_Reset(&hmac_ctx);
     }
 }
 
@@ -64,7 +66,7 @@ void test_all_kmacs(
     const uint8_t *key, size_t key_len,
     const uint8_t *input, size_t input_len,
     const uint8_t *S, size_t S_len) {
-    uint8_t digest[EVP_MAX_DEFAULT_DIGEST_SIZE * 2];
+    uint8_t digest[CF_MAX_DEFAULT_DIGEST_SIZE * 2];
 
     // KMAC types to test
     ll_KMAC_TYPE kmac_types[] = {
@@ -78,6 +80,7 @@ void test_all_kmacs(
 
     for (size_t i = 0; i < num_kmacs; i++) {
         ll_KMAC_CTX kmac_ctx;
+        SECURE_ZERO(&kmac_ctx, sizeof(kmac_ctx));
 
         // Determine output length
         size_t out_len = (kmac_types[i] == KMACXOF128 || kmac_types[i] == KMACXOF256)
@@ -95,7 +98,7 @@ void test_all_kmacs(
         status = ll_KMAC_Update(&kmac_ctx, input, input_len);
         if (status != CF_SUCCESS) {
             printf("ll_KMAC_Update failed: error code = %u\n", status);
-            ll_KMAC_Free(&kmac_ctx);
+            ll_KMAC_Reset(&kmac_ctx);
             continue;
         }
 
@@ -103,7 +106,7 @@ void test_all_kmacs(
         status = ll_KMAC_Final(&kmac_ctx, digest, out_len);
         if (status != CF_SUCCESS) {
             printf("ll_KMAC_Final failed: error code = %u\n", status);
-            ll_KMAC_Free(&kmac_ctx);
+            ll_KMAC_Reset(&kmac_ctx);
             continue;
         }
 
@@ -116,7 +119,7 @@ void test_all_kmacs(
         DEMO_print_hex(digest, out_len);
         printf("\n");
 
-        ll_KMAC_Free(&kmac_ctx);
+        ll_KMAC_Reset(&kmac_ctx);
     }
 }
 
@@ -164,7 +167,10 @@ void test_all_gmacs(void) {
     uint8_t tag[AES_BLOCK_SIZE];
 
     ll_AES_KEY kctx;
+    SECURE_ZERO(&kctx, sizeof(kctx));
+
     ll_GMAC_CTX gctx;
+    SECURE_ZERO(&gctx, sizeof(gctx));
 
     // ---------------- AES-128 ----------------
     uint8_t key128[AES_BLOCK_SIZE] = {
@@ -189,13 +195,13 @@ void test_all_gmacs(void) {
 
     if (ll_GMAC_Update(&gctx, aad, sizeof(aad)) != CF_SUCCESS) {
         printf("GMAC update failed\n");
-        ll_GMAC_Free(&gctx);
+        ll_GMAC_Reset(&gctx);
         return;
     }
 
     if (ll_GMAC_Final(&gctx, tag, sizeof(tag)) != CF_SUCCESS) {
         printf("GMAC finalize failed\n");
-        ll_GMAC_Free(&gctx);
+        ll_GMAC_Reset(&gctx);
         return;
     }
 
@@ -209,7 +215,7 @@ void test_all_gmacs(void) {
     }
 
     ll_AES_ClearKey(&kctx);
-    ll_GMAC_Free(&gctx);
+    ll_GMAC_Reset(&gctx);
 
     // ---------------- AES-192 ----------------
     uint8_t key192[24] = {
@@ -235,13 +241,13 @@ void test_all_gmacs(void) {
 
     if (ll_GMAC_Update(&gctx, aad, sizeof(aad)) != CF_SUCCESS) {
         printf("GMAC update failed\n");
-        ll_GMAC_Free(&gctx);
+        ll_GMAC_Reset(&gctx);
         return;
     }
 
     if (ll_GMAC_Final(&gctx, tag, sizeof(tag)) != CF_SUCCESS) {
         printf("GMAC finalize failed\n");
-        ll_GMAC_Free(&gctx);
+        ll_GMAC_Reset(&gctx);
         return;
     }
 
@@ -255,7 +261,7 @@ void test_all_gmacs(void) {
     }
 
     ll_AES_ClearKey(&kctx);
-    ll_GMAC_Free(&gctx);
+    ll_GMAC_Reset(&gctx);
 
     // ---------------- AES-256 ----------------
     uint8_t key256[32] = {
@@ -282,13 +288,13 @@ void test_all_gmacs(void) {
 
     if (ll_GMAC_Update(&gctx, aad, sizeof(aad)) != CF_SUCCESS) {
         printf("GMAC update failed\n");
-        ll_GMAC_Free(&gctx);
+        ll_GMAC_Reset(&gctx);
         return;
     }
 
     if (ll_GMAC_Final(&gctx, tag, sizeof(tag)) != CF_SUCCESS) {
         printf("GMAC finalize failed\n");
-        ll_GMAC_Free(&gctx);
+        ll_GMAC_Reset(&gctx);
         return;
     }
 
@@ -302,7 +308,7 @@ void test_all_gmacs(void) {
     }
 
     ll_AES_ClearKey(&kctx);
-    ll_GMAC_Free(&gctx);
+    ll_GMAC_Reset(&gctx);
 }
 
 // all tests vectors for this function come from 'https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Standards-and-Guidelines/documents/examples/AES_CMAC.pdf'
@@ -337,7 +343,10 @@ void test_aes_cmac_fips800_38b(void) {
     uint8_t tag[AES_BLOCK_SIZE];
 
     ll_AES_KEY kctx;
+    SECURE_ZERO(&kctx, sizeof(kctx));
+
     ll_CMAC_CTX cctx;
+    SECURE_ZERO(&cctx, sizeof(cctx));
 
     // ---------------- AES-128 ----------------
     uint8_t key128[AES_BLOCK_SIZE] = {
@@ -363,13 +372,13 @@ void test_aes_cmac_fips800_38b(void) {
 
     if (ll_CMAC_Update(&cctx, &plain_text_1, (size_t)plain_text_1) != CF_SUCCESS) {
         printf("CMAC update failed\n");
-        ll_CMAC_Free(&cctx);
+        ll_CMAC_Reset(&cctx);
         return;
     }
 
     if (ll_CMAC_Final(&cctx, tag, sizeof(tag)) != CF_SUCCESS) {
         printf("CMAC finalize failed\n");
-        ll_CMAC_Free(&cctx);
+        ll_CMAC_Reset(&cctx);
         return;
     }
 
@@ -382,7 +391,7 @@ void test_aes_cmac_fips800_38b(void) {
         printf("CMAC tag verified successfully\n");
     }
 
-    ll_CMAC_Free(&cctx);
+    ll_CMAC_Reset(&cctx);
 
     printf("--------------------------------\n");
 
@@ -399,13 +408,13 @@ void test_aes_cmac_fips800_38b(void) {
 
     if (ll_CMAC_Update(&cctx, plain_text_2, sizeof(plain_text_2)) != CF_SUCCESS) {
         printf("CMAC update failed\n");
-        ll_CMAC_Free(&cctx);
+        ll_CMAC_Reset(&cctx);
         return;
     }
 
     if (ll_CMAC_Final(&cctx, tag, sizeof(tag)) != CF_SUCCESS) {
         printf("CMAC finalize failed\n");
-        ll_CMAC_Free(&cctx);
+        ll_CMAC_Reset(&cctx);
         return;
     }
 
@@ -418,7 +427,7 @@ void test_aes_cmac_fips800_38b(void) {
         printf("CMAC tag verified successfully\n");
     }
 
-    ll_CMAC_Free(&cctx);
+    ll_CMAC_Reset(&cctx);
 
     printf("--------------------------------\n");
 
@@ -435,13 +444,13 @@ void test_aes_cmac_fips800_38b(void) {
 
     if (ll_CMAC_Update(&cctx, plain_text_3, sizeof(plain_text_3)) != CF_SUCCESS) {
         printf("CMAC update failed\n");
-        ll_CMAC_Free(&cctx);
+        ll_CMAC_Reset(&cctx);
         return;
     }
 
     if (ll_CMAC_Final(&cctx, tag, sizeof(tag)) != CF_SUCCESS) {
         printf("CMAC finalize failed\n");
-        ll_CMAC_Free(&cctx);
+        ll_CMAC_Reset(&cctx);
         return;
     }
 
@@ -454,7 +463,7 @@ void test_aes_cmac_fips800_38b(void) {
         printf("CMAC tag verified successfully\n");
     }
 
-    ll_CMAC_Free(&cctx);
+    ll_CMAC_Reset(&cctx);
 
     printf("--------------------------------\n");
 
@@ -471,13 +480,13 @@ void test_aes_cmac_fips800_38b(void) {
 
     if (ll_CMAC_Update(&cctx, plain_text_4, sizeof(plain_text_4)) != CF_SUCCESS) {
         printf("CMAC update failed\n");
-        ll_CMAC_Free(&cctx);
+        ll_CMAC_Reset(&cctx);
         return;
     }
 
     if (ll_CMAC_Final(&cctx, tag, sizeof(tag)) != CF_SUCCESS) {
         printf("CMAC finalize failed\n");
-        ll_CMAC_Free(&cctx);
+        ll_CMAC_Reset(&cctx);
         return;
     }
 
@@ -491,7 +500,7 @@ void test_aes_cmac_fips800_38b(void) {
     }
 
     ll_AES_ClearKey(&kctx);
-    ll_CMAC_Free(&cctx);
+    ll_CMAC_Reset(&cctx);
 
     printf("--------------------------------\n");
 
@@ -520,13 +529,13 @@ void test_aes_cmac_fips800_38b(void) {
 
     if (ll_CMAC_Update(&cctx, &plain_text_1, (size_t)plain_text_1) != CF_SUCCESS) {
         printf("CMAC update failed\n");
-        ll_CMAC_Free(&cctx);
+        ll_CMAC_Reset(&cctx);
         return;
     }
 
     if (ll_CMAC_Final(&cctx, tag, sizeof(tag)) != CF_SUCCESS) {
         printf("CMAC finalize failed\n");
-        ll_CMAC_Free(&cctx);
+        ll_CMAC_Reset(&cctx);
         return;
     }
 
@@ -539,7 +548,7 @@ void test_aes_cmac_fips800_38b(void) {
         printf("CMAC tag verified successfully\n");
     }
 
-    ll_CMAC_Free(&cctx);
+    ll_CMAC_Reset(&cctx);
 
     printf("--------------------------------\n");
 
@@ -556,13 +565,13 @@ void test_aes_cmac_fips800_38b(void) {
 
     if (ll_CMAC_Update(&cctx, plain_text_2, sizeof(plain_text_2)) != CF_SUCCESS) {
         printf("CMAC update failed\n");
-        ll_CMAC_Free(&cctx);
+        ll_CMAC_Reset(&cctx);
         return;
     }
 
     if (ll_CMAC_Final(&cctx, tag, sizeof(tag)) != CF_SUCCESS) {
         printf("CMAC finalize failed\n");
-        ll_CMAC_Free(&cctx);
+        ll_CMAC_Reset(&cctx);
         return;
     }
 
@@ -575,7 +584,7 @@ void test_aes_cmac_fips800_38b(void) {
         printf("CMAC tag verified successfully\n");
     }
 
-    ll_CMAC_Free(&cctx);
+    ll_CMAC_Reset(&cctx);
 
     printf("--------------------------------\n");
 
@@ -592,13 +601,13 @@ void test_aes_cmac_fips800_38b(void) {
 
     if (ll_CMAC_Update(&cctx, plain_text_3, sizeof(plain_text_3)) != CF_SUCCESS) {
         printf("CMAC update failed\n");
-        ll_CMAC_Free(&cctx);
+        ll_CMAC_Reset(&cctx);
         return;
     }
 
     if (ll_CMAC_Final(&cctx, tag, sizeof(tag)) != CF_SUCCESS) {
         printf("CMAC finalize failed\n");
-        ll_CMAC_Free(&cctx);
+        ll_CMAC_Reset(&cctx);
         return;
     }
 
@@ -611,7 +620,7 @@ void test_aes_cmac_fips800_38b(void) {
         printf("CMAC tag verified successfully\n");
     }
 
-    ll_CMAC_Free(&cctx);
+    ll_CMAC_Reset(&cctx);
 
     printf("--------------------------------\n");
 
@@ -628,13 +637,13 @@ void test_aes_cmac_fips800_38b(void) {
 
     if (ll_CMAC_Update(&cctx, plain_text_4, sizeof(plain_text_4)) != CF_SUCCESS) {
         printf("CMAC update failed\n");
-        ll_CMAC_Free(&cctx);
+        ll_CMAC_Reset(&cctx);
         return;
     }
 
     if (ll_CMAC_Final(&cctx, tag, sizeof(tag)) != CF_SUCCESS) {
         printf("CMAC finalize failed\n");
-        ll_CMAC_Free(&cctx);
+        ll_CMAC_Reset(&cctx);
         return;
     }
 
@@ -648,7 +657,7 @@ void test_aes_cmac_fips800_38b(void) {
     }
 
     ll_AES_ClearKey(&kctx);
-    ll_CMAC_Free(&cctx);
+    ll_CMAC_Reset(&cctx);
 
     printf("--------------------------------\n");
 
@@ -678,13 +687,13 @@ void test_aes_cmac_fips800_38b(void) {
 
     if (ll_CMAC_Update(&cctx, &plain_text_1, (size_t)plain_text_1) != CF_SUCCESS) {
         printf("CMAC update failed\n");
-        ll_CMAC_Free(&cctx);
+        ll_CMAC_Reset(&cctx);
         return;
     }
 
     if (ll_CMAC_Final(&cctx, tag, sizeof(tag)) != CF_SUCCESS) {
         printf("CMAC finalize failed\n");
-        ll_CMAC_Free(&cctx);
+        ll_CMAC_Reset(&cctx);
         return;
     }
 
@@ -697,7 +706,7 @@ void test_aes_cmac_fips800_38b(void) {
         printf("CMAC tag verified successfully\n");
     }
 
-    ll_CMAC_Free(&cctx);
+    ll_CMAC_Reset(&cctx);
 
     printf("--------------------------------\n");
 
@@ -714,13 +723,13 @@ void test_aes_cmac_fips800_38b(void) {
 
     if (ll_CMAC_Update(&cctx, plain_text_2, sizeof(plain_text_2)) != CF_SUCCESS) {
         printf("CMAC update failed\n");
-        ll_CMAC_Free(&cctx);
+        ll_CMAC_Reset(&cctx);
         return;
     }
 
     if (ll_CMAC_Final(&cctx, tag, sizeof(tag)) != CF_SUCCESS) {
         printf("CMAC finalize failed\n");
-        ll_CMAC_Free(&cctx);
+        ll_CMAC_Reset(&cctx);
         return;
     }
 
@@ -733,7 +742,7 @@ void test_aes_cmac_fips800_38b(void) {
         printf("CMAC tag verified successfully\n");
     }
 
-    ll_CMAC_Free(&cctx);
+    ll_CMAC_Reset(&cctx);
 
     printf("--------------------------------\n");
 
@@ -750,13 +759,13 @@ void test_aes_cmac_fips800_38b(void) {
 
     if (ll_CMAC_Update(&cctx, plain_text_3, sizeof(plain_text_3)) != CF_SUCCESS) {
         printf("CMAC update failed\n");
-        ll_CMAC_Free(&cctx);
+        ll_CMAC_Reset(&cctx);
         return;
     }
 
     if (ll_CMAC_Final(&cctx, tag, sizeof(tag)) != CF_SUCCESS) {
         printf("CMAC finalize failed\n");
-        ll_CMAC_Free(&cctx);
+        ll_CMAC_Reset(&cctx);
         return;
     }
 
@@ -769,7 +778,7 @@ void test_aes_cmac_fips800_38b(void) {
         printf("CMAC tag verified successfully\n");
     }
 
-    ll_CMAC_Free(&cctx);
+    ll_CMAC_Reset(&cctx);
 
     printf("--------------------------------\n");
 
@@ -786,13 +795,13 @@ void test_aes_cmac_fips800_38b(void) {
 
     if (ll_CMAC_Update(&cctx, plain_text_4, sizeof(plain_text_4)) != CF_SUCCESS) {
         printf("CMAC update failed\n");
-        ll_CMAC_Free(&cctx);
+        ll_CMAC_Reset(&cctx);
         return;
     }
 
     if (ll_CMAC_Final(&cctx, tag, sizeof(tag)) != CF_SUCCESS) {
         printf("CMAC finalize failed\n");
-        ll_CMAC_Free(&cctx);
+        ll_CMAC_Reset(&cctx);
         return;
     }
 
@@ -806,7 +815,7 @@ void test_aes_cmac_fips800_38b(void) {
     }
 
     ll_AES_ClearKey(&kctx);
-    ll_CMAC_Free(&cctx);
+    ll_CMAC_Reset(&cctx);
 }
 
 #endif // ENABLE_TESTS

@@ -15,22 +15,22 @@
  * Project repository: https://github.com/0xNullll/CryptoForge
  */
 
-#include "hkdf.h"
+#include "../../include/crypto/hkdf.h"
 
-CF_STATUS ll_HKDF_Init(ll_HKDF_CTX *ctx, const EVP_MD *md, const uint8_t *info, size_t info_len) {
+CF_STATUS ll_HKDF_Init(ll_HKDF_CTX *ctx, const CF_MD *md, const uint8_t *info, size_t info_len) {
     if (!ctx || !md)
         return CF_ERR_NULL_PTR; 
 
     // HKDF is not compatible with XOF hash functions, as per HMAC-based design rules
-    if (EVP_IS_XOF(md->id))
+    if (CF_IS_XOF(md->id))
         return CF_ERR_UNSUPPORTED;
 
     // nothing to write
     if (info && info_len == 0)
         return CF_ERR_INVALID_PARAM;
 
-    SECURE_ZERO(ctx, sizeof(*ctx));
-
+    ll_HKDF_Reset(ctx);
+        
     ctx->md = md;
 
     if (info) {
@@ -46,15 +46,10 @@ CF_STATUS ll_HKDF_Init(ll_HKDF_CTX *ctx, const EVP_MD *md, const uint8_t *info, 
         ctx->info_len = 0;
     }
 
-    SECURE_ZERO(ctx->prev_block, sizeof(ctx->prev_block));
-    ctx->counter = 0;
-
-    // Mark as not heap-allocated
-    ctx->isHeapAlloc = 0;
     return CF_SUCCESS;
 }
 
-ll_HKDF_CTX* ll_HKDF_InitAlloc(const EVP_MD *md, const uint8_t *info, size_t info_len, CF_STATUS *status) {
+ll_HKDF_CTX* ll_HKDF_InitAlloc(const CF_MD *md, const uint8_t *info, size_t info_len, CF_STATUS *status) {
     if (!md) {
         if (status) *status = CF_ERR_NULL_PTR;
         return NULL;
@@ -109,7 +104,7 @@ CF_STATUS ll_HKDF_Extract(
     // Feed the input key material (IKM) into HMAC
     st = ll_HMAC_Update(hmac_ctx, ikm, ikm_len);
     if (st != CF_SUCCESS) {
-        ll_HMAC_Free(hmac_ctx);                     // only cleans internal buffers
+        ll_HMAC_Reset(hmac_ctx);                    // only cleans internal buffers
         SECURE_FREE(hmac_ctx, sizeof(ll_HMAC_CTX)); // frees the struct
         return st;
     }
@@ -117,13 +112,13 @@ CF_STATUS ll_HKDF_Extract(
     // Allocate and compute PRK
     ctx->prk = (uint8_t *)SECURE_ALLOC(hash_len);
     if (!ctx->prk) {
-        ll_HMAC_Free(hmac_ctx);
+        ll_HMAC_Reset(hmac_ctx);
         SECURE_FREE(hmac_ctx, sizeof(ll_HMAC_CTX));
         return CF_ERR_ALLOC_FAILED;
     }
 
     st = ll_HMAC_Final(hmac_ctx, ctx->prk, hash_len);
-    ll_HMAC_Free(hmac_ctx);                     // clean internal buffers
+    ll_HMAC_Reset(hmac_ctx);                     // clean internal buffers
     SECURE_FREE(hmac_ctx, sizeof(ll_HMAC_CTX)); // free the struct itself
     if (st != CF_SUCCESS) {
         SECURE_FREE((void *)ctx->prk, hash_len);
@@ -181,7 +176,7 @@ CF_STATUS ll_HKDF_Expand(
 
     CF_STATUS st;
     size_t generated = 0;
-    uint8_t block[EVP_MAX_DEFAULT_BLOCK_SIZE];
+    uint8_t block[CF_MAX_DEFAULT_BLOCK_SIZE];
 
     while (generated < okm_len) {
         if (ctx->counter >= LL_HKDF_MAX_BLOCKS) { // RFC 5869 max 255 blocks
@@ -218,7 +213,7 @@ CF_STATUS ll_HKDF_Expand(
             goto cleanup;
 
         // clean internal buffers
-        ll_HMAC_Free(hmac_ctx);
+        ll_HMAC_Reset(hmac_ctx);
 
         // Copy required bytes to output
         size_t to_copy = (okm_len - generated > hash_len) ? hash_len : (okm_len - generated);
@@ -234,15 +229,17 @@ CF_STATUS ll_HKDF_Expand(
     st = CF_SUCCESS;
 
 cleanup:
-    ll_HMAC_Free(hmac_ctx);
+    ll_HMAC_Reset(hmac_ctx);
     SECURE_FREE(hmac_ctx, sizeof(hmac_ctx));
     SECURE_ZERO(block, sizeof(block));
     return st;
 }
 
-CF_STATUS ll_HKDF_Free(ll_HKDF_CTX *ctx) {
+CF_STATUS ll_HKDF_Reset(ll_HKDF_CTX *ctx) {
     if (!ctx)
         return CF_ERR_NULL_PTR;
+
+    int wasHeapAlloc = ctx->isHeapAlloc;
 
     if (ctx->prk) {
         if (ctx->prk_len == 0)
@@ -260,18 +257,19 @@ CF_STATUS ll_HKDF_Free(ll_HKDF_CTX *ctx) {
 
     // clear high-level data
     SECURE_ZERO(ctx, sizeof(*ctx));
-
+    
+    ctx->isHeapAlloc = wasHeapAlloc;
     return CF_SUCCESS;
 }
 
-CF_STATUS ll_HKDF_FreeAlloc(ll_HKDF_CTX **p_ctx) {
+CF_STATUS ll_HKDF_Free(ll_HKDF_CTX **p_ctx) {
     if (!p_ctx || !*p_ctx)
         return CF_ERR_NULL_PTR;
 
     ll_HKDF_CTX *ctx = *p_ctx;
     int wasHeapAlloc = ctx->isHeapAlloc;  // save flag
 
-    CF_STATUS st = ll_HKDF_Free(ctx);
+    CF_STATUS st = ll_HKDF_Reset(ctx);
     if (st != CF_SUCCESS)
         return st;
 

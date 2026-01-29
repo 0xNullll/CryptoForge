@@ -15,7 +15,7 @@
  * Project repository: https://github.com/0xNullll/CryptoForge
  */
 
-#include "base85.h"
+#include "../../include/crypto/base85.h"
 
 #define ASCII85_ZERO_SHORTCUT 'z'    // shortcut for 0x00000000
 #define ASCII85_SPACE_SHORTCUT 'y'   // shortcut for 0x20202020

@@ -15,7 +15,7 @@
  * Project repository: https://github.com/0xNullll/CryptoForge
  */
 
-#include "sha1.h"
+#include "../../../include/crypto/sha1.h"
 
 // SHA-1 constants
 #define K_00_19 0x5a827999UL

@@ -1,4 +1,4 @@
-#include "gcm_mode.h"
+#include "../../../include/crypto/gcm_mode.h"
 
 void ll_gcm_mult(uint8_t Z[AES_BLOCK_SIZE],
             const uint8_t X[AES_BLOCK_SIZE],
@@ -62,37 +62,32 @@ bool ll_AES_GCTR_Process(
     const uint8_t *X,
     size_t X_len,
     uint8_t *Y) {
-    uint8_t CB[16] = {0}, encrypted[16] = {0};
-    SECURE_MEMCPY(CB, ICB, 16);
+
+    uint8_t CB[AES_BLOCK_SIZE], encrypted[AES_BLOCK_SIZE];
+    SECURE_MEMCPY(CB, ICB, AES_BLOCK_SIZE);
 
     size_t offset = 0;
 
-    while (X_len >= 16) {
+    while (X_len >= AES_BLOCK_SIZE) {
         if (offset > 0) Inc32(CB);
 
-        if (!ll_AES_EncryptBlock(key, CB, encrypted)) return false;
+        if (!ll_AES_EncryptBlock(key, CB, encrypted))
+            return false;
 
-        // XOR in 64-bit chunks
-        uint64_t x0 = AES_LOAD64(X + offset);
-        uint64_t x1 = AES_LOAD64(X + offset + 8);
+        // simple byte-wise XOR
+        for (size_t j = 0; j < AES_BLOCK_SIZE; j++)
+            Y[offset + j] = X[offset + j] ^ encrypted[j];
 
-        uint64_t e0 = AES_LOAD64(encrypted);
-        uint64_t e1 = AES_LOAD64(encrypted + 8);
-
-        // XOR and store back in big-endian order
-        AES_STORE64(Y + offset, x0 ^ e0);
-        AES_STORE64(Y + offset + 8, x1 ^ e1);
-
-        offset += 16;
-        X_len -= 16;
+        offset += AES_BLOCK_SIZE;
+        X_len -= AES_BLOCK_SIZE;
     }
 
-    // Handle remaining bytes if input not multiple of 16
     if (X_len > 0) {
-        if (!ll_AES_EncryptBlock(key, CB, encrypted)) return false;
-        for (size_t j = 0; j < X_len; j++) {
+        if (!ll_AES_EncryptBlock(key, CB, encrypted))
+            return false;
+
+        for (size_t j = 0; j < X_len; j++)
             Y[offset + j] = X[offset + j] ^ encrypted[j];
-        }
     }
 
     SECURE_ZERO(CB, sizeof(CB));

@@ -15,7 +15,7 @@
  * Project repository: https://github.com/0xNullll/CryptoForge
  */
 
-#include "sha256.h"
+#include "../../../include/crypto/sha256.h"
 
 // SHA-256 constants
 static const uint32_t K256[64] = {

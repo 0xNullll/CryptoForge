@@ -15,7 +15,7 @@
  * Project repository: https://github.com/0xNullll/CryptoForge
  */
 
-#include "keccak.h"
+#include "../../../../include/crypto/keccak.h"
 
 // Precomputed rotation offsets for the ρ (rho) step of Keccak-f[1600].
 // Each entry rhotates[x][y] specifies the number of bits to rotate the lane A[x][y] left.

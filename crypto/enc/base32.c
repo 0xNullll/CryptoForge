@@ -15,7 +15,7 @@
  * Project repository: https://github.com/0xNullll/CryptoForge
  */
 
-#include "base32.h"
+#include "../../include/crypto/base32.h"
 
 // Base32 encoding table (RFC 4648)
 static const char BASE32_ENC_TABLE[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";

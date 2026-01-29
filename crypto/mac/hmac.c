@@ -15,20 +15,22 @@
  * Project repository: https://github.com/0xNullll/CryptoForge
  */
 
-#include "hmac.h"
+#include "../../include/crypto/hmac.h"
 
-CF_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const EVP_MD *md, const uint8_t *key, size_t key_len) {
+CF_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const CF_MD *md, const uint8_t *key, size_t key_len) {
     if (!ctx || !md || !key)
         return CF_ERR_NULL_PTR;
 
     if (key_len == 0)
         return CF_ERR_INVALID_LEN;
 
-    if (EVP_IS_XOF(md->id))
+    if (CF_IS_XOF(md->id))
         return CF_ERR_UNSUPPORTED;
 
-    if (md->block_size == 0 || md->block_size > EVP_MAX_DEFAULT_BLOCK_SIZE)
+    if (md->block_size == 0 || md->block_size > CF_MAX_DEFAULT_BLOCK_SIZE)
         return CF_ERR_UNSUPPORTED;
+
+    ll_HMAC_Reset(ctx);
 
     ctx->md = md;
     ctx->out_len = md->digest_size != 0 ? md->digest_size : md->default_out_len;
@@ -65,7 +67,7 @@ CF_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const EVP_MD *md, const uint8_t *key, s
     ctx->key_len = md->block_size;
 
     // apply XOR pads
-    uint8_t ipad[EVP_MAX_DEFAULT_BLOCK_SIZE], opad[EVP_MAX_DEFAULT_BLOCK_SIZE];
+    uint8_t ipad[CF_MAX_DEFAULT_BLOCK_SIZE], opad[CF_MAX_DEFAULT_BLOCK_SIZE];
     for (size_t i = 0; i < md->block_size; i++) {
         ipad[i] = ctx->key[i] ^ 0x36;
         opad[i] = ctx->key[i] ^ 0x5c;
@@ -82,9 +84,6 @@ CF_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const EVP_MD *md, const uint8_t *key, s
 
     SECURE_ZERO(ipad, md->block_size);
     SECURE_ZERO(opad, md->block_size);
-
-    ctx->isHeapAlloc = 0;
-    ctx->isFinalized = 0;
     return CF_SUCCESS;
 
 cleanup:
@@ -101,7 +100,7 @@ cleanup:
     return CF_ERR_CTX_CORRUPT;
 }
 
-ll_HMAC_CTX* ll_HMAC_InitAlloc(const EVP_MD *md, const uint8_t *key, size_t key_len, CF_STATUS *status) {
+ll_HMAC_CTX* ll_HMAC_InitAlloc(const CF_MD *md, const uint8_t *key, size_t key_len, CF_STATUS *status) {
     if (!md) {
         if (status) *status = CF_ERR_NULL_PTR;
         return NULL;
@@ -157,7 +156,7 @@ CF_STATUS ll_HMAC_Final(ll_HMAC_CTX *ctx, uint8_t *digest, size_t digest_len) {
     CF_STATUS ret = CF_SUCCESS;
 
     const size_t hash_len = ctx->md->digest_size;
-    uint8_t inner_hash[EVP_MAX_DEFAULT_DIGEST_SIZE] = {0};
+    uint8_t inner_hash[CF_MAX_DEFAULT_DIGEST_SIZE] = {0};
 
     // compute inner hash
     if (!ctx->md->hash_final_fn(ctx->ipad_ctx, inner_hash, ctx->md->digest_size)) {
@@ -201,7 +200,7 @@ cleanup:
 }
 
 CF_STATUS ll_HMAC_Verify(
-    const EVP_MD *md,
+    const CF_MD *md,
     const uint8_t *key, size_t key_len,
     const uint8_t *data, size_t data_len,
     const uint8_t *expected_hmac, size_t expected_len) {
@@ -210,7 +209,7 @@ CF_STATUS ll_HMAC_Verify(
 
     CF_STATUS status = CF_SUCCESS;
     ll_HMAC_CTX ctx;
-    uint8_t computed[EVP_MAX_DEFAULT_DIGEST_SIZE] = {0};
+    uint8_t computed[CF_MAX_DEFAULT_DIGEST_SIZE] = {0};
 
     SECURE_ZERO(&ctx, sizeof(ctx));
 
@@ -237,9 +236,11 @@ cleanup:
     return status;
 }
 
-CF_STATUS ll_HMAC_Free(ll_HMAC_CTX *ctx) {
+CF_STATUS ll_HMAC_Reset(ll_HMAC_CTX *ctx) {
     if (!ctx || !ctx->md)
         return CF_ERR_NULL_PTR;
+
+    int wasHeapAlloc = ctx->isHeapAlloc;
 
     // Zero and free inner (ipad) and outer (opad) contexts
     if (ctx->ipad_ctx) {
@@ -259,12 +260,12 @@ CF_STATUS ll_HMAC_Free(ll_HMAC_CTX *ctx) {
     ctx->key_len = 0;
     ctx->out_len = 0;
     ctx->isFinalized = 0;
-    ctx->isHeapAlloc = 0;
+    ctx->isHeapAlloc = wasHeapAlloc;
 
     return CF_SUCCESS;
 }
 
-CF_STATUS ll_HMAC_FreeAlloc(ll_HMAC_CTX **p_ctx) {
+CF_STATUS ll_HMAC_Free(ll_HMAC_CTX **p_ctx) {
     if (!p_ctx || !*p_ctx)
         return CF_ERR_NULL_PTR;
 
@@ -272,7 +273,7 @@ CF_STATUS ll_HMAC_FreeAlloc(ll_HMAC_CTX **p_ctx) {
     int wasHeapAlloc = ctx->isHeapAlloc;  // save flag
 
     // Reuse Free to clean internals
-    ll_HMAC_Free(ctx);
+    ll_HMAC_Reset(ctx);
 
     // Free the outer struct if heap-allocated
     if (wasHeapAlloc) {

@@ -1,4 +1,4 @@
-#include "../config/demo_config.h"
+#include "../include/config/demo_config.h"
 
 int main(void) {
     CF_STATUS status;
@@ -7,54 +7,57 @@ int main(void) {
     size_t input_len = strlen(input);
 
 #if ENABLE_TESTS
-    printf("\nEVP_MD structure test:\n");
+    printf("\nCF_MD structure test:\n");
 
     // Example: XOF (cSHAKE / SHAKE) setup
-    EVP_XOF_OPTS xof_opts;
+    CF_HASH_OPTS hash_opts;
+    SECURE_ZERO(&hash_opts, sizeof(hash_opts));
+
     uint8_t raw_bytes[] = {0x00, 0x01, 0x02, 0x03};
     size_t raw_len = sizeof(raw_bytes);
 
-    status = EVP_XOFOptsInit(&xof_opts,
+    status = CF_HashOptsInit(&hash_opts,
                             //  raw_bytes, raw_len,
                              NULL, 0,    // N and S empty
                              raw_bytes, raw_len,
-                             32          // Output length in bytes
+                             64          // Output length in bytes
     );
 
     if (status != CF_SUCCESS) {
-        printf("EVP_FillXOFOpts failed\n");
+        printf("CF_FillXOFOpts failed\n");
         return 1;
     }
 
     printf("low level funcs:\n");
-    test_all_hashes((const uint8_t *)input, input_len, &xof_opts);
+    test_all_hashes((const uint8_t *)input, input_len, &hash_opts);
     printf("**************************************\n");
     printf("high level funcs:\n");
-    test_all_hashes_high((const uint8_t *)input, input_len, &xof_opts);
+    test_all_hashes_high((const uint8_t *)input, input_len, &hash_opts);
     printf("**************************************\n");
 
-    // Example: Incremental hash using EVP_Hash* API
-    uint8_t digest[64];  // large enough for SHA3-512
-    size_t out_len = 64;
-    const EVP_MD *md = EVP_MDByFlag(EVP_SHA256);
-    EVP_HASH_CTX ctx;
+    // Example: Incremental hash using CF_Hash* API
+    uint8_t digest[CF_MAX_DEFAULT_DIGEST_SIZE];  // large enough for SHA3-512
+    size_t out_len = CF_MAX_DEFAULT_DIGEST_SIZE;
+    const CF_MD *md = CF_MDByFlag(CF_SHA256);
+    CF_HASH_CTX ctx;
+    SECURE_ZERO(&ctx, sizeof(ctx));
 
-    status = EVP_HashInit(&ctx, md, NULL);
-    if (status != CF_SUCCESS) { printf("EVP_HashInit failed\n"); return 1; }
+    status = CF_HashInit(&ctx, md, NULL);
+    if (status != CF_SUCCESS) { printf("CF_HashInit failed\n"); return 1; }
 
-    status = EVP_HashUpdate(&ctx, (uint8_t*)input, input_len);
-    if (status != CF_SUCCESS) { printf("EVP_HashUpdate failed\n"); return 1; }
+    status = CF_HashUpdate(&ctx, (const uint8_t *)input, input_len);
+    if (status != CF_SUCCESS) { printf("CF_HashUpdate failed\n"); return 1; }
 
-    status = EVP_HashFinal(&ctx, digest, out_len);
-    if (status != CF_SUCCESS) { printf("EVP_HashFinal failed\n"); return 1; }
+    status = CF_HashFinal(&ctx, digest, out_len);
+    if (status != CF_SUCCESS) { printf("CF_HashFinal failed\n"); return 1; }
 
-    printf("Digest %s: ", EVP_HashGetName(md));
-    for (size_t i = 0; i < EVP_HashGetDigestSize(&ctx); i++)
+    printf("Digest %s: ", CF_HashGetName(md));
+    for (size_t i = 0; i < CF_HashGetDigestSize(&ctx); i++)
         printf("%02x", digest[i]);
     printf("\n");
 
-    EVP_HashFree(&ctx);
-    EVP_XOFOptsFree(&xof_opts);
+    CF_HashReset(&ctx);
+    CF_HashOptsReset(&hash_opts);
 
     // HMAC tests
     uint8_t key[] = "My Tagged Applicationnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn";
@@ -185,13 +188,13 @@ int main(void) {
         const uint8_t *base_input = (const uint8_t *)test_strings[i];
         size_t len = strlen(test_strings[i]);
 
-        test_base16("Standard Uppercase-Base16", base_input, len, EVP_BASE16_UPPER);
-        test_base16("Standard Lowercase-Base16", base_input, len, EVP_BASE16_LOWER);
+        test_base16("Standard Uppercase-Base16", base_input, len, CF_BASE16_UPPER);
+        test_base16("Standard Lowercase-Base16", base_input, len, CF_BASE16_LOWER);
 
         printf("---------------------------------------------\n");
 
-        test_base32("Standard Base32", base_input, len, EVP_BASE32_ENC, EVP_BASE32_DEC);
-        test_base32("No Padding Base32", base_input, len, EVP_BASE32_ENC_NOPAD, EVP_BASE32_DEC_NOPAD);
+        test_base32("Standard Base32", base_input, len, CF_BASE32_ENC, CF_BASE32_DEC);
+        test_base32("No Padding Base32", base_input, len, CF_BASE32_ENC_NOPAD, CF_BASE32_DEC_NOPAD);
     
         printf("---------------------------------------------\n");
 
@@ -199,16 +202,16 @@ int main(void) {
 
         printf("---------------------------------------------\n");
 
-        test_base64("Standard Base64", base_input, len, EVP_BASE64_STD_ENC, EVP_BASE64_STD_DEC);
-        test_base64("No Padding Standard Base64", base_input, len, EVP_BASE64_STD_ENC | EVP_BASE64_NOPAD_ENC, EVP_BASE64_STD_DEC | EVP_BASE64_NOPAD_DEC);
-        test_base64("URL-safe Base64", base_input, len, EVP_BASE64_URL_ENC, EVP_BASE64_URL_DEC);
-        test_base64("No Padding URL-safe Base64", base_input, len, EVP_BASE64_URL_ENC | EVP_BASE64_NOPAD_ENC, EVP_BASE64_URL_DEC | EVP_BASE64_NOPAD_DEC);
+        test_base64("Standard Base64", base_input, len, CF_BASE64_STD_ENC, CF_BASE64_STD_DEC);
+        test_base64("No Padding Standard Base64", base_input, len, CF_BASE64_STD_ENC | CF_BASE64_NOPAD_ENC, CF_BASE64_STD_DEC | CF_BASE64_NOPAD_DEC);
+        test_base64("URL-safe Base64", base_input, len, CF_BASE64_URL_ENC, CF_BASE64_URL_DEC);
+        test_base64("No Padding URL-safe Base64", base_input, len, CF_BASE64_URL_ENC | CF_BASE64_NOPAD_ENC, CF_BASE64_URL_DEC | CF_BASE64_NOPAD_DEC);
 
         printf("---------------------------------------------\n");
 
-        test_base85("Standard Base85", base_input, len, EVP_BASE85_STD_ENC, EVP_BASE85_STD_DEC);
-        test_base85("Optional 'y' ascii85 Base85", base_input, len, EVP_BASE85_STD_ENC | EVP_BASE85_EXT_ENC, EVP_BASE85_STD_DEC | EVP_BASE85_EXT_DEC);
-        test_base85("z85 Base85", base_input, len, EVP_BASE85_Z85_ENC, EVP_BASE85_Z85_DEC);
+        test_base85("Standard Base85", base_input, len, CF_BASE85_STD_ENC, CF_BASE85_STD_DEC);
+        test_base85("Optional 'y' ascii85 Base85", base_input, len, CF_BASE85_STD_ENC | CF_BASE85_EXT_ENC, CF_BASE85_STD_DEC | CF_BASE85_EXT_DEC);
+        test_base85("z85 Base85", base_input, len, CF_BASE85_Z85_ENC, CF_BASE85_Z85_DEC);
 
         printf("-------------- high level encode test -------------------\n");
 
@@ -219,13 +222,13 @@ int main(void) {
 
     for (size_t i = 0; i < 5; i++) {
 
-        test_hex_base16("test vector Standard Uppercase-Base16", test_hex[i], test_hex_len[i], EVP_BASE16_UPPER);
-        test_hex_base16("test vector Standard Lowercase-Base16", test_hex[i], test_hex_len[i], EVP_BASE16_LOWER);
+        test_hex_base16("test vector Standard Uppercase-Base16", test_hex[i], test_hex_len[i], CF_BASE16_UPPER);
+        test_hex_base16("test vector Standard Lowercase-Base16", test_hex[i], test_hex_len[i], CF_BASE16_LOWER);
 
         printf("---------------------------------------------\n");
 
-        test_hex_base32("test vector Standard Base32", test_hex[i], test_hex_len[i], EVP_BASE32_ENC, EVP_BASE32_DEC);
-        test_hex_base32("test vector No Padding Base32", test_hex[i], test_hex_len[i], EVP_BASE32_ENC_NOPAD, EVP_BASE32_DEC_NOPAD);
+        test_hex_base32("test vector Standard Base32", test_hex[i], test_hex_len[i], CF_BASE32_ENC, CF_BASE32_DEC);
+        test_hex_base32("test vector No Padding Base32", test_hex[i], test_hex_len[i], CF_BASE32_ENC_NOPAD, CF_BASE32_DEC_NOPAD);
 
         printf("---------------------------------------------\n");
 
@@ -233,16 +236,16 @@ int main(void) {
 
         printf("---------------------------------------------\n");
 
-        test_hex_base64("test vector Standard Base64", test_hex[i], test_hex_len[i], EVP_BASE64_STD_ENC, EVP_BASE64_STD_DEC);
-        test_hex_base64("test vector No Padding Standard Base64", test_hex[i], test_hex_len[i], EVP_BASE64_STD_ENC | EVP_BASE64_NOPAD_ENC, EVP_BASE64_STD_DEC | EVP_BASE64_NOPAD_DEC);
-        test_hex_base64("test vector URL-safe Base64", test_hex[i], test_hex_len[i], EVP_BASE64_URL_ENC, EVP_BASE64_URL_DEC);
-        test_hex_base64("test vector No Padding URL-safe Base64", test_hex[i], test_hex_len[i], EVP_BASE64_URL_ENC | EVP_BASE64_NOPAD_ENC, EVP_BASE64_URL_DEC | EVP_BASE64_NOPAD_DEC);
+        test_hex_base64("test vector Standard Base64", test_hex[i], test_hex_len[i], CF_BASE64_STD_ENC, CF_BASE64_STD_DEC);
+        test_hex_base64("test vector No Padding Standard Base64", test_hex[i], test_hex_len[i], CF_BASE64_STD_ENC | CF_BASE64_NOPAD_ENC, CF_BASE64_STD_DEC | CF_BASE64_NOPAD_DEC);
+        test_hex_base64("test vector URL-safe Base64", test_hex[i], test_hex_len[i], CF_BASE64_URL_ENC, CF_BASE64_URL_DEC);
+        test_hex_base64("test vector No Padding URL-safe Base64", test_hex[i], test_hex_len[i], CF_BASE64_URL_ENC | CF_BASE64_NOPAD_ENC, CF_BASE64_URL_DEC | CF_BASE64_NOPAD_DEC);
 
         printf("---------------------------------------------\n");
 
-        test_hex_base85("test vector Standard Base85", test_hex[i], test_hex_len[i], EVP_BASE85_STD_ENC, EVP_BASE85_STD_DEC);
-        test_hex_base85("test vector Optional 'y' ascii85 Base85", test_hex[i], test_hex_len[i], EVP_BASE85_STD_ENC | EVP_BASE85_EXT_ENC, EVP_BASE85_STD_DEC | EVP_BASE85_EXT_DEC);
-        test_hex_base85("test vector z85 Base85", test_hex[i], test_hex_len[i], EVP_BASE85_Z85_ENC, EVP_BASE85_Z85_DEC);
+        test_hex_base85("test vector Standard Base85", test_hex[i], test_hex_len[i], CF_BASE85_STD_ENC, CF_BASE85_STD_DEC);
+        test_hex_base85("test vector Optional 'y' ascii85 Base85", test_hex[i], test_hex_len[i], CF_BASE85_STD_ENC | CF_BASE85_EXT_ENC, CF_BASE85_STD_DEC | CF_BASE85_EXT_DEC);
+        test_hex_base85("test vector z85 Base85", test_hex[i], test_hex_len[i], CF_BASE85_Z85_ENC, CF_BASE85_Z85_DEC);
 
         printf("-------------- high level encode test -------------------\n");
 
