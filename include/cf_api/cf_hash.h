@@ -51,8 +51,8 @@ typedef struct _CF_MD {
     size_t opts_ctx_size;    // size of high-level optional context
     size_t default_out_len;  // for SHAKE / XOF functions
 
-    bool (*hash_init_fn)(void *ctx, const void *opts);
-    bool (*hash_update_fn)(void *ctx, const uint8_t *data, size_t len);
+    bool (*hash_init_fn)(void *ctx, const CF_HASH_OPTS *opts);
+    bool (*hash_update_fn)(void *ctx, const uint8_t *data, size_t data_len);
     bool (*hash_final_fn)(void *ctx, uint8_t *digest, size_t digest_size);
     bool (*hash_squeeze_fn)(void *ctx, uint8_t *output, size_t outlen);
 } CF_MD;

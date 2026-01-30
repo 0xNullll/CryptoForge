@@ -100,6 +100,30 @@ CF_STATUS ll_CMAC_Init(ll_CMAC_CTX *ctx, const ll_AES_KEY *key) {
     return CF_SUCCESS;
 }
 
+ll_CMAC_CTX* ll_CMAC_InitAlloc(const ll_AES_KEY *key, CF_STATUS *status) {
+    if (!key) {
+        if (status) *status = CF_ERR_INVALID_PARAM;
+        return NULL;
+    }
+
+    ll_CMAC_CTX *ctx = (ll_CMAC_CTX *)SECURE_ALLOC(sizeof(ll_CMAC_CTX));
+    if (!ctx) {
+        if (status) *status = CF_ERR_ALLOC_FAILED;
+        return NULL;
+    }
+
+    CF_STATUS st = ll_CMAC_Init(ctx, key);
+    if (st != CF_SUCCESS) {
+        SECURE_FREE(ctx, sizeof(ll_CMAC_CTX));
+        if (status) *status = st;
+        return NULL;
+    }
+
+    ctx->isHeapAlloc = 1;
+    if (status) *status = CF_SUCCESS;
+    return ctx;
+}
+
 CF_STATUS ll_CMAC_Update(ll_CMAC_CTX *ctx, const uint8_t *data, size_t data_len) {
         if (!ctx || !ctx->key || !data)
         return CF_ERR_NULL_PTR;
