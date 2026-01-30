@@ -32,23 +32,30 @@
 extern "C" {
 #endif
 
-#define LL_KMAC_TYPE_IS_VALID(type) \
-    ((type) == KMAC128 || (type) == KMAC256 || \
-     (type) == KMACXOF128 || (type) == KMACXOF256)
+typedef enum {
+    LL_KMAC128      = 0x00,
+    LL_KMAC256      = 0x01,
+    LL_KMAC_XOF128   = 0x02,
+    LL_KMAC_XOF256   = 0x03
+} LL_KMAC_TYPE;
 
-#define LL_KMAC_IS_128(type) ((type) == KMAC128 || (type) == KMACXOF128)
-#define LL_KMAC_IS_256(type) ((type) == KMAC256 || (type) == KMACXOF256)
-#define LL_KMAC_IS_XOF(type) ((type) == KMACXOF128 || (type) == KMACXOF256)
+#define LL_KMAC_TYPE_IS_VALID(type) \
+    ((type) == LL_KMAC128 || (type) == LL_KMAC256 || \
+     (type) == LL_KMAC_XOF128 || (type) == LL_KMAC_XOF256)
+
+#define LL_KMAC_IS_128(type) ((type) == LL_KMAC128 || (type) == LL_KMAC_XOF256)
+#define LL_KMAC_IS_256(type) ((type) == LL_KMAC256 || (type) == LL_KMAC_XOF256)
+#define LL_KMAC_IS_XOF(type) ((type) == LL_KMAC_XOF128 || (type) == LL_KMAC_XOF256)
 
 #define LL_KMAC_DEFAULT_OUTPUT_LEN_128 16  // RFC fixed-length output for KMAC128
 #define LL_KMAC_DEFAULT_OUTPUT_LEN_256 32  // RFC fixed-length output for KMAC256
 
-typedef enum {
-    KMAC128      = CF_CAT_MAC | 0x0002,
-    KMAC256      = CF_CAT_MAC | 0x0003,
-    KMACXOF128   = CF_CAT_MAC | 0x0004,
-    KMACXOF256   = CF_CAT_MAC | 0x0005
-} ll_KMAC_TYPE;
+// typedef enum {
+//     KMAC128      = CF_CAT_MAC | 0x0002,
+//     KMAC256      = CF_CAT_MAC | 0x0003,
+//     KMACXOF128   = CF_CAT_MAC | 0x0004,
+//     KMACXOF256   = CF_CAT_MAC | 0x0005
+// } ll_KMAC_TYPE;
 
 typedef struct _ll_KMAC_CTX {
     // Core CSHAKE sponge context
@@ -74,7 +81,7 @@ typedef struct _ll_KMAC_CTX {
     int isHeapAlloc;
 
     // KMAC variant
-    ll_KMAC_TYPE type;      // e.g., KMAC128, KMAC256, KMACXOF128, KMACXOF256
+    LL_KMAC_TYPE type;      // e.g., KMAC128, KMAC256, KMACXOF128, KMACXOF256
 } ll_KMAC_CTX;
 
 // Initializes a new ll_KMAC_CTX for a given key, output length, and optional customization strings.
@@ -82,14 +89,14 @@ CF_STATUS ll_KMAC_Init(
     ll_KMAC_CTX *ctx,
     const uint8_t *key, size_t key_len,
     const uint8_t *S, size_t S_len,
-    ll_KMAC_TYPE type      // varients: KMAC128, KMAC256, KMACXOF128, KMACXOF256
+    LL_KMAC_TYPE type      // varients: KMAC128, KMAC256, KMACXOF128, KMACXOF256
 );
 
 // Allocates and initializes a new ll_KMAC_CTX and Returns NULL on allocation failure.
 ll_KMAC_CTX* ll_KMAC_InitAlloc(
     const uint8_t *key, size_t key_len,
     const uint8_t *S, size_t S_len,
-    ll_KMAC_TYPE type,      // varients: KMAC128, KMAC256, KMACXOF128, KMACXOF256
+    LL_KMAC_TYPE type,      // varients: KMAC128, KMAC256, KMACXOF128, KMACXOF256
     CF_STATUS *status
 );
 
@@ -107,7 +114,7 @@ CF_STATUS ll_KMAC_Verify(
     const uint8_t *data, size_t data_len,
     const uint8_t *S, size_t S_len,
     const uint8_t *expected_mac,
-    ll_KMAC_TYPE type);
+    LL_KMAC_TYPE type);
 
 // Resets a KMAC context to its initial state with the same key and customization strings.
 CF_STATUS ll_KMAC_Reset(ll_KMAC_CTX *ctx);

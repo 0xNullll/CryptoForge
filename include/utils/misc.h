@@ -22,9 +22,6 @@
 #include "../config/crypto_config.h"
 #include "../config/libs.h"
 
-// ======================
-// 1. Platform / DLL / Compiler Macros
-// ======================
 #ifdef _WIN32
   #ifdef BUILDING_CF_DLL
     #define CF_API __declspec(dllexport)
@@ -41,9 +38,6 @@
   #define FORCE_INLINE inline __attribute__((always_inline))
 #endif
 
-// ======================
-// 2. Integer Literal Macros
-// ======================
 #if (defined(_WIN32) || defined(_WIN64)) && !defined(__MINGW32__)
   #define U64(C) C##UI64
 #elif defined(__arch64__)
@@ -52,19 +46,8 @@
   #define U64(C) C##ULL
 #endif
 
-// ======================
-// 3. Parameter Annotations
-// ======================
-#ifndef IN
-#define IN
-#endif
-
-#ifndef OUT
-#define OUT
-#endif
-
-#ifndef INOUT
-#define INOUT
+#ifndef UNUSED
+#define UNUSED(x) ((void)(x))  /* silence unused variable warnings */
 #endif
 
 #endif // MISC_UTILSH

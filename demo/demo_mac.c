@@ -69,11 +69,11 @@ void test_all_kmacs(
     uint8_t digest[CF_MAX_DEFAULT_DIGEST_SIZE * 2];
 
     // KMAC types to test
-    ll_KMAC_TYPE kmac_types[] = {
-        KMAC128,
-        KMACXOF128,
-        KMAC256,
-        KMACXOF256
+    LL_KMAC_TYPE kmac_types[] = {
+        LL_KMAC128,
+        LL_KMAC_XOF128,
+        LL_KMAC256,
+        LL_KMAC_XOF256
     };
 
     size_t num_kmacs = sizeof(kmac_types) / sizeof(kmac_types[0]);
@@ -83,9 +83,9 @@ void test_all_kmacs(
         SECURE_ZERO(&kmac_ctx, sizeof(kmac_ctx));
 
         // Determine output length
-        size_t out_len = (kmac_types[i] == KMACXOF128 || kmac_types[i] == KMACXOF256)
-                            ? (kmac_types[i] == KMACXOF128 ? LL_KMAC_DEFAULT_OUTPUT_LEN_128: LL_KMAC_DEFAULT_OUTPUT_LEN_256) // just for testing, KMAC-XOF doesnt have a default fixed length
-                            : (kmac_types[i] == KMAC128 ? LL_KMAC_DEFAULT_OUTPUT_LEN_128: LL_KMAC_DEFAULT_OUTPUT_LEN_256);
+        size_t out_len = (kmac_types[i] == LL_KMAC_XOF128 || kmac_types[i] == LL_KMAC_XOF256)
+                            ? (kmac_types[i] == LL_KMAC_XOF128 ? LL_KMAC_DEFAULT_OUTPUT_LEN_128: LL_KMAC_DEFAULT_OUTPUT_LEN_256) // just for testing, KMAC-XOF doesnt have a default fixed length
+                            : (kmac_types[i] == LL_KMAC128 ? LL_KMAC_DEFAULT_OUTPUT_LEN_128: LL_KMAC_DEFAULT_OUTPUT_LEN_256);
 
         // Initialize
         CF_STATUS status = ll_KMAC_Init(&kmac_ctx, key, key_len, S, S_len, kmac_types[i]);
@@ -111,10 +111,10 @@ void test_all_kmacs(
         }
 
         // Print result
-        printf("%s: ", (kmac_types[i] == KMAC128) ? "KMAC128" :
-                        (kmac_types[i] == KMACXOF128) ? "KMACXOF128" :
-                        (kmac_types[i] == KMAC256) ? "KMAC256" :
-                        "KMACXOF256");
+        printf("%s: ", (kmac_types[i] == LL_KMAC128) ? "LL_KMAC128" :
+                        (kmac_types[i] == LL_KMAC_XOF128) ? "LL_KMAC_XOF128" :
+                        (kmac_types[i] == LL_KMAC256) ? "LL_KMAC256" :
+                        "LL_KMAC_XOF256");
 
         DEMO_print_hex(digest, out_len);
         printf("\n");
@@ -127,8 +127,8 @@ void test_all_kmacs_verify_array(const uint8_t *key, size_t key_len,
                                  const uint8_t *input, size_t input_len,
                                  const uint8_t *S, size_t S_len,
                                  const uint8_t *expected_digests[4]) {
-    ll_KMAC_TYPE kmac_types[] = { KMAC128, KMACXOF128, KMAC256, KMACXOF256 };
-    const char *kmac_names[] = { "KMAC128", "KMACXOF128", "KMAC256", "KMACXOF256" };
+    LL_KMAC_TYPE kmac_types[] = { LL_KMAC128, LL_KMAC_XOF128, LL_KMAC256, LL_KMAC_XOF256 };
+    const char *kmac_names[] = { "LL_KMAC128", "LL_KMAC_XOF128", "LL_KMAC256", "LL_KMAC_XOF256" };
     size_t num_kmacs = sizeof(kmac_types) / sizeof(kmac_types[0]);
 
     for (size_t i = 0; i < num_kmacs; i++) {

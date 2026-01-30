@@ -50,6 +50,9 @@ typedef struct _ll_GMAC_CTX {
 // Initialize a GMAC context with AES key and IV
 CF_STATUS ll_GMAC_Init(ll_GMAC_CTX *ctx, const ll_AES_KEY *key, const uint8_t *iv, size_t iv_len);
 
+// Allocates and initialize a GMAC context with AES key and IV
+ll_GMAC_CTX* ll_GMAC_InitAlloc(const ll_AES_KEY *key, const uint8_t *iv, size_t iv_len, CF_STATUS *status);
+
 // Update GMAC with Additional Authenticated Data (AAD)
 CF_STATUS ll_GMAC_Update(ll_GMAC_CTX *ctx, const uint8_t *aad, size_t aad_len);
 

@@ -20,24 +20,24 @@
 
 // Helper macros
 #define ll_KMAC_INIT(ctx, name, name_len, S, S_len)                        \
-    ((ctx)->type == KMAC128 || (ctx)->type == KMACXOF128               \
+    ((ctx)->type == LL_KMAC128 || (ctx)->type == LL_KMAC_XOF128               \
         ? ll_cshake128_init((ll_CSHAKE128_CTX*)(ctx)->cshake_ctx, (name), (name_len), (S), (S_len)) \
         : ll_cshake256_init((ll_CSHAKE256_CTX*)(ctx)->cshake_ctx, (name), (name_len), (S), (S_len)))
 
 #define ll_KMAC_ABSORB(ctx, data, data_len)                                 \
-    ((ctx)->type == KMAC128 || (ctx)->type == KMACXOF128                \
+    ((ctx)->type == LL_KMAC128 || (ctx)->type == LL_KMAC_XOF128                \
         ? ll_cshake128_absorb((ll_CSHAKE128_CTX*)(ctx)->cshake_ctx, (data), (data_len)) \
         : ll_cshake256_absorb((ll_CSHAKE256_CTX*)(ctx)->cshake_ctx, (data), (data_len)))
 
 #define ll_KMAC_FINALIZE(ctx, buf, buf_len)                                   \
-    ((ctx)->type == KMAC128 || (ctx)->type == KMACXOF128                   \
+    ((ctx)->type == LL_KMAC128 || (ctx)->type == LL_KMAC_XOF128                   \
         ? (ll_cshake128_absorb((ll_CSHAKE128_CTX*)(ctx)->cshake_ctx, (buf), (buf_len)) && \
            ll_cshake128_final((ll_CSHAKE128_CTX*)(ctx)->cshake_ctx))      \
         : (ll_cshake256_absorb((ll_CSHAKE256_CTX*)(ctx)->cshake_ctx, (buf), (buf_len)) && \
            ll_cshake256_final((ll_CSHAKE256_CTX*)(ctx)->cshake_ctx)))
 
 #define ll_KMAC_SQUEEZE(ctx, digest, len)                                    \
-    ((ctx)->type == KMAC128 || (ctx)->type == KMACXOF128                   \
+    ((ctx)->type == LL_KMAC128 || (ctx)->type == LL_KMAC_XOF128                   \
         ? ll_cshake128_squeeze((ll_CSHAKE128_CTX*)(ctx)->cshake_ctx, (digest), (len)) \
         : ll_cshake256_squeeze((ll_CSHAKE256_CTX*)(ctx)->cshake_ctx, (digest), (len)))
 
@@ -102,7 +102,7 @@ static size_t kmac_bytepad_encode_key(unsigned char *out, size_t out_max_len,
 CF_STATUS ll_KMAC_Init(ll_KMAC_CTX *ctx,
                           const uint8_t *key, size_t key_len,
                           const uint8_t *S, size_t S_len,
-                          ll_KMAC_TYPE type) {
+                          LL_KMAC_TYPE type) {
     if (!ctx || !key)
         return CF_ERR_NULL_PTR;
 
@@ -145,7 +145,7 @@ CF_STATUS ll_KMAC_Init(ll_KMAC_CTX *ctx,
 ll_KMAC_CTX *ll_KMAC_InitAlloc(
     const uint8_t *key, size_t key_len,
     const uint8_t *S, size_t S_len,
-    ll_KMAC_TYPE type,
+    LL_KMAC_TYPE type,
     CF_STATUS *status) {
     if (!key) {
         if (status) *status = CF_ERR_NULL_PTR;
@@ -278,7 +278,7 @@ CF_STATUS ll_KMAC_Verify(
     const uint8_t *data, size_t data_len,
     const uint8_t *S, size_t S_len,
     const uint8_t *expected_mac,
-    ll_KMAC_TYPE type) {
+    LL_KMAC_TYPE type) {
     if (!key || !data || !expected_mac)
         return CF_ERR_NULL_PTR;
 
@@ -305,7 +305,7 @@ CF_STATUS ll_KMAC_Verify(
     }
 
     // Determine MAC length based on type
-    size_t mac_len = (type == KMAC128) ? LL_KMAC_DEFAULT_OUTPUT_LEN_128
+    size_t mac_len = (type == LL_KMAC128) ? LL_KMAC_DEFAULT_OUTPUT_LEN_128
                                        : LL_KMAC_DEFAULT_OUTPUT_LEN_256;
 
     // Finalize
@@ -330,7 +330,7 @@ CF_STATUS ll_KMAC_Reset(ll_KMAC_CTX *ctx) {
 
     // Free underlying CSHAKE context
     if (ctx->cshake_ctx) {
-        if (ctx->type == KMAC128 || ctx->type == KMACXOF128)
+        if (ctx->type == LL_KMAC128 || ctx->type == LL_KMAC_XOF128)
             SECURE_FREE(ctx->cshake_ctx, sizeof(ll_CSHAKE128_CTX));
         else
             SECURE_FREE(ctx->cshake_ctx, sizeof(ll_CSHAKE256_CTX));

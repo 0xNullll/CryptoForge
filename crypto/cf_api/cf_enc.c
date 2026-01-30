@@ -18,9 +18,9 @@
 
 #include "../../include/cf_api/cf_enc.h"
 
-// ======================
+//
 // Wrappers for all encoders
-// ======================
+//
 
 // BASE-16
 static bool base16_encode_wrapper(const uint8_t *data, size_t data_len, char *out, size_t *out_len, uint32_t mode) {

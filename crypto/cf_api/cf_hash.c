@@ -19,132 +19,133 @@
 #include "../../include/cf_api/cf_hash.h"
 
 
-// ======================
+//
 // Wrappers for all hashes
-// ======================
+//
 
 // MD5
-static bool md5_init_wrapper(void *ctx, const void *opts) {
-    (void)opts;
+static bool md5_init_wrapper(void *ctx, const CF_HASH_OPTS *opts) {
+    UNUSED(opts);
     return ll_md5_init((ll_MD5_CTX *)ctx);
 }
-static bool md5_update_wrapper(void *ctx, const uint8_t *data, size_t len) {
-    return ll_md5_update((ll_MD5_CTX *)ctx, data, len);
+
+static bool md5_update_wrapper(void *ctx, const uint8_t *data, size_t data_len) {
+    return ll_md5_update((ll_MD5_CTX *)ctx, data, data_len);
 }
 static bool md5_final_wrapper(void *ctx, uint8_t *digest, size_t digest_size) {
-    (void)digest_size;
+    UNUSED(digest_size);
     return ll_md5_final((ll_MD5_CTX *)ctx, digest);
 }
 
-// ----------------------
+//
 // SHA1 / SHA256 / SHA512
-// ----------------------
+//
 
 // SHA1
-static bool sha1_init_wrapper(void *ctx, const void *opts) {
-    (void)opts;
+static bool sha1_init_wrapper(void *ctx, const CF_HASH_OPTS *opts) {
+    UNUSED(opts);
     return ll_sha1_init((ll_SHA1_CTX *)ctx);
 }
-static bool sha1_update_wrapper(void *ctx, const uint8_t *data, size_t len) {
-    return ll_sha1_update((ll_SHA1_CTX *)ctx, data, len);
+static bool sha1_update_wrapper(void *ctx, const uint8_t *data, size_t data_len) {
+    return ll_sha1_update((ll_SHA1_CTX *)ctx, data, data_len);
 }
 static bool sha1_final_wrapper(void *ctx, uint8_t *digest, size_t digest_size) {
-    (void)digest_size;
+    UNUSED(digest_size);
     return ll_sha1_final((ll_SHA1_CTX *)ctx, digest);
 }
 
 // SHA224
-static bool sha224_init_wrapper(void *ctx, const void *opts) {
-    (void)opts;
+static bool sha224_init_wrapper(void *ctx, const CF_HASH_OPTS *opts) {
+    UNUSED(opts);
     return ll_sha224_init((ll_SHA224_CTX *)ctx);
 }
-static bool sha224_update_wrapper(void *ctx, const uint8_t *data, size_t len) {
-    return ll_sha224_update((ll_SHA224_CTX *)ctx, data, len);
+static bool sha224_update_wrapper(void *ctx, const uint8_t *data, size_t data_len) {
+    return ll_sha224_update((ll_SHA224_CTX *)ctx, data, data_len);
 }
 static bool sha224_final_wrapper(void *ctx, uint8_t *digest, size_t digest_size) {
-    (void)digest_size;
+    UNUSED(digest_size);
     return ll_sha224_final((ll_SHA224_CTX *)ctx, digest);
 }
 
 // SHA256
-static bool sha256_init_wrapper(void *ctx, const void *opts) {
-    (void)opts;
+static bool sha256_init_wrapper(void *ctx, const CF_HASH_OPTS *opts) {
+    UNUSED(opts);
     return ll_sha256_init((ll_SHA256_CTX *)ctx);
 }
-static bool sha256_update_wrapper(void *ctx, const uint8_t *data, size_t len) {
-    return ll_sha256_update((ll_SHA256_CTX *)ctx, data, len);
+static bool sha256_update_wrapper(void *ctx, const uint8_t *data, size_t data_len) {
+    return ll_sha256_update((ll_SHA256_CTX *)ctx, data, data_len);
 }
 static bool sha256_final_wrapper(void *ctx, uint8_t *digest, size_t digest_size) {
-    (void)digest_size;
+    UNUSED(digest_size);
     return ll_sha256_final((ll_SHA256_CTX *)ctx, digest);
 }
 
 // SHA384
-static bool sha384_init_wrapper(void *ctx, const void *opts) {
-    (void)opts;
+static bool sha384_init_wrapper(void *ctx, const CF_HASH_OPTS *opts) {
+    UNUSED(opts);
     return ll_sha384_init((ll_SHA384_CTX *)ctx);
 }
-static bool sha384_update_wrapper(void *ctx, const uint8_t *data, size_t len) {
-    return ll_sha384_update((ll_SHA384_CTX *)ctx, data, len);
+static bool sha384_update_wrapper(void *ctx, const uint8_t *data, size_t data_len) {
+    return ll_sha384_update((ll_SHA384_CTX *)ctx, data, data_len);
 }
 static bool sha384_final_wrapper(void *ctx, uint8_t *digest, size_t digest_size) {
-    (void)digest_size;
+    UNUSED(digest_size);
     return ll_sha384_final((ll_SHA384_CTX *)ctx, digest);
 }
 
 // SHA512
-static bool sha512_init_wrapper(void *ctx, const void *opts) {
-    (void)opts;
+static bool sha512_init_wrapper(void *ctx, const CF_HASH_OPTS *opts) {
+    UNUSED(opts);
     return ll_sha512_init((ll_SHA512_CTX *)ctx);
 }
-static bool sha512_update_wrapper(void *ctx, const uint8_t *data, size_t len) {
-    return ll_sha512_update((ll_SHA512_CTX *)ctx, data, len);
+static bool sha512_update_wrapper(void *ctx, const uint8_t *data, size_t data_len) {
+    return ll_sha512_update((ll_SHA512_CTX *)ctx, data, data_len);
 }
 static bool sha512_final_wrapper(void *ctx, uint8_t *digest, size_t digest_size) {
-    (void)digest_size;
+    UNUSED(digest_size);
     return ll_sha512_final((ll_SHA512_CTX *)ctx, digest);
 }
 
 // SHA512_224
-static bool sha512_224_init_wrapper(void *ctx, const void *opts) {
-    (void)opts;
+static bool sha512_224_init_wrapper(void *ctx, const CF_HASH_OPTS *opts) {
+    UNUSED(opts);
     return ll_sha512_224_init((ll_SHA512_224_CTX *)ctx);
 }
-static bool sha512_224_update_wrapper(void *ctx, const uint8_t *data, size_t len) {
-    return ll_sha512_224_update((ll_SHA512_224_CTX *)ctx, data, len);
+static bool sha512_224_update_wrapper(void *ctx, const uint8_t *data, size_t data_len) {
+    return ll_sha512_224_update((ll_SHA512_224_CTX *)ctx, data, data_len);
 }
 static bool sha512_224_final_wrapper(void *ctx, uint8_t *digest, size_t digest_size) {
-    (void)digest_size;
+    UNUSED(digest_size);
     return ll_sha512_224_final((ll_SHA512_224_CTX *)ctx, digest);
 }
 
 // SHA512_256
-static bool sha512_256_init_wrapper(void *ctx, const void *opts) {
-    (void)opts;
+static bool sha512_256_init_wrapper(void *ctx, const CF_HASH_OPTS *opts) {
+    UNUSED(opts);
     return ll_sha512_256_init((ll_SHA512_256_CTX *)ctx);
 }
-static bool sha512_256_update_wrapper(void *ctx, const uint8_t *data, size_t len) {
-    return ll_sha512_256_update((ll_SHA512_256_CTX *)ctx, data, len);
+static bool sha512_256_update_wrapper(void *ctx, const uint8_t *data, size_t data_len) {
+    return ll_sha512_256_update((ll_SHA512_256_CTX *)ctx, data, data_len);
 }
 static bool sha512_256_final_wrapper(void *ctx, uint8_t *digest, size_t digest_size) {
-    (void)digest_size;
+    UNUSED(digest_size);
     return ll_sha512_256_final((ll_SHA512_256_CTX *)ctx, digest);
 }
 
-// ----------------------
+//
 // SHA3 / SHAKE / RawSHAKE
-// ----------------------
+//
 // SHA3-224
-static bool sha3_224_init_wrapper(void *ctx, const void *opts) {
-    (void)opts;
+static bool sha3_224_init_wrapper(void *ctx, const CF_HASH_OPTS *opts) {
+    UNUSED(opts);
     return ll_sha3_224_init((ll_SHA3_224_CTX *)ctx);
 }
-static bool sha3_224_update_wrapper(void *ctx, const uint8_t *data, size_t len) {
-    return ll_sha3_224_absorb((ll_SHA3_224_CTX *)ctx, data, len);
+static bool sha3_224_update_wrapper(void *ctx, const uint8_t *data, size_t data_len) {
+    return ll_sha3_224_absorb((ll_SHA3_224_CTX *)ctx, data, data_len);
 }
 static bool sha3_224_final_wrapper(void *ctx, uint8_t *digest, size_t digest_size) {
-    (void)digest;
-    (void)digest_size;
+    UNUSED(digest);
+    UNUSED(digest_size);
     return ll_sha3_224_final((ll_SHA3_224_CTX *)ctx);
 }
 static bool sha3_224_squeeze_wrapper(void *ctx, uint8_t *output, size_t outlen) {
@@ -152,16 +153,16 @@ static bool sha3_224_squeeze_wrapper(void *ctx, uint8_t *output, size_t outlen) 
 }
 
 // SHA3-256
-static bool sha3_256_init_wrapper(void *ctx, const void *opts) {
-    (void)opts;
+static bool sha3_256_init_wrapper(void *ctx, const CF_HASH_OPTS *opts) {
+    UNUSED(opts);
     return ll_sha3_256_init((ll_SHA3_256_CTX *)ctx);
 }
-static bool sha3_256_update_wrapper(void *ctx, const uint8_t *data, size_t len) {
-    return ll_sha3_256_absorb((ll_SHA3_256_CTX *)ctx, data, len);
+static bool sha3_256_update_wrapper(void *ctx, const uint8_t *data, size_t data_len) {
+    return ll_sha3_256_absorb((ll_SHA3_256_CTX *)ctx, data, data_len);
 }
 static bool sha3_256_final_wrapper(void *ctx, uint8_t *digest, size_t digest_size) {
-    (void)digest;
-    (void)digest_size;
+    UNUSED(digest);
+    UNUSED(digest_size);
     return ll_sha3_256_final((ll_SHA3_256_CTX *)ctx);
 }
 static bool sha3_256_squeeze_wrapper(void *ctx, uint8_t *output, size_t outlen) {
@@ -169,16 +170,16 @@ static bool sha3_256_squeeze_wrapper(void *ctx, uint8_t *output, size_t outlen) 
 }
 
 // SHA3-384
-static bool sha3_384_init_wrapper(void *ctx, const void *opts) {
-    (void)opts;
+static bool sha3_384_init_wrapper(void *ctx, const CF_HASH_OPTS *opts) {
+    UNUSED(opts);
     return ll_sha3_384_init((ll_SHA3_384_CTX *)ctx);
 }
-static bool sha3_384_update_wrapper(void *ctx, const uint8_t *data, size_t len) {
-    return ll_sha3_384_absorb((ll_SHA3_384_CTX *)ctx, data, len);
+static bool sha3_384_update_wrapper(void *ctx, const uint8_t *data, size_t data_len) {
+    return ll_sha3_384_absorb((ll_SHA3_384_CTX *)ctx, data, data_len);
 }
 static bool sha3_384_final_wrapper(void *ctx, uint8_t *digest, size_t digest_size) {
-    (void)digest;
-    (void)digest_size;
+    UNUSED(digest);
+    UNUSED(digest_size);
     return ll_sha3_384_final((ll_SHA3_384_CTX *)ctx);
 }
 static bool sha3_384_squeeze_wrapper(void *ctx, uint8_t *output, size_t outlen) {
@@ -186,16 +187,16 @@ static bool sha3_384_squeeze_wrapper(void *ctx, uint8_t *output, size_t outlen) 
 }
 
 // SHA3-512
-static bool sha3_512_init_wrapper(void *ctx, const void *opts) {
-    (void)opts;
+static bool sha3_512_init_wrapper(void *ctx, const CF_HASH_OPTS *opts) {
+    UNUSED(opts);
     return ll_sha3_512_init((ll_SHA3_512_CTX *)ctx);
 }
-static bool sha3_512_update_wrapper(void *ctx, const uint8_t *data, size_t len) {
-    return ll_sha3_512_absorb((ll_SHA3_512_CTX *)ctx, data, len);
+static bool sha3_512_update_wrapper(void *ctx, const uint8_t *data, size_t data_len) {
+    return ll_sha3_512_absorb((ll_SHA3_512_CTX *)ctx, data, data_len);
 }
 static bool sha3_512_final_wrapper(void *ctx, uint8_t *digest, size_t digest_size) {
-    (void)digest;
-    (void)digest_size;
+    UNUSED(digest);
+    UNUSED(digest_size);
     return ll_sha3_512_final((ll_SHA3_512_CTX *)ctx);
 }
 static bool sha3_512_squeeze_wrapper(void *ctx, uint8_t *output, size_t outlen) {
@@ -203,16 +204,16 @@ static bool sha3_512_squeeze_wrapper(void *ctx, uint8_t *output, size_t outlen) 
 }
 
 // SHAKE128
-static bool shake128_init_wrapper(void *ctx, const void *opts) {
-    (void)opts;
+static bool shake128_init_wrapper(void *ctx, const CF_HASH_OPTS *opts) {
+    UNUSED(opts);
     return ll_shake128_init((ll_SHAKE128_CTX *)ctx);
 }
-static bool shake128_update_wrapper(void *ctx, const uint8_t *data, size_t len) {
-    return ll_shake128_absorb((ll_SHAKE128_CTX *)ctx, data, len);
+static bool shake128_update_wrapper(void *ctx, const uint8_t *data, size_t data_len) {
+    return ll_shake128_absorb((ll_SHAKE128_CTX *)ctx, data, data_len);
 }
 static bool shake128_final_wrapper(void *ctx, uint8_t *digest, size_t digest_size) {
-    (void)digest;
-    (void)digest_size;
+    UNUSED(digest);
+    UNUSED(digest_size);
     return ll_shake128_final((ll_SHAKE128_CTX *)ctx);
 }
 static bool shake128_squeeze_wrapper(void *ctx, uint8_t *output, size_t outlen) {
@@ -220,16 +221,16 @@ static bool shake128_squeeze_wrapper(void *ctx, uint8_t *output, size_t outlen) 
 }
 
 // SHAKE256
-static bool shake256_init_wrapper(void *ctx, const void *opts) {
-    (void)opts;
+static bool shake256_init_wrapper(void *ctx, const CF_HASH_OPTS *opts) {
+    UNUSED(opts);
     return ll_shake256_init((ll_SHAKE256_CTX *)ctx);
 }
-static bool shake256_update_wrapper(void *ctx, const uint8_t *data, size_t len) {
-    return ll_shake256_absorb((ll_SHAKE256_CTX *)ctx, data, len);
+static bool shake256_update_wrapper(void *ctx, const uint8_t *data, size_t data_len) {
+    return ll_shake256_absorb((ll_SHAKE256_CTX *)ctx, data, data_len);
 }
 static bool shake256_final_wrapper(void *ctx, uint8_t *digest, size_t digest_size) {
-    (void)digest;
-    (void)digest_size;
+    UNUSED(digest);
+    UNUSED(digest_size);
     return ll_shake256_final((ll_SHAKE256_CTX *)ctx);
 }
 static bool shake256_squeeze_wrapper(void *ctx, uint8_t *output, size_t outlen) {
@@ -237,16 +238,16 @@ static bool shake256_squeeze_wrapper(void *ctx, uint8_t *output, size_t outlen) 
 }
 
 // RawSHAKE128
-static bool rawshake128_init_wrapper(void *ctx, const void *opts) {
-    (void)opts;
+static bool rawshake128_init_wrapper(void *ctx, const CF_HASH_OPTS *opts) {
+    UNUSED(opts);
     return ll_rawshake128_init((ll_RawSHAKE128_CTX *)ctx);
 }
-static bool rawshake128_update_wrapper(void *ctx, const uint8_t *data, size_t len) {
-    return ll_rawshake128_absorb((ll_RawSHAKE128_CTX *)ctx, data, len);
+static bool rawshake128_update_wrapper(void *ctx, const uint8_t *data, size_t data_len) {
+    return ll_rawshake128_absorb((ll_RawSHAKE128_CTX *)ctx, data, data_len);
 }
 static bool rawshake128_final_wrapper(void *ctx, uint8_t *digest, size_t digest_size) {
-    (void)digest;
-    (void)digest_size;
+    UNUSED(digest);
+    UNUSED(digest_size);
     return ll_rawshake128_final((ll_RawSHAKE128_CTX *)ctx);
 }
 static bool rawshake128_squeeze_wrapper(void *ctx, uint8_t *output, size_t outlen) {
@@ -254,43 +255,42 @@ static bool rawshake128_squeeze_wrapper(void *ctx, uint8_t *output, size_t outle
 }
 
 // RawSHAKE256
-static bool rawshake256_init_wrapper(void *ctx, const void *opts) {
-    (void)opts;
+static bool rawshake256_init_wrapper(void *ctx, const CF_HASH_OPTS *opts) {
+    UNUSED(opts);
     return ll_rawshake256_init((ll_RawSHAKE256_CTX *)ctx);
 }
-static bool rawshake256_update_wrapper(void *ctx, const uint8_t *data, size_t len) {
-    return ll_rawshake256_absorb((ll_RawSHAKE256_CTX *)ctx, data, len);
+static bool rawshake256_update_wrapper(void *ctx, const uint8_t *data, size_t data_len) {
+    return ll_rawshake256_absorb((ll_RawSHAKE256_CTX *)ctx, data, data_len);
 }
 static bool rawshake256_final_wrapper(void *ctx, uint8_t *digest, size_t digest_size) {
-    (void)digest;
-    (void)digest_size;
+    UNUSED(digest);
+    UNUSED(digest_size);
     return ll_rawshake256_final((ll_RawSHAKE256_CTX *)ctx);
 }
 static bool rawshake256_squeeze_wrapper(void *ctx, uint8_t *output, size_t outlen) {
     return ll_rawshake256_squeeze((ll_RawSHAKE256_CTX *)ctx, output, outlen);
 }
 
-// ======================================
+//
 // cSHAKE128 simple wrappers
-// ======================================
-static bool cshake128_init_wrapper(void *ctx, const void *opts) {
-    const CF_HASH_OPTS *xof_opts = (const CF_HASH_OPTS *)opts;
+//
+static bool cshake128_init_wrapper(void *ctx, const CF_HASH_OPTS *opts) {
     return ll_cshake128_init(
         (ll_CSHAKE128_CTX *)ctx,
-        opts ? xof_opts->N : NULL,
-        opts ? xof_opts->N_len : 0,
-        opts ? xof_opts->S : NULL,
-        opts ? xof_opts->S_len : 0
+        opts ? opts->N : NULL,
+        opts ? opts->N_len : 0,
+        opts ? opts->S : NULL,
+        opts ? opts->S_len : 0
     );
 }
 
-static bool cshake128_update_wrapper(void *ctx, const uint8_t *data, size_t len) {
-    return ll_cshake128_absorb((ll_CSHAKE128_CTX *)ctx, data, len);
+static bool cshake128_update_wrapper(void *ctx, const uint8_t *data, size_t data_len) {
+    return ll_cshake128_absorb((ll_CSHAKE128_CTX *)ctx, data, data_len);
 }
 
 static bool cshake128_final_wrapper(void *ctx, uint8_t *digest, size_t digest_len) {
-    (void)digest;
-    (void)digest_len;
+    UNUSED(digest);
+    UNUSED(digest_len);
     return ll_cshake128_final((ll_CSHAKE128_CTX *)ctx);
 }
 
@@ -298,27 +298,26 @@ static bool cshake128_squeeze_wrapper(void *ctx, uint8_t *output, size_t outlen)
     return ll_cshake128_squeeze((ll_CSHAKE128_CTX *)ctx, output, outlen);
 }
 
-// ======================================
+//
 // cSHAKE256 simple wrappers
-// ======================================
-static bool cshake256_init_wrapper(void *ctx, const void *opts) {
-    const CF_HASH_OPTS *xof_opts = (const CF_HASH_OPTS *)opts;
+//
+static bool cshake256_init_wrapper(void *ctx, const CF_HASH_OPTS *opts) {
     return ll_cshake256_init(
         (ll_CSHAKE256_CTX *)ctx,
-        xof_opts ? xof_opts->N : NULL,
-        xof_opts ? xof_opts->N_len : 0,
-        xof_opts ? xof_opts->S : NULL,
-        xof_opts ? xof_opts->S_len : 0
+        opts ? opts->N : NULL,
+        opts ? opts->N_len : 0,
+        opts ? opts->S : NULL,
+        opts ? opts->S_len : 0
     );
 }
 
-static bool cshake256_update_wrapper(void *ctx, const uint8_t *data, size_t len) {
-    return ll_cshake256_absorb((ll_CSHAKE256_CTX *)ctx, data, len);
+static bool cshake256_update_wrapper(void *ctx, const uint8_t *data, size_t data_len) {
+    return ll_cshake256_absorb((ll_CSHAKE256_CTX *)ctx, data, data_len);
 }
 
 static bool cshake256_final_wrapper(void *ctx, uint8_t *digest, size_t digest_len) {
-    (void)digest;
-    (void)digest_len;
+    UNUSED(digest);
+    UNUSED(digest_len);
     return ll_cshake256_final((ll_CSHAKE256_CTX *)ctx);
 }
 
@@ -328,9 +327,9 @@ static bool cshake256_squeeze_wrapper(void *ctx, uint8_t *output, size_t outlen)
 
 // --- CF_MD Return Functions ---
 
-// =======================
+//
 // MD5
-// =======================
+//
 static const CF_MD *CF_get_md5(void) {
     static CF_MD md = {
         .id = CF_MD5,
@@ -348,9 +347,9 @@ static const CF_MD *CF_get_md5(void) {
     return &md;
 }
 
-// =======================
+//
 // SHA1
-// =======================
+//
 static const CF_MD *CF_get_sha1(void) {
     static CF_MD md = {
         .id = CF_SHA1,
@@ -368,9 +367,9 @@ static const CF_MD *CF_get_sha1(void) {
     return &md;
 }
 
-// =======================
+//
 // SHA256
-// =======================
+//
 static const CF_MD *CF_get_sha224(void) {
     static CF_MD md = {
         .id = CF_SHA224,
@@ -405,9 +404,9 @@ static const CF_MD *CF_get_sha256(void) {
     return &md;
 }
 
-// =======================
+//
 // SHA512
-// =======================
+//
 static const CF_MD *CF_get_sha384(void) {
     static CF_MD md = {
         .id = CF_SHA384,
@@ -476,9 +475,9 @@ static const CF_MD *CF_get_sha512_256(void) {
     return &md;
 }
 
-// =======================
+//
 // SHA3
-// =======================
+//
 static const CF_MD *CF_get_sha3_224(void) {
     static CF_MD md = {
         .id = CF_SHA3_224,
@@ -547,9 +546,9 @@ static const CF_MD *CF_get_sha3_512(void) {
     return &md;
 }
 
-// =======================
+//
 // SHAKE / RawSHAKE
-// =======================
+//
 static const CF_MD *CF_get_shake128(void) {
     static CF_MD md = {
         .id = CF_SHAKE128,
@@ -584,9 +583,9 @@ static const CF_MD *CF_get_shake256(void) {
     return &md;
 }
 
-// =======================
+//
 // RawSHAKE
-// =======================
+//
 static const CF_MD *CF_get_raw_shake128(void) {
     static CF_MD md = {
         .id = CF_RAWSHAKE128,
@@ -621,9 +620,9 @@ static const CF_MD *CF_get_raw_shake256(void) {
     return &md;
 }
 
-// =======================
+//
 // cSHAKE
-// =======================
+//
 static const CF_MD *CF_get_cshake128(void) {
     static CF_MD md = {
         .id = CF_CSHAKE128,
@@ -681,6 +680,9 @@ static const CF_ALGO_ENTRY cf_md_table[] = {
 };
 
 const CF_MD *CF_MDByFlag(uint32_t algo_flag) {
+    if (!CF_IS_DIGEST(algo_flag)) 
+        return NULL;
+
     size_t table_len = sizeof(cf_md_table) / sizeof(cf_md_table[0]);
     for (size_t i = 0; i < table_len; i++) {
         if (cf_md_table[i].flag == algo_flag) {

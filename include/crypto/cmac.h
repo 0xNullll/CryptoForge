@@ -53,6 +53,9 @@ typedef struct _ll_CMAC_CTX {
 // Initialize a CMAC context with AES key
 CF_STATUS ll_CMAC_Init(ll_CMAC_CTX *ctx, const ll_AES_KEY *key);
 
+// Allocates and initialize a CMAC context with AES key
+ll_CMAC_CTX* ll_CMAC_InitAlloc(const ll_AES_KEY *key, CF_STATUS *status);
+
 // Update CMAC with message data
 CF_STATUS ll_CMAC_Update(ll_CMAC_CTX *ctx, const uint8_t *data, size_t data_len);
 

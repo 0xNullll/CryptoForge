@@ -31,17 +31,14 @@ typedef struct _CF_ALGO_ENTRY {
 } CF_ALGO_ENTRY;
 
 typedef struct _CF_MD CF_MD;
-
-typedef struct _CF_MD_ENTRY CF_MD_ENTRY;
-
-typedef struct _CF_MAC CF_MAC;
-
-typedef struct _CF_XOF_OPTS CF_XOF_OPTS;
-
+typedef struct _CF_HASH_OPTS CF_HASH_OPTS;
 typedef struct _CF_HASH_CTX CF_HASH_CTX;
 
-typedef struct _CF_ENCODER CF_ENCODER;
+typedef struct _CF_MAC CF_MAC;
+typedef struct _CF_MAC_OPTS CF_MAC_OPTS;
+typedef struct _CF_MAC_CTX CF_MAC_CTX;
 
+typedef struct _CF_ENCODER CF_ENCODER;
 typedef struct _CF_ENCODER_CTX CF_ENCODER_CTX;
 
 #ifdef __cplusplus

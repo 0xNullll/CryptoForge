@@ -107,28 +107,28 @@ typedef enum {
 
 // Unique algorithm IDs
 typedef enum {
-    CF_MD5        = CF_CAT_DIGEST | 0x0001,
-    CF_SHA1       = CF_CAT_DIGEST | 0x0002,
-    CF_SHA224     = CF_CAT_DIGEST | 0x0003,
-    CF_SHA256     = CF_CAT_DIGEST | 0x0004,
-    CF_SHA384     = CF_CAT_DIGEST | 0x0005,
-    CF_SHA512     = CF_CAT_DIGEST | 0x0006,
-    CF_SHA512_224 = CF_CAT_DIGEST | 0x0007,
-    CF_SHA512_256 = CF_CAT_DIGEST | 0x0008,
-    CF_SHA3_224   = CF_CAT_DIGEST | 0x0010,
-    CF_SHA3_256   = CF_CAT_DIGEST | 0x0011,
-    CF_SHA3_384   = CF_CAT_DIGEST | 0x0012,
-    CF_SHA3_512   = CF_CAT_DIGEST | 0x0013,
-    CF_SHAKE128   = CF_CAT_XOF    | 0x0010,
-    CF_SHAKE256   = CF_CAT_XOF    | 0x0011,
-    CF_RAWSHAKE128= CF_CAT_XOF    | 0x0020,
-    CF_RAWSHAKE256= CF_CAT_XOF    | 0x0021,
-    CF_CSHAKE128  = CF_CAT_XOF    | 0x0030,
-    CF_CSHAKE256  = CF_CAT_XOF    | 0x0031
+    CF_MD5         = CF_CAT_DIGEST | 0x0001,
+    CF_SHA1        = CF_CAT_DIGEST | 0x0002,
+    CF_SHA224      = CF_CAT_DIGEST | 0x0003,
+    CF_SHA256      = CF_CAT_DIGEST | 0x0004,
+    CF_SHA384      = CF_CAT_DIGEST | 0x0005,
+    CF_SHA512      = CF_CAT_DIGEST | 0x0006,
+    CF_SHA512_224  = CF_CAT_DIGEST | 0x0007,
+    CF_SHA512_256  = CF_CAT_DIGEST | 0x0008,
+    CF_SHA3_224    = CF_CAT_DIGEST | 0x0010,
+    CF_SHA3_256    = CF_CAT_DIGEST | 0x0011,
+    CF_SHA3_384    = CF_CAT_DIGEST | 0x0012,
+    CF_SHA3_512    = CF_CAT_DIGEST | 0x0013,
+    CF_SHAKE128    = CF_CAT_XOF    | 0x0010,
+    CF_SHAKE256    = CF_CAT_XOF    | 0x0011,
+    CF_RAWSHAKE128 = CF_CAT_XOF    | 0x0020,
+    CF_RAWSHAKE256 = CF_CAT_XOF    | 0x0021,
+    CF_CSHAKE128   = CF_CAT_XOF    | 0x0030,
+    CF_CSHAKE256   = CF_CAT_XOF    | 0x0031
 } CF_Algorithm;
 
 // Helper macros for category checks
-#define CF_IS_DIGEST_SIZE(id) (((id) & 0xF0000000) == CF_CAT_DIGEST)
+#define CF_IS_DIGEST(id) (((id) & 0xF0000000) == CF_CAT_DIGEST)
 
 #define IS_KECCAK_BASED(id) \
     (((id) == CF_SHA3_224)   || ((id) == CF_SHA3_256)   || \
@@ -141,15 +141,45 @@ typedef enum {
 #define CF_IS_MAC(id)    (((id) & 0xF0000000) == CF_CAT_MAC)
 
 // ======================
-// 2. HMAC / KMAC Flags
+// 2. HMAC / KMAC / CMAC / GMAC Flags
 // ======================
+
+// Subflags for MACs
+#define CF_MAC_SUBFLAG_MASK 0x00FFFFFF  // lower 24 bits reserved for variants
+#define CF_MAC_XOF_FLAG     0x00100000  // set if MAC produces XOF output (KMACXOF)
+#define CF_MAC_HASH_MASK    0x000000FF  // hash selection for HMAC (SHA1, SHA256, etc.)
+#define CF_MAC_KMAC_MASK    0x0000FF00  // KMAC variant selection (128/256)
+
+// Unified MAC IDs / Flags
 typedef enum {
-    CF_HMAC       = CF_CAT_MAC | 0x0001,
-    CF_KMAC128    = CF_CAT_MAC | 0x0002,
-    CF_KMAC256    = CF_CAT_MAC | 0x0003,
-    CF_KMACXOF128 = CF_CAT_MAC | 0x0004,
-    CF_KMACXOF256 = CF_CAT_MAC | 0x0005
+    // HMAC / KMAC (require subflags)
+    CF_HMAC = CF_CAT_MAC | 0x0100, // subflags: hash ID
+    CF_KMAC = CF_CAT_MAC | 0x0200, // subflags: KMAC type
+
+    // CMAC / GMAC (no subflags, derive from key)
+    CF_CMAC = CF_CAT_MAC | 0x0300, // subflags ignored
+    CF_GMAC = CF_CAT_MAC | 0x0400, // subflags ignored
+
 } CF_MAC_FLAGS;
+
+// ======================
+// Helper macros for MACs
+// ======================
+
+// Checks if ID is a MAC
+#define CF_IS_MAC(id)      (((id) & 0xF0000000) == CF_CAT_MAC)
+
+// Check specific MAC types
+#define CF_IS_HMAC(id)     (((id) & CF_MAC_SUBFLAG_MASK) == 0x0001)
+#define CF_IS_CMAC(id)     (((id) & CF_MAC_SUBFLAG_MASK) == 0x0100)
+#define CF_IS_GMAC(id)     (((id) & CF_MAC_SUBFLAG_MASK) == 0x0200)
+#define CF_IS_KMAC(id)     ((((id) & 0x00FF0000) == 0x00020000) || (((id) & 0x00FF0000) == 0x00030000))
+
+// Check if MAC produces XOF output (only meaningful for KMAC)
+#define CF_IS_XOF_MAC(id)  (((id) & CF_MAC_XOF_FLAG) != 0)
+
+// Extract HMAC hash ID (SHA1, SHA256, etc.)
+#define CF_MAC_GET_HASH(id) ((id) & CF_MAC_HASH_MASK)
 
 // ======================
 // 3. RNG / DRBG Flags
