@@ -33,10 +33,10 @@ extern "C" {
 #endif
 
 typedef enum {
-    LL_KMAC128      = 0x00,
-    LL_KMAC256      = 0x01,
-    LL_KMAC_XOF128   = 0x02,
-    LL_KMAC_XOF256   = 0x03
+    LL_KMAC128      = 0x100,
+    LL_KMAC256      = 0x200,
+    LL_KMAC_XOF128  = 0x300,
+    LL_KMAC_XOF256  = 0x400
 } LL_KMAC_TYPE;
 
 #define LL_KMAC_TYPE_IS_VALID(type) \
@@ -51,10 +51,10 @@ typedef enum {
 #define LL_KMAC_DEFAULT_OUTPUT_LEN_256 32  // RFC fixed-length output for KMAC256
 
 // typedef enum {
-//     KMAC128      = CF_CAT_MAC | 0x0002,
-//     KMAC256      = CF_CAT_MAC | 0x0003,
-//     KMACXOF128   = CF_CAT_MAC | 0x0004,
-//     KMACXOF256   = CF_CAT_MAC | 0x0005
+//     KMAC128      = 0x0002,
+//     KMAC256      = 0x0003,
+//     KMACXOF128   = 0x0004,
+//     KMACXOF256   = 0x0005
 // } ll_KMAC_TYPE;
 
 typedef struct _ll_KMAC_CTX {

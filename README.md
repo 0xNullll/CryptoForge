@@ -258,8 +258,7 @@ Evaluate behavior under hostile or constrained execution environments.
 ```c
 /CryptoForge
 ├─ /include
-│   ├─ cf.h                 <-- umbrella header
-│   ├─ cf_api/              <-- top-level API headers
+│   ├─ cf_api/              <-- top-level API headers (includes the umbrella header file too)
 │   ├─ utils/               <-- utility headers (mem, status, misc)
 │   ├─ config/              <-- config headers (crypto_config, demo_config)
 │   └─ crypto/              <-- all low-level crypto headers

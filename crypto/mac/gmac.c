@@ -25,6 +25,9 @@ CF_STATUS ll_GMAC_Init(ll_GMAC_CTX *ctx, const ll_AES_KEY *key, const uint8_t *i
     if (iv_len < AES_GCM_IV_MIN)
         return CF_ERR_MAC_BAD_IV_LEN;
 
+    if (ctx->isHeapAlloc != 0 && ctx->isHeapAlloc != 1)
+        return CF_ERR_CTX_UNINITIALIZED;
+
     ll_GMAC_Reset(ctx);
 
     ctx->key = key;

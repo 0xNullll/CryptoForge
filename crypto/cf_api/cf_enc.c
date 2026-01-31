@@ -181,7 +181,7 @@ static const CF_ENCODER *CF_get_base85(void) {
 }
 
 // Iternal Lookup encoder descriptor by flag using masks
-static const CF_ENCODER* CF_EncoderByFlag(uint32_t encoder_flag) {
+static const CF_ENCODER* CF_Enc_GetByFlag(uint32_t encoder_flag) {
     if (encoder_flag & CF_BASE16_MASK)
         return CF_get_base16();
     if (encoder_flag & CF_BASE32_MASK)
@@ -196,16 +196,19 @@ static const CF_ENCODER* CF_EncoderByFlag(uint32_t encoder_flag) {
     return NULL; // no matching encoder found
 }
 
-CF_STATUS CF_EncInit(CF_ENCODER_CTX *ctx, uint32_t enc_flags, uint32_t dec_flags) {
+CF_STATUS CF_Enc_Init(CF_ENCODER_CTX *ctx, uint32_t enc_flags, uint32_t dec_flags) {
     if (!ctx)
         return CF_ERR_NULL_PTR;
     
-    CF_EncReset(ctx);
+    if (ctx->isHeapAlloc != 0 && ctx->isHeapAlloc != 1)
+        return CF_ERR_CTX_UNINITIALIZED;
+
+    CF_Enc_Reset(ctx);
 
     if (!CF_IS_ENC(enc_flags) || !CF_IS_DEC(dec_flags))
         return CF_ERR_INVALID_PARAM;
 
-    const CF_ENCODER *encoder = CF_EncoderByFlag(enc_flags);
+    const CF_ENCODER *encoder = CF_Enc_GetByFlag(enc_flags);
     if (!encoder)
         return CF_ERR_INVALID_PARAM;
 
@@ -220,7 +223,7 @@ CF_STATUS CF_EncInit(CF_ENCODER_CTX *ctx, uint32_t enc_flags, uint32_t dec_flags
     return CF_SUCCESS;
 }
 
-CF_ENCODER_CTX *CF_EncInitAlloc(uint32_t enc_flags, uint32_t dec_flags, CF_STATUS *status) {
+CF_ENCODER_CTX *CF_Enc_InitAlloc(uint32_t enc_flags, uint32_t dec_flags, CF_STATUS *status) {
     if (!CF_IS_ENC(enc_flags) || !CF_IS_DEC(dec_flags)) {
         if (status) *status = CF_ERR_INVALID_PARAM;
         return NULL;
@@ -232,7 +235,7 @@ CF_ENCODER_CTX *CF_EncInitAlloc(uint32_t enc_flags, uint32_t dec_flags, CF_STATU
         return NULL;
     }
 
-    CF_STATUS st = CF_EncInit(ctx, enc_flags, dec_flags);
+    CF_STATUS st = CF_Enc_Init(ctx, enc_flags, dec_flags);
     if (st != CF_SUCCESS) {
         SECURE_FREE(ctx, sizeof(CF_ENCODER_CTX));
         if (status) *status = st;
@@ -245,7 +248,7 @@ CF_ENCODER_CTX *CF_EncInitAlloc(uint32_t enc_flags, uint32_t dec_flags, CF_STATU
     return ctx;
 }
 
-CF_STATUS CF_EncReset(CF_ENCODER_CTX *ctx) {
+CF_STATUS CF_Enc_Reset(CF_ENCODER_CTX *ctx) {
     if (!ctx) return CF_ERR_NULL_PTR;
 
     int wasHeapAlloc = ctx->isHeapAlloc;
@@ -259,7 +262,7 @@ CF_STATUS CF_EncReset(CF_ENCODER_CTX *ctx) {
 }
 
 
-CF_STATUS CF_EncFree(CF_ENCODER_CTX **p_ctx) {
+CF_STATUS CF_Enc_Free(CF_ENCODER_CTX **p_ctx) {
     if (!p_ctx || !*p_ctx)
         return CF_ERR_NULL_PTR;
 
@@ -267,7 +270,7 @@ CF_STATUS CF_EncFree(CF_ENCODER_CTX **p_ctx) {
 
     int wasHeapAlloc = ctx->isHeapAlloc;
 
-    CF_EncReset(ctx);
+    CF_Enc_Reset(ctx);
 
     if (wasHeapAlloc) {
         SECURE_FREE(ctx, sizeof(*ctx));  // free the heap memory
@@ -280,7 +283,7 @@ CF_STATUS CF_EncFree(CF_ENCODER_CTX **p_ctx) {
 }
 
 
-CF_STATUS CF_Encode(CF_ENCODER_CTX *ctx, const uint8_t *src, size_t src_len,  char *dst, size_t *dst_len) {
+CF_STATUS CF_Enc_Encode(CF_ENCODER_CTX *ctx, const uint8_t *src, size_t src_len,  char *dst, size_t *dst_len) {
     if (!ctx || !ctx->encoder || !src || !dst || !dst_len)
         return CF_ERR_NULL_PTR;
 
@@ -301,18 +304,18 @@ CF_STATUS CF_Encode(CF_ENCODER_CTX *ctx, const uint8_t *src, size_t src_len,  ch
     return CF_SUCCESS;
 }
 
-CF_STATUS CF_EncodeRaw(CF_ENCODER_CTX *ctx, const void *src, size_t src_len, char *dst, size_t *dst_len) {
-    return CF_Encode(ctx, (const uint8_t *)src, src_len, dst, dst_len);
+CF_STATUS CF_Enc_EncodeRaw(CF_ENCODER_CTX *ctx, const void *src, size_t src_len, char *dst, size_t *dst_len) {
+    return CF_Enc_Encode(ctx, (const uint8_t *)src, src_len, dst, dst_len);
 }
 
-char* CF_EncodeAlloc(CF_ENCODER_CTX *ctx, const uint8_t *src, size_t src_len, size_t *out_len, CF_STATUS *status) {
+char* CF_Enc_EncodeAlloc(CF_ENCODER_CTX *ctx, const uint8_t *src, size_t src_len, size_t *out_len, CF_STATUS *status) {
     if (!ctx || !ctx->encoder || !src || !out_len) {
         if (status) *status = CF_ERR_NULL_PTR;
         return NULL;
     }
 
     // Calculate required output length
-    size_t required_len = CF_EncodeRequiredLen(ctx->encFlags, src_len);
+    size_t required_len = CF_Enc_RequiredEncLen(ctx->encFlags, src_len);
 
     // Allocate memory
     char *dst = (char*)SECURE_ALLOC(required_len);
@@ -322,7 +325,7 @@ char* CF_EncodeAlloc(CF_ENCODER_CTX *ctx, const uint8_t *src, size_t src_len, si
     }
 
     size_t written = 0;
-    CF_STATUS res = CF_Encode(ctx, src, src_len, dst, &written);
+    CF_STATUS res = CF_Enc_Encode(ctx, src, src_len, dst, &written);
     if (status) *status = res;
 
     if (res != CF_SUCCESS) {
@@ -334,12 +337,12 @@ char* CF_EncodeAlloc(CF_ENCODER_CTX *ctx, const uint8_t *src, size_t src_len, si
     return dst;
 }
 
-char *CF_EncodeAllocRaw(CF_ENCODER_CTX *ctx, const void *src, size_t src_len, size_t *out_len, CF_STATUS *status) {
-    return CF_EncodeAlloc(ctx, (const uint8_t *)src, src_len, out_len, status);
+char *CF_Enc_EncodeAllocRaw(CF_ENCODER_CTX *ctx, const void *src, size_t src_len, size_t *out_len, CF_STATUS *status) {
+    return CF_Enc_EncodeAlloc(ctx, (const uint8_t *)src, src_len, out_len, status);
 }
 
 
-CF_STATUS CF_Decode(CF_ENCODER_CTX *ctx, const char *src, size_t src_len, uint8_t *dst, size_t *dst_len)  {
+CF_STATUS CF_Enc_Decode(CF_ENCODER_CTX *ctx, const char *src, size_t src_len, uint8_t *dst, size_t *dst_len)  {
     if (!ctx || !ctx->encoder || !src || !dst || !dst_len)
         return CF_ERR_NULL_PTR;
 
@@ -362,18 +365,18 @@ CF_STATUS CF_Decode(CF_ENCODER_CTX *ctx, const char *src, size_t src_len, uint8_
     return CF_SUCCESS;
 }
 
-CF_STATUS CF_DecodeRaw(CF_ENCODER_CTX *ctx, const void *src, size_t src_len, uint8_t *dst, size_t *dst_len) {
-    return CF_Decode(ctx, (const char *)src, src_len, dst, dst_len);
+CF_STATUS CF_Enc_DecodeRaw(CF_ENCODER_CTX *ctx, const void *src, size_t src_len, uint8_t *dst, size_t *dst_len) {
+    return CF_Enc_Decode(ctx, (const char *)src, src_len, dst, dst_len);
 }
 
-uint8_t* CF_DecodeAlloc(CF_ENCODER_CTX *ctx, const char *src, size_t src_len, size_t *out_len, CF_STATUS *status) {
+uint8_t* CF_Enc_DecodeAlloc(CF_ENCODER_CTX *ctx, const char *src, size_t src_len, size_t *out_len, CF_STATUS *status) {
     if (!ctx || !ctx->encoder || !src || !out_len) {
         if (status) *status = CF_ERR_NULL_PTR;
         return NULL;
     }
 
     // Calculate required output length
-    size_t required_len = CF_DecodeRequiredLen(ctx->decFlags, src_len);
+    size_t required_len = CF_Enc_RequiredDecLen(ctx->decFlags, src_len);
 
     // Allocate memory
     uint8_t *dst = (uint8_t *)SECURE_ALLOC(required_len);
@@ -383,7 +386,7 @@ uint8_t* CF_DecodeAlloc(CF_ENCODER_CTX *ctx, const char *src, size_t src_len, si
     }
 
     size_t written = 0;
-    CF_STATUS res = CF_Decode(ctx, src, src_len, dst, &written);
+    CF_STATUS res = CF_Enc_Decode(ctx, src, src_len, dst, &written);
     if (status) *status = res;
 
     if (res != CF_SUCCESS) {
@@ -395,12 +398,12 @@ uint8_t* CF_DecodeAlloc(CF_ENCODER_CTX *ctx, const char *src, size_t src_len, si
     return dst;
 }
 
-uint8_t* CF_DecodeAllocRaw(CF_ENCODER_CTX *ctx, const void *src, size_t src_len, size_t *out_len, CF_STATUS *status) {
-    return CF_DecodeAlloc(ctx, (const char *)src, src_len, out_len, status);
+uint8_t* CF_Enc_DecodeAllocRaw(CF_ENCODER_CTX *ctx, const void *src, size_t src_len, size_t *out_len, CF_STATUS *status) {
+    return CF_Enc_DecodeAlloc(ctx, (const char *)src, src_len, out_len, status);
 }
 
 
-size_t CF_EncodeRequiredLen(uint32_t enc_flags, size_t input_len) {
+size_t CF_Enc_RequiredEncLen(uint32_t enc_flags, size_t input_len) {
     if (!CF_IS_ENC(enc_flags) || input_len == 0)
         return 0;
 
@@ -423,7 +426,7 @@ size_t CF_EncodeRequiredLen(uint32_t enc_flags, size_t input_len) {
     return 0;
 }
 
-size_t CF_DecodeRequiredLen(uint32_t dec_flags, size_t input_len) {
+size_t CF_Enc_RequiredDecLen(uint32_t dec_flags, size_t input_len) {
     if (!CF_IS_DEC(dec_flags) || input_len == 0)
         return 0;
 
@@ -447,11 +450,11 @@ size_t CF_DecodeRequiredLen(uint32_t dec_flags, size_t input_len) {
 }
 
 
-bool CF_EncodedIsValid(uint32_t dec_flags, const char *src, size_t len) {
+bool CF_Enc_IsValid(uint32_t dec_flags, const char *src, size_t len) {
     if (!CF_IS_DEC(dec_flags) || !src || len == 0)
         return false;
 
-    const CF_ENCODER *encoder = CF_EncoderByFlag(dec_flags);
+    const CF_ENCODER *encoder = CF_Enc_GetByFlag(dec_flags);
     if (!encoder || !encoder->rev_table)
         return false;
 
@@ -518,7 +521,7 @@ bool CF_EncodedIsValid(uint32_t dec_flags, const char *src, size_t len) {
     return true;
 }
 
-const char *CF_EncName(CF_ENCODER_CTX *ctx) {
+const char *CF_Enc_GetName(const CF_ENCODER_CTX *ctx) {
     if (!ctx || !ctx->encoder)
         return NULL;
 
@@ -577,14 +580,14 @@ const char *CF_EncName(CF_ENCODER_CTX *ctx) {
     return NULL;
 }
 
-size_t CF_EncMinInput(CF_ENCODER_CTX *ctx) {
+size_t CF_Enc_MinInput(const CF_ENCODER_CTX *ctx) {
     if (!ctx || !ctx->encoder)
         return 0;
 
     return ctx->encoder->min_input;
 }
 
-size_t CF_EncMinOutput(CF_ENCODER_CTX *ctx) {
+size_t CF_Enc_MinOutput(const CF_ENCODER_CTX *ctx) {
     if (!ctx || !ctx->encoder)
         return 0;
 

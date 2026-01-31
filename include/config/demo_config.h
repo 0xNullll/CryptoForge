@@ -51,8 +51,8 @@
 #include "../cf_api/cf_defs.h"
 #include "../cf_api/cf_flags.h"
 #include "../cf_api/cf_hash.h"
+#include "../cf_api/cf_mac.h"
 #include "../cf_api/cf_enc.h"
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -93,6 +93,7 @@ CF_API void test_all_kmacs_verify_array(const uint8_t *key, size_t key_len,
                                  const uint8_t *expected_digests[4]);
 CF_API void test_all_gmacs(void);
 CF_API void test_aes_cmac_fips800_38b(void);
+CF_API void test_all_macs_high(void);
 
 CF_API void test_all_hkdfs(
     const uint8_t *info, size_t info_len,

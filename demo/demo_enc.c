@@ -393,45 +393,45 @@ void test_all_encoders_high(const uint8_t *input, size_t input_len) {
         CF_STATUS status;
 
         // Allocate encoder context
-        CF_ENCODER_CTX *ctx = CF_EncInitAlloc(t.enc, t.dec, &status);
+        CF_ENCODER_CTX *ctx = CF_Enc_InitAlloc(t.enc, t.dec, &status);
         if (!ctx || status != CF_SUCCESS) {
             printf("[FAIL] %s: Failed to init context\n", t.desc);
             continue;
         }
 
         // Prepare output buffer
-        size_t out_len = CF_EncodeRequiredLen(t.enc, input_len);
+        size_t out_len = CF_Enc_RequiredEncLen(t.enc, input_len);
         char *enc_buf = (char *)SECURE_ALLOC(out_len);
         if (!enc_buf) {
             printf("[FAIL] %s: Failed to allocate buffer\n", t.desc);
-            CF_EncFree(&ctx);
+            CF_Enc_Free(&ctx);
             continue;
         }
         memset(enc_buf, 0, out_len);
 
         // Encode
-        status = CF_Encode(ctx, input, input_len, enc_buf, &out_len);
+        status = CF_Enc_Encode(ctx, input, input_len, enc_buf, &out_len);
         if (status != CF_SUCCESS) {
             printf("[FAIL] %s: Encoding failed\n", t.desc);
             free(enc_buf);
-            CF_EncFree(&ctx);
+            CF_Enc_Free(&ctx);
             continue;
         }
 
         DEMO_print_str(t.desc, enc_buf, out_len);
 
         // Decode
-        size_t dec_len = CF_DecodeRequiredLen(t.dec, out_len);
+        size_t dec_len = CF_Enc_RequiredDecLen(t.dec, out_len);
         uint8_t *dec_buf = (uint8_t *)SECURE_ALLOC(dec_len);
         if (!dec_buf) {
             printf("[FAIL] %s: Failed to allocate decode buffer\n", t.desc);
             free(enc_buf);
-            CF_EncFree(&ctx);
+            CF_Enc_Free(&ctx);
             continue;
         }
         memset(dec_buf, 0, dec_len);
 
-        status = CF_Decode(ctx, enc_buf, out_len, dec_buf, &dec_len);
+        status = CF_Enc_Decode(ctx, enc_buf, out_len, dec_buf, &dec_len);
         if (status != CF_SUCCESS) {
             printf("[FAIL] %s: Decoding failed\n", t.desc);
         } else if (dec_len != input_len || memcmp(dec_buf, input, input_len) != 0) {
@@ -444,7 +444,7 @@ void test_all_encoders_high(const uint8_t *input, size_t input_len) {
         SECURE_FREE(dec_buf, dec_len);
 
 
-        CF_EncFree(&ctx);
+        CF_Enc_Free(&ctx);
     }
 }
 
