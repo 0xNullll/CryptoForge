@@ -106,11 +106,14 @@ CF_STATUS ll_KMAC_Init(ll_KMAC_CTX *ctx,
     if (!ctx || !key)
         return CF_ERR_NULL_PTR;
 
-    if ((key && key_len == 0) || (S && S_len == 0) || !LL_KMAC_TYPE_IS_VALID(type))
+    if (!LL_KMAC_TYPE_IS_VALID(type))
         return CF_ERR_INVALID_PARAM;
 
     if (key_len > MAX_KEY_SIZE || S_len > MAX_CUSTOMIZATION) 
         return CF_ERR_INVALID_LEN;
+
+    if (ctx->isHeapAlloc != 0 && ctx->isHeapAlloc != 1)
+        return CF_ERR_CTX_UNINITIALIZED;
 
     ll_KMAC_Reset(ctx);
     
@@ -131,7 +134,7 @@ CF_STATUS ll_KMAC_Init(ll_KMAC_CTX *ctx,
 
     // Step 2: encode + bytepad the key
     size_t rate_bytes = LL_KMAC_IS_128(ctx->type) ? CSHAKE128_BLOCK_SIZE : CSHAKE256_BLOCK_SIZE;
-    uint8_t padded_key[2 * KECCAK_BLOCK_SIZE];
+    uint8_t padded_key[2 * KECCAK_BLOCK_SIZE + MAX_KEY_SIZE + 16];
     size_t padded_len = kmac_bytepad_encode_key(padded_key, sizeof(padded_key),
                                                 NULL, key, key_len, rate_bytes);
     if (padded_len == 0) return CF_ERR_INVALID_LEN;
@@ -163,7 +166,7 @@ ll_KMAC_CTX *ll_KMAC_InitAlloc(
     }
 
     // Allocate memory for the context
-    ll_KMAC_CTX *ctx = (ll_KMAC_CTX *)malloc(sizeof(ll_KMAC_CTX));
+    ll_KMAC_CTX *ctx = (ll_KMAC_CTX *)SECURE_ALLOC(sizeof(ll_KMAC_CTX));
     if (!ctx) {
         if (status) *status = CF_ERR_ALLOC_FAILED;
         return NULL;

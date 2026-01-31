@@ -86,6 +86,7 @@ typedef enum {
 //
 typedef enum {
     CF_ERR_CIPHER_BASE_ERROR   = CF_ERR_CIPHER_BASE,    // base for ciphers errors
+    CF_ERR_CIPHER_INVALID_KEY_LEN,                      // invalid key length
     CF_ERR_CIPHER_KEY_SETUP,                            // error during key setup
     CF_ERR_CIPHER_ENCRYPT,                              // encryption failed
     CF_ERR_CIPHER_DECRYPT,                              // decryption failed

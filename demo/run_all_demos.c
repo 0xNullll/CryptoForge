@@ -16,7 +16,7 @@ int main(void) {
     uint8_t raw_bytes[] = {0x00, 0x01, 0x02, 0x03};
     size_t raw_len = sizeof(raw_bytes);
 
-    status = CF_HashOptsInit(&hash_opts,
+    status = CF_HashOpts_Init(&hash_opts,
                             //  raw_bytes, raw_len,
                              NULL, 0,    // N and S empty
                              raw_bytes, raw_len,
@@ -38,26 +38,26 @@ int main(void) {
     // Example: Incremental hash using CF_Hash* API
     uint8_t digest[CF_MAX_DEFAULT_DIGEST_SIZE];  // large enough for SHA3-512
     size_t out_len = CF_MAX_DEFAULT_DIGEST_SIZE;
-    const CF_MD *md = CF_MDByFlag(CF_SHA256);
+    const CF_MD *md = CF_MD_GetByFlag(CF_SHA256);
     CF_HASH_CTX ctx;
     SECURE_ZERO(&ctx, sizeof(ctx));
 
-    status = CF_HashInit(&ctx, md, NULL);
+    status = CF_Hash_Init(&ctx, md, NULL);
     if (status != CF_SUCCESS) { printf("CF_HashInit failed\n"); return 1; }
 
-    status = CF_HashUpdate(&ctx, (const uint8_t *)input, input_len);
+    status = CF_Hash_Update(&ctx, (const uint8_t *)input, input_len);
     if (status != CF_SUCCESS) { printf("CF_HashUpdate failed\n"); return 1; }
 
-    status = CF_HashFinal(&ctx, digest, out_len);
+    status = CF_Hash_Final(&ctx, digest, out_len);
     if (status != CF_SUCCESS) { printf("CF_HashFinal failed\n"); return 1; }
 
-    printf("Digest %s: ", CF_HashGetName(md));
-    for (size_t i = 0; i < CF_HashGetDigestSize(&ctx); i++)
+    printf("Digest %s: ", CF_Hash_GetName(md));
+    for (size_t i = 0; i < CF_Hash_GetDigestSize(&ctx); i++)
         printf("%02x", digest[i]);
     printf("\n");
 
-    CF_HashReset(&ctx);
-    CF_HashOptsReset(&hash_opts);
+    CF_Hash_Reset(&ctx);
+    CF_HashOpts_Reset(&hash_opts);
 
     // HMAC tests
     uint8_t key[] = "My Tagged Applicationnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn";

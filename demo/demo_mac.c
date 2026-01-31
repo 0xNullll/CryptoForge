@@ -23,7 +23,7 @@ void test_all_hmacs(const uint8_t *key, size_t key_len, const uint8_t *input, si
     size_t num_hashes = sizeof(hash_flags)/sizeof(hash_flags[0]);
 
     for (size_t i = 0; i < num_hashes; i++) {
-        const CF_MD *md = CF_MDByFlag(hash_flags[i]);
+        const CF_MD *md = CF_MD_GetByFlag(hash_flags[i]);
         if (!md) { 
             printf("Unknown hash flag %u\n", hash_flags[i]); 
             continue; 
@@ -34,13 +34,13 @@ void test_all_hmacs(const uint8_t *key, size_t key_len, const uint8_t *input, si
 
         CF_STATUS status = ll_HMAC_Init(&hmac_ctx, md, key, key_len);
         if (status != CF_SUCCESS) { 
-            printf("ll_HMAC_Init failed for %s\n", CF_HashGetName(hmac_ctx.md)); 
+            printf("ll_HMAC_Init failed for %s\n", CF_Hash_GetName(md)); 
             continue; 
         }
 
         status = ll_HMAC_Update(&hmac_ctx, input, input_len);
         if (status != CF_SUCCESS) { 
-            printf("ll_HMAC_Update failed for %s\n", CF_HashGetName(hmac_ctx.md)); 
+            printf("ll_HMAC_Update failed for %s\n", CF_Hash_GetName(md)); 
             ll_HMAC_Reset(&hmac_ctx); 
             continue; 
         }
@@ -48,12 +48,12 @@ void test_all_hmacs(const uint8_t *key, size_t key_len, const uint8_t *input, si
         size_t out_len = hmac_ctx.out_len;
         status = ll_HMAC_Final(&hmac_ctx, digest, out_len);
         if (status != CF_SUCCESS) { 
-            printf("ll_HMAC_Final failed for %s\n", CF_HashGetName(hmac_ctx.md)); 
+            printf("ll_HMAC_Final failed for %s\n", CF_Hash_GetName(md)); 
             ll_HMAC_Reset(&hmac_ctx); 
             continue; 
         }
 
-        printf("%s HMAC: ", CF_HashGetName(hmac_ctx.md));
+        printf("%s HMAC: ", CF_Hash_GetName(md));
         DEMO_print_hex(digest, out_len);
         printf("\n");
 
@@ -816,6 +816,88 @@ void test_aes_cmac_fips800_38b(void) {
 
     ll_AES_ClearKey(&kctx);
     ll_CMAC_Reset(&cctx);
+}
+
+void test_all_macs_high(void) {
+    uint8_t tag[CF_MAX_DEFAULT_DIGEST_SIZE];
+
+    // List of MAC flags to test
+    uint32_t mac_flags[] = {
+        CF_HMAC,
+        CF_KMAC,
+        CF_CMAC,
+        CF_GMAC
+    };
+
+    // List of hash flags to test
+    uint32_t hash_flags[] = {
+        CF_SHA1,
+        CF_SHA224,
+        CF_SHA256,
+        CF_SHA384,
+        CF_SHA512,
+        CF_SHA512_224,
+        CF_SHA512_256,
+        CF_SHA3_224,
+        CF_SHA3_256,
+        CF_SHA3_384,
+        CF_SHA3_512
+    };
+
+    size_t num_hashes = sizeof(hash_flags)/sizeof(hash_flags[0]);
+
+    //
+    // source: https://datatracker.ietf.org/doc/html/rfc4231#section-4
+    //
+    uint8_t test_vector_hmac_key[] = {
+        0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b,
+        0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b,
+        0x0b, 0x0b, 0x0b, 0x0b
+    };
+    size_t test_vector_hmac_key_len = sizeof(test_vector_hmac_key)/sizeof(test_vector_hmac_key[0]);
+
+    uint8_t test_vector_hmac_data[] = {
+        0x48, 0x69, 0x20, 0x54, 0x68, 0x65, 0x72, 0x65
+    };
+    size_t test_vector_hmac_data_len = sizeof(test_vector_hmac_data)/sizeof(test_vector_hmac_data[0]);
+
+    for (size_t i = 0; i < num_hashes; i++) {
+        const CF_MAC *mac = CF_MAC_GetByFlag(hash_flags[i]);
+        if (!mac) { 
+            printf("Unknown MAC flag %u\n", hash_flags[i]); 
+            continue; 
+        }
+
+        CF_MAC_CTX mac_ctx;
+        SECURE_ZERO(&mac_ctx, sizeof(mac_ctx));
+
+        CF_STATUS status = CF_MAC_Init(&mac_ctx, mac, NULL, test_vector_hmac_key, test_vector_hmac_key_len, mac_flags[i]);
+        if (status != CF_SUCCESS) { 
+            printf("CF_MAC_Init failed for MAC ID: %s\n", CF_MAC_GetName(mac)); 
+            continue; 
+        }
+
+        status = CF_MAC_Update(&mac_ctx, test_vector_hmac_data, test_vector_hmac_data_len);
+        if (status != CF_SUCCESS) { 
+            printf("ll_MAC_Update failed for %s\n", CF_MAC_GetName(mac)); 
+            CF_MAC_Reset(&mac_ctx); 
+            continue; 
+        }
+
+        size_t out_len = mac_ctx.tag_len;
+        status = CF_MAC_Final(&mac_ctx, tag, out_len);
+        if (status != CF_SUCCESS) { 
+            printf("ll_MAC_Final failed for %s\n", CF_MAC_GetName(mac)); 
+            CF_MAC_Reset(&mac_ctx); 
+            continue; 
+        }
+
+        printf("%s HMAC: ", CF_MAC_GetName(mac));
+        DEMO_print_hex(tag, out_len);
+        printf("\n");
+
+        CF_MAC_Reset(&mac_ctx);
+    }
 }
 
 #endif // ENABLE_TESTS

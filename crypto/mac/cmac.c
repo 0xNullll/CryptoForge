@@ -93,6 +93,9 @@ static void ll_CMAC_Pad(uint8_t padded_block[AES_BLOCK_SIZE], size_t padded_bloc
 CF_STATUS ll_CMAC_Init(ll_CMAC_CTX *ctx, const ll_AES_KEY *key) {
     if (!ctx || !key) return CF_ERR_NULL_PTR;
 
+    if (ctx->isHeapAlloc != 0 && ctx->isHeapAlloc != 1)
+        return CF_ERR_CTX_UNINITIALIZED;
+
     ll_CMAC_Reset(ctx);
 
     ctx->key = key;

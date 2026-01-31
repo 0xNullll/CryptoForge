@@ -22,14 +22,14 @@ CF_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const CF_MD *md, const uint8_t *key, si
     if (!ctx || !md || !key)
         return CF_ERR_NULL_PTR;
 
-    if (key_len == 0)
-        return CF_ERR_INVALID_LEN;
-
     if (CF_IS_XOF(md->id))
         return CF_ERR_UNSUPPORTED;
 
     if (md->block_size == 0 || md->block_size > CF_MAX_DEFAULT_BLOCK_SIZE)
         return CF_ERR_UNSUPPORTED;
+
+    if (ctx->isHeapAlloc != 0 && ctx->isHeapAlloc != 1)
+        return CF_ERR_CTX_UNINITIALIZED;
 
     ll_HMAC_Reset(ctx);
 
@@ -166,7 +166,7 @@ CF_STATUS ll_HMAC_Final(ll_HMAC_CTX *ctx, uint8_t *digest, size_t digest_len) {
     }
 
     // For SHA3 variants that require squeezing
-    if (ctx->md->hash_squeeze_fn && IS_KECCAK_BASED(ctx->md->id)) {
+    if (ctx->md->hash_squeeze_fn && CF_IS_KECCAK(ctx->md->id)) {
         if (!ctx->md->hash_squeeze_fn(ctx->ipad_ctx, inner_hash, ctx->md->digest_size)) {
             ret = CF_ERR_CTX_CORRUPT;
             goto cleanup;
@@ -186,7 +186,7 @@ CF_STATUS ll_HMAC_Final(ll_HMAC_CTX *ctx, uint8_t *digest, size_t digest_len) {
     }
 
     // For SHA3 variants that require squeezing
-    if (ctx->md->hash_squeeze_fn && IS_KECCAK_BASED(ctx->md->id)) {
+    if (ctx->md->hash_squeeze_fn && CF_IS_KECCAK(ctx->md->id)) {
         if (!ctx->md->hash_squeeze_fn(ctx->opad_ctx, digest, hash_len)) {
             ret = CF_ERR_CTX_CORRUPT;
             goto cleanup;
