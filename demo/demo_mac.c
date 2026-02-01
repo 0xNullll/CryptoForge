@@ -84,8 +84,8 @@ void test_all_kmacs(
 
         // Determine output length
         size_t out_len = (kmac_types[i] == LL_KMAC_XOF128 || kmac_types[i] == LL_KMAC_XOF256)
-                            ? (kmac_types[i] == LL_KMAC_XOF128 ? LL_KMAC_DEFAULT_OUTPUT_LEN_128: LL_KMAC_DEFAULT_OUTPUT_LEN_256) // just for testing, KMAC-XOF doesnt have a default fixed length
-                            : (kmac_types[i] == LL_KMAC128 ? LL_KMAC_DEFAULT_OUTPUT_LEN_128: LL_KMAC_DEFAULT_OUTPUT_LEN_256);
+                            ? (kmac_types[i] == LL_KMAC_XOF128 ? LL_KMAC_DEFAULT_OUTPUT_LEN_128 * 2: LL_KMAC_DEFAULT_OUTPUT_LEN_256* 2) // just for testing, KMAC-XOF doesnt have a fixed length
+                            : (kmac_types[i] == LL_KMAC128 ? LL_KMAC_DEFAULT_OUTPUT_LEN_128* 2: LL_KMAC_DEFAULT_OUTPUT_LEN_256* 2);
 
         // Initialize
         CF_STATUS status = ll_KMAC_Init(&kmac_ctx, key, key_len, S, S_len, kmac_types[i]);
@@ -818,6 +818,12 @@ void test_aes_cmac_fips800_38b(void) {
     ll_CMAC_Reset(&cctx);
 }
 
+
+// all tests vectors for this function come from 
+// -  https://datatracker.ietf.org/doc/html/rfc4231#section-4
+// - https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Standards-and-Guidelines/documents/examples/KMAC_samples.pdf
+// - https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Standards-and-Guidelines/documents/examples/KMACXOF_samples.pdf
+// - https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Standards-and-Guidelines/documents/examples/AES_CMAC.pdf
 void test_all_macs_high(void) {
     uint8_t tag[CF_MAX_DEFAULT_DIGEST_SIZE];
 
@@ -861,17 +867,18 @@ void test_all_macs_high(void) {
     };
     size_t test_vector_hmac_data_len = sizeof(test_vector_hmac_data)/sizeof(test_vector_hmac_data[0]);
 
+    // HMAC execution path
     for (size_t i = 0; i < num_hashes; i++) {
-        const CF_MAC *mac = CF_MAC_GetByFlag(hash_flags[i]);
+        const CF_MAC *mac = CF_MAC_GetByFlag(mac_flags[0]);
         if (!mac) { 
-            printf("Unknown MAC flag %u\n", hash_flags[i]); 
+            printf("Unknown MAC flag %u\n", mac_flags[0]); 
             continue; 
         }
 
         CF_MAC_CTX mac_ctx;
         SECURE_ZERO(&mac_ctx, sizeof(mac_ctx));
 
-        CF_STATUS status = CF_MAC_Init(&mac_ctx, mac, NULL, test_vector_hmac_key, test_vector_hmac_key_len, mac_flags[i]);
+        CF_STATUS status = CF_MAC_Init(&mac_ctx, mac, NULL, test_vector_hmac_key, test_vector_hmac_key_len, hash_flags[i]);
         if (status != CF_SUCCESS) { 
             printf("CF_MAC_Init failed for MAC ID: %s\n", CF_MAC_GetName(mac)); 
             continue; 
@@ -893,6 +900,81 @@ void test_all_macs_high(void) {
         }
 
         printf("%s HMAC: ", CF_MAC_GetName(mac));
+        DEMO_print_hex(tag, out_len);
+        printf("\n");
+
+        CF_MAC_Reset(&mac_ctx);
+    }
+
+    // List of KMAC type flags to test
+    uint32_t kmac_flags[] = {
+        CF_KMAC128,
+        CF_KMAC256,
+        CF_KMAC_XOF128,
+        CF_KMAC_XOF256
+    };
+
+    size_t num_kmac = sizeof(kmac_flags)/sizeof(kmac_flags[0]);
+
+    // test vectors from:
+    // - https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Standards-and-Guidelines/documents/examples/KMAC_samples.pdf
+    // - https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Standards-and-Guidelines/documents/examples/KMACXOF_samples.pdf
+
+    const uint8_t test_vector_kmac_key[32] = {
+        0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47,
+        0x48, 0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x4F,
+        0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57,
+        0x58, 0x59, 0x5A, 0x5B, 0x5C, 0x5D, 0x5E, 0x5F
+    };
+
+    const uint8_t test_vector_kmac_input[4] = {
+        0x0, 0x1, 0x2, 0x3
+    };
+
+    const char *test_vector_kmac_s_input =  "My Tagged Application";
+
+    // KMAC execution path
+    for (size_t i = 0; i < num_kmac; i++) {
+        const CF_MAC *mac = CF_MAC_GetByFlag(mac_flags[1]);
+        if (!mac) { 
+            printf("Unknown MAC flag %u\n", mac_flags[1]); 
+            continue; 
+        }
+
+        CF_MAC_CTX mac_ctx;
+        SECURE_ZERO(&mac_ctx, sizeof(mac_ctx));
+        CF_MAC_OPTS mac_opts_ctx;
+        SECURE_ZERO(&mac_opts_ctx, sizeof(mac_opts_ctx));
+
+        CF_STATUS status = CF_MACOpts_Init(&mac_opts_ctx, NULL, 0,(const uint8_t *)test_vector_kmac_s_input, strlen(test_vector_kmac_s_input));
+
+        if (status != CF_SUCCESS) { 
+            printf("CF_MACOpts_Init failed for %s\n", CF_MAC_GetName(mac)); 
+            continue; 
+        }
+
+         status = CF_MAC_Init(&mac_ctx, mac, &mac_opts_ctx, test_vector_kmac_key, sizeof(test_vector_kmac_key), hash_flags[i]);
+        if (status != CF_SUCCESS) { 
+            printf("CF_MAC_Init failed for %s\n", CF_MAC_GetName(mac)); 
+            continue; 
+        }
+
+        status = CF_MAC_Update(&mac_ctx, test_vector_kmac_input, sizeof(test_vector_kmac_input));
+        if (status != CF_SUCCESS) { 
+            printf("ll_MAC_Update failed for %s\n", CF_MAC_GetName(mac)); 
+            CF_MAC_Reset(&mac_ctx); 
+            continue; 
+        }
+
+        size_t out_len = mac_ctx.tag_len;
+        status = CF_MAC_Final(&mac_ctx, tag, out_len);
+        if (status != CF_SUCCESS) { 
+            printf("ll_MAC_Final failed for %s\n", CF_MAC_GetName(mac)); 
+            CF_MAC_Reset(&mac_ctx); 
+            continue; 
+        }
+
+        printf("%s %s: ", CF_MAC_GetName(mac), CF_Hash_GetName(mac_ctx.md));
         DEMO_print_hex(tag, out_len);
         printf("\n");
 

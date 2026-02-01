@@ -126,17 +126,11 @@ ll_HMAC_CTX* ll_HMAC_InitAlloc(const CF_MD *md, const uint8_t *key, size_t key_l
 }
 
 CF_STATUS ll_HMAC_Update(ll_HMAC_CTX *ctx, const uint8_t *data, size_t data_len) {
-    if (!ctx || !ctx->md || !ctx->ipad_ctx)
+    if (!ctx || !ctx->md || !ctx->ipad_ctx || !data)
         return CF_ERR_NULL_PTR;
-
-    if (data_len > 0 && !data)
-        return CF_ERR_INVALID_PARAM;
 
     if (ctx->isFinalized) 
         return CF_ERR_HASH_FINALIZED;
-
-    if (data_len == 0)
-        return CF_SUCCESS; // noop
 
     if (!ctx->md->hash_update_fn(ctx->ipad_ctx, data, data_len))
         return CF_ERR_CTX_CORRUPT;
@@ -245,13 +239,11 @@ CF_STATUS ll_HMAC_Reset(ll_HMAC_CTX *ctx) {
 
     // Zero and free inner (ipad) and outer (opad) contexts
     if (ctx->ipad_ctx) {
-        SECURE_ZERO(ctx->ipad_ctx, ctx->md->ctx_size);
         SECURE_FREE(ctx->ipad_ctx, ctx->md->ctx_size);
         ctx->ipad_ctx = NULL;
     }
 
     if (ctx->opad_ctx) {
-        SECURE_ZERO(ctx->opad_ctx, ctx->md->ctx_size);
         SECURE_FREE(ctx->opad_ctx, ctx->md->ctx_size);
         ctx->opad_ctx = NULL;
     }
@@ -278,7 +270,6 @@ CF_STATUS ll_HMAC_Free(ll_HMAC_CTX **p_ctx) {
 
     // Free the outer struct if heap-allocated
     if (wasHeapAlloc) {
-        SECURE_ZERO(ctx, sizeof(ll_HMAC_CTX));
         SECURE_FREE(ctx, sizeof(ll_HMAC_CTX));
         *p_ctx = NULL;
     }

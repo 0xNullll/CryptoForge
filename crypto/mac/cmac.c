@@ -131,6 +131,9 @@ CF_STATUS ll_CMAC_Update(ll_CMAC_CTX *ctx, const uint8_t *data, size_t data_len)
         if (!ctx || !ctx->key || !data)
         return CF_ERR_NULL_PTR;
 
+    if (ctx->isFinalized)
+        return CF_ERR_MAC_FINALIZED;
+
     size_t offset = 0;
 
     // If we have leftover bytes from previous update, fill unprocessed_block
@@ -187,6 +190,9 @@ CF_STATUS ll_CMAC_Final(ll_CMAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
 
     if (tag_len < 4 || tag_len > AES_BLOCK_SIZE)
         return CF_ERR_MAC_BAD_TAG_LEN;
+
+    if (ctx->isFinalized)
+        return CF_ERR_CIPHER_FINALIZED;
 
     uint8_t K1[AES_BLOCK_SIZE] = {0};
     uint8_t K2[AES_BLOCK_SIZE] = {0};

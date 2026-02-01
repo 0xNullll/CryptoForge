@@ -23,8 +23,8 @@
 #define BUILDING_CF_DLL 1
 #endif
 
-#ifndef USE_STRICT_SECURE_MEMORY
-#define USE_STRICT_SECURE_MEMORY 0  // enable OS based memory functions for maximum security and prevent advanced side-channel attacks
+#ifndef CF_DEBUG
+#define CF_DEBUG 1
 #endif
 
 #ifndef ENABLE_TESTS
@@ -35,16 +35,16 @@
 #define BASE_TRUNCATE_ON_NULL 0 // Check every input byte and enforce max length / null termination
 #endif
 
-// ------------------------
-// Function name prefix support
-// ------------------------
-#ifndef TSHASH_PREFIX
-#define TSHASH_PREFIX
-#endif
+// // ------------------------
+// // Function name prefix support
+// // ------------------------
+// #ifndef TSHASH_PREFIX
+// #define TSHASH_PREFIX
+// #endif
 
-#define _TS_CAT(a,b) a##b
-#define _TS_CAT2(a,b) _TS_CAT(a,b)
-#define TC_TSHASH_FN(name) _TS_CAT2(TSHASH_PREFIX, name)
+// #define _TS_CAT(a,b) a##b
+// #define _TS_CAT2(a,b) _TS_CAT(a,b)
+// #define TC_TSHASH_FN(name) _TS_CAT2(TSHASH_PREFIX, name)
 
 // ------------------------
 // Endianness detection

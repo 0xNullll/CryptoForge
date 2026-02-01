@@ -43,7 +43,7 @@ typedef enum {
     ((type) == LL_KMAC128 || (type) == LL_KMAC256 || \
      (type) == LL_KMAC_XOF128 || (type) == LL_KMAC_XOF256)
 
-#define LL_KMAC_IS_128(type) ((type) == LL_KMAC128 || (type) == LL_KMAC_XOF256)
+#define LL_KMAC_IS_128(type) ((type) == LL_KMAC128 || (type) == LL_KMAC_XOF128)
 #define LL_KMAC_IS_256(type) ((type) == LL_KMAC256 || (type) == LL_KMAC_XOF256)
 #define LL_KMAC_IS_XOF(type) ((type) == LL_KMAC_XOF128 || (type) == LL_KMAC_XOF256)
 
