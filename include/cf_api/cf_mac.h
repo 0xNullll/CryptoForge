@@ -45,6 +45,7 @@ typedef struct _CF_MAC {
     uint32_t id;                  // CF MAC ID / flag
     size_t ctx_size;              // low-level context size
     size_t key_ctx_size;          // low-level cipher key context size
+    size_t default_tag_len;
 
     // Low-level function pointers
     void*     (*mac_init_alloc_fn)(struct _CF_MAC_CTX *ctx, const struct _CF_MAC_OPTS *opts, CF_STATUS *status);
@@ -57,13 +58,13 @@ typedef struct _CF_MAC {
 // Optional MAC parameters
 // ============================
 typedef struct _CF_MAC_OPTS {
-    const uint8_t *iv;           // optional IV (GMAC or other MACs)
+    uint8_t iv[AES_BLOCK_SIZE];           // optional IV for GMAC
     size_t iv_len;
 
     uint8_t custom[CF_MAX_CUSTOMIZATION]; // optional custom bytes
     size_t custom_len;
 
-    int isHeapAlloc;              // 1 if allocated by library, 0 if user stack
+    int isHeapAlloc;
 } CF_MAC_OPTS;
 
 // ============================
@@ -74,7 +75,7 @@ typedef struct _CF_MAC_CTX {
     const CF_MD *md;              // mandetory for HMAC
     const CF_MAC_OPTS *opts;      // optional parameters
 
-    const void *cipher_key;       // optional low-level key for CMAC/GMAC
+    void *cipher_key;             // optional low-level key for CMAC/GMAC
     size_t cipher_key_len;
 
     void *mac_ctx;                // low-level MAC context (internal)
@@ -136,8 +137,8 @@ CF_API CF_MAC_OPTS* CF_MACOpts_InitAlloc(const uint8_t *iv, size_t iv_len,
                                          const uint8_t *custom, size_t custom_len,
                                          CF_STATUS *status);
 
-CF_API void CF_MACOpts_Reset(CF_MAC_OPTS *opts);
-CF_API void CF_MACOpts_Free(CF_MAC_OPTS **p_opts);
+CF_API CF_STATUS CF_MACOpts_Reset(CF_MAC_OPTS *opts);
+CF_API CF_STATUS CF_MACOpts_Free(CF_MAC_OPTS **p_opts);
 
 CF_API CF_STATUS CF_MACOpts_CloneCtx(CF_MAC_OPTS *dst, const CF_MAC_OPTS *src);
 CF_API CF_MAC_OPTS* CF_MACOpts_CloneCtxAlloc(const CF_MAC_OPTS *src, CF_STATUS *status);

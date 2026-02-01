@@ -32,6 +32,12 @@
   #define CF_API
 #endif
 
+#ifdef CF_DEBUG
+    #define CF_ASSERT(expr) assert(expr)
+#else
+    #define CF_ASSERT(expr) ((void)0)
+#endif
+
 #ifdef _MSC_VER
   #define FORCE_INLINE __forceinline
 #else

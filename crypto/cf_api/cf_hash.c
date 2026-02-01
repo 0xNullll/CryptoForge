@@ -746,6 +746,9 @@ CF_STATUS CF_Hash_Update(CF_HASH_CTX *ctx, const uint8_t *data, size_t data_len)
     if (!ctx || !ctx->digest_ctx || !ctx->md || !data)
         return CF_ERR_NULL_PTR;
 
+    if (ctx->isFinalized)
+        return CF_ERR_MAC_FINALIZED;
+
     if (!ctx->md->hash_update_fn(ctx->digest_ctx, data, data_len))
         return CF_ERR_CTX_CORRUPT;
 
@@ -755,6 +758,9 @@ CF_STATUS CF_Hash_Update(CF_HASH_CTX *ctx, const uint8_t *data, size_t data_len)
 CF_STATUS CF_Hash_Final(CF_HASH_CTX *ctx, uint8_t *digest, size_t digest_len) {
     if (!ctx || !ctx->digest_ctx || !ctx->md || !digest)
         return CF_ERR_NULL_PTR;
+
+    if (ctx->isFinalized)
+        return CF_ERR_MAC_FINALIZED;
 
     size_t final_len;
 
@@ -822,7 +828,6 @@ CF_STATUS CF_Hash_Free(CF_HASH_CTX **p_ctx) {
 
     if (wasHeapAlloc) {
         SECURE_ZERO(ctx, sizeof(CF_HASH_CTX));
-        SECURE_FREE(ctx, sizeof(CF_HASH_CTX));
         *p_ctx = NULL;
     }
 
@@ -968,7 +973,7 @@ const char* CF_Hash_GetName(const CF_MD *md) {
         case CF_RAWSHAKE256:  return "rawSHAKE256";
         case CF_CSHAKE128:    return "cSHAKE128";
         case CF_CSHAKE256:    return "cSHAKE256";
-        default:               return NULL;
+        default:              return NULL;
     }
 }
 

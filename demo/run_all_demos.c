@@ -129,6 +129,10 @@ int main(void) {
 
     printf("**************************************\n");
 
+    test_all_macs_high();
+
+    printf("**************************************\n");
+
     // Input parameters
     uint8_t ikm[] = {
         0x0b,0x0b,0x0b,0x0b,0x0b,0x0b,0x0b,0x0b,

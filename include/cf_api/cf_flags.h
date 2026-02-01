@@ -152,7 +152,8 @@ typedef enum {
 // ======================
 // MAC flags / subflags
 // ======================
-#define CF_MAC_SUBFLAG_MASK 0x00FFFFFF
+#define CF_MAC_FLAG_MASK    0xFFFFF000
+#define CF_MAC_SUBFLAG_MASK 0x00000FFF
 #define CF_MAC_XOF_FLAG     0x00100000
 #define CF_MAC_HASH_MASK    0x000000FF
 #define CF_MAC_KMAC_MASK    0x00000F00
@@ -164,10 +165,10 @@ typedef enum {
     CF_GMAC = CF_CAT_MAC | 0x4000  // no subflags
 } CF_MAC_FLAGS;
 
-#define CF_MAC_IS_HMAC(id)    (((id) & CF_MAC_SUBFLAG_MASK) == CF_HMAC)
-#define CF_MAC_IS_KMAC(id)    (((id) & CF_MAC_SUBFLAG_MASK) == CF_KMAC)
-#define CF_MAC_IS_CMAC(id)    (((id) & CF_MAC_SUBFLAG_MASK) == CF_CMAC)
-#define CF_MAC_IS_GMAC(id)    (((id) & CF_MAC_SUBFLAG_MASK) == CF_GMAC)
+#define CF_MAC_IS_HMAC(id)    (((id) & CF_MAC_FLAG_MASK) == CF_HMAC)
+#define CF_MAC_IS_KMAC(id)    (((id) & CF_MAC_FLAG_MASK) == CF_KMAC)
+#define CF_MAC_IS_CMAC(id)    (((id) & CF_MAC_FLAG_MASK) == CF_CMAC)
+#define CF_MAC_IS_GMAC(id)    (((id) & CF_MAC_FLAG_MASK) == CF_GMAC)
 #define CF_MAC_IS_XOF(id)     (((id) & CF_MAC_XOF_FLAG) != 0)
 #define CF_MAC_GET_HASH(id)   ((id) & CF_MAC_HASH_MASK)
 // ======================

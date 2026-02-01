@@ -64,7 +64,8 @@ typedef enum {
 // 2. Hash-specific errors
 //
 typedef enum {
-    CF_ERR_HASH_FINALIZED     = CF_ERR_HASH_BASE,   // update after final()
+    CF_ERR_HASH_BASE_ERROR     = CF_ERR_HASH_BASE, 
+    CF_ERR_HASH_FINALIZED,                          // update after final()
     CF_ERR_HASH_STATE_INVALID,                      // internal state invalid
     CF_ERR_HASH_PAD_ERROR,                          // padding issue (rare)
     CF_ERR_HASH_BAD_BLOCK_SIZE,                     // block misalignment
@@ -74,7 +75,8 @@ typedef enum {
 // 3. MAC/HMAC-specific errors
 //
 typedef enum {
-    CF_ERR_MAC_BASE_ERROR      = CF_ERR_MAC_BASE,    // base for MAC errors
+    CF_ERR_MAC_BASE_ERROR      = CF_ERR_MAC_BASE,
+    CF_ERR_MAC_FINALIZED,                            // update after final()
     CF_ERR_MAC_VERIFY,                               // HMAC verification failed
     CF_ERR_MAC_BAD_TAG_LEN,                          // tag length is not recommended and unsafe
     CF_ERR_MAC_BAD_IV_LEN,                           // iv length is not recommended and unsafe

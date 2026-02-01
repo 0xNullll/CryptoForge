@@ -326,8 +326,11 @@ cleanup:
 
 // Frees internal buffers of a pre-allocated KMAC context
 CF_STATUS ll_KMAC_Reset(ll_KMAC_CTX *ctx) {
-    if (!ctx) return CF_ERR_NULL_PTR;
-    if (!LL_KMAC_TYPE_IS_VALID(ctx->type)) return CF_ERR_UNSUPPORTED;
+    if (!ctx)
+        return CF_ERR_NULL_PTR;
+    
+    if (!LL_KMAC_TYPE_IS_VALID(ctx->type))
+        return CF_ERR_CTX_CORRUPT;
 
     int wasHeapAlloc = ctx->isHeapAlloc;
 

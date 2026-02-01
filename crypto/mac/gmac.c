@@ -22,11 +22,11 @@ CF_STATUS ll_GMAC_Init(ll_GMAC_CTX *ctx, const ll_AES_KEY *key, const uint8_t *i
     if (!ctx || !key || !iv)
         return CF_ERR_NULL_PTR;
 
-    if (iv_len < AES_GCM_IV_MIN)
-        return CF_ERR_MAC_BAD_IV_LEN;
-
     if (ctx->isHeapAlloc != 0 && ctx->isHeapAlloc != 1)
         return CF_ERR_CTX_UNINITIALIZED;
+
+    if (iv_len < AES_GCM_IV_MIN)
+        return CF_ERR_MAC_BAD_IV_LEN;
 
     ll_GMAC_Reset(ctx);
 
@@ -87,12 +87,12 @@ CF_STATUS ll_GMAC_Update(ll_GMAC_CTX *ctx, const uint8_t *aad, size_t aad_len) {
     if (!ctx || !aad || aad_len == 0)
         return CF_ERR_INVALID_PARAM;
 
-    if (ctx->isFinalized)
-        return CF_ERR_CIPHER_FINALIZED;
-
     // Length limits (from NIST SP 800‑38D)
     if (aad_len > ((U64(0x1) << 61) - 1))
         return CF_ERR_INVALID_LEN;
+
+    if (ctx->isFinalized)
+        return CF_ERR_CIPHER_FINALIZED;
 
     ll_GHASH_Process(ctx->H, aad, aad_len, ctx->X);
     ctx->aad_len += aad_len;
@@ -103,6 +103,9 @@ CF_STATUS ll_GMAC_Update(ll_GMAC_CTX *ctx, const uint8_t *aad, size_t aad_len) {
 CF_STATUS ll_GMAC_Final(ll_GMAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
     if (!ctx || !tag || !IS_VALID_GCM_TAG_SIZE(tag_len))
         return CF_ERR_INVALID_PARAM;
+
+    if (ctx->isFinalized)
+        return CF_ERR_CIPHER_FINALIZED;
 
     CF_STATUS ret = CF_SUCCESS;
 
