@@ -47,8 +47,8 @@ typedef enum {
 #define LL_KMAC_IS_256(type) ((type) == LL_KMAC256 || (type) == LL_KMAC_XOF256)
 #define LL_KMAC_IS_XOF(type) ((type) == LL_KMAC_XOF128 || (type) == LL_KMAC_XOF256)
 
-#define LL_KMAC_DEFAULT_OUTPUT_LEN_128 16  // RFC fixed-length output for KMAC128
-#define LL_KMAC_DEFAULT_OUTPUT_LEN_256 32  // RFC fixed-length output for KMAC256
+#define LL_KMAC_DEFAULT_OUTPUT_LEN_128 32  // 256‑bit tag
+#define LL_KMAC_DEFAULT_OUTPUT_LEN_256 64  // 512‑bit tag
 
 // typedef enum {
 //     KMAC128      = 0x0002,
@@ -109,11 +109,19 @@ CF_STATUS ll_KMAC_Final(ll_KMAC_CTX *ctx, uint8_t *digest, size_t digest_len);
 // Verifies a standard fixed-length KMAC (KMAC128 or KMAC256) against expected output.
 // Returns CF_SUCCESS if the output matches, CF_ERR_MAC_VERIFY if invalid.
 // XOF variants are not allowed.
+// CF_STATUS ll_KMAC_Verify(
+//     const uint8_t *key, size_t key_len,
+//     const uint8_t *data, size_t data_len,
+//     const uint8_t *S, size_t S_len,
+//     const uint8_t *expected_mac,
+//     LL_KMAC_TYPE type);
+
 CF_STATUS ll_KMAC_Verify(
     const uint8_t *key, size_t key_len,
     const uint8_t *data, size_t data_len,
     const uint8_t *S, size_t S_len,
     const uint8_t *expected_mac,
+    size_t expected_mac_len,   // allow arbitrary tag length
     LL_KMAC_TYPE type);
 
 // Resets a KMAC context to its initial state with the same key and customization strings.

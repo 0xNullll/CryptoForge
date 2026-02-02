@@ -155,7 +155,7 @@ ll_KMAC_CTX *ll_KMAC_InitAlloc(
         return NULL;
     }
     
-    if ((key && key_len == 0) || (S && S_len == 0) || !LL_KMAC_TYPE_IS_VALID(type)) {
+    if (!LL_KMAC_TYPE_IS_VALID(type)) {
         if (status) *status = CF_ERR_INVALID_PARAM;
         return NULL;
     }
@@ -281,6 +281,7 @@ CF_STATUS ll_KMAC_Verify(
     const uint8_t *data, size_t data_len,
     const uint8_t *S, size_t S_len,
     const uint8_t *expected_mac,
+    size_t expected_mac_len,   // allow arbitrary tag length
     LL_KMAC_TYPE type) {
     if (!key || !data || !expected_mac)
         return CF_ERR_NULL_PTR;
@@ -288,30 +289,32 @@ CF_STATUS ll_KMAC_Verify(
     if (!LL_KMAC_TYPE_IS_VALID(type))
         return CF_ERR_INVALID_PARAM;
 
-    if (LL_KMAC_IS_XOF(type))  // verification only for fixed-length output
-        return CF_ERR_UNSUPPORTED;
-
     CF_STATUS status = CF_SUCCESS;
-    ll_KMAC_CTX ctx;
-    uint8_t computed[CF_MAX_DEFAULT_DIGEST_SIZE] = {0};
+    ll_KMAC_CTX ctx = {0};
 
-    SECURE_ZERO(&ctx, sizeof(ctx));
+    // Determine MAC length based on type and user input
+    size_t mac_len = expected_mac_len;
+    uint8_t stack_computed[CF_MAX_DEFAULT_DIGEST_SIZE] = {0};
+    uint8_t *computed = NULL;
 
-    // Initialize
+    // Choose buffer: use stack if small enough, heap if needed
+    if (mac_len <= sizeof(stack_computed)) {
+        computed = stack_computed;
+    } else {
+        computed = (uint8_t *)SECURE_ALLOC(mac_len);
+        if (!computed)
+            return CF_ERR_ALLOC_FAILED;
+        SECURE_ZERO(computed, mac_len);
+    }
+
     status = ll_KMAC_Init(&ctx, key, key_len, S, S_len, type);
     if (status != CF_SUCCESS) goto cleanup;
 
-    // Update with message data
     if (data_len > 0) {
         status = ll_KMAC_Update(&ctx, data, data_len);
         if (status != CF_SUCCESS) goto cleanup;
     }
 
-    // Determine MAC length based on type
-    size_t mac_len = (type == LL_KMAC128) ? LL_KMAC_DEFAULT_OUTPUT_LEN_128
-                                       : LL_KMAC_DEFAULT_OUTPUT_LEN_256;
-
-    // Finalize
     status = ll_KMAC_Final(&ctx, computed, mac_len);
     if (status != CF_SUCCESS) goto cleanup;
 
@@ -320,9 +323,61 @@ CF_STATUS ll_KMAC_Verify(
 
 cleanup:
     SECURE_ZERO(&ctx, sizeof(ctx));
-    SECURE_ZERO(computed, sizeof(computed));
+    if (computed != stack_computed)
+        SECURE_FREE(computed, mac_len);
+    else
+        SECURE_ZERO(computed, sizeof(stack_computed));
+
     return status;
 }
+
+// CF_STATUS ll_KMAC_Verify(
+//     const uint8_t *key, size_t key_len,
+//     const uint8_t *data, size_t data_len,
+//     const uint8_t *S, size_t S_len,
+//     const uint8_t *expected_mac,
+//     LL_KMAC_TYPE type) {
+//     if (!key || !data || !expected_mac)
+//         return CF_ERR_NULL_PTR;
+
+//     if (!LL_KMAC_TYPE_IS_VALID(type))
+//         return CF_ERR_INVALID_PARAM;
+
+//     if (LL_KMAC_IS_XOF(type))  // verification only for fixed-length output
+//         return CF_ERR_UNSUPPORTED;
+
+//     CF_STATUS status = CF_SUCCESS;
+//     ll_KMAC_CTX ctx;
+//     uint8_t computed[CF_MAX_DEFAULT_DIGEST_SIZE] = {0};
+
+//     SECURE_ZERO(&ctx, sizeof(ctx));
+
+//     // Initialize
+//     status = ll_KMAC_Init(&ctx, key, key_len, S, S_len, type);
+//     if (status != CF_SUCCESS) goto cleanup;
+
+//     // Update with message data
+//     if (data_len > 0) {
+//         status = ll_KMAC_Update(&ctx, data, data_len);
+//         if (status != CF_SUCCESS) goto cleanup;
+//     }
+
+//     // Determine MAC length based on type
+//     size_t mac_len = (type == LL_KMAC128) ? LL_KMAC_DEFAULT_OUTPUT_LEN_128
+//                                        : LL_KMAC_DEFAULT_OUTPUT_LEN_256;
+
+//     // Finalize
+//     status = ll_KMAC_Final(&ctx, computed, mac_len);
+//     if (status != CF_SUCCESS) goto cleanup;
+
+//     // Constant-time comparison
+//     status = SECURE_MEM_EQUAL(computed, expected_mac, mac_len) ? CF_SUCCESS : CF_ERR_MAC_VERIFY;
+
+// cleanup:
+//     SECURE_ZERO(&ctx, sizeof(ctx));
+//     SECURE_ZERO(computed, sizeof(computed));
+//     return status;
+// }
 
 // Frees internal buffers of a pre-allocated KMAC context
 CF_STATUS ll_KMAC_Reset(ll_KMAC_CTX *ctx) {

@@ -90,7 +90,9 @@ CF_API void test_all_kmacs(
 CF_API void test_all_kmacs_verify_array(const uint8_t *key, size_t key_len,
                                  const uint8_t *input, size_t input_len,
                                  const uint8_t *S, size_t S_len,
-                                 const uint8_t *expected_digests[4]);
+                                 const uint8_t *expected_digests[4],
+                                 const size_t expected_digests_len[4]);
+
 CF_API void test_all_gmacs(void);
 CF_API void test_aes_cmac_fips800_38b(void);
 CF_API void test_all_macs_high(void);

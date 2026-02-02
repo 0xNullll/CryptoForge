@@ -48,10 +48,10 @@ typedef struct _CF_MAC {
     size_t default_tag_len;
 
     // Low-level function pointers
-    void*     (*mac_init_alloc_fn)(struct _CF_MAC_CTX *ctx, const struct _CF_MAC_OPTS *opts, CF_STATUS *status);
+    CF_STATUS (*mac_init_fn)(struct _CF_MAC_CTX *ctx, const struct _CF_MAC_OPTS *opts);
     CF_STATUS (*mac_update_fn)(struct _CF_MAC_CTX *ctx, const uint8_t *data, size_t data_len);
     CF_STATUS (*mac_final_fn)(struct _CF_MAC_CTX *ctx, uint8_t *tag, size_t tag_len);
-    CF_STATUS (*mac_free_fn)(struct _CF_MAC_CTX *ctx);
+    CF_STATUS (*mac_reset_fn)(struct _CF_MAC_CTX *ctx);
 } CF_MAC;
 
 // ============================
@@ -115,10 +115,11 @@ CF_API CF_STATUS CF_MAC_Compute(const CF_MAC *mac,
                                 const uint8_t *key, size_t key_len,
                                 const uint8_t *data, size_t data_len,
                                 uint8_t *tag, size_t tag_len,
-                                const CF_MAC_OPTS *opts);
+                                const CF_MAC_OPTS *opts, uint32_t subflags);
 
 
 CF_API const char* CF_MAC_GetName(const CF_MAC *ctx);
+CF_API const char* CF_MAC_GetFullName(const CF_MAC_CTX *ctx);
 
 // ============================
 // Cloning
