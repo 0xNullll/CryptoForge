@@ -759,35 +759,37 @@ CF_STATUS CF_Hash_Final(CF_HASH_CTX *ctx, uint8_t *digest, size_t digest_len) {
     if (!ctx || !ctx->digest_ctx || !ctx->md || !digest)
         return CF_ERR_NULL_PTR;
 
-    if (ctx->isFinalized)
-        return CF_ERR_MAC_FINALIZED;
-
-    size_t final_len;
-
     if (CF_IS_XOF(ctx->md->id)) {
-        // XOF: allow variable-length output
+        // XOF: variable-length output
         if (digest_len == 0)
             return CF_ERR_INVALID_LEN;
-        final_len = digest_len;
-    } else {
-        // Fixed-length hash: always use default size
-        final_len = ctx->md->default_out_len;
 
-        // ensure caller buffer is large enough
+        // Only allow first final once
+        if (!ctx->isFinalized) {
+            if (!ctx->md->hash_final_fn(ctx->digest_ctx, digest, digest_len))
+                return CF_ERR_CTX_CORRUPT;
+            ctx->isFinalized = 1;
+        } else {
+            // After final, only squeeze is allowed
+            if (!ctx->md->hash_squeeze_fn || !ctx->md->hash_squeeze_fn(ctx->digest_ctx, digest, digest_len))
+                return CF_ERR_CTX_CORRUPT;
+        }
+
+    } else {
+        // Non-XOF: fixed length hash
+        if (ctx->isFinalized)
+            return CF_ERR_HASH_FINALIZED;
+
+        size_t final_len = ctx->md->default_out_len;
         if (digest_len != 0 && digest_len < final_len)
             return CF_ERR_OUTPUT_BUFFER_TOO_SMALL;
-    }
 
-    if (!ctx->md->hash_final_fn(ctx->digest_ctx, digest, final_len))
-        return CF_ERR_CTX_CORRUPT;
-
-    // For XOFs or SHA3 variants that require squeezing
-    if (ctx->md->hash_squeeze_fn && CF_IS_KECCAK(ctx->md->id)) {
-        if (!ctx->md->hash_squeeze_fn(ctx->digest_ctx, digest, final_len))
+        if (!ctx->md->hash_final_fn(ctx->digest_ctx, digest, final_len))
             return CF_ERR_CTX_CORRUPT;
+
+        ctx->isFinalized = 1;
     }
 
-    ctx->isFinalized = 1;
     return CF_SUCCESS;
 }
 
@@ -840,20 +842,22 @@ CF_STATUS CF_Hash_Compute(const CF_MD *md, const uint8_t *data, size_t data_len,
     if (!md || !digest || !data)
         return CF_ERR_NULL_PTR;
 
-    CF_STATUS status;
-    CF_HASH_CTX *ctx = CF_Hash_InitAlloc(md, opts, &status);
-    if (!ctx) return status;
+    CF_HASH_CTX ctx = {0};
+    CF_STATUS st = CF_SUCCESS;
 
-    status = CF_Hash_Update(ctx, data, data_len);
-    if (status != CF_SUCCESS) {
-        CF_Hash_Free(&ctx);
-        return status;
-    }
+    st = CF_Hash_Init(&ctx, md, opts);
+    if (st != CF_SUCCESS)
+        goto cleanup;
 
-    status = CF_Hash_Final(ctx, digest, digest_len);
+    st = CF_Hash_Update(&ctx, data, data_len);
+    if (st != CF_SUCCESS)
+        goto cleanup;
 
-    CF_Hash_Free(&ctx);
-    return status;
+    st = CF_Hash_Final(&ctx, digest, digest_len);
+
+cleanup:
+    CF_Hash_Reset(&ctx);
+    return st;
 }
 
 CF_STATUS CF_Hash_ComputeFixed(const CF_MD *md, const uint8_t *data, size_t data_len, uint8_t *digest) {
@@ -864,21 +868,23 @@ CF_STATUS CF_Hash_ComputeFixed(const CF_MD *md, const uint8_t *data, size_t data
     if (CF_IS_XOF(md->id))
         return CF_ERR_UNSUPPORTED;
 
-    CF_STATUS status;
-    CF_HASH_CTX *ctx = CF_Hash_InitAlloc(md, NULL, &status);
-    if (!ctx) return status;
+    CF_HASH_CTX ctx = {0};
+    CF_STATUS st = CF_SUCCESS;
 
-    status = CF_Hash_Update(ctx, data, data_len);
-    if (status != CF_SUCCESS) {
-        CF_Hash_Free(&ctx);
-        return status;
-    }
+    st = CF_Hash_Init(&ctx, md, NULL);
+    if (st != CF_SUCCESS)
+        goto cleanup;
+
+    st = CF_Hash_Update(&ctx, data, data_len);
+    if (st != CF_SUCCESS) 
+        goto cleanup;
 
     // Fixed-length hash uses md->digest_size
-    status = CF_Hash_Final(ctx, digest, md->digest_size);
+    st = CF_Hash_Final(&ctx, digest, md->digest_size);
 
-    CF_Hash_Free(&ctx);
-    return status;
+cleanup:
+    CF_Hash_Reset(&ctx);
+    return st;
 }
 
 CF_STATUS CF_Hash_CloneCtx(CF_HASH_CTX *dst, const CF_HASH_CTX *src) {
@@ -955,24 +961,24 @@ const char* CF_Hash_GetName(const CF_MD *md) {
     if (!md) return NULL;
 
     switch (md->id) {
-        case CF_MD5:          return "MD5";
-        case CF_SHA1:         return "SHA1";
-        case CF_SHA224:       return "SHA224";
-        case CF_SHA256:       return "SHA256";
-        case CF_SHA384:       return "SHA384";
-        case CF_SHA512:       return "SHA512";
-        case CF_SHA512_224:   return "SHA512_224";
-        case CF_SHA512_256:   return "SHA512_256";
-        case CF_SHA3_224:     return "SHA3_224";
-        case CF_SHA3_256:     return "SHA3_256";
-        case CF_SHA3_384:     return "SHA3_384";
-        case CF_SHA3_512:     return "SHA3_512";
-        case CF_SHAKE128:     return "SHAKE128";
-        case CF_SHAKE256:     return "SHAKE256";
-        case CF_RAWSHAKE128:  return "rawSHAKE128";
-        case CF_RAWSHAKE256:  return "rawSHAKE256";
-        case CF_CSHAKE128:    return "cSHAKE128";
-        case CF_CSHAKE256:    return "cSHAKE256";
+        case CF_MD5:          return "MD-5";
+        case CF_SHA1:         return "SHA-1";
+        case CF_SHA224:       return "SHA-224";
+        case CF_SHA256:       return "SHA-256";
+        case CF_SHA384:       return "SHA-384";
+        case CF_SHA512:       return "SHA-512";
+        case CF_SHA512_224:   return "SHA-512/224";
+        case CF_SHA512_256:   return "SHA-512/256";
+        case CF_SHA3_224:     return "SHA-3/224";
+        case CF_SHA3_256:     return "SHA-3/256";
+        case CF_SHA3_384:     return "SHA-3/384";
+        case CF_SHA3_512:     return "SHA-3/512";
+        case CF_SHAKE128:     return "SHAKE-128";
+        case CF_SHAKE256:     return "SHAKE-256";
+        case CF_RAWSHAKE128:  return "RAWSHAKE-128";
+        case CF_RAWSHAKE256:  return "RAWSHAKE-256";
+        case CF_CSHAKE128:    return "CSHAKE-128";
+        case CF_CSHAKE256:    return "CSHAKE-256";
         default:              return NULL;
     }
 }
@@ -980,9 +986,10 @@ const char* CF_Hash_GetName(const CF_MD *md) {
 
 CF_STATUS CF_HashOpts_Init(CF_HASH_OPTS *opts,
                              const uint8_t *N, size_t N_len,
-                             const uint8_t *S, size_t S_len,
-                             size_t out_len) {
-    if (!opts) return CF_ERR_NULL_PTR;
+                             const uint8_t *S, size_t S_len) {
+    if (!opts)
+        return CF_ERR_NULL_PTR;
+
     if (N_len > CF_MAX_CUSTOMIZATION || S_len > CF_MAX_CUSTOMIZATION)
         return CF_ERR_INVALID_LEN;
 
@@ -990,7 +997,6 @@ CF_STATUS CF_HashOpts_Init(CF_HASH_OPTS *opts,
 
     opts->N_len = N_len;
     opts->S_len = S_len;
-    opts->out_len = out_len;
     opts->emptyNameCustom = 1;
 
     if (N && N_len > 0) {
@@ -1007,8 +1013,7 @@ CF_STATUS CF_HashOpts_Init(CF_HASH_OPTS *opts,
 }
 
 CF_HASH_OPTS* CF_HashOpts_InitAlloc(const uint8_t *N, size_t N_len,
-                                             const uint8_t *S, size_t S_len,
-                                             size_t out_len, CF_STATUS *status) {
+                                    const uint8_t *S, size_t S_len, CF_STATUS *status) {
     if (N_len > CF_MAX_CUSTOMIZATION || S_len > CF_MAX_CUSTOMIZATION) {
         if (status) *status = CF_ERR_INVALID_LEN;
         return NULL;
@@ -1020,7 +1025,7 @@ CF_HASH_OPTS* CF_HashOpts_InitAlloc(const uint8_t *N, size_t N_len,
         return NULL;
     }
 
-    CF_STATUS st = CF_HashOpts_Init(opts, N, N_len, S, S_len, out_len);
+    CF_STATUS st = CF_HashOpts_Init(opts, N, N_len, S, S_len);
     if (st != CF_SUCCESS) {
         SECURE_FREE(opts, sizeof(CF_HASH_OPTS));
         if (status) *status = st;
@@ -1036,14 +1041,13 @@ CF_STATUS CF_HashOpts_Reset(CF_HASH_OPTS *opts) {
     if (!opts)
         return CF_ERR_NULL_PTR;
 
-    int wasHeapAlloc = opts->isHeapAlloc;
-
-    SECURE_ZERO(opts, sizeof(*opts));
     SECURE_ZERO(opts->N, sizeof(opts->N));
     SECURE_ZERO(opts->S, sizeof(opts->S));
 
+    opts->N_len = 0;
+    opts->S_len = 0;
+    opts->custom_absorbed = 0;
     opts->emptyNameCustom = 1;
-    opts->isHeapAlloc = wasHeapAlloc;
 
     return CF_SUCCESS;
 }
@@ -1053,13 +1057,12 @@ CF_STATUS CF_HashOpts_Free(CF_HASH_OPTS **p_opts) {
         return CF_ERR_NULL_PTR;
 
     CF_HASH_OPTS *opts = *p_opts;
-    int wasHeapAlloc = opts->isHeapAlloc;
 
     CF_STATUS ret = CF_HashOpts_Reset(opts);
     if (ret != CF_SUCCESS)
         return ret;
 
-    if (wasHeapAlloc) {
+    if (opts->isHeapAlloc) {
         SECURE_FREE(opts, sizeof(*opts));
         *p_opts = NULL;
     }
@@ -1075,7 +1078,7 @@ CF_STATUS CF_HashOpts_Clone(CF_HASH_OPTS *dst, const CF_HASH_OPTS *src) {
 
     dst->N_len = src->N_len;
     dst->S_len = src->S_len;
-    dst->out_len = src->out_len;
+    // dst->out_len = src->out_len;
     dst->finalized = src->finalized;
     dst->custom_absorbed = src->custom_absorbed;
     dst->emptyNameCustom = src->emptyNameCustom;

@@ -161,37 +161,41 @@ Small, reusable helpers that make your library more **robust, convenient, and de
 
 These features go beyond initial correctness to protect the library against real-world misuse, adversarial inputs, and advanced attack scenarios.
 
-- **Integrated AE Pipelines**
+[ ] **Integrated AE Pipelines**
   - High-level authenticated encryption workflows
   - Combine cipher + MAC correctly (e.g. Encrypt-then-MAC)
   - Reduce API misuse by providing safe defaults
   - Optional: user-controlled low-level primitives remain exposed
 
-- **EVP Stack-Only & Explicit Memory Ownership (Advanced)**
+[ ] **EVP Stack-Only & Explicit Memory Ownership (Advanced)**
   - High-level API supports fully stack-based operation with caller-provided memory, avoiding any hidden malloc or OS dependencies
   - Suitable for bare-metal or highly constrained embedded systems where deterministic memory usage is required
   - Contexts require explicit memory ownership, enabling safe stack allocation and full zeroization
   - Alternate init paths and structs ensure auditable lifetimes and consistent behavior across embedded and standard environments
 
-- **Runtime Legacy / Optional Feature Control**
+[ ] **Runtime Legacy / Optional Feature Control**
   - Centralized configuration module tracks which algorithms or features are enabled at runtime
   - Weak or legacy algorithms (DES, MD5, etc.) are disabled by default and must be explicitly enabled
   - High-level API functions check this central configuration before executing
   - Supports safe opt-in for backward compatibility without compromising default security
   - Can be extended to track padding schemes, experimental primitives, or debugging hooks
 
-- **Context Lifetime & Auto-Zeroing Policy**
+[ ] **Context Lifetime & Auto-Zeroing Policy**
   - Finalization functions securely wipe and invalidate cryptographic contexts by default
   - Advanced users may opt into “keep-state” APIs or per-context flags to disable automatic wiping
   - When keep-state is used, the caller is responsible for explicit context cleanup via provided free/wipe functions
 
+[ ] **Build-Time Isolation**
+  - Generated vectors live in tests/generated/ while runners live in tests/runner/
+  - No JSON parsing occurs at runtime; your library remains free of test dependencies
+  - Allows safe regeneration of test vectors without touching production code
 
-- **Optional Debug / Audit Hooks**
+[ ] **Optional Debug / Audit Hooks**
   - Hooks can provide trace or memory audit features for development
   - Disabled in production builds to avoid exposing sensitive data
   - Supports testing and static analysis without compromising runtime security
 
-- **Unified XOR Utility (Advanced)**
+[ ] **Unified XOR Utility (Advanced)**
   - Provides a single function to XOR two buffers of arbitrary length
   - Handles alignment and architecture differences safely (e.g., 8-bit, 32-bit, 64-bit, or vectorized)
   - Enables optimized block operations (AES, CMAC, Poly1305, etc.) without duplicating code
@@ -204,16 +208,16 @@ These features go beyond initial correctness to protect the library against real
 
 Stress-test the library against malformed, adversarial, and unexpected inputs.
 
-- **Coverage-guided fuzzing**
+[ ] **Coverage-guided fuzzing**
   - Target encoders/decoders, padding, MAC verification, AEAD APIs
   - Validate graceful failure (no crashes, no UB, no leaks)
 
-- **Boundary & Limit Testing**
+[ ] **Boundary & Limit Testing**
   - Extremely large inputs
   - Zero-length and near-limit buffers
   - Invalid IV, nonce, tag, and key sizes
 
-- **Error-path fuzzing**
+[ ] **Error-path fuzzing**
   - Ensure all error conditions are handled deterministically
   - No memory leaks or partial state exposure on failure
 
@@ -223,12 +227,12 @@ Stress-test the library against malformed, adversarial, and unexpected inputs.
 
 Use the compiled library itself as a reverse-engineering target.
 
-- **Self-RE practice**
+[ ] **Self-RE practice**
   - Analyze compiled binaries to verify assumptions made in C
   - Ensure constant-time logic survives compiler optimizations
   - Inspect memory layout, call flow, and symbol boundaries
 
-- **Compiler behavior validation**
+[ ] **Compiler behavior validation**
   - Confirm secure zeroing is not optimized away
   - Validate constant-time comparisons at assembly level
   - Identify unexpected instruction patterns or data-dependent branches
@@ -239,15 +243,15 @@ Use the compiled library itself as a reverse-engineering target.
 
 Evaluate behavior under hostile or constrained execution environments.
 
-- **VM-based testing**
+[ ] **VM-based testing**
   - Run under different OS versions and configurations
   - Simulate low-memory and restricted execution environments
 
-- **Sandbox execution**
+[ ] **Sandbox execution**
   - Test behavior under debuggers, emulators, and monitoring tools
   - Observe memory access patterns and failure modes
 
-- **Crash containment**
+[ ] **Crash containment**
   - Ensure failures do not corrupt external memory
   - Validate clean teardown and state reset after errors
 
@@ -289,7 +293,7 @@ Evaluate behavior under hostile or constrained execution environments.
    - Fully deterministic, no user-facing key checks or policy enforcement
    - Some `ll_*` may call other lower-level `ll_*` functions
 
-2. **Facade  Layer / User-Facing Layer (`cf_*`)**
+2. **Facade Layer / User-Facing Layer (`cf_*`)**
    - Dispatcher by enum/macro for algorithm selection
    - Supports streaming, piping, and user-facing APIs
    - Enforces security policies (e.g., minimum key lengths)

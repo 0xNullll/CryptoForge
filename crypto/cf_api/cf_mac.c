@@ -23,9 +23,9 @@
 //
 
 // HMAC
-static void *hmac_init_alloc_wrapper(CF_MAC_CTX *ctx, const CF_MAC_OPTS *opts, CF_STATUS *status) {
+static CF_STATUS hmac_init_wrapper(CF_MAC_CTX *ctx, const CF_MAC_OPTS *opts) {
     UNUSED(opts);
-    return ll_HMAC_InitAlloc(ctx->md, ctx->key, ctx->key_len, status);
+    return ll_HMAC_Init((ll_HMAC_CTX *)ctx->mac_ctx, ctx->md, ctx->key, ctx->key_len);
 }
 static CF_STATUS hmac_update_wrapper(CF_MAC_CTX *ctx, const uint8_t *data, size_t data_len) {
     return ll_HMAC_Update((ll_HMAC_CTX *)ctx->mac_ctx, data, data_len);
@@ -33,13 +33,13 @@ static CF_STATUS hmac_update_wrapper(CF_MAC_CTX *ctx, const uint8_t *data, size_
 static CF_STATUS hmac_final_wrapper(CF_MAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
     return ll_HMAC_Final((ll_HMAC_CTX *)ctx->mac_ctx, tag, tag_len);
 }
-static CF_STATUS hmac_free_wrapper(CF_MAC_CTX *ctx) {
-    return ll_HMAC_Free((ll_HMAC_CTX **)&ctx->mac_ctx);
+static CF_STATUS hmac_reset_wrapper(CF_MAC_CTX *ctx) {
+    return ll_HMAC_Reset((ll_HMAC_CTX *)ctx->mac_ctx);
 }
 
 // KMAC
-static void *kmac_init_alloc_wrapper(CF_MAC_CTX *ctx, const CF_MAC_OPTS *opts, CF_STATUS *status) {
-    return ll_KMAC_InitAlloc(ctx->key, ctx->key_len, opts->custom, opts->custom_len, ctx->subflags, status);
+static CF_STATUS kmac_init_wrapper(CF_MAC_CTX *ctx, const CF_MAC_OPTS *opts) {
+    return ll_KMAC_Init((ll_KMAC_CTX *)ctx->mac_ctx, ctx->key, ctx->key_len, opts->custom, opts->custom_len, ctx->subflags);
 }
 
 static CF_STATUS kmac_update_wrapper(CF_MAC_CTX *ctx, const uint8_t *data, size_t data_len) {
@@ -48,13 +48,14 @@ static CF_STATUS kmac_update_wrapper(CF_MAC_CTX *ctx, const uint8_t *data, size_
 static CF_STATUS kmac_final_wrapper(CF_MAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
     return ll_KMAC_Final((ll_KMAC_CTX *)ctx->mac_ctx, tag, tag_len);
 }
-static CF_STATUS kmac_free_wrapper(CF_MAC_CTX *ctx) {
-    return ll_KMAC_Free((ll_KMAC_CTX **)&ctx->mac_ctx);
+static CF_STATUS kmac_reset_wrapper(CF_MAC_CTX *ctx) {
+    return ll_KMAC_Reset((ll_KMAC_CTX *)ctx->mac_ctx);
 }
 
 // CMAC
-static void *cmac_init_alloc_wrapper(CF_MAC_CTX *ctx, const CF_MAC_OPTS *opts, CF_STATUS *status) {
-    return ll_CMAC_InitAlloc((const ll_AES_KEY *)ctx->cipher_key, status);
+static CF_STATUS cmac_init_wrapper(CF_MAC_CTX *ctx, const CF_MAC_OPTS *opts) {
+    UNUSED(opts);
+    return ll_CMAC_Init((ll_CMAC_CTX *)ctx->mac_ctx, (const ll_AES_KEY *)ctx->cipher_key);
 }
 static CF_STATUS cmac_update_wrapper(CF_MAC_CTX *ctx, const uint8_t *data, size_t data_len) {
     return ll_CMAC_Update((ll_CMAC_CTX *)ctx->mac_ctx, data, data_len);
@@ -62,13 +63,13 @@ static CF_STATUS cmac_update_wrapper(CF_MAC_CTX *ctx, const uint8_t *data, size_
 static CF_STATUS cmac_final_wrapper(CF_MAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
     return ll_CMAC_Final((ll_CMAC_CTX *)ctx->mac_ctx, tag, tag_len);
 }
-static CF_STATUS cmac_free_wrapper(CF_MAC_CTX *ctx) {
-    return ll_CMAC_Free((ll_CMAC_CTX **)&ctx->mac_ctx);
+static CF_STATUS cmac_reset_wrapper(CF_MAC_CTX *ctx) {
+    return ll_CMAC_Reset((ll_CMAC_CTX *)ctx->mac_ctx);
 }
 
 // GMAC
-static void *gmac_init_alloc_wrapper(CF_MAC_CTX *ctx, const CF_MAC_OPTS *opts, CF_STATUS *status) {
-    return ll_GMAC_InitAlloc((const ll_AES_KEY *)ctx->cipher_key, opts->iv, opts->iv_len, status);
+static CF_STATUS gmac_init_wrapper(CF_MAC_CTX *ctx, const CF_MAC_OPTS *opts) {
+    return ll_GMAC_Init((ll_GMAC_CTX *)ctx->mac_ctx, (const ll_AES_KEY *)ctx->cipher_key, opts->iv, opts->iv_len);
 }
 static CF_STATUS gmac_update_wrapper(CF_MAC_CTX *ctx, const uint8_t *data, size_t data_len) {
     return ll_GMAC_Update((ll_GMAC_CTX *)ctx->mac_ctx, data, data_len);
@@ -76,8 +77,8 @@ static CF_STATUS gmac_update_wrapper(CF_MAC_CTX *ctx, const uint8_t *data, size_
 static CF_STATUS gmac_final_wrapper(CF_MAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
     return ll_GMAC_Final((ll_GMAC_CTX *)ctx->mac_ctx, tag, tag_len);
 }
-static CF_STATUS gmac_free_wrapper(CF_MAC_CTX *ctx) {
-    return ll_GMAC_Free((ll_GMAC_CTX **)&ctx->mac_ctx);
+static CF_STATUS gmac_reset_wrapper(CF_MAC_CTX *ctx) {
+    return ll_GMAC_Reset((ll_GMAC_CTX *)ctx->mac_ctx);
 }
 
 // --- CF_MAC Return Functions ---
@@ -91,10 +92,10 @@ static const CF_MAC *CF_get_hmac(void) {
         .ctx_size = sizeof(ll_HMAC_CTX),
         .key_ctx_size = 0,
         .default_tag_len = 0,
-        .mac_init_alloc_fn = hmac_init_alloc_wrapper,
+        .mac_init_fn = hmac_init_wrapper,
         .mac_update_fn = hmac_update_wrapper,
         .mac_final_fn = hmac_final_wrapper,
-        .mac_free_fn = hmac_free_wrapper
+        .mac_reset_fn = hmac_reset_wrapper
     };
     return &md;
 }
@@ -108,10 +109,10 @@ static const CF_MAC *CF_get_kmac(void) {
         .ctx_size = sizeof(ll_KMAC_CTX),
         .key_ctx_size = 0,
         .default_tag_len = 0,
-        .mac_init_alloc_fn = kmac_init_alloc_wrapper,
+        .mac_init_fn = kmac_init_wrapper,
         .mac_update_fn = kmac_update_wrapper,
         .mac_final_fn = kmac_final_wrapper,
-        .mac_free_fn = kmac_free_wrapper
+        .mac_reset_fn = kmac_reset_wrapper
     };
     return &md;
 }
@@ -125,10 +126,10 @@ static const CF_MAC *CF_get_cmac(void) {
         .ctx_size = sizeof(ll_CMAC_CTX),
         .key_ctx_size = sizeof(ll_AES_KEY),
         .default_tag_len = AES_BLOCK_SIZE,
-        .mac_init_alloc_fn = cmac_init_alloc_wrapper,
+        .mac_init_fn = cmac_init_wrapper,
         .mac_update_fn = cmac_update_wrapper,
         .mac_final_fn = cmac_final_wrapper,
-        .mac_free_fn = cmac_free_wrapper
+        .mac_reset_fn = cmac_reset_wrapper
     };
     return &md;
 }
@@ -142,10 +143,10 @@ static const CF_MAC *CF_get_gmac(void) {
         .ctx_size = sizeof(ll_GMAC_CTX),
         .key_ctx_size = sizeof(ll_AES_KEY),
         .default_tag_len = AES_BLOCK_SIZE,
-        .mac_init_alloc_fn = gmac_init_alloc_wrapper,
+        .mac_init_fn = gmac_init_wrapper,
         .mac_update_fn = gmac_update_wrapper,
         .mac_final_fn = gmac_final_wrapper,
-        .mac_free_fn = gmac_free_wrapper
+        .mac_reset_fn = gmac_reset_wrapper
     };
     return &md;
 }
@@ -229,13 +230,24 @@ CF_STATUS CF_MAC_Init(CF_MAC_CTX *ctx, const CF_MAC *mac, const CF_MAC_OPTS *opt
 
     // Allocate / initialize MAC internal context
     ctx->mac_ctx = NULL;
-    CF_STATUS st = CF_SUCCESS;
 
-    ctx->mac_ctx = mac->mac_init_alloc_fn(ctx, opts, &st);
-    if (st != CF_SUCCESS && !ctx->mac_ctx) {
+    // Only allocate if context size > 0
+    if (ctx->mac->ctx_size > 0) {
+        ctx->mac_ctx = SECURE_ALLOC(ctx->mac->ctx_size);
+        if (!ctx->mac_ctx) {
+            if (ctx->cipher_key)
+                SECURE_FREE(ctx->cipher_key, ctx->mac->key_ctx_size);
+            return CF_ERR_ALLOC_FAILED;
+        }
+    }
+
+    // Initialize context
+    CF_STATUS st = mac->mac_init_fn(ctx, opts);
+    if (st != CF_SUCCESS) {
+        if (ctx->mac_ctx)
+            SECURE_FREE(ctx->mac_ctx, ctx->mac->ctx_size);
         if (ctx->cipher_key)
             SECURE_FREE(ctx->cipher_key, ctx->mac->key_ctx_size);
-        
         return st;
     }
 
@@ -337,7 +349,7 @@ CF_STATUS CF_MAC_Reset(CF_MAC_CTX *ctx) {
         SECURE_FREE(ctx->cipher_key, ctx->mac->key_ctx_size);
 
     if (ctx->mac_ctx) {
-        st = ctx->mac->mac_free_fn(ctx);  // pass full context
+        st = ctx->mac->mac_reset_fn(ctx);  // pass full context
         if (st != CF_SUCCESS)
             return st;
         ctx->mac_ctx = NULL;  // avoid dangling pointer
@@ -373,16 +385,31 @@ CF_STATUS CF_MAC_Free(CF_MAC_CTX **p_ctx) {
     return CF_SUCCESS;
 }
 
-// ============================
-// One-shot MAC computation
-// ============================
 CF_STATUS CF_MAC_Compute(const CF_MAC *mac,
-                                const uint8_t *key, size_t key_len,
-                                const uint8_t *data, size_t data_len,
-                                uint8_t *tag, size_t tag_len,
-                                const CF_MAC_OPTS *opts) {
-}
+                         const uint8_t *key, size_t key_len,
+                         const uint8_t *data, size_t data_len,
+                         uint8_t *tag, size_t tag_len,
+                         const CF_MAC_OPTS *opts, uint32_t subflags) {
+    if (!mac || !key || !data || !tag)
+        return CF_ERR_NULL_PTR;
 
+    CF_MAC_CTX ctx = {0};
+    CF_STATUS st = CF_SUCCESS;
+
+    st = CF_MAC_Init(&ctx, mac, opts, key, key_len, subflags);
+    if (st != CF_SUCCESS)
+        goto cleanup;
+
+    st = CF_MAC_Update(&ctx, data, data_len);
+    if (st != CF_SUCCESS)
+        goto cleanup;
+
+    st = CF_MAC_Final(&ctx, tag, tag_len);
+
+cleanup:
+    CF_MAC_Reset(&ctx);
+    return st;
+}
 
 const char* CF_MAC_GetName(const CF_MAC *ctx) {
     if (!ctx) return NULL;
@@ -396,43 +423,132 @@ const char* CF_MAC_GetName(const CF_MAC *ctx) {
     }
 }
 
-// ============================
-// Cloning
-// ============================
-CF_STATUS CF_MAC_CloneCtx(CF_MAC_CTX *dst, const CF_MAC_CTX *src) {
+const char* CF_MAC_GetFullName(const CF_MAC_CTX *ctx) {
+    if (!ctx || !ctx->mac) return NULL;
 
+    switch (ctx->mac->id) {
+    case CF_HMAC:
+        switch (ctx->subflags) {
+        case CF_SHA1:       return "HMAC-SHA-1";
+        case CF_SHA224:     return "HMAC-SHA-224";
+        case CF_SHA256:     return "HMAC-SHA-256";
+        case CF_SHA384:     return "HMAC-SHA-384";
+        case CF_SHA512:     return "HMAC-SHA-512";
+        case CF_SHA512_224: return "HMAC-SHA-512/224";
+        case CF_SHA512_256: return "HMAC-SHA-512/256";
+        case CF_SHA3_224:   return "HMAC-SHA-3/224";
+        case CF_SHA3_256:   return "HMAC-SHA-3/256";
+        case CF_SHA3_384:   return "HMAC-SHA-3/384";
+        case CF_SHA3_512:   return "HMAC-SHA-3/512";
+        default:            return "HMAC-UNKNOWN";
+        }
+
+    case CF_KMAC:
+        switch (ctx->subflags) {
+        case CF_KMAC128:      return "KMAC-128";
+        case CF_KMAC256:      return "KMAC-256";
+        case CF_KMAC_XOF128:  return "KMAC-XOF-128";
+        case CF_KMAC_XOF256:  return "KMAC-XOF-256";
+        default:              return "KMAC-UNKNOWN";
+        }
+
+    case CF_CMAC:
+        switch (ctx->key_len) {
+        case AES_128_KEY_SIZE: return "CMAC-AES-128";
+        case AES_192_KEY_SIZE: return "CMAC-AES-192";
+        case AES_256_KEY_SIZE: return "CMAC-AES-256";
+        default:               return "CMAC-UNKNOWN";
+        }
+
+    case CF_GMAC:
+        switch (ctx->key_len) {
+        case AES_128_KEY_SIZE: return "GMAC-AES-128";
+        case AES_192_KEY_SIZE: return "GMAC-AES-192";
+        case AES_256_KEY_SIZE: return "GMAC-AES-256";
+        default:               return "GMAC-UNKNOWN";
+        }
+
+    default:
+        return "UNKNOWN-MAC";
+    }
 }
-CF_MAC_CTX* CF_MAC_CloneCtxAlloc(const CF_MAC_CTX *src, CF_STATUS *status) {
 
-}
-
-// ============================
-// Optional parameters init / cleanup
-// ============================
 CF_STATUS CF_MACOpts_Init(CF_MAC_OPTS *opts,
-                                 const uint8_t *iv, size_t iv_len,
-                                 const uint8_t *custom, size_t custom_len) {
+                          const uint8_t *iv, size_t iv_len,
+                          const uint8_t *custom, size_t custom_len) {
+    if (!opts)
+        return CF_ERR_NULL_PTR;
+
+    if (iv_len > CF_MAX_CUSTOMIZATION || custom_len > CF_MAX_CUSTOMIZATION)
+        return CF_ERR_INVALID_LEN;
+
+    CF_MACOpts_Reset(opts);
+
+    opts->iv_len = iv_len;
+    opts->custom_len = custom_len;
+
+    if (iv && iv_len > 0)
+        SECURE_MEMCPY(opts->iv, iv, iv_len);;
+
+    if (custom && custom_len > 0)
+        SECURE_MEMCPY(opts->custom, custom, custom_len);
+
     return CF_SUCCESS;
 }
 
 CF_MAC_OPTS* CF_MACOpts_InitAlloc(const uint8_t *iv, size_t iv_len,
-                                         const uint8_t *custom, size_t custom_len,
-                                         CF_STATUS *status) {
-    return CF_SUCCESS;
+                                  const uint8_t *custom, size_t custom_len,
+                                  CF_STATUS *status) {
+    if (iv_len > CF_MAX_CUSTOMIZATION || custom_len > CF_MAX_CUSTOMIZATION) {
+        if (status) *status = CF_ERR_INVALID_LEN;
+        return NULL;
+    }
+
+    CF_MAC_OPTS *opts = (CF_MAC_OPTS *)SECURE_ALLOC(sizeof(CF_MAC_OPTS));
+    if (!opts) {
+        if (status) *status = CF_ERR_ALLOC_FAILED;
+        return NULL;
+    }
+
+    CF_STATUS st = CF_MACOpts_Init(opts, iv, iv_len, custom, custom_len);
+    if (st != CF_SUCCESS) {
+        SECURE_FREE(opts, sizeof(CF_MAC_OPTS));
+        if (status) *status = st;
+        return NULL;
+    }
+
+    opts->isHeapAlloc = 1;
+    if (status) *status = CF_SUCCESS;
+    return opts;
 }
 
 CF_STATUS CF_MACOpts_Reset(CF_MAC_OPTS *opts) {
-    return CF_SUCCESS;
+    if (!opts)
+        return CF_ERR_NULL_PTR;
 
+    SECURE_ZERO(opts->iv, sizeof(opts->iv));
+    SECURE_ZERO(opts->custom, sizeof(opts->custom));
+
+    opts->iv_len = 0;
+    opts->custom_len = 0;
+
+    return CF_SUCCESS;
 }
+
 CF_STATUS CF_MACOpts_Free(CF_MAC_OPTS **p_opts) {
-    return CF_SUCCESS;
-}
+    if (!p_opts || !*p_opts)
+        return CF_ERR_NULL_PTR;
 
-CF_STATUS CF_MACOpts_CloneCtx(CF_MAC_OPTS *dst, const CF_MAC_OPTS *src) {
-    return CF_SUCCESS;
+    CF_MAC_OPTS *opts = *p_opts;
 
-}
-CF_MAC_OPTS* CF_MACOpts_CloneCtxAlloc(const CF_MAC_OPTS *src, CF_STATUS *status) {
-    return NULL;
+    CF_STATUS ret = CF_MACOpts_Reset(opts);
+    if (ret != CF_SUCCESS)
+        return ret;
+
+    if (opts->isHeapAlloc) {
+        SECURE_FREE(opts, sizeof(*opts));
+        *p_opts = NULL;
+    }
+
+    return CF_SUCCESS;
 }

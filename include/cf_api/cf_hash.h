@@ -58,9 +58,6 @@ typedef struct _CF_MD {
 } CF_MD;
 
 typedef struct _CF_HASH_OPTS {
-    // Output length
-    size_t out_len;     // requested output length
-
     // Fixed-size customization strings
     uint8_t N[CF_MAX_CUSTOMIZATION];
     size_t N_len;
@@ -141,14 +138,12 @@ CF_API const char* CF_Hash_GetName(const CF_MD *md);
 CF_API CF_STATUS CF_HashOpts_Init(
     CF_HASH_OPTS *opts,
     const uint8_t *N, size_t N_len,
-    const uint8_t *S, size_t S_len,
-    size_t out_len
+    const uint8_t *S, size_t S_len
 );
 
 CF_API CF_HASH_OPTS* CF_HashOpts_InitAlloc(
     const uint8_t *N, size_t N_len,
     const uint8_t *S, size_t S_len,
-    size_t out_len,
     CF_STATUS *status
 );
 
