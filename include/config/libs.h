@@ -28,11 +28,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <math.h>
 #include <string.h>
 #include <ctype.h>
-#include <stdbool.h>
 #include <assert.h>
 
 #endif // LIBS_H

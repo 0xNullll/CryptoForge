@@ -1,6 +1,6 @@
 /*
- * CryptoForge - hkdf.h / HKDF (HKDF-SHA-1, HKDF-SHA-2, and HKDF-SHA-3) Interface
- * Copyright (C) 2025 0xNullll
+ * CryptoForge - hkdf.h / HKDF (HKDF-HMAC-SHA1, SHA2, SHA3) Interface
+ * Copyright (C) 2026 0xNullll
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.

@@ -1,5 +1,5 @@
 /*
- * CryptoForge - hkdf.c / HKDF (HKDF-SHA-1, HKDF-SHA-2, and HKDF-SHA-3) Implementation
+ * CryptoForge - hkdf.c / HKDF (HKDF-HMAC-SHA1, SHA2, SHA3) Implementation
  * Copyright (C) 2026 0xNullll
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
@@ -42,9 +42,6 @@ CF_STATUS ll_HKDF_Init(ll_HKDF_CTX *ctx, const CF_MD *md, const uint8_t *info, s
             return CF_ERR_ALLOC_FAILED;
 
         ctx->info_len = info_len;
-    } else {
-        ctx->info = NULL;
-        ctx->info_len = 0;
     }
 
     return CF_SUCCESS;
@@ -69,7 +66,6 @@ ll_HKDF_CTX* ll_HKDF_InitAlloc(const CF_MD *md, const uint8_t *info, size_t info
         return NULL;
     }
 
-    // Mark as heap-allocated
     ctx->isHeapAlloc = 1;
     if (status) *status = CF_SUCCESS;
     return ctx;
@@ -79,51 +75,46 @@ CF_STATUS ll_HKDF_Extract(
     ll_HKDF_CTX *ctx,
     const uint8_t *salt, size_t salt_len,
     const uint8_t *ikm, size_t ikm_len) {
-    if (!ctx || !ctx->md || !ikm)
+    if (!ctx || !ctx->md)
         return CF_ERR_NULL_PTR;
-
-    if (ikm_len == 0)
-        return CF_ERR_INVALID_LEN;
-
-    if (salt && salt_len == 0)
-        return CF_ERR_INVALID_PARAM;
 
     size_t hash_len = ctx->md->digest_size;  // always PRK = hash output size
 
     CF_STATUS st;
-    ll_HMAC_CTX *hmac_ctx = (ll_HMAC_CTX *)SECURE_ALLOC(sizeof(ll_HMAC_CTX));
-    if (!hmac_ctx)
-        return CF_ERR_ALLOC_FAILED;
+    ll_HMAC_CTX hmac_ctx = {0};
 
-    // Initialize HMAC with salt (or zeroed default)
-    st = ll_HMAC_Init(hmac_ctx, ctx->md, salt ? salt : NULL, salt ? salt_len : 0);
+    // HMAC key = salt
+    if (salt && salt_len > 0)
+        st = ll_HMAC_Init(&hmac_ctx, ctx->md, salt, salt_len);
+    else
+        st = ll_HMAC_Init(&hmac_ctx, ctx->md, (const uint8_t *)"", 0);
+
     if (st != CF_SUCCESS) {
-        SECURE_FREE(hmac_ctx, sizeof(ll_HMAC_CTX));
         return st;
     }
 
     // Feed the input key material (IKM) into HMAC
-    st = ll_HMAC_Update(hmac_ctx, ikm, ikm_len);
+    if (salt && salt_len > 0)
+        st = ll_HMAC_Update(&hmac_ctx, ikm, ikm_len);
+    else
+        st = ll_HMAC_Update(&hmac_ctx, (const uint8_t *)"", 0);
+
     if (st != CF_SUCCESS) {
-        ll_HMAC_Reset(hmac_ctx);                    // only cleans internal buffers
-        SECURE_FREE(hmac_ctx, sizeof(ll_HMAC_CTX)); // frees the struct
+        ll_HMAC_Reset(&hmac_ctx);
         return st;
     }
 
     // Allocate and compute PRK
     ctx->prk = (uint8_t *)SECURE_ALLOC(hash_len);
     if (!ctx->prk) {
-        ll_HMAC_Reset(hmac_ctx);
-        SECURE_FREE(hmac_ctx, sizeof(ll_HMAC_CTX));
+        ll_HMAC_Reset(&hmac_ctx);
         return CF_ERR_ALLOC_FAILED;
     }
 
-    st = ll_HMAC_Final(hmac_ctx, ctx->prk, hash_len);
-    ll_HMAC_Reset(hmac_ctx);                     // clean internal buffers
-    SECURE_FREE(hmac_ctx, sizeof(ll_HMAC_CTX)); // free the struct itself
+    st = ll_HMAC_Final(&hmac_ctx, ctx->prk, hash_len);
+    ll_HMAC_Reset(&hmac_ctx);
     if (st != CF_SUCCESS) {
         SECURE_FREE((void *)ctx->prk, hash_len);
-        ctx->prk = NULL;
         return st;
     }
 
@@ -240,8 +231,6 @@ CF_STATUS ll_HKDF_Reset(ll_HKDF_CTX *ctx) {
     if (!ctx)
         return CF_ERR_NULL_PTR;
 
-    int wasHeapAlloc = ctx->isHeapAlloc;
-
     if (ctx->prk) {
         if (ctx->prk_len == 0)
             return CF_ERR_CTX_CORRUPT;
@@ -256,10 +245,11 @@ CF_STATUS ll_HKDF_Reset(ll_HKDF_CTX *ctx) {
 
     SECURE_ZERO(ctx->prev_block, sizeof(ctx->prev_block));
 
-    // clear high-level data
-    SECURE_ZERO(ctx, sizeof(*ctx));
-    
-    ctx->isHeapAlloc = wasHeapAlloc;
+    ctx->md = NULL;
+    ctx->prk_len = 0;
+    ctx->counter = 0;
+    ctx->info_len = 0;
+
     return CF_SUCCESS;
 }
 
@@ -268,16 +258,15 @@ CF_STATUS ll_HKDF_Free(ll_HKDF_CTX **p_ctx) {
         return CF_ERR_NULL_PTR;
 
     ll_HKDF_CTX *ctx = *p_ctx;
-    int wasHeapAlloc = ctx->isHeapAlloc;  // save flag
 
     CF_STATUS st = ll_HKDF_Reset(ctx);
     if (st != CF_SUCCESS)
         return st;
 
-    if (wasHeapAlloc)
+    if (ctx->isHeapAlloc)
         SECURE_FREE(ctx, sizeof(*ctx));   // free only if heap-allocated
 
-    *p_ctx = NULL;  // nullify caller pointer
+    ctx = NULL;  // nullify caller pointer
 
     return CF_SUCCESS;
 }
@@ -287,7 +276,9 @@ CF_STATUS ll_HKDF_CloneCtx(ll_HKDF_CTX *ctx_dest, const ll_HKDF_CTX *ctx_src) {
 
     // Copy top-level context first (fixed-size parts only)
     ll_HKDF_CTX tmp = *ctx_src; // shallow copy
-    SECURE_ZERO(ctx_dest, sizeof(*ctx_dest));
+
+    ll_HKDF_Reset(ctx_dest);
+
     SECURE_MEMCPY(ctx_dest, &tmp, sizeof(*ctx_dest));
 
     ctx_dest->isHeapAlloc = 0; // cloned context will not own heap allocations by default
