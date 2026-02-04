@@ -106,16 +106,7 @@ CF_STATUS ll_KMAC_Update(ll_KMAC_CTX *ctx, const uint8_t *data, size_t data_len)
 // Finalizes the KMAC if not finalized already and writes the output to the digest buffer
 CF_STATUS ll_KMAC_Final(ll_KMAC_CTX *ctx, uint8_t *digest, size_t digest_len);
 
-// Verifies a standard fixed-length KMAC (KMAC128 or KMAC256) against expected output.
-// Returns CF_SUCCESS if the output matches, CF_ERR_MAC_VERIFY if invalid.
-// XOF variants are not allowed.
-// CF_STATUS ll_KMAC_Verify(
-//     const uint8_t *key, size_t key_len,
-//     const uint8_t *data, size_t data_len,
-//     const uint8_t *S, size_t S_len,
-//     const uint8_t *expected_mac,
-//     LL_KMAC_TYPE type);
-
+// Verifies a KMAC tag against expected output.
 CF_STATUS ll_KMAC_Verify(
     const uint8_t *key, size_t key_len,
     const uint8_t *data, size_t data_len,

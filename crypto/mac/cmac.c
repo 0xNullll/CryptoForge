@@ -50,7 +50,14 @@ static void ll_AES_CMAC_MultiplyByU(const uint8_t in[AES_BLOCK_SIZE], uint8_t ou
 /*
  * Generate subkeys K1 and K2
  *
- * - As specified in RFC 4493, section 2.3 (Subkey Generation Algorithm)
+ * As specified in RFC 4493, section 2.3 (Subkey Generation Algorithm):
+ *
+ *   1. Encrypt the zero block with the AES key to produce L
+ *   2. Compute K1 = L * u in GF(2^128)
+ *   3. Compute K2 = K1 * u in GF(2^128)
+ *
+ * These subkeys are used in CMAC for padding the last block.
+ * Temporary values are securely zeroed before returning.
  */
 static bool ll_CMAC_GenerateSubKeys(const ll_AES_KEY *aes_key,
                                     uint8_t K1[AES_BLOCK_SIZE],
@@ -65,7 +72,11 @@ static bool ll_CMAC_GenerateSubKeys(const ll_AES_KEY *aes_key,
     //
     // Generate subkeys K1 and K2
     //
+
+    // K1 = L * u in GF(2^128)
     ll_AES_CMAC_MultiplyByU(L, K1);
+
+    // K2 = K1 * u in GF(2^128)
     ll_AES_CMAC_MultiplyByU(K1, K2);
 
     SECURE_ZERO(L, sizeof(L));
@@ -76,6 +87,18 @@ cleanup:
     return false;
 }
 
+/*
+ * CMAC pad the last block
+ *
+ * As specified in RFC 4493, section 2.4 (MAC Generation Algorithm):
+ *
+ *   - Copy existing bytes from the last block
+ *   - Append 0x80 immediately after the data
+ *   - Fill remaining bytes with 0x00
+ *
+ * Ensures the last block is always 16 bytes (AES block size).
+ * Input and output buffers MUST NOT overlap.
+ */
 static void ll_CMAC_Pad(uint8_t padded_block[AES_BLOCK_SIZE], size_t padded_block_len,
                      const uint8_t last_block[AES_BLOCK_SIZE], size_t last_block_len) {
 
@@ -319,4 +342,50 @@ CF_STATUS ll_CMAC_Free(ll_CMAC_CTX **p_ctx) {
     }
 
     return CF_SUCCESS;
+}
+
+CF_STATUS ll_CMAC_CloneCtx(ll_CMAC_CTX *ctx_dest, const ll_CMAC_CTX *ctx_src) {
+    if (!ctx_dest || !ctx_src)
+        return CF_ERR_NULL_PTR;
+
+    ctx_dest->key = ctx_src->key;
+
+    ctx_dest->unprocessed_len = ctx_src->unprocessed_len;
+    SECURE_MEMCPY(ctx_dest->unprocessed_block,
+                ctx_src->unprocessed_block,
+                sizeof(ctx_dest->unprocessed_block));
+
+    SECURE_MEMCPY(ctx_dest->last_block,
+                ctx_src->last_block,
+                sizeof(ctx_dest->last_block));
+
+    ctx_dest->isFinalized = ctx_src->isFinalized;
+    ctx_dest->isHeapAlloc = 0; // dst is “new”, caller owns it
+
+    return CF_SUCCESS;
+}
+
+ll_CMAC_CTX* ll_CMAC_CloneCtxAlloc(const ll_CMAC_CTX *ctx_src, CF_STATUS *status) {
+    if (!ctx_src) {
+        if (status) *status = CF_ERR_NULL_PTR;
+        return NULL;
+    }
+
+    // Allocate the destination context
+    ll_CMAC_CTX *ctx_dest = (ll_CMAC_CTX *)SECURE_ALLOC(sizeof(ll_CMAC_CTX));
+    if (!ctx_dest) {
+        if (status) *status = CF_ERR_ALLOC_FAILED;
+        return NULL;
+    }
+
+    // Use the in-place clone function
+    CF_STATUS ret = ll_CMAC_CloneCtx(ctx_dest, ctx_src);
+    if (ret != CF_SUCCESS) {
+        SECURE_FREE(ctx_dest, sizeof(ll_CMAC_CTX));
+        return NULL;
+    }
+
+    ctx_dest->isHeapAlloc = 1; // library owns this memory
+
+    return ctx_dest;
 }

@@ -36,6 +36,15 @@ static CF_STATUS hmac_final_wrapper(CF_MAC_CTX *ctx, uint8_t *tag, size_t tag_le
 static CF_STATUS hmac_reset_wrapper(CF_MAC_CTX *ctx) {
     return ll_HMAC_Reset((ll_HMAC_CTX *)ctx->mac_ctx);
 }
+static CF_STATUS hmac_verify_wrapper(CF_MAC_CTX *ctx,
+                                     const uint8_t *data, size_t data_len,
+                                     const uint8_t *expected_tag, size_t expected_tag_len,
+                                     const struct _CF_MAC_OPTS *opts)
+{
+    UNUSED(opts);
+    return ll_HMAC_Verify((const CF_MD *)ctx->md, ctx->key, ctx->key_len, 
+                          data, data_len, expected_tag, expected_tag_len);
+}
 
 // KMAC
 static CF_STATUS kmac_init_wrapper(CF_MAC_CTX *ctx, const CF_MAC_OPTS *opts) {
@@ -50,6 +59,15 @@ static CF_STATUS kmac_final_wrapper(CF_MAC_CTX *ctx, uint8_t *tag, size_t tag_le
 }
 static CF_STATUS kmac_reset_wrapper(CF_MAC_CTX *ctx) {
     return ll_KMAC_Reset((ll_KMAC_CTX *)ctx->mac_ctx);
+}
+static CF_STATUS kmac_verify_wrapper(CF_MAC_CTX *ctx,
+                                     const uint8_t *data, size_t data_len,
+                                     const uint8_t *expected_tag, size_t expected_tag_len,
+                                     const struct _CF_MAC_OPTS *opts)
+{
+    return ll_KMAC_Verify(ctx->key, ctx->key_len, data, data_len,
+                          opts->custom, opts->custom_len, expected_tag, expected_tag_len,
+                          ctx->subflags);
 }
 
 // CMAC
@@ -66,6 +84,15 @@ static CF_STATUS cmac_final_wrapper(CF_MAC_CTX *ctx, uint8_t *tag, size_t tag_le
 static CF_STATUS cmac_reset_wrapper(CF_MAC_CTX *ctx) {
     return ll_CMAC_Reset((ll_CMAC_CTX *)ctx->mac_ctx);
 }
+static CF_STATUS cmac_verify_wrapper(CF_MAC_CTX *ctx,
+                                     const uint8_t *data, size_t data_len,
+                                     const uint8_t *expected_tag, size_t expected_tag_len,
+                                     const struct _CF_MAC_OPTS *opts)
+{
+    UNUSED(opts);
+    return ll_CMAC_Verify((const ll_AES_KEY *)ctx->cipher_key, data, data_len,
+                          expected_tag, expected_tag_len);
+}
 
 // GMAC
 static CF_STATUS gmac_init_wrapper(CF_MAC_CTX *ctx, const CF_MAC_OPTS *opts) {
@@ -79,6 +106,14 @@ static CF_STATUS gmac_final_wrapper(CF_MAC_CTX *ctx, uint8_t *tag, size_t tag_le
 }
 static CF_STATUS gmac_reset_wrapper(CF_MAC_CTX *ctx) {
     return ll_GMAC_Reset((ll_GMAC_CTX *)ctx->mac_ctx);
+}
+static CF_STATUS gmac_verify_wrapper(CF_MAC_CTX *ctx,
+                                     const uint8_t *data, size_t data_len,
+                                     const uint8_t *expected_tag, size_t expected_tag_len,
+                                     const struct _CF_MAC_OPTS *opts)
+{
+    return ll_GMAC_Verify((const ll_AES_KEY *)ctx->cipher_key, opts->iv, opts->iv_len,
+                           data, data_len, expected_tag, expected_tag_len);
 }
 
 // --- CF_MAC Return Functions ---
@@ -95,7 +130,8 @@ static const CF_MAC *CF_get_hmac(void) {
         .mac_init_fn = hmac_init_wrapper,
         .mac_update_fn = hmac_update_wrapper,
         .mac_final_fn = hmac_final_wrapper,
-        .mac_reset_fn = hmac_reset_wrapper
+        .mac_reset_fn = hmac_reset_wrapper,
+        .mac_verify_fn = hmac_verify_wrapper
     };
     return &md;
 }
@@ -112,7 +148,8 @@ static const CF_MAC *CF_get_kmac(void) {
         .mac_init_fn = kmac_init_wrapper,
         .mac_update_fn = kmac_update_wrapper,
         .mac_final_fn = kmac_final_wrapper,
-        .mac_reset_fn = kmac_reset_wrapper
+        .mac_reset_fn = kmac_reset_wrapper,
+        .mac_verify_fn = kmac_verify_wrapper
     };
     return &md;
 }
@@ -129,7 +166,8 @@ static const CF_MAC *CF_get_cmac(void) {
         .mac_init_fn = cmac_init_wrapper,
         .mac_update_fn = cmac_update_wrapper,
         .mac_final_fn = cmac_final_wrapper,
-        .mac_reset_fn = cmac_reset_wrapper
+        .mac_reset_fn = cmac_reset_wrapper,
+        .mac_verify_fn = cmac_verify_wrapper
     };
     return &md;
 }
@@ -146,7 +184,8 @@ static const CF_MAC *CF_get_gmac(void) {
         .mac_init_fn = gmac_init_wrapper,
         .mac_update_fn = gmac_update_wrapper,
         .mac_final_fn = gmac_final_wrapper,
-        .mac_reset_fn = gmac_reset_wrapper
+        .mac_reset_fn = gmac_reset_wrapper,
+        .mac_verify_fn = gmac_verify_wrapper
     };
     return &md;
 }
@@ -180,10 +219,6 @@ CF_STATUS CF_MAC_Init(CF_MAC_CTX *ctx, const CF_MAC *mac, const CF_MAC_OPTS *opt
     if (ctx->isHeapAlloc != 0 && ctx->isHeapAlloc != 1)
         return CF_ERR_CTX_UNINITIALIZED;
 
-    // Discard invalid or empty subflags
-    if ((subflags & CF_MAC_SUBFLAG_MASK) == 0)
-        return CF_ERR_INVALID_PARAM;
-
     // Fresh cleanup
     CF_MAC_Reset(ctx);
 
@@ -192,11 +227,13 @@ CF_STATUS CF_MAC_Init(CF_MAC_CTX *ctx, const CF_MAC *mac, const CF_MAC_OPTS *opt
     ctx->key_len  = key_len;
     ctx->subflags = subflags;
 
-    // Hash selection is only valid for HMAC-like MACs
-    if ((subflags & CF_MAC_HASH_MASK) != 0) {
-
-        if (!CF_MAC_IS_HMAC(mac->id))
+    if (CF_MAC_IS_HMAC(mac->id)) {
+        // HMAC: requires a hash subflag, cannot have KMAC bits
+        if ((subflags & CF_MAC_KMAC_MASK) != 0)
             return CF_ERR_INVALID_PARAM;
+
+        if ((subflags & CF_MAC_HASH_MASK) == 0)
+            return CF_ERR_INVALID_PARAM; // must specify hash
 
         if (CF_IS_XOF(mac->id))
             return CF_ERR_UNSUPPORTED;
@@ -206,11 +243,17 @@ CF_STATUS CF_MAC_Init(CF_MAC_CTX *ctx, const CF_MAC *mac, const CF_MAC_OPTS *opt
             return CF_ERR_UNSUPPORTED;
 
         ctx->tag_len = ctx->md->default_out_len;
-    }
 
-    // CMAC / GMAC need an AES key schedule
-    if (CF_MAC_IS_CMAC(mac->id) || CF_MAC_IS_GMAC(mac->id)) {
+    } else if (CF_MAC_IS_KMAC(mac->id)) {
+        // KMAC: must have KMAC type, cannot have hash flags
+        if ((subflags & CF_MAC_KMAC_MASK) == 0)
+            return CF_ERR_INVALID_PARAM;
 
+        if ((subflags & CF_MAC_HASH_MASK) != 0)
+            return CF_ERR_INVALID_PARAM;
+
+    } else if (CF_MAC_IS_CMAC(mac->id) || CF_MAC_IS_GMAC(mac->id)) {
+        // AES MACs: CMAC / GMAC
         if (!CF_IS_AES_KEY_VALID(key_len))
             return CF_ERR_CIPHER_INVALID_KEY_LEN;
 
@@ -221,11 +264,13 @@ CF_STATUS CF_MAC_Init(CF_MAC_CTX *ctx, const CF_MAC *mac, const CF_MAC_OPTS *opt
         if (!ctx->cipher_key)
             return CF_ERR_ALLOC_FAILED;
 
-        // Library-owned, immutable key schedule
         if (!ll_AES_SetEncryptKey((ll_AES_KEY *)ctx->cipher_key, key, ctx->cipher_key_len)) {
             SECURE_FREE(ctx->cipher_key, mac->key_ctx_size);
             return CF_ERR_CIPHER_KEY_SETUP;
         }
+
+    } else {
+        return CF_ERR_INVALID_PARAM;
     }
 
     // Allocate / initialize MAC internal context
@@ -323,7 +368,8 @@ CF_STATUS CF_MAC_Final(CF_MAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
     }
 
     CF_STATUS st = CF_SUCCESS;
-    st = ctx->mac->mac_final_fn(ctx, tag, tag_len);
+    size_t out_len = ctx->tag_len != 0 ? ctx->tag_len : tag_len;
+    st = ctx->mac->mac_final_fn(ctx, tag, out_len);
     if (st != CF_SUCCESS)
         return st;
 
@@ -383,6 +429,30 @@ CF_STATUS CF_MAC_Free(CF_MAC_CTX **p_ctx) {
     }
 
     return CF_SUCCESS;
+}
+
+CF_STATUS CF_MAC_Verify(const CF_MAC *mac,
+                        const uint8_t *key, size_t key_len,
+                        const uint8_t *data, size_t data_len,
+                        const uint8_t *expected_mac, size_t expected_mac_len,
+                        const CF_MAC_OPTS *opts, uint32_t subflags) {
+    if (!mac || !key || !data || !expected_mac)
+        return CF_ERR_NULL_PTR;
+
+    CF_STATUS st = CF_SUCCESS;
+    CF_MAC_CTX ctx = {0};
+
+    // Initialize context using standard MAC init
+    st = CF_MAC_Init(&ctx, mac, opts, key, key_len, subflags);
+    if (st != CF_SUCCESS)
+        return st;
+
+    st = mac->mac_verify_fn(&ctx, data, data_len, expected_mac, expected_mac_len, opts);
+
+    // Always securely clear context
+    CF_MAC_Reset(&ctx);
+
+    return st;
 }
 
 CF_STATUS CF_MAC_Compute(const CF_MAC *mac,

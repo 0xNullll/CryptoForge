@@ -281,6 +281,8 @@ CF_STATUS ll_HMAC_CloneCtx(ll_HMAC_CTX *ctx_dest, const ll_HMAC_CTX *ctx_src) {
     if (!ctx_dest || !ctx_src)
         return CF_ERR_NULL_PTR;
 
+    ll_HMAC_Reset(ctx_dest);
+
     // Copy MD pointer
     ctx_dest->md = ctx_src->md;
 
@@ -300,8 +302,7 @@ CF_STATUS ll_HMAC_CloneCtx(ll_HMAC_CTX *ctx_dest, const ll_HMAC_CTX *ctx_src) {
     }
 
     // Copy key and metadata
-    if (ctx_src->key_len > 0)
-        SECURE_MEMCPY(ctx_dest->key, ctx_src->key, ctx_src->key_len);
+    SECURE_MEMCPY(ctx_dest->key, ctx_src->key, sizeof(ctx_dest->key));
 
     ctx_dest->key_len     = ctx_src->key_len;
     ctx_dest->out_len     = ctx_src->out_len;
@@ -331,8 +332,7 @@ ll_HMAC_CTX *ll_HMAC_CloneCtxAlloc(const ll_HMAC_CTX *ctx_src, CF_STATUS *status
         return NULL;
     }
 
-    // Mark as heap-allocated
-    ctx_dest->isHeapAlloc = 1;
+    ctx_dest->isHeapAlloc = 1; // library owns this memory
 
     return ctx_dest;
 }
