@@ -33,6 +33,7 @@
 #include "../crypto/cmac.h"
 
 #include "../crypto/hkdf.h"
+#include "../crypto/pbkdf2.h"
 
 #include "../crypto/base16.h"
 #include "../crypto/base32.h"
@@ -102,6 +103,10 @@ CF_API void test_all_hkdfs(
     const uint8_t *salt, size_t salt_len,
     const uint8_t *ikm, size_t ikm_len,
     size_t okm_len);
+
+CF_API void test_all_pbkdf2s(const uint8_t *password, size_t password_len,
+                             const uint8_t *salt, size_t salt_len,
+                             size_t dk_len, size_t iteration_count);
 
 CF_API void test_base16(const char *label, const uint8_t *input, size_t len, uint32_t mode);
 CF_API void test_hex_base16(const char *label, const uint8_t *input, size_t len, uint32_t mode);

@@ -21,6 +21,7 @@
 
 #include "../config/crypto_config.h"
 
+#define CF_MAX_HASH_CTX_SIZE 512                         // bytes
 #define CF_MAX_KEY_SIZE MAX_KEY_SIZE                     // bytes
 #define CF_MAX_CUSTOMIZATION MAX_CUSTOMIZATION           // bytes
 #define CF_MAX_ENCODED_HEADER_LEN MAX_ENCODED_HEADER_LEN // bytes

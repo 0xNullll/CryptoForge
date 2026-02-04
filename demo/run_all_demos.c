@@ -171,6 +171,22 @@ int main(void) {
 
     printf("**************************************\n");
 
+    // "password123" in hex
+    uint8_t password_hex[] = {
+        0x70, 0x61, 0x73, 0x73, 0x77, 0x6F, 0x72, 0x64, 0x31, 0x32, 0x33
+    };
+
+    // "salt111" in hex
+    uint8_t salt_hex[] = {
+        0x73, 0x61, 0x6C, 0x74, 0x31, 0x31, 0x31
+    };
+
+    size_t iterations = 10000;
+
+    test_all_pbkdf2s(password_hex, sizeof(password_hex), salt_hex, sizeof(salt_hex), 32, iterations);
+
+    printf("**************************************\n");
+
     // All Base64 characters for testing
     const char *all_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/-_";
 

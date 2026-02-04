@@ -83,49 +83,139 @@ CF_STATUS ll_PBKDF2_Extract(
     if (!ctx || !ctx->md || !ctx->password)
         return CF_ERR_NULL_PTR;
 
+    // nothing to write
+    if (salt && salt_len == 0)
+        return CF_ERR_INVALID_PARAM;
+
     size_t hash_len = ctx->md->digest_size;  // PRK length = hash output size
     CF_STATUS st;
 
-    // Allocate PRK buffer if not already
-    if (!ctx->prk) {
-        ctx->prk = (uint8_t *)SECURE_ALLOC(hash_len);
-        if (!ctx->prk)
-            return CF_ERR_ALLOC_FAILED;
-    }
-
     ll_HMAC_CTX hmac_ctx = {0};
+
+    if (salt) {
+        ctx->salt = (uint8_t *)SECURE_ALLOC(salt_len);
+        SECURE_MEMCPY((void *)ctx->salt, salt, salt_len);
+
+        if (!ctx->salt)
+            return CF_ERR_ALLOC_FAILED;
+
+        ctx->salt_len = salt_len;
+    }
 
     // HMAC key = password
     st = ll_HMAC_Init(&hmac_ctx, ctx->md, ctx->password, ctx->password_len);
     if (st != CF_SUCCESS)
         return st;
 
-    // Feed salt (or empty string if salt is NULL)
-    if (salt && salt_len > 0)
-        st = ll_HMAC_Update(&hmac_ctx, salt, salt_len);
-    else
-        st = ll_HMAC_Update(&hmac_ctx, (const uint8_t *)"", 0);
-
+    st = ll_HMAC_Update(&hmac_ctx, ctx->salt, ctx->salt_len);
+    
     if (st != CF_SUCCESS) {
         ll_HMAC_Reset(&hmac_ctx);
         return st;
     }
 
     // Compute PRK and store in context
-    st = ll_HMAC_Final(&hmac_ctx, ctx->prk, hash_len);
+    st = ll_HMAC_Final(&hmac_ctx, ctx->prev_block, hash_len);
     ll_HMAC_Reset(&hmac_ctx);
     if (st != CF_SUCCESS) {
-        SECURE_FREE(ctx->prk, hash_len);
+        SECURE_ZERO(ctx->prev_block, sizeof(ctx->prev_block));
         return st;
     }
-
-    ctx->prk_len = hash_len;
 
     // Prepare for Expand: first block index = 1
     ctx->block_index = 1;
     ctx->generated_len = 0;
 
     return CF_SUCCESS;
+}
+
+CF_STATUS ll_PBKDF2_Expand(
+    ll_PBKDF2_CTX *ctx,
+    uint8_t *dk, size_t dk_len,
+    size_t iterations) {
+    if (!ctx || !ctx->md || !ctx->password || !dk)
+        return CF_ERR_NULL_PTR;
+
+    if (iterations < KDF_PBKDF2_MIN_ITERATIONS || iterations > LL_PBKDF2_MAX_ITERATION)
+        return CF_ERR_INVALID_LEN;
+
+    size_t hash_len = ctx->md->digest_size;
+    size_t l = (dk_len + hash_len - 1) / hash_len;  // ceil division
+    size_t r = dk_len - (l - 1) * hash_len;
+
+    uint8_t T[CF_MAX_DEFAULT_DIGEST_SIZE];
+    uint8_t U[CF_MAX_DEFAULT_DIGEST_SIZE];
+    size_t generated = 0;
+    CF_STATUS st;
+
+    // --- Precompute HMAC base with password ---
+    ll_HMAC_CTX base_hmac = {0};
+    st = ll_HMAC_Init(&base_hmac, ctx->md, ctx->password, ctx->password_len);
+    if (st != CF_SUCCESS)
+        return st;
+
+    // Allocate working ctx once
+    ll_HMAC_CTX work_hmac = {0};
+    SECURE_MEMCPY(work_hmac.key, base_hmac.key, sizeof(base_hmac.key));
+    work_hmac.key_len = base_hmac.key_len;
+    work_hmac.md = base_hmac.md;
+
+    for (uint32_t block = 1; block <= l; block++) {
+        // --- U1 = HMAC(password, salt || INT(block)) ---
+        SECURE_MEMCPY(work_hmac.ipad_ctx, base_hmac.ipad_ctx, ctx->md->ctx_size);
+        SECURE_MEMCPY(work_hmac.opad_ctx, base_hmac.opad_ctx, ctx->md->ctx_size);
+        work_hmac.out_len = 0;
+        work_hmac.isFinalized = 0;
+
+        st = ll_HMAC_Update(&work_hmac, ctx->salt, ctx->salt_len);
+        if (st != CF_SUCCESS) goto cleanup;
+
+        uint8_t block_index_be[4] = {
+            (uint8_t)((block >> 24) & 0xFF),
+            (uint8_t)((block >> 16) & 0xFF),
+            (uint8_t)((block >> 8) & 0xFF),
+            (uint8_t)(block & 0xFF)
+        };
+        st = ll_HMAC_Update(&work_hmac, block_index_be, 4);
+        if (st != CF_SUCCESS) goto cleanup;
+
+        st = ll_HMAC_Final(&work_hmac, U, hash_len);
+        if (st != CF_SUCCESS) goto cleanup;
+
+        SECURE_MEMCPY(T, U, hash_len);
+
+        // --- iterations j = 2..c ---
+        for (size_t j = 2; j <= iterations; j++) {
+            // Only reset internal digest state, keep key/pads
+            SECURE_MEMCPY(work_hmac.ipad_ctx, base_hmac.ipad_ctx, ctx->md->ctx_size);
+            SECURE_MEMCPY(work_hmac.opad_ctx, base_hmac.opad_ctx, ctx->md->ctx_size);
+            work_hmac.out_len = 0;
+            work_hmac.isFinalized = 0;
+
+            st = ll_HMAC_Update(&work_hmac, U, hash_len);
+            if (st != CF_SUCCESS) goto cleanup;
+
+            st = ll_HMAC_Final(&work_hmac, U, hash_len);
+            if (st != CF_SUCCESS) goto cleanup;
+
+            for (size_t k = 0; k < hash_len; k++)
+                T[k] ^= U[k];
+        }
+
+        // Copy T into derived key
+        size_t to_copy = (block == l) ? r : hash_len;
+        SECURE_MEMCPY(dk + generated, T, to_copy);
+        generated += to_copy;
+    }
+
+    st = CF_SUCCESS;
+
+cleanup:
+    SECURE_ZERO(T, sizeof(T));
+    SECURE_ZERO(U, sizeof(U));
+    ll_HMAC_Reset(&base_hmac);
+    ll_HMAC_Reset(&work_hmac);
+    return st;
 }
 
 CF_STATUS ll_PBKDF2_Reset(ll_PBKDF2_CTX *ctx) {
@@ -138,10 +228,10 @@ CF_STATUS ll_PBKDF2_Reset(ll_PBKDF2_CTX *ctx) {
         SECURE_FREE(ctx->password, ctx->password_len);
     }
 
-    if (ctx->prk) {
-        if (ctx->prk_len == 0)
+    if (ctx->salt) {
+        if (ctx->salt_len == 0)
             return CF_ERR_CTX_CORRUPT;
-        SECURE_FREE(ctx->prk, ctx->prk_len);
+        SECURE_FREE(ctx->salt, ctx->salt_len);
     }
 
     SECURE_ZERO(ctx->prev_block, sizeof(ctx->prev_block));

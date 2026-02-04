@@ -36,17 +36,6 @@ CF_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const CF_MD *md, const uint8_t *key, si
     ctx->md = md;
     ctx->out_len = md->digest_size != 0 ? md->digest_size : md->default_out_len;
 
-    // allocate low-level internal contexts
-    ctx->ipad_ctx = SECURE_ALLOC(md->ctx_size);
-    if (!ctx->ipad_ctx)
-        return CF_ERR_ALLOC_FAILED;
-
-    ctx->opad_ctx = SECURE_ALLOC(md->ctx_size);
-    if (!ctx->opad_ctx) {
-        SECURE_FREE(ctx->ipad_ctx, md->ctx_size);
-        return CF_ERR_ALLOC_FAILED;
-    }
-
     // normalize key
     if (key_len > md->block_size) {
         if (!md->hash_init_fn(ctx->ipad_ctx, NULL) ||
@@ -88,16 +77,8 @@ CF_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const CF_MD *md, const uint8_t *key, si
     return CF_SUCCESS;
 
 cleanup:
-    if (ctx->ipad_ctx) {
-        SECURE_ZERO(ctx->ipad_ctx, md->ctx_size);
-        SECURE_FREE(ctx->ipad_ctx, md->ctx_size);
-    }
-
-    if (ctx->opad_ctx) {
-        SECURE_ZERO(ctx->opad_ctx, md->ctx_size);
-        SECURE_FREE(ctx->opad_ctx, md->ctx_size);
-    }
-
+    SECURE_ZERO(ctx->ipad_ctx, md->ctx_size);
+    SECURE_ZERO(ctx->opad_ctx, md->ctx_size);
     return CF_ERR_CTX_CORRUPT;
 }
 
@@ -126,7 +107,7 @@ ll_HMAC_CTX* ll_HMAC_InitAlloc(const CF_MD *md, const uint8_t *key, size_t key_l
 }
 
 CF_STATUS ll_HMAC_Update(ll_HMAC_CTX *ctx, const uint8_t *data, size_t data_len) {
-    if (!ctx || !ctx->md || !ctx->ipad_ctx || !data)
+    if (!ctx || !ctx->md || !data)
         return CF_ERR_NULL_PTR;
 
     if (ctx->isFinalized) 
@@ -139,7 +120,7 @@ CF_STATUS ll_HMAC_Update(ll_HMAC_CTX *ctx, const uint8_t *data, size_t data_len)
 }
 
 CF_STATUS ll_HMAC_Final(ll_HMAC_CTX *ctx, uint8_t *digest, size_t digest_len) {
-    if (!ctx || !ctx->md || !ctx->ipad_ctx || !ctx->opad_ctx || !digest)
+    if (!ctx || !ctx->md || !digest)
         return CF_ERR_NULL_PTR;
 
     if (digest_len == 0 && ctx->out_len == 0)
@@ -237,16 +218,8 @@ CF_STATUS ll_HMAC_Reset(ll_HMAC_CTX *ctx) {
 
     int wasHeapAlloc = ctx->isHeapAlloc;
 
-    // Zero and free inner (ipad) and outer (opad) contexts
-    if (ctx->ipad_ctx) {
-        SECURE_FREE(ctx->ipad_ctx, ctx->md->ctx_size);
-        ctx->ipad_ctx = NULL;
-    }
-
-    if (ctx->opad_ctx) {
-        SECURE_FREE(ctx->opad_ctx, ctx->md->ctx_size);
-        ctx->opad_ctx = NULL;
-    }
+    SECURE_ZERO(ctx->ipad_ctx, ctx->md->ctx_size);
+    SECURE_ZERO(ctx->opad_ctx, ctx->md->ctx_size);
 
     // Zero key material and reset fields
     SECURE_ZERO(ctx->key, sizeof(ctx->key));
@@ -288,17 +261,8 @@ CF_STATUS ll_HMAC_CloneCtx(ll_HMAC_CTX *ctx_dest, const ll_HMAC_CTX *ctx_src) {
 
     // Allocate and copy inner/outer contexts
     if (ctx_src->md && ctx_src->md->ctx_size > 0) {
-        ctx_dest->ipad_ctx = SECURE_ALLOC(ctx_src->md->ctx_size);
-        ctx_dest->opad_ctx = SECURE_ALLOC(ctx_src->md->ctx_size);
-
-        if (!ctx_dest->ipad_ctx || !ctx_dest->opad_ctx)
-            return CF_ERR_ALLOC_FAILED;
-
         SECURE_MEMCPY(ctx_dest->ipad_ctx, ctx_src->ipad_ctx, ctx_src->md->ctx_size);
         SECURE_MEMCPY(ctx_dest->opad_ctx, ctx_src->opad_ctx, ctx_src->md->ctx_size);
-    } else {
-        ctx_dest->ipad_ctx = NULL;
-        ctx_dest->opad_ctx = NULL;
     }
 
     // Copy key and metadata

@@ -34,7 +34,8 @@
 extern "C" {
 #endif
 
-#define LL_PBKDF2_MAX_BLOCKS 0xFFFFFFFF  // Arbitrary large max block count
+#define KDF_PBKDF2_MIN_ITERATIONS 1000
+#define LL_PBKDF2_MAX_ITERATION 0xFFFFFFFF  // Arbitrary large max iteration count
 #define LL_PBKDF2_MAX_DKLEN  (1024*1024) // Arbitrary max derived key length
 
 // ============================
@@ -46,11 +47,11 @@ typedef struct _ll_PBKDF2_CTX {
     uint8_t *password;         // Password bytes
     size_t password_len;       
 
+    uint8_t *salt;         // salt bytes
+    size_t salt_len;       
+
     size_t iterations;         // Iteration count
     size_t dk_len;             // Desired output length
-
-    uint8_t *prk;              // Pseudorandom key from Extract
-    size_t prk_len;            
 
     uint8_t prev_block[CF_MAX_DEFAULT_DIGEST_SIZE];  // Last block Ti
     uint32_t block_index;                             // Block counter (1..N)
