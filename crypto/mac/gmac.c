@@ -159,12 +159,10 @@ CF_STATUS ll_GMAC_Verify(
     if (iv_len < AES_GCM_IV_MIN || !IS_VALID_GCM_TAG_SIZE(tag_len))
         return CF_ERR_INVALID_PARAM;
 
-    uint8_t tag[AES_BLOCK_SIZE];
-    SECURE_ZERO(tag, sizeof(tag));
+    uint8_t tag[AES_BLOCK_SIZE] = {0};
 
     CF_STATUS st = CF_SUCCESS;
-    ll_GMAC_CTX ctx;
-    SECURE_ZERO(&ctx, sizeof(ctx));
+    ll_GMAC_CTX ctx = {0};
 
     // Initialize context
     st = ll_GMAC_Init(&ctx, key, iv, iv_len);
@@ -188,7 +186,6 @@ cleanup:
     SECURE_ZERO(tag, sizeof(tag));
     return st;
 }
-
 
 CF_STATUS ll_GMAC_Reset(ll_GMAC_CTX *ctx) {
     if (!ctx || !ctx->key)
@@ -230,4 +227,46 @@ CF_STATUS ll_GMAC_Free(ll_GMAC_CTX **p_ctx) {
     }
 
     return CF_SUCCESS;
+}
+
+CF_STATUS ll_GMAC_CloneCtx(ll_GMAC_CTX *ctx_dest, const ll_GMAC_CTX *ctx_src) {
+    if (!ctx_dest || !ctx_src)
+        return CF_ERR_NULL_PTR;
+
+    ctx_dest->key = ctx_src->key;
+
+    SECURE_MEMCPY(ctx_dest->H, ctx_src->H, sizeof(ctx_dest->H));
+    SECURE_MEMCPY(ctx_dest->J0, ctx_src->J0, sizeof(ctx_dest->J0));
+    SECURE_MEMCPY(ctx_dest->X, ctx_src->X, sizeof(ctx_dest->X));
+
+    ctx_dest->aad_len = ctx_src->aad_len;
+    ctx_dest->isFinalized = ctx_src->isFinalized;
+    ctx_dest->isHeapAlloc = 0; // dst is “new”, caller owns it
+
+    return CF_SUCCESS;
+}
+
+ll_GMAC_CTX* ll_GMAC_CloneCtxAlloc(const ll_GMAC_CTX *ctx_src, CF_STATUS *status) {
+    if (!ctx_src) {
+        if (status) *status = CF_ERR_NULL_PTR;
+        return NULL;
+    }
+
+    // Allocate the destination context
+    ll_GMAC_CTX *ctx_dest = (ll_GMAC_CTX *)SECURE_ALLOC(sizeof(ll_GMAC_CTX));
+    if (!ctx_dest) {
+        if (status) *status = CF_ERR_ALLOC_FAILED;
+        return NULL;
+    }
+
+    // Use the in-place clone function
+    CF_STATUS ret = ll_GMAC_CloneCtx(ctx_dest, ctx_src);
+    if (ret != CF_SUCCESS) {
+        SECURE_FREE(ctx_dest, sizeof(ll_GMAC_CTX));
+        return NULL;
+    }
+
+    ctx_dest->isHeapAlloc = 1; // library owns this memory
+
+    return ctx_dest;
 }

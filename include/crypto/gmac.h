@@ -72,7 +72,6 @@ CF_STATUS ll_GMAC_Reset(ll_GMAC_CTX *ctx);
 // Free internal buffers + heap-allocated GMAC context
 CF_STATUS ll_GMAC_Free(ll_GMAC_CTX **p_ctx);
 
-
 // Clone a GMAC context into an existing destination
 CF_STATUS ll_GMAC_CloneCtx(ll_GMAC_CTX *ctx_dest, const ll_GMAC_CTX *ctx_src);
 

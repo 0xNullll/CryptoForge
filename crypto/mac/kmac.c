@@ -42,42 +42,41 @@
         : ll_cshake256_squeeze((ll_CSHAKE256_CTX*)(ctx)->cshake_ctx, (digest), (len)))
 
 /*
- * See SP800-185 "Appendix A - KMAC, .... in Terms of Keccak[c]"
+ * See NIST SP 800-185, Sections 4–4.3.1 (KMAC) for details on the Keccak[c]-based construction.
  *
- * Inputs are:
- *    K = Key                  (len(K) < 2^2040 bits)
+ * Inputs:
+ *    K = Key                   (len(K) < 2^2040 bits)
  *    X = Input
- *    L = Output length        (0 <= L < 2^2040 bits)
- *    S = Customization String Default="" (len(S) < 2^2040 bits)
+ *    L = Output length         (0 <= L < 2^2040 bits)
+ *    S = Customization String  Default="" (len(S) < 2^2040 bits)
  *
  * KMAC128(K, X, L, S)
  * {
- *     newX = bytepad(encode_string(K), 168) ||  X || right_encode(L).
- *     T = bytepad(encode_string("KMAC") || encode_string(S), 168).
- *     return KECCAK[256](T || newX || 00, L).
+ *     newX = bytepad(encode_string(K), 168) || X || right_encode(L)
+ *     T    = bytepad(encode_string("KMAC") || encode_string(S), 168)
+ *     return KECCAK[256](T || newX || 0x00, L)
  * }
  *
  * KMAC256(K, X, L, S)
  * {
- *     newX = bytepad(encode_string(K), 136) ||  X || right_encode(L).
- *     T = bytepad(encode_string("KMAC") || encode_string(S), 136).
- *     return KECCAK[512](T || newX || 00, L).
+ *     newX = bytepad(encode_string(K), 136) || X || right_encode(L)
+ *     T    = bytepad(encode_string("KMAC") || encode_string(S), 136)
+ *     return KECCAK[512](T || newX || 0x00, L)
  * }
  *
  * KMAC128XOF(K, X, L, S)
  * {
- *     newX = bytepad(encode_string(K), 168) ||  X || right_encode(0).
- *     T = bytepad(encode_string("KMAC") || encode_string(S), 168).
- *     return KECCAK[256](T || newX || 00, L).
+ *     newX = bytepad(encode_string(K), 168) || X || right_encode(0)
+ *     T    = bytepad(encode_string("KMAC") || encode_string(S), 168)
+ *     return KECCAK[256](T || newX || 0x00, L)
  * }
  *
  * KMAC256XOF(K, X, L, S)
  * {
- *     newX = bytepad(encode_string(K), 136) ||  X || right_encode(0).
- *     T = bytepad(encode_string("KMAC") || encode_string(S), 136).
- *     return KECCAK[512](T || newX || 00, L).
+ *     newX = bytepad(encode_string(K), 136) || X || right_encode(0)
+ *     T    = bytepad(encode_string("KMAC") || encode_string(S), 136)
+ *     return KECCAK[512](T || newX || 0x00, L)
  * }
- *
  */
 
 // computes the key for KMAC -> bytepad(encode_string(K), rate)
@@ -220,8 +219,8 @@ CF_STATUS ll_KMAC_Final(ll_KMAC_CTX *ctx, uint8_t *digest, size_t digest_len) {
 
     // Already finalized? Just squeeze again
     if (ctx->isFinalized) {
-        if (digest_len != ctx->out_len)
-            return CF_ERR_INVALID_LEN;
+        if (!ctx->isXOF && digest_len != ctx->out_len)
+            return CF_ERR_INVALID_LEN;  // only enforce for fixed-length KMAC
 
         if (!ll_KMAC_SQUEEZE(ctx, digest, digest_len))
             return CF_ERR_CTX_CORRUPT;
@@ -310,10 +309,8 @@ CF_STATUS ll_KMAC_Verify(
     status = ll_KMAC_Init(&ctx, key, key_len, S, S_len, type);
     if (status != CF_SUCCESS) goto cleanup;
 
-    if (data_len > 0) {
-        status = ll_KMAC_Update(&ctx, data, data_len);
-        if (status != CF_SUCCESS) goto cleanup;
-    }
+    status = ll_KMAC_Update(&ctx, data, data_len);
+    if (status != CF_SUCCESS) goto cleanup;
 
     status = ll_KMAC_Final(&ctx, computed, mac_len);
     if (status != CF_SUCCESS) goto cleanup;
@@ -330,54 +327,6 @@ cleanup:
 
     return status;
 }
-
-// CF_STATUS ll_KMAC_Verify(
-//     const uint8_t *key, size_t key_len,
-//     const uint8_t *data, size_t data_len,
-//     const uint8_t *S, size_t S_len,
-//     const uint8_t *expected_mac,
-//     LL_KMAC_TYPE type) {
-//     if (!key || !data || !expected_mac)
-//         return CF_ERR_NULL_PTR;
-
-//     if (!LL_KMAC_TYPE_IS_VALID(type))
-//         return CF_ERR_INVALID_PARAM;
-
-//     if (LL_KMAC_IS_XOF(type))  // verification only for fixed-length output
-//         return CF_ERR_UNSUPPORTED;
-
-//     CF_STATUS status = CF_SUCCESS;
-//     ll_KMAC_CTX ctx;
-//     uint8_t computed[CF_MAX_DEFAULT_DIGEST_SIZE] = {0};
-
-//     SECURE_ZERO(&ctx, sizeof(ctx));
-
-//     // Initialize
-//     status = ll_KMAC_Init(&ctx, key, key_len, S, S_len, type);
-//     if (status != CF_SUCCESS) goto cleanup;
-
-//     // Update with message data
-//     if (data_len > 0) {
-//         status = ll_KMAC_Update(&ctx, data, data_len);
-//         if (status != CF_SUCCESS) goto cleanup;
-//     }
-
-//     // Determine MAC length based on type
-//     size_t mac_len = (type == LL_KMAC128) ? LL_KMAC_DEFAULT_OUTPUT_LEN_128
-//                                        : LL_KMAC_DEFAULT_OUTPUT_LEN_256;
-
-//     // Finalize
-//     status = ll_KMAC_Final(&ctx, computed, mac_len);
-//     if (status != CF_SUCCESS) goto cleanup;
-
-//     // Constant-time comparison
-//     status = SECURE_MEM_EQUAL(computed, expected_mac, mac_len) ? CF_SUCCESS : CF_ERR_MAC_VERIFY;
-
-// cleanup:
-//     SECURE_ZERO(&ctx, sizeof(ctx));
-//     SECURE_ZERO(computed, sizeof(computed));
-//     return status;
-// }
 
 // Frees internal buffers of a pre-allocated KMAC context
 CF_STATUS ll_KMAC_Reset(ll_KMAC_CTX *ctx) {
@@ -435,7 +384,7 @@ CF_STATUS ll_KMAC_CloneCtx(ll_KMAC_CTX *ctx_dest, const ll_KMAC_CTX *ctx_src) {
     if (!ctx_dest || !ctx_src)
         return CF_ERR_NULL_PTR;
 
-    SECURE_ZERO(ctx_dest, sizeof(*ctx_dest));
+    ll_KMAC_Reset(ctx_dest);
 
     // Clone CSHAKE context if present
     if (ctx_src->cshake_ctx) {
@@ -452,12 +401,10 @@ CF_STATUS ll_KMAC_CloneCtx(ll_KMAC_CTX *ctx_dest, const ll_KMAC_CTX *ctx_src) {
 
     // Copy key and customization arrays
     ctx_dest->key_len = ctx_src->key_len;
-    if (ctx_dest->key_len)
-        SECURE_MEMCPY(ctx_dest->key, ctx_src->key, ctx_dest->key_len);
+    SECURE_MEMCPY(ctx_dest->key, ctx_src->key, sizeof(ctx_dest->key));
 
     ctx_dest->S_len = ctx_src->S_len;
-    if (ctx_dest->S_len)
-        SECURE_MEMCPY(ctx_dest->S, ctx_src->S, ctx_dest->S_len);
+    SECURE_MEMCPY(ctx_dest->S, ctx_src->S, sizeof(ctx_dest->S));
 
     // Copy output length
     ctx_dest->out_len = ctx_src->out_len;
@@ -467,7 +414,7 @@ CF_STATUS ll_KMAC_CloneCtx(ll_KMAC_CTX *ctx_dest, const ll_KMAC_CTX *ctx_src) {
     ctx_dest->customAbsorbed   = ctx_src->customAbsorbed;
     ctx_dest->emptyNameCustom  = ctx_src->emptyNameCustom;
     ctx_dest->isXOF            = ctx_src->isXOF;
-    ctx_dest->isHeapAlloc      = 0; // always caller-managed
+    ctx_dest->isHeapAlloc      = 0; // dst is “new”, caller owns it
 
     // Copy KMAC type
     ctx_dest->type = ctx_src->type;

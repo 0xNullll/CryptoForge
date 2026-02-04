@@ -52,6 +52,10 @@ typedef struct _CF_MAC {
     CF_STATUS (*mac_update_fn)(struct _CF_MAC_CTX *ctx, const uint8_t *data, size_t data_len);
     CF_STATUS (*mac_final_fn)(struct _CF_MAC_CTX *ctx, uint8_t *tag, size_t tag_len);
     CF_STATUS (*mac_reset_fn)(struct _CF_MAC_CTX *ctx);
+    CF_STATUS (*mac_verify_fn)(struct _CF_MAC_CTX *ctx,
+                            const uint8_t *data, size_t data_len,
+                            const uint8_t *expected_tag, size_t expected_tag_len,
+                            const struct _CF_MAC_OPTS *opts);
 } CF_MAC;
 
 // ============================
@@ -107,6 +111,13 @@ CF_API CF_STATUS CF_MAC_Final(CF_MAC_CTX *ctx, uint8_t *tag, size_t tag_len);
 
 CF_API CF_STATUS CF_MAC_Reset(CF_MAC_CTX *ctx);
 CF_API CF_STATUS CF_MAC_Free(CF_MAC_CTX **p_ctx);
+
+// Verifies a MAC tag against expected output.
+CF_API CF_STATUS CF_MAC_Verify(const CF_MAC *mac,
+                               const uint8_t *key, size_t key_len,
+                               const uint8_t *data, size_t data_len,
+                               const uint8_t *expected_mac, size_t expected_mac_len,
+                               const CF_MAC_OPTS *opts, uint32_t subflags);
 
 // ============================
 // One-shot MAC computation

@@ -175,6 +175,7 @@ typedef enum {
 #define CF_MAC_IS_GMAC(id)    (((id) & CF_MAC_FLAG_MASK) == CF_GMAC)
 #define CF_MAC_IS_XOF(id)     (((id) & CF_MAC_XOF_FLAG) != 0)
 #define CF_MAC_GET_HASH(id)   ((id) & CF_MAC_HASH_MASK)
+
 // ======================
 // 3. RNG / DRBG Flags
 // ======================
