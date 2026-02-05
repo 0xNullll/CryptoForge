@@ -35,7 +35,7 @@ extern "C" {
 #endif
 
 #define KDF_PBKDF2_MIN_ITERATIONS 1000
-#define LL_PBKDF2_MAX_ITERATION 0xFFFFFFFF  // Arbitrary large max iteration count
+#define LL_PBKDF2_MAX_ITERATION 0xFFFFFFFF
 #define LL_PBKDF2_MAX_DKLEN  (1024*1024) // Arbitrary max derived key length
 
 // ============================

@@ -1,6 +1,6 @@
 /*
  * CryptoForge - sha256.h / SHA-256 (SHA-256, and SHA-224) Hash Interface
- * Copyright (C) 2025 0xNullll
+ * Copyright (C) 2026 0xNullll
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 #ifndef SHA2_H
 #define SHA2_H
 
-#include "hash_common.h"
+#include "../utils/bitops.h"
 #include "../config/crypto_config.h"
 #include "../utils/misc.h"
 #include "../utils/mem.h"

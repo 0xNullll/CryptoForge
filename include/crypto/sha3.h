@@ -1,6 +1,6 @@
 /*
  * CryptoForge - sha3.h / SHA-3 (SHA-3-224, SHA-3-256, SHA3-384, and SHA3-512) Hash Interface
- * Copyright (C) 2025 0xNullll
+ * Copyright (C) 2026 0xNullll
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 #ifndef SHA3_H
 #define SHA3_H
 
-#include "hash_common.h"
+#include "../utils/bitops.h"
 #include "../config/crypto_config.h"
 #include "../utils/misc.h"
 #include "keccak.h"

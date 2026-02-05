@@ -3,9 +3,9 @@
 
 #include "../utils/mem.h"
 #include "../utils/misc.h"
-#include "../config/libs.h"
+#include "../utils/bitops.h"
 
-#include "aes_common.h"
+#include "../config/libs.h"
 
 #ifdef __cplusplus
 extern "C" {

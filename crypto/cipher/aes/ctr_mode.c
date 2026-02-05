@@ -20,11 +20,11 @@ bool ll_AES_CTR_Process(
             if (!ll_AES_EncryptBlock(key, counter, keystream)) goto cleanup;
 
             // increment 16-byte counter (big-endian)
-            uint64_t hi = AES_LOAD64(counter);
-            uint64_t lo = AES_LOAD64(counter + 8);
+            uint64_t hi = LOAD64(counter);
+            uint64_t lo = LOAD64(counter + 8);
             if (++lo == 0) hi++;
-            AES_STORE64(counter, hi);
-            AES_STORE64(counter + 8, lo);
+            STORE64(counter, hi);
+            STORE64(counter + 8, lo);
 
             keystream_used = 0;
         }

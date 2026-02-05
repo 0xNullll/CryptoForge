@@ -52,6 +52,14 @@
   #define U64(C) C##ULL
 #endif
 
+#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
+#define CPU_BIG_ENDIAN 1
+#elif defined(_BIG_ENDIAN) || defined(__BIG_ENDIAN__) || defined(__ARMEB__) || defined(__MIPSEB__)
+#define CPU_BIG_ENDIAN 1
+#else
+#define CPU_BIG_ENDIAN 0
+#endif
+
 #ifndef UNUSED
 #define UNUSED(x) ((void)(x))  /* silence unused variable warnings */
 #endif

@@ -1,6 +1,6 @@
 /*
  * CryptoForge - sha1.h / SHA-1 Hash Interface
- * Copyright (C) 2025 0xNullll
+ * Copyright (C) 2026 0xNullll
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 #ifndef SHA1_H
 #define SHA1_H
 
-#include "hash_common.h"
+#include "../utils/bitops.h"
 #include "../config/crypto_config.h"
 #include "../utils/mem.h"
 
