@@ -1,5 +1,5 @@
 /*
- * CryptoForge - hash_common.h / Common Hash Utilities
+ * CryptoForge - bitopts.h / bit operation Utilities
  * Copyright (C) 2025 0xNullll
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
@@ -16,13 +16,16 @@
  * Project repository: https://github.com/0xNullll/CryptoForge
  */
 
-#ifndef HASH_COMMON_H
-#define HASH_COMMON_H
+#ifndef BITOPS_h
+#define BITOPS_h
 
+#include "mem.h"
+#include "misc.h" 
 #include "../config/libs.h"
-#include "../config/crypto_config.h"
-#include "../utils/mem.h"
-#include "../utils/misc.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // =======================
 // Bit rotation helpers
@@ -52,47 +55,37 @@ static FORCE_INLINE uint64_t rotr64(uint64_t x, uint64_t n) {
 #define ROTL64(x,n) rotl64(x,n)
 #define ROTR64(x,n) rotr64(x,n)
 
-
 // =======================
 // Big-endian conversions
 // =======================
 #if CPU_BIG_ENDIAN
-
 // Big-endian CPU: memory already matches the hash format
 static FORCE_INLINE uint32_t BE32(const uint8_t *p) { 
     uint32_t x;
-    SECURE_MEMCPY(x, p, sizeof(x));
-    return x;
-}
-
-static FORCE_INLINE void PUT_BE32(uint8_t *p, uint32_t x) { 
-    *(uint32_t*)p = x; 
+    SECURE_MEMCPY(&x, p, sizeof(x));
+    return x; 
 }
 
 static FORCE_INLINE uint64_t BE64(const uint8_t *p) { 
-    uint32_t x;
-    SECURE_MEMCPY(x, p, sizeof(x));
-    return x;
+    uint64_t x;
+    SECURE_MEMCPY(&x, p, sizeof(x));
+    return x; 
+}
+
+static FORCE_INLINE void PUT_BE32(uint8_t *p, uint32_t x) { 
+    SECURE_MEMCPY(p, &x, sizeof(x));
 }
 
 static FORCE_INLINE void PUT_BE64(uint8_t *p, uint64_t x) { 
-    *(uint64_t*)p = x; 
+    SECURE_MEMCPY(p, &x, sizeof(x));
 }
 #else
-
 // Little-endian CPU: convert manually
 static FORCE_INLINE uint32_t BE32(const uint8_t *p) {
     return ((uint32_t)p[0] << 24) |
            ((uint32_t)p[1] << 16) |
            ((uint32_t)p[2] << 8)  |
            ((uint32_t)p[3]);
-}
-
-static FORCE_INLINE void PUT_BE32(uint8_t *p, uint32_t x) {
-    p[0] = (uint8_t)(x >> 24);
-    p[1] = (uint8_t)(x >> 16);
-    p[2] = (uint8_t)(x >> 8);
-    p[3] = (uint8_t)x;
 }
 
 static FORCE_INLINE uint64_t BE64(const uint8_t *p) {
@@ -106,6 +99,13 @@ static FORCE_INLINE uint64_t BE64(const uint8_t *p) {
            ((uint64_t)p[7]);
 }
 
+static FORCE_INLINE void PUT_BE32(uint8_t *p, uint32_t x) {
+    p[0] = (uint8_t)(x >> 24);
+    p[1] = (uint8_t)(x >> 16);
+    p[2] = (uint8_t)(x >> 8);
+    p[3] = (uint8_t)x;
+}
+
 static FORCE_INLINE void PUT_BE64(uint8_t *p, uint64_t x) {
     p[0] = (uint8_t)(x >> 56);
     p[1] = (uint8_t)(x >> 48);
@@ -116,7 +116,6 @@ static FORCE_INLINE void PUT_BE64(uint8_t *p, uint64_t x) {
     p[6] = (uint8_t)(x >> 8);
     p[7] = (uint8_t)x;
 }
-
 #endif
 
 #define LOAD32(p)    BE32((const uint8_t*)(p))
@@ -192,37 +191,8 @@ static FORCE_INLINE void TWISTED_PUT64(uint8_t *p, uint64_t x) {
 #define TWISTED_LOAD64(p)    TWISTED64((const uint8_t*)(p))
 #define TWISTED_STORE64(p,x) TWISTED_PUT64((uint8_t*)(p), x)
 
-// =======================
-// Word <-> Byte conversions
-// =======================
-#if CPU_BIG_ENDIAN
-// On big-endian CPUs, swap bytes to little-endian
-static FORCE_INLINE void HASH_PACK32(uint8_t *out, const uint32_t *in, unsigned int len) {
-    for (unsigned int i = 0, j = 0; j < len; i++, j += 4) {
-        out[j]   = (uint8_t)(in[i] & 0xff);
-        out[j+1] = (uint8_t)((in[i] >> 8) & 0xff);
-        out[j+2] = (uint8_t)((in[i] >>16) & 0xff);
-        out[j+3] = (uint8_t)((in[i] >>24) & 0xff);
-    }
-}
-
-static FORCE_INLINE void HASH_UNPACK32(uint32_t *out, const uint8_t *in, unsigned int len) {
-    for (unsigned int i = 0, j = 0; j < len; i++, j += 4) {
-        out[i] = ((uint32_t)in[j]) |
-                 ((uint32_t)in[j+1] << 8) |
-                 ((uint32_t)in[j+2] << 16) |
-                 ((uint32_t)in[j+3] << 24);
-    }
-}
-#else
-// On little-endian CPUs, memory matches the format -> use direct memcpy
-static FORCE_INLINE void HASH_PACK32(uint8_t *out, const uint32_t *in, unsigned int len) {
-    SECURE_MEMCPY(out, in, len);
-}
-
-static FORCE_INLINE void HASH_UNPACK32(uint32_t *out, const uint8_t *in, unsigned int len) {
-    SECURE_MEMCPY(out, in, len);
+#ifdef __cplusplus
 }
 #endif
 
-#endif // HASH_COMMON_H
+#endif // BITOPS_h

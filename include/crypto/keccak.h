@@ -19,7 +19,7 @@
 #ifndef KECCAK_H
 #define KECCAK_H
 
-#include "hash_common.h"
+#include "../utils/bitops.h"
 #include "../config/crypto_config.h"
 #include "../utils/misc.h"
 #include "../utils/mem.h"

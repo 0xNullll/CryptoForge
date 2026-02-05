@@ -36,10 +36,10 @@ static void ll_AES_CMAC_MultiplyByU(const uint8_t in[AES_BLOCK_SIZE], uint8_t ou
 
     // Process 4-byte chunks
     for (int i = AES_BLOCK_SIZE - 4; i >= 0; i -= 4) {
-        uint32_t in32 = AES_LOAD32(&in[i]);
+        uint32_t in32 = LOAD32(&in[i]);
         uint32_t new_overflow = in32 >> 31;
         in32 = (in32 << 1) | overflow;
-        AES_STORE32(&out[i], in32);
+        STORE32(&out[i], in32);
         overflow = new_overflow;
     }
 

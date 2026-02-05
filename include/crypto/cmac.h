@@ -21,10 +21,11 @@
 
 #include "../utils/mem.h"
 #include "../utils/cf_status.h"
+#include "../utils/bitops.h"
+
 #include "../config/libs.h"
 
 #include "aes_core.h"
-#include "aes_common.h"
 
 #ifdef __cplusplus
 extern "C" {
