@@ -52,31 +52,26 @@ void ll_GHASH_Process(
 
 bool ll_AES_GCTR_Process(const ll_AES_KEY *key, uint8_t ICB[AES_BLOCK_SIZE], const uint8_t *X, size_t X_len, uint8_t *Y);
 
-bool ll_AES_GCM_Encrypt(
-    const ll_AES_KEY *key,
-    const uint8_t *iv,
-    size_t iv_len,
-    const uint8_t *aad,
-    size_t aad_len,
-    const uint8_t *in,
-    size_t in_len,
-    uint8_t *out,
-    uint8_t *tag,
-    size_t tag_len
-);
+typedef struct {
+    const ll_AES_KEY *key;       // AES key
+    uint8_t H[AES_BLOCK_SIZE];   // GHASH subkey
+    uint8_t J0[AES_BLOCK_SIZE];  // initial counter block
+    uint8_t ctr[AES_BLOCK_SIZE]; // current counter block for GCTR
+    uint8_t X[AES_BLOCK_SIZE];   // GHASH accumulator
+    size_t aad_len;              // total AAD length
+    size_t data_len;             // total ciphertext/plaintext length
+} ll_AES_GCM_CTX;
 
-bool ll_AES_GCM_Decrypt(
-    const ll_AES_KEY *key,
-    const uint8_t *iv,
-    size_t iv_len,
-    const uint8_t *aad,
-    size_t aad_len,
-    const uint8_t *in,
-    size_t in_len,
-    uint8_t *out,
-    const uint8_t *tag,
-    size_t tag_len
-);
+bool ll_AES_GCM_Init(ll_AES_GCM_CTX *ctx,
+                     const ll_AES_KEY *key,
+                     const uint8_t *iv, size_t iv_len,
+                     const uint8_t *aad, size_t aad_len);
+
+bool ll_AES_GCM_Update(ll_AES_GCM_CTX *ctx,
+                            const uint8_t *in, size_t in_len,
+                            uint8_t *out, bool encrypt);
+
+bool ll_AES_GCM_Final(ll_AES_GCM_CTX *ctx, uint8_t *tag, size_t tag_len);
 
 #ifdef __cplusplus
 }

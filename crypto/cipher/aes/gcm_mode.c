@@ -96,208 +96,128 @@ bool ll_AES_GCTR_Process(
     return true;
 }
 
-bool ll_AES_GCM_Encrypt(
-    const ll_AES_KEY *key,
-    const uint8_t *iv,
-    size_t iv_len,
-    const uint8_t *aad,
-    size_t aad_len,
-    const uint8_t *in,
-    size_t in_len,
-    uint8_t *out,
-    uint8_t *tag,
-    size_t tag_len) {
-
-    if (!key || !iv || iv_len < AES_GCM_IV_MIN || !tag) return false;
-    if (!IS_VALID_GCM_TAG_SIZE(tag_len)) return false;
-
-    // Length limits (from NIST SP 800‑38D)
-    if (aad_len > ((U64(0x1) << 61) - 1)) return false;
-    if (in_len  > ((U64(0x1) << 36) - 32)) return false;
-
-    // Prevent NULL misuse
-    if (in_len != 0 && !in) return false;
-    if (aad_len != 0 && !aad) return false;
-
-    const uint8_t zero_block[AES_BLOCK_SIZE] = {0};
-    uint8_t H[AES_BLOCK_SIZE] = {0};
-    uint8_t J0[AES_BLOCK_SIZE] = {0};
-
-    // 1. Compute H = AES_K(0^128)
-    if (!ll_AES_EncryptBlock(key, zero_block, H)) return false;
-
-    // 2. Prepare initial counter block J0
-    if (iv_len == 12) { // 12-byte IV (most common)
-        SECURE_MEMCPY(J0, iv, 12);
-        J0[12] = 0x00;
-        J0[13] = 0x00;
-        J0[14] = 0x00;
-        J0[15] = 0x01;
-    } else { // arbitrary IV length
-        uint8_t X[AES_BLOCK_SIZE] = {0};
-        ll_GHASH_Process(H, iv, iv_len, X);
-
-        // Append IV length (64-bit) in bits as last 8 bytes
-        uint8_t len_block[AES_BLOCK_SIZE] = {0};
-        uint64_t iv_bits = iv_len * 8;
-        for (int i = 0; i < 8; i++)
-            len_block[8 + i] = (uint8_t)((iv_bits >> (56 - i*8)) & 0xFF);
-
-        ll_GHASH_Process(H, len_block, AES_BLOCK_SIZE, X);
-        SECURE_MEMCPY(J0, X, AES_BLOCK_SIZE);
-        SECURE_ZERO(X, sizeof(X));
-    }
-
-    // 3. Prepare GCTR counter block
-    uint8_t ctr[AES_BLOCK_SIZE] = {0};
-    SECURE_MEMCPY(ctr, J0, AES_BLOCK_SIZE);
-    Inc32(ctr);  // start from J0 + 1
-
-    // 4. Encrypt plaintext
-    if (in_len > 0 && out && !ll_AES_GCTR_Process(key, ctr, in, in_len, out))
+// --- Initialization with optional AAD ---
+bool ll_AES_GCM_Init(ll_AES_GCM_CTX *ctx,
+                     const ll_AES_KEY *key,
+                     const uint8_t *iv, size_t iv_len,
+                     const uint8_t *aad, size_t aad_len) {
+    if (!ctx || !key || !iv || iv_len < AES_GCM_IV_MIN)
         return false;
 
-    // 5. Compute GHASH over AAD + ciphertext
-    uint8_t X[AES_BLOCK_SIZE] = {0};
-    if (aad_len > 0) ll_GHASH_Process(H, aad, aad_len, X);
-    if (in_len  > 0 && out) ll_GHASH_Process(H, out, in_len, X);
-
-    // 6. Append lengths of AAD and ciphertext in bits
-    uint8_t len_block[AES_BLOCK_SIZE] = {0};
-    uint64_t aad_bits = aad_len * 8;
-    uint64_t ct_bits  = in_len  * 8;
-
-    for (int i = 0; i < 8; i++)      len_block[i]     = (uint8_t)((aad_bits >> (56 - i*8)) & 0xFF);
-    for (int i = 0; i < 8; i++)      len_block[8 + i] = (uint8_t)((ct_bits  >> (56 - i*8)) & 0xFF);
-
-    for (int i = 0; i < AES_BLOCK_SIZE; i++)
-        X[i] ^= len_block[i];
-
-    ll_gcm_mult(X, X, H);  // multiply by H in GF(2^128)
-
-    // 7. Compute tag: T = AES_K(J0) XOR GHASH
-    uint8_t EK0[AES_BLOCK_SIZE] = {0};
-    if (!ll_AES_EncryptBlock(key, J0, EK0)) return false;
-
-    for (size_t i = 0; i < tag_len && i < AES_BLOCK_SIZE; i++)
-        tag[i] = EK0[i] ^ X[i];
-
-    SECURE_ZERO(H, sizeof(H));
-    SECURE_ZERO(J0, sizeof(J0));
-    SECURE_ZERO(ctr, sizeof(ctr));
-    SECURE_ZERO(X, sizeof(X));
-    SECURE_ZERO(len_block, sizeof(len_block));
-    SECURE_ZERO(EK0, sizeof(EK0));
-
-    return true;
-}
-
-bool ll_AES_GCM_Decrypt(
-    const ll_AES_KEY *key,
-    const uint8_t *iv,
-    size_t iv_len,
-    const uint8_t *aad,
-    size_t aad_len,
-    const uint8_t *in,
-    size_t in_len,
-    uint8_t *out,
-    const uint8_t *tag,
-    size_t tag_len) {
-
-    if (!key || !iv || iv_len < AES_GCM_IV_MIN || !tag) return false;
-    if (!IS_VALID_GCM_TAG_SIZE(tag_len)) return false;
-
-    // Prevent NULL misuse
-    if (in_len != 0 && !in) return false;
-    if (aad_len != 0 && !aad) return false;
-
     // Length limits (from NIST SP 800‑38D)
     if (aad_len > ((U64(0x1) << 61) - 1)) return false;
-    if (in_len  > ((U64(0x1) << 36) - 32)) return false;
 
-    bool ok = false;
-
-    const uint8_t zero_block[AES_BLOCK_SIZE] = {0};
-    uint8_t H[AES_BLOCK_SIZE] = {0};
-    uint8_t J0[AES_BLOCK_SIZE] = {0};
+    ctx->key = key;
 
     // 1. Compute H = AES_K(0^128)
-    if (!ll_AES_EncryptBlock(key, zero_block, H)) goto cleanup;
+    uint8_t zero_block[AES_BLOCK_SIZE] = {0};
+    if (!ll_AES_EncryptBlock(key, zero_block, ctx->H))
+        return false;
 
-    // 2. Prepare initial counter block J0
-    if (iv_len == 12) { // 12-byte IV (fast path)
-        SECURE_MEMCPY(J0, iv, 12);
-        J0[12] = 0x00;
-        J0[13] = 0x00;
-        J0[14] = 0x00;
-        J0[15] = 0x01;
-    } else { // arbitrary IV
-        uint8_t X[AES_BLOCK_SIZE] = {0};
-        ll_GHASH_Process(H, iv, iv_len, X);
+    // 2. Prepare J0
+    if (iv_len == 12) {
+        SECURE_MEMCPY(ctx->J0, iv, 12);
+        ctx->J0[12] = 0; ctx->J0[13] = 0; ctx->J0[14] = 0; ctx->J0[15] = 1;
+    } else {
+        uint8_t tmp[AES_BLOCK_SIZE] = {0};
+        ll_GHASH_Process(ctx->H, iv, iv_len, tmp);
 
-        // Append IV length (64-bit) in bits
         uint8_t len_block[AES_BLOCK_SIZE] = {0};
         uint64_t iv_bits = iv_len * 8;
-        for (int i = 0; i < 8; i++)
-            len_block[8 + i] = (uint8_t)((iv_bits >> (56 - i*8)) & 0xFF);
+        for (int i = 0; i < 8; i++) len_block[8+i] = (uint8_t)((iv_bits >> (56 - i*8)) & 0xFF);
 
-        ll_GHASH_Process(H, len_block, AES_BLOCK_SIZE, X);
-        SECURE_MEMCPY(J0, X, AES_BLOCK_SIZE);
-        SECURE_ZERO(X, sizeof(X));
+        ll_GHASH_Process(ctx->H, len_block, AES_BLOCK_SIZE, tmp);
+        SECURE_MEMCPY(ctx->J0, tmp, AES_BLOCK_SIZE);
+        SECURE_ZERO(tmp, sizeof(tmp));
         SECURE_ZERO(len_block, sizeof(len_block));
     }
 
-    // 3. Compute GHASH over AAD + ciphertext
-    uint8_t X[AES_BLOCK_SIZE] = {0};
-    if (aad_len > 0) ll_GHASH_Process(H, aad, aad_len, X);
-    if (in_len  > 0) ll_GHASH_Process(H, in, in_len, X);
+    SECURE_MEMCPY(ctx->ctr, ctx->J0, AES_BLOCK_SIZE);
+    Inc32(ctx->ctr); // start counter at J0 + 1
+    SECURE_ZERO(ctx->X, sizeof(ctx->X));
 
-    // 4. Append lengths of AAD and ciphertext in bits
+    // 3. Process AAD immediately if present
+    if (aad_len && aad) {
+        ll_GHASH_Process(ctx->H, aad, aad_len, ctx->X);
+        ctx->aad_len = aad_len;
+    }
+
+    ctx->data_len = 0;
+    return true;
+}
+
+// --- Data encryption/decryption update ---
+bool ll_AES_GCM_Update(ll_AES_GCM_CTX *ctx,
+                       const uint8_t *in, size_t in_len,
+                       uint8_t *out, bool encrypt)  {
+    if (!ctx) return false;
+
+    // If in_len == 0, do nothing (mimics GMAC)
+    if (in_len == 0)
+        return true;
+
+    // Length limits (from NIST SP 800‑38D)
+    if (in_len > ((U64(0x1) << 36) - 32))
+        return false;
+
+    // Ensure non-NULL buffers for non-zero length
+    if (!in || !out) return false;
+
+    bool ok = false;
+
+    if (encrypt) {
+        if (!ll_AES_GCTR_Process(ctx->key, ctx->ctr, in, in_len, out))
+            goto cleanup;
+        ll_GHASH_Process(ctx->H, out, in_len, ctx->X);
+    } else {
+        ll_GHASH_Process(ctx->H, in, in_len, ctx->X);
+        if (!ll_AES_GCTR_Process(ctx->key, ctx->ctr, in, in_len, out))
+            goto cleanup;
+    }
+
+    ctx->data_len += in_len;
+    ok = true;
+
+cleanup:
+    if (!ok) {
+        // Only wipe context on failure
+        SECURE_ZERO(ctx, sizeof(*ctx));
+    }
+
+    return ok;
+}
+
+// --- Final tag computation ---
+bool ll_AES_GCM_Final(ll_AES_GCM_CTX *ctx, uint8_t *tag, size_t tag_len) {
+    if (!ctx || !tag || !IS_VALID_GCM_TAG_SIZE(tag_len)) return false;
+
+    bool ok = false;
+
+    // Append lengths
     uint8_t len_block[AES_BLOCK_SIZE] = {0};
-    uint64_t aad_bits = aad_len * 8;
-    uint64_t ct_bits  = in_len  * 8;
+    uint64_t aad_bits = ctx->aad_len * 8;
+    uint64_t data_bits = ctx->data_len * 8;
 
     for (int i = 0; i < 8; i++)      len_block[i]     = (uint8_t)((aad_bits >> (56 - i*8)) & 0xFF);
-    for (int i = 0; i < 8; i++)      len_block[8 + i] = (uint8_t)((ct_bits  >> (56 - i*8)) & 0xFF);
+    for (int i = 0; i < 8; i++)      len_block[8 + i] = (uint8_t)((data_bits >> (56 - i*8)) & 0xFF);
 
     for (int i = 0; i < AES_BLOCK_SIZE; i++)
-        X[i] ^= len_block[i];
+        ctx->X[i] ^= len_block[i];
 
-    ll_gcm_mult(X, X, H);  // multiply by H in GF(2^128)
+    ll_gcm_mult(ctx->X, ctx->X, ctx->H);
 
-    // 5. Compute expected tag: T' = AES_K(J0) XOR GHASH
+    // Compute final tag
     uint8_t EK0[AES_BLOCK_SIZE] = {0};
-    if (!ll_AES_EncryptBlock(key, J0, EK0)) goto cleanup;
+    if (!ll_AES_EncryptBlock(ctx->key, ctx->J0, EK0))
+        goto cleanup;
 
-    uint8_t computed_tag[AES_BLOCK_SIZE] = {0};
     for (size_t i = 0; i < tag_len && i < AES_BLOCK_SIZE; i++)
-        computed_tag[i] = EK0[i] ^ X[i];
-
-    // 6. Constant-time tag comparison
-    if (!SECURE_MEM_EQUAL(tag, computed_tag, tag_len)) goto cleanup; // tag mismatch
-
-    // 7. Decrypt ciphertext using GCTR
-    if (in_len > 0 && out) {
-        uint8_t ctr[AES_BLOCK_SIZE] = {0};
-        SECURE_MEMCPY(ctr, J0, AES_BLOCK_SIZE);
-
-        Inc32(ctr);  // start from J0 + 1
-        if (!ll_AES_GCTR_Process(key, ctr, in, in_len, out))
-            goto cleanup;
-
-        SECURE_ZERO(ctr, sizeof(ctr));
-    }
+        tag[i] = EK0[i] ^ ctx->X[i];
 
     ok = true;
 
 cleanup:
-
-    SECURE_ZERO(H, sizeof(H));
-    SECURE_ZERO(J0, sizeof(J0));
-    SECURE_ZERO(X, sizeof(X));
-    SECURE_ZERO(len_block, sizeof(len_block));
     SECURE_ZERO(EK0, sizeof(EK0));
-    SECURE_ZERO(computed_tag, sizeof(computed_tag));
-
+    SECURE_ZERO(ctx, sizeof(*ctx)); // force wipe any sensitive data
     return ok;
 }
