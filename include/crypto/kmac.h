@@ -111,8 +111,8 @@ CF_STATUS ll_KMAC_Verify(
     const uint8_t *key, size_t key_len,
     const uint8_t *data, size_t data_len,
     const uint8_t *S, size_t S_len,
-    const uint8_t *expected_mac,
-    size_t expected_mac_len,   // allow arbitrary tag length
+    const uint8_t *expected_tag,
+    size_t expected_tag_len,   // allow arbitrary tag length
     LL_KMAC_TYPE type);
 
 // Resets a KMAC context to its initial state with the same key and customization strings.

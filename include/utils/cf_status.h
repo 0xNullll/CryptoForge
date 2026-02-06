@@ -78,6 +78,7 @@ typedef enum {
     CF_ERR_MAC_BASE_ERROR      = CF_ERR_MAC_BASE,
     CF_ERR_MAC_FINALIZED,                            // update after final()
     CF_ERR_MAC_VERIFY,                               // HMAC verification failed
+    CF_ERR_MAC_INVALID_KEY_LEN,                      // poly1305 key length is invalid
     CF_ERR_MAC_BAD_TAG_LEN,                          // tag length is not recommended and unsafe
     CF_ERR_MAC_BAD_IV_LEN,                           // iv length is not recommended and unsafe
     CF_ERR_MAC_STATE_INVALID,                        // internal context/state invalid

@@ -60,35 +60,42 @@ static FORCE_INLINE uint64_t rotr64(uint64_t x, uint64_t n) {
 // =======================
 #if CPU_BIG_ENDIAN
 // Big-endian CPU: memory already matches the hash format
-static FORCE_INLINE uint32_t BE32(const uint8_t *p) { 
+static FORCE_INLINE uint32_t BE32BE(const uint8_t *p) { 
     uint32_t x;
     SECURE_MEMCPY(&x, p, sizeof(x));
     return x; 
 }
 
-static FORCE_INLINE uint64_t BE64(const uint8_t *p) { 
+static FORCE_INLINE void PUT32BE(uint8_t *p, uint32_t x) { 
+    SECURE_MEMCPY(p, &x, sizeof(x));
+}
+
+static FORCE_INLINE uint64_t BE64BE(const uint8_t *p) { 
     uint64_t x;
     SECURE_MEMCPY(&x, p, sizeof(x));
     return x; 
 }
 
-static FORCE_INLINE void PUT_BE32(uint8_t *p, uint32_t x) { 
-    SECURE_MEMCPY(p, &x, sizeof(x));
-}
-
-static FORCE_INLINE void PUT_BE64(uint8_t *p, uint64_t x) { 
+static FORCE_INLINE void PUT64BE(uint8_t *p, uint64_t x) { 
     SECURE_MEMCPY(p, &x, sizeof(x));
 }
 #else
 // Little-endian CPU: convert manually
-static FORCE_INLINE uint32_t BE32(const uint8_t *p) {
+static FORCE_INLINE uint32_t BE32BE(const uint8_t *p) {
     return ((uint32_t)p[0] << 24) |
            ((uint32_t)p[1] << 16) |
            ((uint32_t)p[2] << 8)  |
            ((uint32_t)p[3]);
 }
 
-static FORCE_INLINE uint64_t BE64(const uint8_t *p) {
+static FORCE_INLINE void PUT32BE(uint8_t *p, uint32_t x) {
+    p[0] = (uint8_t)(x >> 24);
+    p[1] = (uint8_t)(x >> 16);
+    p[2] = (uint8_t)(x >> 8);
+    p[3] = (uint8_t)x;
+}
+
+static FORCE_INLINE uint64_t BE64BE(const uint8_t *p) {
     return ((uint64_t)p[0] << 56) |
            ((uint64_t)p[1] << 48) |
            ((uint64_t)p[2] << 40) |
@@ -99,14 +106,7 @@ static FORCE_INLINE uint64_t BE64(const uint8_t *p) {
            ((uint64_t)p[7]);
 }
 
-static FORCE_INLINE void PUT_BE32(uint8_t *p, uint32_t x) {
-    p[0] = (uint8_t)(x >> 24);
-    p[1] = (uint8_t)(x >> 16);
-    p[2] = (uint8_t)(x >> 8);
-    p[3] = (uint8_t)x;
-}
-
-static FORCE_INLINE void PUT_BE64(uint8_t *p, uint64_t x) {
+static FORCE_INLINE void PUT64BE(uint8_t *p, uint64_t x) {
     p[0] = (uint8_t)(x >> 56);
     p[1] = (uint8_t)(x >> 48);
     p[2] = (uint8_t)(x >> 40);
@@ -118,10 +118,10 @@ static FORCE_INLINE void PUT_BE64(uint8_t *p, uint64_t x) {
 }
 #endif
 
-#define LOAD32(p)    BE32((const uint8_t*)(p))
-#define STORE32(p,x) PUT_BE32((uint8_t*)(p), x)
-#define LOAD64(p)    BE64((const uint8_t*)(p))
-#define STORE64(p,x) PUT_BE64((uint8_t*)(p), x)
+#define LOAD32BE(p)    BE32BE((const uint8_t*)(p))
+#define STORE32BE(p,x) PUT32BE((uint8_t*)(p), x)
+#define LOAD64BE(p)    BE64BE((const uint8_t*)(p))
+#define STORE64BE(p,x) PUT64BE((uint8_t*)(p), x)
 
 // =======================
 // Twisted load/store helpers
@@ -130,41 +130,41 @@ static FORCE_INLINE void PUT_BE64(uint8_t *p, uint64_t x) {
 // =======================
 #if CPU_BIG_ENDIAN
 // big-endian CPU: memory matches algorithm -> no-op
-static FORCE_INLINE uint32_t TWISTED32(const uint8_t *p) {
+static FORCE_INLINE uint32_t BE32LE(const uint8_t *p) {
     uint32_t x;
     SECURE_MEMCPY(p, x, sizeof(x));
     return x;
 }
 
-static FORCE_INLINE void TWISTED_PUT32(uint8_t *p, uint32_t x) {
+static FORCE_INLINE void PUT32LE(uint8_t *p, uint32_t x) {
     SECURE_MEMCPY(p, x, sizeof(x));
 }
 
-static FORCE_INLINE uint64_t TWISTED64(const uint8_t *p) {
+static FORCE_INLINE uint64_t BE64LE(const uint8_t *p) {
     uint64_t x;
     SECURE_MEMCPY(p, x, sizeof(x));
     return x;
 }
 
-static FORCE_INLINE void TWISTED_PUT64(uint8_t *p, uint64_t x) {
+static FORCE_INLINE void PUT64LE(uint8_t *p, uint64_t x) {
     SECURE_MEMCPY(p, x, sizeof(x));
 }
 #else
-static FORCE_INLINE uint32_t TWISTED32(const uint8_t *p) {
+static FORCE_INLINE uint32_t BE32LE(const uint8_t *p) {
     return (uint32_t)p[0]         |
            ((uint32_t)p[1] << 8)  |
            ((uint32_t)p[2] << 16) |
            ((uint32_t)p[3] << 24);
 }
 
-static FORCE_INLINE void TWISTED_PUT32(uint8_t *p, uint32_t x) {
+static FORCE_INLINE void PUT32LE(uint8_t *p, uint32_t x) {
     p[0] = (uint8_t)x;
     p[1] = (uint8_t)(x >> 8);
     p[2] = (uint8_t)(x >> 16);
     p[3] = (uint8_t)(x >> 24);
 }
 
-static FORCE_INLINE uint64_t TWISTED64(const uint8_t *p) {
+static FORCE_INLINE uint64_t BE64LE(const uint8_t *p) {
     return  (uint64_t)p[0]        |
            ((uint64_t)p[1] << 8)  |
            ((uint64_t)p[2] << 16) |
@@ -174,7 +174,7 @@ static FORCE_INLINE uint64_t TWISTED64(const uint8_t *p) {
            ((uint64_t)p[6] << 48) |
            ((uint64_t)p[7] << 56);
 }
-static FORCE_INLINE void TWISTED_PUT64(uint8_t *p, uint64_t x) {
+static FORCE_INLINE void PUT64LE(uint8_t *p, uint64_t x) {
     p[0] = (uint8_t)x;
     p[1] = (uint8_t)(x >> 8);
     p[2] = (uint8_t)(x >> 16);
@@ -186,10 +186,10 @@ static FORCE_INLINE void TWISTED_PUT64(uint8_t *p, uint64_t x) {
 }
 #endif
 
-#define TWISTED_LOAD32(p)    TWISTED32((const uint8_t*)(p))
-#define TWISTED_STORE32(p,x) TWISTED_PUT32((uint8_t*)(p), x)
-#define TWISTED_LOAD64(p)    TWISTED64((const uint8_t*)(p))
-#define TWISTED_STORE64(p,x) TWISTED_PUT64((uint8_t*)(p), x)
+#define LOAD32LE(p)    BE32LE((const uint8_t*)(p))
+#define STORE32LE(p,x) PUT32LE((uint8_t*)(p), x)
+#define LOAD64LE(p)    BE64LE((const uint8_t*)(p))
+#define STORE64LE(p,x) PUT64LE((uint8_t*)(p), x)
 
 #ifdef __cplusplus
 }

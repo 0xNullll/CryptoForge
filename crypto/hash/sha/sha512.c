@@ -97,7 +97,7 @@ static bool SHA512ProcessBlock(ll_SHA512_CTX *ctx, const uint8_t *block) {
     SECURE_ZERO(W, sizeof(W));
 
     for (int t=0; t<16; t++)
-        W[t] = LOAD64(block + t*8);
+        W[t] = LOAD64BE(block + t*8);
 
     for (int t=16; t<80; t++)
         W[t] = SHA512_SSIG1(W[t-2]) + W[t-7] + SHA512_SSIG0(W[t-15]) + W[t-16];
@@ -155,8 +155,8 @@ bool ll_sha512_final(ll_SHA512_CTX *ctx, uint8_t digest[SHA512_DIGEST_SIZE]) {
     pad[0] = 0x80;
 
     uint8_t len_bytes[16];
-    STORE64(len_bytes, ctx->Nh);
-    STORE64(len_bytes + 8, ctx->Nl);
+    STORE64BE(len_bytes, ctx->Nh);
+    STORE64BE(len_bytes + 8, ctx->Nl);
 
     size_t pad_len = (ctx->buf_len < 112) ? (112 - ctx->buf_len) : (128 + 112 - ctx->buf_len);
 
@@ -164,7 +164,7 @@ bool ll_sha512_final(ll_SHA512_CTX *ctx, uint8_t digest[SHA512_DIGEST_SIZE]) {
     if (!ll_sha512_update(ctx, len_bytes, 16)) return false;
 
     for (int i = 0; i < 8; i++)
-        STORE64(digest + i*8, ctx->state[i]);
+        STORE64BE(digest + i*8, ctx->state[i]);
 
     return true;
 }

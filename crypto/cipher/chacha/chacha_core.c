@@ -41,31 +41,31 @@ bool ll_CHACHA_Init(ll_CHACHA_CTX *ctx, const uint8_t *key, size_t key_len,
     // Key words: input words 4-11 are derived from the key
     // For 256-bit key: use all 32 bytes directly
     // For 128-bit key: repeat the first 16 bytes to fill 8 words
-    w[4]  = TWISTED_LOAD32(key);
-    w[5]  = TWISTED_LOAD32(key + 4);
-    w[6]  = TWISTED_LOAD32(key + 8);
-    w[7]  = TWISTED_LOAD32(key + 12);
+    w[4]  = LOAD32LE(key);
+    w[5]  = LOAD32LE(key + 4);
+    w[6]  = LOAD32LE(key + 8);
+    w[7]  = LOAD32LE(key + 12);
 
     if (key_len == CHACHA_KEY_SIZE_256) {
-        w[8]  = TWISTED_LOAD32(key + 16);
-        w[9]  = TWISTED_LOAD32(key + 20);
-        w[10] = TWISTED_LOAD32(key + 24);
-        w[11] = TWISTED_LOAD32(key + 28);
+        w[8]  = LOAD32LE(key + 16);
+        w[9]  = LOAD32LE(key + 20);
+        w[10] = LOAD32LE(key + 24);
+        w[11] = LOAD32LE(key + 28);
     } else { // 128-bit key
         // Repeat first 16 bytes to fill second half of key schedule
-        w[8]  = TWISTED_LOAD32(key);
-        w[9]  = TWISTED_LOAD32(key + 4);
-        w[10] = TWISTED_LOAD32(key + 8);
-        w[11] = TWISTED_LOAD32(key + 12);    
+        w[8]  = LOAD32LE(key);
+        w[9]  = LOAD32LE(key + 4);
+        w[10] = LOAD32LE(key + 8);
+        w[11] = LOAD32LE(key + 12);    
     }
 
     // Input word 12 is the block counter (usually starts at 0)
     w[12] = counter;
 
     // Input words 13-15 are the 96-bit nonce
-    w[13] = TWISTED_LOAD32(nonce);
-    w[14] = TWISTED_LOAD32(nonce + 4);
-    w[15] = TWISTED_LOAD32(nonce + 8);
+    w[13] = LOAD32LE(nonce);
+    w[14] = LOAD32LE(nonce + 4);
+    w[15] = LOAD32LE(nonce + 8);
 
     // Initialize keystream position to zero
     ctx->pos = 0;
@@ -104,7 +104,7 @@ static bool ll_CHACHA_ProcessBlock(ll_CHACHA_CTX *ctx) {
 
     //Serialize the words into the keystream buffer
     for (i = 0; i < 16; i++) {
-        TWISTED_STORE32(ctx->keystream + i * 4, w[i]);
+        STORE32LE(ctx->keystream + i * 4, w[i]);
     }
 
     return true;

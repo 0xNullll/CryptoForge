@@ -72,7 +72,7 @@ static bool ll_sha256_process_block(ll_SHA256_CTX *ctx, const uint8_t *block) {
     SECURE_ZERO(W, sizeof(W));
 
     for(int t=0;t<16;t++)
-        W[t] = LOAD32(block + t*4);
+        W[t] = LOAD32BE(block + t*4);
     for(int t=16;t<64;t++)
         W[t] = SHA256_SSIG1(W[t-2]) + W[t-7] + SHA256_SSIG0(W[t-15]) + W[t-16];
 
@@ -133,7 +133,7 @@ bool ll_sha256_final(ll_SHA256_CTX *ctx, uint8_t digest[SHA256_DIGEST_SIZE]) {
     SECURE_MEMSET(block + ctx->buf_len, 0, pad_len);
 
     uint64_t bit_len = ctx->len * 8;
-    STORE64(block + 56, bit_len);
+    STORE64BE(block + 56, bit_len);
 
     if(!ll_sha256_process_block(ctx, block)) return false;
 
@@ -143,7 +143,7 @@ bool ll_sha256_final(ll_SHA256_CTX *ctx, uint8_t digest[SHA256_DIGEST_SIZE]) {
     }
 
     for(size_t i=0;i<8;i++)
-        STORE32(digest + i*4, ctx->state[i]);
+        STORE32BE(digest + i*4, ctx->state[i]);
 
     SECURE_ZERO(block, sizeof(block));
 

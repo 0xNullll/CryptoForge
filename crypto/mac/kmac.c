@@ -185,11 +185,8 @@ ll_KMAC_CTX *ll_KMAC_InitAlloc(
 }
 
 CF_STATUS ll_KMAC_Update(ll_KMAC_CTX *ctx, const uint8_t *data, size_t data_len) {
-    if (!ctx || !ctx->cshake_ctx)
+    if (!ctx || !ctx->cshake_ctx || !data)
         return CF_ERR_NULL_PTR;
-
-    if (data_len > 0 && !data)
-        return CF_ERR_INVALID_PARAM;
 
     if (ctx->isFinalized)
         return CF_ERR_HASH_FINALIZED;
@@ -275,59 +272,6 @@ cleanup:
 #undef ll_KMAC_SQUEEZE
 #undef ll_KMAC_FINALIZE
 
-CF_STATUS ll_KMAC_Verify(
-    const uint8_t *key, size_t key_len,
-    const uint8_t *data, size_t data_len,
-    const uint8_t *S, size_t S_len,
-    const uint8_t *expected_mac,
-    size_t expected_mac_len,   // allow arbitrary tag length
-    LL_KMAC_TYPE type) {
-    if (!key || !data || !expected_mac)
-        return CF_ERR_NULL_PTR;
-
-    if (!LL_KMAC_TYPE_IS_VALID(type))
-        return CF_ERR_INVALID_PARAM;
-
-    CF_STATUS status = CF_SUCCESS;
-    ll_KMAC_CTX ctx = {0};
-
-    // Determine MAC length based on type and user input
-    size_t mac_len = expected_mac_len;
-    uint8_t stack_computed[CF_MAX_DEFAULT_DIGEST_SIZE] = {0};
-    uint8_t *computed = NULL;
-
-    // Choose buffer: use stack if small enough, heap if needed
-    if (mac_len <= sizeof(stack_computed)) {
-        computed = stack_computed;
-    } else {
-        computed = (uint8_t *)SECURE_ALLOC(mac_len);
-        if (!computed)
-            return CF_ERR_ALLOC_FAILED;
-        SECURE_ZERO(computed, mac_len);
-    }
-
-    status = ll_KMAC_Init(&ctx, key, key_len, S, S_len, type);
-    if (status != CF_SUCCESS) goto cleanup;
-
-    status = ll_KMAC_Update(&ctx, data, data_len);
-    if (status != CF_SUCCESS) goto cleanup;
-
-    status = ll_KMAC_Final(&ctx, computed, mac_len);
-    if (status != CF_SUCCESS) goto cleanup;
-
-    // Constant-time comparison
-    status = SECURE_MEM_EQUAL(computed, expected_mac, mac_len) ? CF_SUCCESS : CF_ERR_MAC_VERIFY;
-
-cleanup:
-    SECURE_ZERO(&ctx, sizeof(ctx));
-    if (computed != stack_computed)
-        SECURE_FREE(computed, mac_len);
-    else
-        SECURE_ZERO(computed, sizeof(stack_computed));
-
-    return status;
-}
-
 // Frees internal buffers of a pre-allocated KMAC context
 CF_STATUS ll_KMAC_Reset(ll_KMAC_CTX *ctx) {
     if (!ctx)
@@ -371,19 +315,71 @@ CF_STATUS ll_KMAC_Free(ll_KMAC_CTX **p_ctx) {
 
     ll_KMAC_Reset(ctx);
 
-    if (wasHeapAlloc) {
-        SECURE_ZERO(ctx, sizeof(ll_KMAC_CTX));
+    // Free the outer struct if heap-allocated
+    if (wasHeapAlloc)
         SECURE_FREE(ctx, sizeof(ll_KMAC_CTX));
-        *p_ctx = NULL;
-    }
 
     return CF_SUCCESS;
+}
+
+CF_STATUS ll_KMAC_Verify(
+    const uint8_t *key, size_t key_len,
+    const uint8_t *data, size_t data_len,
+    const uint8_t *S, size_t S_len,
+    const uint8_t *expected_tag,
+    size_t expected_tag_len,   // allow arbitrary tag length
+    LL_KMAC_TYPE type) {
+    if (!key || !data || !expected_tag)
+        return CF_ERR_NULL_PTR;
+
+    if (!LL_KMAC_TYPE_IS_VALID(type))
+        return CF_ERR_INVALID_PARAM;
+
+    CF_STATUS status = CF_SUCCESS;
+    ll_KMAC_CTX ctx = {0};
+
+    // Determine MAC length based on type and user input
+    size_t tag_len = expected_tag_len;
+    uint8_t stack_computed_tag[CF_MAX_DEFAULT_DIGEST_SIZE] = {0};
+    uint8_t *computed_tag = NULL;
+
+    // Choose buffer: use stack if small enough, heap if needed
+    if (tag_len <= sizeof(stack_computed_tag)) {
+        computed_tag = stack_computed_tag;
+    } else {
+        computed_tag = (uint8_t *)SECURE_ALLOC(tag_len);
+        if (!computed_tag)
+            return CF_ERR_ALLOC_FAILED;
+        SECURE_ZERO(computed_tag, tag_len);
+    }
+
+    status = ll_KMAC_Init(&ctx, key, key_len, S, S_len, type);
+    if (status != CF_SUCCESS) goto cleanup;
+
+    status = ll_KMAC_Update(&ctx, data, data_len);
+    if (status != CF_SUCCESS) goto cleanup;
+
+    status = ll_KMAC_Final(&ctx, computed_tag, tag_len);
+    if (status != CF_SUCCESS) goto cleanup;
+
+    // Constant-time comparison
+    status = SECURE_MEM_EQUAL(computed_tag, expected_tag, tag_len) ? CF_SUCCESS : CF_ERR_MAC_VERIFY;
+
+cleanup:
+    ll_KMAC_Reset(&ctx);
+    if (computed_tag != stack_computed_tag)
+        SECURE_FREE(computed_tag, tag_len);
+    else
+        SECURE_ZERO(computed_tag, sizeof(stack_computed_tag));
+
+    return status;
 }
 
 CF_STATUS ll_KMAC_CloneCtx(ll_KMAC_CTX *ctx_dest, const ll_KMAC_CTX *ctx_src) {
     if (!ctx_dest || !ctx_src)
         return CF_ERR_NULL_PTR;
 
+    // Zero the destination first
     ll_KMAC_Reset(ctx_dest);
 
     // Clone CSHAKE context if present
@@ -434,9 +430,6 @@ ll_KMAC_CTX *ll_KMAC_CloneCtxAlloc(const ll_KMAC_CTX *ctx_src, CF_STATUS *status
         if (status) *status = CF_ERR_ALLOC_FAILED;
         return NULL;
     }
-
-    // Zero-initialize the new context
-    SECURE_ZERO(ctx_dest, sizeof(ll_KMAC_CTX));
 
     // Use existing clone function to copy contents
     CF_STATUS ret = ll_KMAC_CloneCtx(ctx_dest, ctx_src);

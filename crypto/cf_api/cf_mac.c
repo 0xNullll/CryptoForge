@@ -39,8 +39,7 @@ static CF_STATUS hmac_reset_wrapper(CF_MAC_CTX *ctx) {
 static CF_STATUS hmac_verify_wrapper(CF_MAC_CTX *ctx,
                                      const uint8_t *data, size_t data_len,
                                      const uint8_t *expected_tag, size_t expected_tag_len,
-                                     const struct _CF_MAC_OPTS *opts)
-{
+                                     const struct _CF_MAC_OPTS *opts) {
     UNUSED(opts);
     return ll_HMAC_Verify((const CF_MD *)ctx->md, ctx->key, ctx->key_len, 
                           data, data_len, expected_tag, expected_tag_len);
@@ -63,8 +62,7 @@ static CF_STATUS kmac_reset_wrapper(CF_MAC_CTX *ctx) {
 static CF_STATUS kmac_verify_wrapper(CF_MAC_CTX *ctx,
                                      const uint8_t *data, size_t data_len,
                                      const uint8_t *expected_tag, size_t expected_tag_len,
-                                     const struct _CF_MAC_OPTS *opts)
-{
+                                     const struct _CF_MAC_OPTS *opts) {
     return ll_KMAC_Verify(ctx->key, ctx->key_len, data, data_len,
                           opts->custom, opts->custom_len, expected_tag, expected_tag_len,
                           ctx->subflags);
@@ -87,8 +85,7 @@ static CF_STATUS cmac_reset_wrapper(CF_MAC_CTX *ctx) {
 static CF_STATUS cmac_verify_wrapper(CF_MAC_CTX *ctx,
                                      const uint8_t *data, size_t data_len,
                                      const uint8_t *expected_tag, size_t expected_tag_len,
-                                     const struct _CF_MAC_OPTS *opts)
-{
+                                     const struct _CF_MAC_OPTS *opts) {
     UNUSED(opts);
     return ll_CMAC_Verify((const ll_AES_KEY *)ctx->cipher_key, data, data_len,
                           expected_tag, expected_tag_len);
@@ -110,10 +107,31 @@ static CF_STATUS gmac_reset_wrapper(CF_MAC_CTX *ctx) {
 static CF_STATUS gmac_verify_wrapper(CF_MAC_CTX *ctx,
                                      const uint8_t *data, size_t data_len,
                                      const uint8_t *expected_tag, size_t expected_tag_len,
-                                     const struct _CF_MAC_OPTS *opts)
-{
+                                     const struct _CF_MAC_OPTS *opts) {
     return ll_GMAC_Verify((const ll_AES_KEY *)ctx->cipher_key, opts->iv, opts->iv_len,
                            data, data_len, expected_tag, expected_tag_len);
+}
+
+// poly1305
+static CF_STATUS poly1305_init_wrapper(CF_MAC_CTX *ctx, const CF_MAC_OPTS *opts) {
+    UNUSED(opts);
+    return ll_POLY1305_Init((ll_POLY1305_CTX *)ctx->mac_ctx, ctx->key);
+}
+static CF_STATUS poly1305_update_wrapper(CF_MAC_CTX *ctx, const uint8_t *data, size_t data_len) {
+    return ll_POLY1305_Update((ll_POLY1305_CTX *)ctx->mac_ctx, data, data_len);
+}
+static CF_STATUS poly1305_final_wrapper(CF_MAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
+    return ll_POLY1305_Final((ll_POLY1305_CTX *)ctx->mac_ctx, tag);
+}
+static CF_STATUS poly1305_reset_wrapper(CF_MAC_CTX *ctx) {
+    return ll_POLY1305_Reset((ll_POLY1305_CTX *)ctx->mac_ctx);
+}
+static CF_STATUS poly1305_verify_wrapper(CF_MAC_CTX *ctx,
+                                     const uint8_t *data, size_t data_len,
+                                     const uint8_t *expected_tag, size_t expected_tag_len,
+                                     const struct _CF_MAC_OPTS *opts) {
+    UNUSED(opts);
+    return ll_POLY1305_Verify(ctx->key, data, data_len, expected_tag);
 }
 
 // --- CF_MAC Return Functions ---
@@ -190,12 +208,31 @@ static const CF_MAC *CF_get_gmac(void) {
     return &md;
 }
 
+//
+// poly1305
+//
+static const CF_MAC *CF_get_poly1305(void) {
+    static CF_MAC md = {
+        .id = CF_GMAC,
+        .ctx_size = sizeof(ll_POLY1305_CTX),
+        .key_ctx_size = 0,
+        .default_tag_len = LL_POLY1305_TAG_LEN,
+        .mac_init_fn = poly1305_init_wrapper,
+        .mac_update_fn = poly1305_update_wrapper,
+        .mac_final_fn = poly1305_final_wrapper,
+        .mac_reset_fn = poly1305_reset_wrapper,
+        .mac_verify_fn = poly1305_verify_wrapper
+    };
+    return &md;
+}
+
 // Table of all supported MACs
 static const CF_ALGO_ENTRY cf_mac_table[] = {
-    { CF_HMAC,  (const void* (*)(void))CF_get_hmac },
-    { CF_KMAC,  (const void* (*)(void))CF_get_kmac },
-    { CF_CMAC,  (const void* (*)(void))CF_get_cmac },
-    { CF_GMAC,  (const void* (*)(void))CF_get_gmac }
+    { CF_HMAC,      (const void* (*)(void))CF_get_hmac     },
+    { CF_KMAC,      (const void* (*)(void))CF_get_kmac     },
+    { CF_CMAC,      (const void* (*)(void))CF_get_cmac     },
+    { CF_GMAC,      (const void* (*)(void))CF_get_gmac     },
+    { CF_POLY1305,  (const void* (*)(void))CF_get_poly1305 }
 };
 
 const CF_MAC *CF_MAC_GetByFlag(uint32_t algo_flag) {
@@ -268,6 +305,13 @@ CF_STATUS CF_MAC_Init(CF_MAC_CTX *ctx, const CF_MAC *mac, const CF_MAC_OPTS *opt
             SECURE_FREE(ctx->cipher_key, mac->key_ctx_size);
             return CF_ERR_CIPHER_KEY_SETUP;
         }
+
+    else if (CF_MAC_IS_POLY1305(mac->id)) {
+        if (key_len != LL_POLY1305_KEY_LEN)
+            return CF_ERR_MAC_INVALID_KEY_LEN;
+
+        ctx->tag_len = ctx->mac->default_tag_len;
+    } 
 
     } else {
         return CF_ERR_INVALID_PARAM;
@@ -357,14 +401,23 @@ CF_STATUS CF_MAC_Final(CF_MAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
             return CF_ERR_MAC_BAD_TAG_LEN;
     }
 
-    if (CF_MAC_IS_CMAC(ctx->mac->id)) {
+    else if (CF_MAC_IS_CMAC(ctx->mac->id)) {
         if (tag_len < 4 || tag_len > AES_BLOCK_SIZE)
             return CF_ERR_MAC_BAD_TAG_LEN;
     }
 
-    if (CF_MAC_IS_GMAC(ctx->mac->id)) {
+    else if (CF_MAC_IS_GMAC(ctx->mac->id)) {
         if (!IS_VALID_GCM_TAG_SIZE(tag_len))
                 return CF_ERR_MAC_BAD_TAG_LEN;
+    }
+
+    else if (CF_MAC_IS_POLY1305(ctx->mac->id)) {
+        if (tag_len != LL_POLY1305_TAG_LEN)
+                return CF_ERR_MAC_BAD_TAG_LEN;
+    }
+    
+    else {
+        return CF_ERR_INVALID_PARAM;
     }
 
     CF_STATUS st = CF_SUCCESS;

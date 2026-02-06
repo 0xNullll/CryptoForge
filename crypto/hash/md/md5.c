@@ -171,7 +171,7 @@ bool ll_md5_final(ll_MD5_CTX *ctx,uint8_t digest[MD5_DIGEST_SIZE]){
     ctx->buffer_len += padLen;
 
     // Append length in bits
-    TWISTED_STORE64(block + 56 ,ctx->bitlen);
+    STORE64LE(block + 56 ,ctx->bitlen);
 
     if(!ll_md5_process_block(ctx,block)) return false;
     

@@ -228,7 +228,7 @@ static FORCE_INLINE void absorb_block(uint64_t A[5][5], const uint8_t *buf, size
     for (size_t i = 0; i < lanes; i++) {
         size_t x = i % 5;
         size_t y = i / 5;
-        uint64_t lane = TWISTED_LOAD64(buf + i * 8);
+        uint64_t lane = LOAD64LE(buf + i * 8);
 
     A[y][x] ^= lane;
     }
@@ -242,7 +242,7 @@ static FORCE_INLINE void squeeze_block(uint64_t A[5][5], uint8_t *buf, size_t r)
         
         uint64_t lane = A[y][x];
         
-        TWISTED_STORE64(buf + i * 8, lane);
+        STORE64LE(buf + i * 8, lane);
     }
 }
 

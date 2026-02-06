@@ -33,6 +33,7 @@
 #include "../crypto/kmac.h"
 #include "../crypto/cmac.h"
 #include "../crypto/gmac.h"
+#include "../crypto/poly1305.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -80,14 +80,14 @@ static FORCE_INLINE uint32_t RotWord(uint32_t x) {
 static uint32_t SubWord(uint32_t w) {
     uint8_t b[4] = {0};
 
-    STORE32(b, w);
+    STORE32BE(b, w);
 
     b[0] = sBox[b[0]];
     b[1] = sBox[b[1]];
     b[2] = sBox[b[2]];
     b[3] = sBox[b[3]];
 
-    return LOAD32(b);
+    return LOAD32BE(b);
 }
 
 
@@ -207,7 +207,7 @@ static void KeyExpansion(uint32_t *rk, const uint8_t *key, size_t keySize, uint3
     uint32_t Nk = (uint32_t)(keySize / 4); // 4, 6, or 8
 
     for (uint32_t i = 0; i < Nk; i++) {
-        rk[i] = LOAD32(key + 4*i);
+        rk[i] = LOAD32BE(key + 4*i);
     }
 
     for (uint32_t i = Nk; i < 4 * (rounds + 1); i++) {

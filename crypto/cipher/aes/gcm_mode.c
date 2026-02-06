@@ -4,8 +4,8 @@ void ll_gcm_mult(uint8_t Z[AES_BLOCK_SIZE],
             const uint8_t X[AES_BLOCK_SIZE],
             const uint8_t Y[AES_BLOCK_SIZE]) {
     uint64_t zh = 0, zl = 0;
-    uint64_t yh = LOAD64(Y);
-    uint64_t yl = LOAD64(Y + 8);
+    uint64_t yh = LOAD64BE(Y);
+    uint64_t yl = LOAD64BE(Y + 8);
 
     for (int i = 0; i < 128; i++) {
         uint8_t bit = (X[i >> 3] >> (7 - (i & 7))) & 1;
@@ -19,8 +19,8 @@ void ll_gcm_mult(uint8_t Z[AES_BLOCK_SIZE],
         yh = (yh >> 1) ^ (U64(0xe100000000000000) & ((uint64_t)0 - lsb));
     }
 
-    STORE64(Z, zh);
-    STORE64(Z + 8, zl);
+    STORE64BE(Z, zh);
+    STORE64BE(Z + 8, zl);
 }
 
 void ll_GHASH_Process(
@@ -51,9 +51,9 @@ void ll_GHASH_Process(
 
 // Increment last 32 bits of 16-byte block (GCM counter)
 static void Inc32(uint8_t CB[16]) {
-    uint32_t val = LOAD32(CB + 12);
+    uint32_t val = LOAD32BE(CB + 12);
     val++;
-    STORE32(CB + 12, val);
+    STORE32BE(CB + 12, val);
 }
 
 bool ll_AES_GCTR_Process(
