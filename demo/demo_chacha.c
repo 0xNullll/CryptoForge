@@ -87,9 +87,9 @@ void test_chacha20_rfc7539(void) {
 
     if (memcmp(ciphertext, expected_ciphertext, sizeof(expected_ciphertext)) == 0 &&
         memcmp(plaintext, decrypted, sizeof(plaintext)) == 0) {
-        printf("CHACHA-20 RFC-7539 test PASSED\n");
+        printf("CHACHA-20 RFC-7539 Example test PASSED\n");
     } else {
-        printf("CHACHA-20 RFC-7539 test FAILED\n");
+        printf("CHACHA-20 RFC-7539 Example test FAILED\n");
     }  
 
 }
