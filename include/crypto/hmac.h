@@ -73,7 +73,7 @@ CF_STATUS ll_HMAC_Verify(
     const CF_MD *md, 
     const uint8_t *key, size_t key_len,
     const uint8_t *data, size_t data_len,
-    const uint8_t *expected_hmac, size_t expected_len
+    const uint8_t *expected_tag, size_t expected_tag_len
 );
 
 // Frees internal buffers of a pre-allocated context

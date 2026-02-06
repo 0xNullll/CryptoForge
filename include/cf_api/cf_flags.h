@@ -164,18 +164,20 @@ typedef enum {
 #define CF_MAC_KMAC_MASK    0x00000F00
 
 typedef enum {
-    CF_HMAC = CF_CAT_MAC | 0x1000, // subflags: hash ID
-    CF_KMAC = CF_CAT_MAC | 0x2000, // subflags: KMAC type
-    CF_CMAC = CF_CAT_MAC | 0x3000, // no subflags
-    CF_GMAC = CF_CAT_MAC | 0x4000  // no subflags
+    CF_HMAC     = CF_CAT_MAC | 0x1000, // subflags: hash ID
+    CF_KMAC     = CF_CAT_MAC | 0x2000, // subflags: KMAC type
+    CF_CMAC     = CF_CAT_MAC | 0x3000, // no subflags
+    CF_GMAC     = CF_CAT_MAC | 0x4000, // no subflags
+    CF_POLY1305 = CF_CAT_MAC | 0x5000  // no subflags
 } CF_MAC_FLAGS;
 
-#define CF_MAC_IS_HMAC(id)    (((id) & CF_MAC_FLAG_MASK) == CF_HMAC)
-#define CF_MAC_IS_KMAC(id)    (((id) & CF_MAC_FLAG_MASK) == CF_KMAC)
-#define CF_MAC_IS_CMAC(id)    (((id) & CF_MAC_FLAG_MASK) == CF_CMAC)
-#define CF_MAC_IS_GMAC(id)    (((id) & CF_MAC_FLAG_MASK) == CF_GMAC)
-#define CF_MAC_IS_XOF(id)     (((id) & CF_MAC_XOF_FLAG) != 0)
-#define CF_MAC_GET_HASH(id)   ((id) & CF_MAC_HASH_MASK)
+#define CF_MAC_IS_HMAC(id)      (((id) & CF_MAC_FLAG_MASK) == CF_HMAC)
+#define CF_MAC_IS_KMAC(id)      (((id) & CF_MAC_FLAG_MASK) == CF_KMAC)
+#define CF_MAC_IS_CMAC(id)      (((id) & CF_MAC_FLAG_MASK) == CF_CMAC)
+#define CF_MAC_IS_GMAC(id)      (((id) & CF_MAC_FLAG_MASK) == CF_GMAC)
+#define CF_MAC_IS_POLY1305(id)  (((id) & CF_MAC_FLAG_MASK) == CF_POLY1305)
+#define CF_MAC_IS_XOF(id)       (((id) & CF_MAC_XOF_FLAG) != 0)
+#define CF_MAC_GET_HASH(id)     ((id) & CF_MAC_HASH_MASK)
 
 // ======================
 // 3. RNG / DRBG Flags

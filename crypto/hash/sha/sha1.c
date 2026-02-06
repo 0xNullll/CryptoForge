@@ -51,7 +51,7 @@ static bool ll_sha1_process_block(ll_SHA1_CTX *ctx, const uint8_t *block) {
 
     // Copy block to W[0..15] (big-endian)
     for(int i = 0; i < 16; i++)
-        W[i] = LOAD32(block + i*4);
+        W[i] = LOAD32BE(block + i*4);
 
     // Expand W[16..79]
     for(int t=16;t<80;t++) {
@@ -136,17 +136,17 @@ bool ll_sha1_final(ll_SHA1_CTX *ctx, uint8_t digest[SHA1_DIGEST_SIZE]) {
     }
 
     // Append length in bits using CPU-endian aware macro
-    STORE64(block + 56, ctx->len);
+    STORE64BE(block + 56, ctx->len);
 
     // Process final block
     if (!ll_sha1_process_block(ctx, block)) return false;
 
-    // Output digest using STORE32
-    STORE32(digest + 0,  ctx->h0);
-    STORE32(digest + 4,  ctx->h1);
-    STORE32(digest + 8,  ctx->h2);
-    STORE32(digest + 12, ctx->h3);
-    STORE32(digest + 16, ctx->h4);
+    // Output digest using STORE32BE
+    STORE32BE(digest + 0,  ctx->h0);
+    STORE32BE(digest + 4,  ctx->h1);
+    STORE32BE(digest + 8,  ctx->h2);
+    STORE32BE(digest + 12, ctx->h3);
+    STORE32BE(digest + 16, ctx->h4);
 
     SECURE_ZERO(block, sizeof(block));
 

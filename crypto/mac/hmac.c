@@ -179,36 +179,33 @@ CF_STATUS ll_HMAC_Verify(
     const CF_MD *md,
     const uint8_t *key, size_t key_len,
     const uint8_t *data, size_t data_len,
-    const uint8_t *expected_hmac, size_t expected_len) {
-    if (!md || !key || !data || !expected_hmac)
+    const uint8_t *expected_tag, size_t expected_tag_len) {
+    if (!md || !key || !data || !expected_tag)
         return CF_ERR_NULL_PTR;
 
     CF_STATUS status = CF_SUCCESS;
-    ll_HMAC_CTX ctx;
-    uint8_t computed[CF_MAX_DEFAULT_DIGEST_SIZE] = {0};
 
-    SECURE_ZERO(&ctx, sizeof(ctx));
+    uint8_t tag[CF_MAX_DEFAULT_DIGEST_SIZE] = {0};
+    ll_HMAC_CTX ctx = {0};
 
     // Initialize context
     status = ll_HMAC_Init(&ctx, md, key, key_len);
     if (status != CF_SUCCESS) goto cleanup;
 
     // Update with data
-    if (data_len > 0) {
-        status = ll_HMAC_Update(&ctx, data, data_len);
-        if (status != CF_SUCCESS) goto cleanup;
-    }
+    status = ll_HMAC_Update(&ctx, data, data_len);
+    if (status != CF_SUCCESS) goto cleanup;
 
     // Finalize
-    status = ll_HMAC_Final(&ctx, computed, expected_len);
+    status = ll_HMAC_Final(&ctx, tag, expected_tag_len);
     if (status != CF_SUCCESS) goto cleanup;
 
     // Constant-time comparison
-    status = SECURE_MEM_EQUAL(computed, expected_hmac, expected_len) ? CF_SUCCESS : CF_ERR_MAC_VERIFY;
+    status = SECURE_MEM_EQUAL(tag, expected_tag, expected_tag_len) ? CF_SUCCESS : CF_ERR_MAC_VERIFY;
 
 cleanup:
-    SECURE_ZERO(&ctx, sizeof(ctx));
-    SECURE_ZERO(computed, sizeof(computed));
+    ll_HMAC_Reset(&ctx);
+    SECURE_ZERO(tag, sizeof(tag));
     return status;
 }
 
@@ -242,10 +239,8 @@ CF_STATUS ll_HMAC_Free(ll_HMAC_CTX **p_ctx) {
     ll_HMAC_Reset(ctx);
 
     // Free the outer struct if heap-allocated
-    if (wasHeapAlloc) {
+    if (wasHeapAlloc)
         SECURE_FREE(ctx, sizeof(ll_HMAC_CTX));
-        *p_ctx = NULL;
-    }
 
     return CF_SUCCESS;
 }
@@ -254,6 +249,7 @@ CF_STATUS ll_HMAC_CloneCtx(ll_HMAC_CTX *ctx_dest, const ll_HMAC_CTX *ctx_src) {
     if (!ctx_dest || !ctx_src)
         return CF_ERR_NULL_PTR;
 
+    // Zero the destination first
     ll_HMAC_Reset(ctx_dest);
 
     // Copy MD pointer

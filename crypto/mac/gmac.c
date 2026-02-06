@@ -84,8 +84,8 @@ ll_GMAC_CTX* ll_GMAC_InitAlloc(const ll_AES_KEY *key, const uint8_t *iv, size_t 
 }
 
 CF_STATUS ll_GMAC_Update(ll_GMAC_CTX *ctx, const uint8_t *aad, size_t aad_len) {
-    if (!ctx || !aad || aad_len == 0)
-        return CF_ERR_INVALID_PARAM;
+    if (!ctx || !aad)
+        return CF_ERR_NULL_PTR;
 
     // Length limits (from NIST SP 800‑38D)
     if (aad_len > ((U64(0x1) << 61) - 1))
@@ -159,9 +159,9 @@ CF_STATUS ll_GMAC_Verify(
     if (iv_len < AES_GCM_IV_MIN || !IS_VALID_GCM_TAG_SIZE(tag_len))
         return CF_ERR_INVALID_PARAM;
 
-    uint8_t tag[AES_BLOCK_SIZE] = {0};
-
     CF_STATUS st = CF_SUCCESS;
+
+    uint8_t tag[AES_BLOCK_SIZE] = {0};
     ll_GMAC_CTX ctx = {0};
 
     // Initialize context
@@ -169,10 +169,8 @@ CF_STATUS ll_GMAC_Verify(
     if (st != CF_SUCCESS) goto cleanup;
 
     // Process AAD
-    if (aad_len > 0) {
-        st = ll_GMAC_Update(&ctx, aad, aad_len);
-        if (st != CF_SUCCESS) goto cleanup;
-    }
+    st = ll_GMAC_Update(&ctx, aad, aad_len);
+    if (st != CF_SUCCESS) goto cleanup;
 
     // Finalize
     st = ll_GMAC_Final(&ctx, tag, tag_len);
@@ -220,11 +218,8 @@ CF_STATUS ll_GMAC_Free(ll_GMAC_CTX **p_ctx) {
     ll_GMAC_Reset(ctx);
 
     // Free the outer struct if heap-allocated
-    if (wasHeapAlloc) {
-        SECURE_ZERO(ctx, sizeof(ll_GMAC_CTX));
+    if (wasHeapAlloc)
         SECURE_FREE(ctx, sizeof(ll_GMAC_CTX));
-        *p_ctx = NULL;
-    }
 
     return CF_SUCCESS;
 }
@@ -232,6 +227,9 @@ CF_STATUS ll_GMAC_Free(ll_GMAC_CTX **p_ctx) {
 CF_STATUS ll_GMAC_CloneCtx(ll_GMAC_CTX *ctx_dest, const ll_GMAC_CTX *ctx_src) {
     if (!ctx_dest || !ctx_src)
         return CF_ERR_NULL_PTR;
+
+    // Zero the destination first
+    ll_GMAC_Reset(&ctx_dest);
 
     ctx_dest->key = ctx_src->key;
 

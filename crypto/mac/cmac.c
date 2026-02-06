@@ -36,10 +36,10 @@ static void ll_AES_CMAC_MultiplyByU(const uint8_t in[AES_BLOCK_SIZE], uint8_t ou
 
     // Process 4-byte chunks
     for (int i = AES_BLOCK_SIZE - 4; i >= 0; i -= 4) {
-        uint32_t in32 = LOAD32(&in[i]);
+        uint32_t in32 = LOAD32BE(&in[i]);
         uint32_t new_overflow = in32 >> 31;
         in32 = (in32 << 1) | overflow;
-        STORE32(&out[i], in32);
+        STORE32BE(&out[i], in32);
         overflow = new_overflow;
     }
 
@@ -263,47 +263,6 @@ cleanup:
     return ret;
 }
 
-CF_STATUS ll_CMAC_Verify(
-    const ll_AES_KEY *key,
-    const uint8_t *data, size_t data_len,
-    const uint8_t *expected_tag, size_t tag_len) {
-    if (!key || !expected_tag)
-        return CF_ERR_NULL_PTR;
-
-    if (tag_len < 4 || tag_len > AES_BLOCK_SIZE)
-        return CF_ERR_MAC_BAD_TAG_LEN;
-
-    CF_STATUS st = CF_SUCCESS;
-    uint8_t tag[AES_BLOCK_SIZE];
-    SECURE_ZERO(tag, sizeof(tag));
-
-    ll_CMAC_CTX ctx;
-    SECURE_ZERO(&ctx, sizeof(ctx));
-
-    // Initialize context with key
-    st = ll_CMAC_Init(&ctx, key);
-    if (st != CF_SUCCESS) goto cleanup;
-
-    // Update with message data
-    if (data_len > 0) {
-        st = ll_CMAC_Update(&ctx, data, data_len);
-        if (st != CF_SUCCESS) goto cleanup;
-    }
-
-    // Finalize and compute tag
-    st = ll_CMAC_Final(&ctx, tag, tag_len);
-    if (st != CF_SUCCESS) goto cleanup;
-
-    // Constant-time comparison
-    st = SECURE_MEM_EQUAL(tag, expected_tag, tag_len) ? CF_SUCCESS : CF_ERR_MAC_VERIFY;
-
-cleanup:
-    ll_CMAC_Reset(&ctx);
-    SECURE_ZERO(tag, sizeof(tag));
-
-    return st;
-}
-
 CF_STATUS ll_CMAC_Reset(ll_CMAC_CTX *ctx) {
     if (!ctx || !ctx->key)
         return CF_ERR_NULL_PTR;
@@ -335,18 +294,56 @@ CF_STATUS ll_CMAC_Free(ll_CMAC_CTX **p_ctx) {
 
     ll_CMAC_Reset(ctx);
 
-    if (wasHeapAlloc) {
-        SECURE_ZERO(ctx, sizeof(ll_CMAC_CTX));
+    // Free the outer struct if heap-allocated
+    if (wasHeapAlloc)
         SECURE_FREE(ctx, sizeof(ll_CMAC_CTX));
-        *p_ctx = NULL;
-    }
 
     return CF_SUCCESS;
+}
+
+CF_STATUS ll_CMAC_Verify(
+    const ll_AES_KEY *key,
+    const uint8_t *data, size_t data_len,
+    const uint8_t *expected_tag, size_t tag_len) {
+    if (!key || !expected_tag)
+        return CF_ERR_NULL_PTR;
+
+    if (tag_len < 4 || tag_len > AES_BLOCK_SIZE)
+        return CF_ERR_MAC_BAD_TAG_LEN;
+
+    CF_STATUS st = CF_SUCCESS;
+
+    uint8_t tag[AES_BLOCK_SIZE] = {0};
+    ll_CMAC_CTX ctx = {0};
+
+    // Initialize context with key
+    st = ll_CMAC_Init(&ctx, key);
+    if (st != CF_SUCCESS) goto cleanup;
+
+    // Update with message data
+    st = ll_CMAC_Update(&ctx, data, data_len);
+    if (st != CF_SUCCESS) goto cleanup;
+
+    // Finalize and compute tag
+    st = ll_CMAC_Final(&ctx, tag, tag_len);
+    if (st != CF_SUCCESS) goto cleanup;
+
+    // Constant-time comparison
+    st = SECURE_MEM_EQUAL(tag, expected_tag, tag_len) ? CF_SUCCESS : CF_ERR_MAC_VERIFY;
+
+cleanup:
+    ll_CMAC_Reset(&ctx);
+    SECURE_ZERO(tag, sizeof(tag));
+
+    return st;
 }
 
 CF_STATUS ll_CMAC_CloneCtx(ll_CMAC_CTX *ctx_dest, const ll_CMAC_CTX *ctx_src) {
     if (!ctx_dest || !ctx_src)
         return CF_ERR_NULL_PTR;
+
+    // Zero the destination first
+    ll_CMAC_Reset(&ctx_dest);
 
     ctx_dest->key = ctx_src->key;
 
