@@ -1,6 +1,6 @@
 /*
  * CryptoForge - bitopts.h / bit operation Utilities
- * Copyright (C) 2025 0xNullll
+ * Copyright (C) 2026 0xNullll
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
