@@ -1,16 +1,11 @@
 #include "../../../include/crypto/chacha_core.h"
 
-static FORCE_INLINE uint32_t rotl32(uint32_t x, uint32_t n) {
-    n &= 31;
-    return (x << n) | (x >> (32 - n));
-}
-
 // ChaCha quarter-round function
 #define QUARTER_ROUND(a, b, c, d) {      \
-    a += b;  d ^= a;  d = rotl32(d, 16);  \
-    c += d;  b ^= c;  b = rotl32(b, 12);  \
-    a += b;  d ^= a;  d = rotl32(d, 8);   \
-    c += d;  b ^= c;  b = rotl32(b, 7);   \
+    a += b;  d ^= a;  d = ROTL32(d, 16);  \
+    c += d;  b ^= c;  b = ROTL32(b, 12);  \
+    a += b;  d ^= a;  d = ROTL32(d, 8);   \
+    c += d;  b ^= c;  b = ROTL32(b, 7);   \
 }
 
 #define CHACHA_CONSTANT_0 0x61707865  // "expa"
@@ -18,53 +13,62 @@ static FORCE_INLINE uint32_t rotl32(uint32_t x, uint32_t n) {
 #define CHACHA_CONSTANT_2 0x79622d32  // "2-by"
 #define CHACHA_CONSTANT_3 0x6b206574  // "te k"
 
-bool ll_CHACHA_Init(ll_CHACHA_CTX *ctx, const uint8_t key[CHACHA_KEY_SIZE], 
+bool ll_CHACHA_Init(ll_CHACHA_CTX *ctx, const uint8_t *key, size_t key_len, 
                     const uint8_t nonce[CHACHA_NONCE_SIZE], uint32_t counter,
-                    uint32_t rounds) {
+                    int rounds) {
     if (!ctx || !key || !nonce)
         return false;
 
-    //The number of rounds must be 8, 12 or 20
-    if (rounds != 8 || rounds != 12 || rounds != 20)
+    // Accept only supported key sizes: 128-bit or 256-bit
+    if (key_len != CHACHA_KEY_SIZE_128 && key_len != CHACHA_KEY_SIZE_256)
         return false;
 
-    //Save the number of rounds to be applied
+    // Validate number of rounds (ChaCha supports 8, 12, or 20 rounds)
+    if (rounds != 8 && rounds != 12 && rounds != 20)
+        return false;
+
+    // Save the number of rounds to be applied in this context
     ctx->rounds = rounds;
 
-    // Point to the state
     uint32_t *w = ctx->state;
 
-    //The first four input words are constants
+    // The first four words of the state are constants (sigma)
     w[0] = CHACHA_CONSTANT_0;
     w[1] = CHACHA_CONSTANT_1;
     w[2] = CHACHA_CONSTANT_2;
     w[3] = CHACHA_CONSTANT_3;
 
-    //Input words 4 through 11 are taken from the 256-bit key,
-    //by reading the bytes in little-endian order, in 4-byte chunks
-    w[4] = LOAD32(key);
-    w[5] = LOAD32(key + 4);
-    w[6] = LOAD32(key + 8);
-    w[7] = LOAD32(key + 12);
-    w[8] = LOAD32(key + 16);
-    w[9] = LOAD32(key + 20);
-    w[10] = LOAD32(key + 24);
-    w[11] = LOAD32(key + 28);
+    // Key words: input words 4-11 are derived from the key
+    // For 256-bit key: use all 32 bytes directly
+    // For 128-bit key: repeat the first 16 bytes to fill 8 words
+    w[4]  = TWISTED_LOAD32(key);
+    w[5]  = TWISTED_LOAD32(key + 4);
+    w[6]  = TWISTED_LOAD32(key + 8);
+    w[7]  = TWISTED_LOAD32(key + 12);
 
-    //Input word 12 is the block counter
-    w[12] = LOAD32(counter);
+    if (key_len == CHACHA_KEY_SIZE_256) {
+        w[8]  = TWISTED_LOAD32(key + 16);
+        w[9]  = TWISTED_LOAD32(key + 20);
+        w[10] = TWISTED_LOAD32(key + 24);
+        w[11] = TWISTED_LOAD32(key + 28);
+    } else { // 128-bit key
+        // Repeat first 16 bytes to fill second half of key schedule
+        w[8]  = TWISTED_LOAD32(key);
+        w[9]  = TWISTED_LOAD32(key + 4);
+        w[10] = TWISTED_LOAD32(key + 8);
+        w[11] = TWISTED_LOAD32(key + 12);    
+    }
 
-    //Input words 13 through 15 are taken from the 96-bit nonce,
-    //by reading the bytes in little-endian order, in 4-byte chunks
-    w[13] = LOAD32(nonce);
-    w[14] = LOAD32(nonce + 4);
-    w[15] = LOAD32(nonce + 8);
+    // Input word 12 is the block counter (usually starts at 0)
+    w[12] = counter;
 
-    //The keystream block is empty
-    ctx->position = 0;
+    // Input words 13-15 are the 96-bit nonce
+    w[13] = TWISTED_LOAD32(nonce);
+    w[14] = TWISTED_LOAD32(nonce + 4);
+    w[15] = TWISTED_LOAD32(nonce + 8);
 
-    // the output buffer is empty
-    ctx->buffer_len = 0;
+    // Initialize keystream position to zero
+    ctx->pos = 0;
 
     return true;
 }
@@ -100,10 +104,46 @@ static bool ll_CHACHA_ProcessBlock(ll_CHACHA_CTX *ctx) {
 
     //Serialize the words into the keystream buffer
     for (i = 0; i < 16; i++) {
-        STORE32(w[i], ctx->keystream + i * 4);
+        TWISTED_STORE32(ctx->keystream + i * 4, w[i]);
     }
+
+    return true;
 }
 
-bool ll_CHACHA_Update(ll_CHACHA_CTX *ctx, const uint8_t *in, uint8_t *out, size_t len) {
+bool ll_CHACHA_Cipher(ll_CHACHA_CTX *ctx,
+                      const uint8_t *in, size_t in_len,
+                      uint8_t *out) {
+    if (!ctx || !in || !out)
+        return false;
 
+    size_t i = 0; // input/output index
+
+    while (i < in_len) {
+        // Generate a new keystream block if needed
+        if (ctx->pos == 0 || ctx->pos == CHACHA_BLOCK_SIZE) {
+            ll_CHACHA_ProcessBlock(ctx);
+
+            // Increment block counter
+            ctx->state[12]++;
+            if (ctx->state[12] == 0)
+                ctx->state[13]++;
+
+            ctx->pos = 0;
+            }
+
+        // How many bytes we can consume from the current keystream
+        size_t remaining_keystream = CHACHA_BLOCK_SIZE - ctx->pos;
+        size_t remaining_input = in_len - i;
+        size_t chunk = remaining_keystream < remaining_input ? remaining_keystream : remaining_input;
+
+        // XOR the chunk
+        for (size_t j = 0; j < chunk; j++)
+            out[i + j] = in[i + j] ^ ctx->keystream[ctx->pos + j];
+
+        // Advance counters
+        ctx->pos += chunk;
+        i += chunk;
+    }
+
+    return true;
 }

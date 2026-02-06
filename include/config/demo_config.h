@@ -41,6 +41,8 @@
 #include "../crypto/base64.h"
 #include "../crypto/base85.h"
 
+#include "../crypto/chacha.h"
+
 #include "../crypto/aes_core.h"
 #include "../crypto/ecb_mode.h"
 #include "../crypto/cbc_mode.h"
@@ -119,6 +121,8 @@ CF_API void test_hex_base64(const char *label, const uint8_t *input, size_t len,
 CF_API void test_base85(const char *label, const uint8_t *input, size_t len, uint32_t enc_mode, uint32_t dec_mode);
 CF_API void test_hex_base85(const char *label, const uint8_t *input, size_t len, uint32_t enc_mode, uint32_t dec_mode);
 CF_API void test_all_encoders_high(const uint8_t *input, size_t input_len);
+
+CF_API void test_chacha20_rfc7539(void);
 
 CF_API void test_aes128_fips197(void);
 CF_API void test_aes192_fips197(void);

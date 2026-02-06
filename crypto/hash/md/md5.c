@@ -146,7 +146,7 @@ bool ll_md5_update(ll_MD5_CTX *ctx,const uint8_t *data,size_t len){
     size_t i = 0;
     while(i < len){
         size_t space = MD5_BLOCK_SIZE-ctx->buffer_len;
-        size_t to_copy=(len - i < space) ? len-i:space;
+        size_t to_copy = (len - i < space) ? len - i : space;
         SECURE_MEMCPY(ctx->buffer + ctx->buffer_len, data + i, to_copy);
         ctx->buffer_len += to_copy;
         ctx->bitlen += to_copy * 8;
