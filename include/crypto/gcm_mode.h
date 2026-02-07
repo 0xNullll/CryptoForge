@@ -61,16 +61,17 @@ typedef struct {
     uint8_t X[AES_BLOCK_SIZE];   // GHASH accumulator
     size_t aad_len;              // total AAD length
     size_t data_len;             // total ciphertext/plaintext length
+    int isEncrypt;               // 1 = encrypting, 0 = decrypting
 } ll_AES_GCM_CTX;
 
 bool ll_AES_GCM_Init(ll_AES_GCM_CTX *ctx,
                      const ll_AES_KEY *key,
                      const uint8_t *iv, size_t iv_len,
-                     const uint8_t *aad, size_t aad_len);
+                     const uint8_t *aad, size_t aad_len, bool encrypt);
 
 bool ll_AES_GCM_Update(ll_AES_GCM_CTX *ctx,
                             const uint8_t *in, size_t in_len,
-                            uint8_t *out, bool encrypt);
+                            uint8_t *out);
 
 bool ll_AES_GCM_Final(ll_AES_GCM_CTX *ctx, uint8_t *tag, size_t tag_len);
 

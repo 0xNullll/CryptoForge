@@ -820,6 +820,58 @@ void test_all_gmacs(void) {
     ll_GMAC_Reset(&gctx);
 }
 
+void test_all_poly1305(void) {
+    // Message (from hex)
+    // uint8_t message[] = {
+    //     0x43, 0x72, 0x79, 0x70, 0x74, 0x6f, 0x67, 0x72,
+    //     0x61, 0x70, 0x68, 0x69, 0x63, 0x20, 0x46, 0x6f,
+    //     0x72, 0x75, 0x6d, 0x20, 0x52, 0x65, 0x73, 0x65,
+    //     0x61, 0x72, 0x63, 0x68, 0x20, 0x47, 0x72, 0x6f,
+    //     0x75, 0x70
+    // };
+
+    char *message = "Cryptographic Forum Research Group";
+
+    // // 32-byte Poly1305 key (r + s)
+    uint8_t key[32] = {
+        0x85, 0xd6, 0xbe, 0x78, 0x57, 0x55, 0x6d, 0x33,
+        0x7f, 0x44, 0x52, 0xfe, 0x42, 0xd5, 0x06, 0xa8,  // r
+        0x01, 0x03, 0x80, 0x8a, 0xfb, 0x0d, 0xb2, 0xfd,
+        0x4a, 0xbf, 0xf6, 0xaf, 0x41, 0x49, 0xf5, 0x1b   // s
+    };
+
+    uint8_t expected_tag[16] = {
+        0xa8, 0x06, 0x1d, 0xc1, 0x30, 0x51, 0x36, 0xc6,
+        0xc2, 0x2b, 0x8b, 0xaf, 0x0c, 0x01, 0x27, 0xa9
+    };
+
+    ll_POLY1305_CTX ctx = {0};
+    uint8_t tag[LL_POLY1305_TAG_LEN] = {0};
+
+    if (ll_POLY1305_Init(&ctx, key) != CF_SUCCESS) {
+        printf("POLY-1305 Init failed\n"); return;
+    }
+
+    if (ll_POLY1305_Update(&ctx, (uint8_t *)message, strlen(message)) != CF_SUCCESS) {
+        printf("POLY-1305 Update failed\n"); return;
+    }
+
+    if (ll_POLY1305_Final(&ctx, tag) != CF_SUCCESS) {
+        printf("POLY-1305 Final failed\n"); return;
+    }
+
+    printf("POLY-1305 Raw Key Test:\n");
+    printf("Tag: "); DEMO_print_hex(tag, sizeof(tag));
+    printf("Expected Tag: "); DEMO_print_hex(expected_tag, sizeof(expected_tag));
+    if (ll_POLY1305_Verify(key, (uint8_t *)message, strlen(message), expected_tag) != CF_SUCCESS) {
+        printf("POLY-1305 tag verification failed\n");
+    } else {
+        printf("POLY-1305 tag verified successfully\n");
+    }
+
+    ll_POLY1305_Reset(&ctx);
+}
+
 // all tests vectors for this function come from 
 // -  https://datatracker.ietf.org/doc/html/rfc4231#section-4
 // - https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Standards-and-Guidelines/documents/examples/KMAC_samples.pdf

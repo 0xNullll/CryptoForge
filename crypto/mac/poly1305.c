@@ -18,6 +18,12 @@
 
 #include "../../include/crypto/poly1305.h"
 
+/**
+ * Poly1305 message-authentication code
+ * 
+ * Implementation copied unmodified from CycloneCRYPTO (Oryx Embedded SARL, GPL-2.0-or-later)
+ * Used here for learning/experimentation purposes.
+ */
 CF_STATUS ll_POLY1305_Init(ll_POLY1305_CTX *ctx, const uint8_t key[LL_POLY1305_KEY_LEN]) {
     if (!ctx || !key)
         return CF_ERR_NULL_PTR;
@@ -77,83 +83,112 @@ ll_POLY1305_CTX* ll_POLY1305_InitAlloc(const uint8_t key[LL_POLY1305_KEY_LEN], C
     return ctx;
 }
 
-// Process a single 16-byte Poly1305 block
 static bool ll_POLY1305_ProcessBlock(ll_POLY1305_CTX *ctx) {
     if (!ctx)
         return false;
 
-    uint8_t n = ctx->buffer_len;
+    size_t n;
     uint64_t temp;
     uint32_t u[8];
-
-    // Append 1 bit (0x01) to the block, pad remaining to 17 bytes
+  
+    //Retrieve the length of the last block
+    n = ctx->buffer_len;
+  
+    //Add one bit beyond the number of octets. For a 16-byte block,
+    //this is equivalent to adding 2^128 to the number. For the shorter
+    //block, it can be 2^120, 2^112, or any power of two that is evenly
+    //divisible by 8, all the way down to 2^8
     ctx->buffer[n++] = 0x01;
-    while (n < 17) {
-        ctx->buffer[n++] = 0x00;
+  
+    //If the resulting block is not 17 bytes long (the last block),
+    //pad it with zeros
+    while(n < 17)
+    {
+       ctx->buffer[n++] = 0x00;
     }
-
-    // Load block into little-endian 32-bit words
+  
+    //Read the block as a little-endian number
     u[0] = LOAD32LE(ctx->buffer);
     u[1] = LOAD32LE(ctx->buffer + 4);
     u[2] = LOAD32LE(ctx->buffer + 8);
     u[3] = LOAD32LE(ctx->buffer + 12);
     u[4] = ctx->buffer[16];
-
-    // Add block to accumulator
-    temp = (uint64_t)ctx->acc[0] + u[0];
+  
+    //Add this number to the accumulator
+    temp = (uint64_t) ctx->acc[0] + u[0];
     ctx->acc[0] = temp & 0xFFFFFFFF;
     temp >>= 32;
-    temp += (uint64_t)ctx->acc[1] + u[1];
+    temp += (uint64_t) ctx->acc[1] + u[1];
     ctx->acc[1] = temp & 0xFFFFFFFF;
     temp >>= 32;
-    temp += (uint64_t)ctx->acc[2] + u[2];
+    temp += (uint64_t) ctx->acc[2] + u[2];
     ctx->acc[2] = temp & 0xFFFFFFFF;
     temp >>= 32;
-    temp += (uint64_t)ctx->acc[3] + u[3];
+    temp += (uint64_t) ctx->acc[3] + u[3];
     ctx->acc[3] = temp & 0xFFFFFFFF;
     temp >>= 32;
-    temp += (uint64_t)ctx->acc[4] + u[4];
+    temp += (uint64_t) ctx->acc[4] + u[4];
     ctx->acc[4] = temp & 0xFFFFFFFF;
-
-    // Multiply accumulator by r
-    temp = (uint64_t)ctx->acc[0] * ctx->r[0];
+  
+    //Multiply the accumulator by r
+    temp = (uint64_t) ctx->acc[0] * ctx->r[0];
     u[0] = temp & 0xFFFFFFFF;
     temp >>= 32;
-    temp += (uint64_t)ctx->acc[0] * ctx->r[1] + (uint64_t)ctx->acc[1] * ctx->r[0];
+    temp += (uint64_t) ctx->acc[0] * ctx->r[1];
+    temp += (uint64_t) ctx->acc[1] * ctx->r[0];
     u[1] = temp & 0xFFFFFFFF;
     temp >>= 32;
-    temp += (uint64_t)ctx->acc[0] * ctx->r[2] + (uint64_t)ctx->acc[1] * ctx->r[1] + (uint64_t)ctx->acc[2] * ctx->r[0];
+    temp += (uint64_t) ctx->acc[0] * ctx->r[2];
+    temp += (uint64_t) ctx->acc[1] * ctx->r[1];
+    temp += (uint64_t) ctx->acc[2] * ctx->r[0];
     u[2] = temp & 0xFFFFFFFF;
     temp >>= 32;
-    temp += (uint64_t)ctx->acc[0] * ctx->r[3] + (uint64_t)ctx->acc[1] * ctx->r[2] + (uint64_t)ctx->acc[2] * ctx->r[1] + (uint64_t)ctx->acc[3] * ctx->r[0];
+    temp += (uint64_t) ctx->acc[0] * ctx->r[3];
+    temp += (uint64_t) ctx->acc[1] * ctx->r[2];
+    temp += (uint64_t) ctx->acc[2] * ctx->r[1];
+    temp += (uint64_t) ctx->acc[3] * ctx->r[0];
     u[3] = temp & 0xFFFFFFFF;
     temp >>= 32;
-    temp += (uint64_t)ctx->acc[1] * ctx->r[3] + (uint64_t)ctx->acc[2] * ctx->r[2] + (uint64_t)ctx->acc[3] * ctx->r[1] + (uint64_t)ctx->acc[4] * ctx->r[0];
+    temp += (uint64_t) ctx->acc[1] * ctx->r[3];
+    temp += (uint64_t) ctx->acc[2] * ctx->r[2];
+    temp += (uint64_t) ctx->acc[3] * ctx->r[1];
+    temp += (uint64_t) ctx->acc[4] * ctx->r[0];
     u[4] = temp & 0xFFFFFFFF;
     temp >>= 32;
-    temp += (uint64_t)ctx->acc[2] * ctx->r[3] + (uint64_t)ctx->acc[3] * ctx->r[2] + (uint64_t)ctx->acc[4] * ctx->r[1];
+    temp += (uint64_t) ctx->acc[2] * ctx->r[3];
+    temp += (uint64_t) ctx->acc[3] * ctx->r[2];
+    temp += (uint64_t) ctx->acc[4] * ctx->r[1];
     u[5] = temp & 0xFFFFFFFF;
     temp >>= 32;
-    temp += (uint64_t)ctx->acc[3] * ctx->r[3] + (uint64_t)ctx->acc[4] * ctx->r[2];
+    temp += (uint64_t) ctx->acc[3] * ctx->r[3];
+    temp += (uint64_t) ctx->acc[4] * ctx->r[2];
     u[6] = temp & 0xFFFFFFFF;
     temp >>= 32;
-    temp += (uint64_t)ctx->acc[4] * ctx->r[3];
+    temp += (uint64_t) ctx->acc[4] * ctx->r[3];
     u[7] = temp & 0xFFFFFFFF;
-
-    // Modular reduction
-    temp = u[0] + (u[4] & 0xFFFFFFFC) + ((u[4] >> 2) | (u[5] << 30));
+  
+    //Perform modular reduction
+    temp = u[0];
+    temp += u[4] & 0xFFFFFFFC;
+    temp += (u[4] >> 2) | (u[5] << 30);
     ctx->acc[0] = temp & 0xFFFFFFFF;
     temp >>= 32;
-    temp += u[1] + u[5] + ((u[5] >> 2) | (u[6] << 30));
+    temp += u[1];
+    temp += u[5];
+    temp += (u[5] >> 2) | (u[6] << 30);
     ctx->acc[1] = temp & 0xFFFFFFFF;
     temp >>= 32;
-    temp += u[2] + u[6] + ((u[6] >> 2) | (u[7] << 30));
+    temp += u[2];
+    temp += u[6];
+    temp += (u[6] >> 2) | (u[7] << 30);
     ctx->acc[2] = temp & 0xFFFFFFFF;
     temp >>= 32;
-    temp += u[3] + u[7] + (u[7] >> 2);
+    temp += u[3];
+    temp += u[7];
+    temp += u[7] >> 2;
     ctx->acc[3] = temp & 0xFFFFFFFF;
     temp >>= 32;
-    temp += u[4] & 0x03;
+    temp += u[4] & 0x00000003;
     ctx->acc[4] = temp & 0xFFFFFFFF;
 
     return true;
@@ -176,18 +211,18 @@ CF_STATUS ll_POLY1305_Update(ll_POLY1305_CTX *ctx, const uint8_t *data, size_t d
         data_len -= i;
 
         // Process full 16-byte blocks
-        if (ctx->buffer_len == 16) {
-            if (!ll_POLY1305_ProcessBlock(ctx))
-                return CF_ERR_CTX_CORRUPT;
-
-            ctx->buffer_len = 0;
-        }
+       if(ctx->buffer_len == 16) {
+          //Transform the 16-byte block
+          ll_POLY1305_ProcessBlock(ctx);
+          //Empty the buffer
+          ctx->buffer_len = 0;
+       }
     }
 
     return CF_SUCCESS;
 }
 
-CF_STATUS ll_POLY1305_Final(ll_POLY1305_CTX *ctx, uint8_t tag[LL_POLY1305_TAG_LEN]) {
+CF_STATUS ll_POLY1305_Final(ll_POLY1305_CTX *ctx, uint8_t tag[16]) {
     if (!ctx || !tag)
         return CF_ERR_NULL_PTR;
 
@@ -197,7 +232,7 @@ CF_STATUS ll_POLY1305_Final(ll_POLY1305_CTX *ctx, uint8_t tag[LL_POLY1305_TAG_LE
   
     //Process the last block
     if(ctx->buffer_len != 0) {
-       poly1305ProcessBlock(ctx);
+       ll_POLY1305_ProcessBlock(ctx);
     }
   
     //Perform modular reduction (2^130 = 5)
@@ -260,10 +295,10 @@ CF_STATUS ll_POLY1305_Final(ll_POLY1305_CTX *ctx, uint8_t tag[LL_POLY1305_TAG_LE
   
     //The result is serialized as a little-endian number, producing
     //the 16 byte tag
-    STORE32LE(b[0], tag);
-    STORE32LE(b[1], tag + 4);
-    STORE32LE(b[2], tag + 8);
-    STORE32LE(b[3], tag + 12);
+    STORE32LE(tag, b[0]);
+    STORE32LE(tag + 4, b[1]);
+    STORE32LE(tag + 8, b[2]);
+    STORE32LE(tag + 12, b[3]);
   
     //Clear the accumulator
     ctx->acc[0] = 0;
@@ -311,7 +346,7 @@ CF_STATUS ll_POLY1305_Verify(
     uint8_t tag[LL_POLY1305_TAG_LEN] = {0};
     ll_POLY1305_CTX ctx = {0};
 
-    // Initialize context with key
+    // Initialize ctx with key
     st = ll_POLY1305_Init(&ctx, key);
     if (st != CF_SUCCESS) goto cleanup;
 
@@ -349,13 +384,12 @@ CF_STATUS ll_POLY1305_Free(ll_POLY1305_CTX **p_ctx) {
     return CF_SUCCESS;
 }
 
-// Clone a Poly1305 context into an existing destination
 CF_STATUS ll_POLY1305_CloneCtx(ll_POLY1305_CTX *ctx_dest, const ll_POLY1305_CTX *ctx_src) {
     if (!ctx_dest || !ctx_src)
         return CF_ERR_NULL_PTR;
 
     // Zero the destination first
-    ll_POLY1305_Reset(&ctx_dest);
+    ll_POLY1305_Reset(ctx_dest);
     
     // Copy r, s, and accumulator arrays
     SECURE_MEMCPY(ctx_dest->r, ctx_src->r, sizeof(ctx_dest->r));
@@ -373,7 +407,6 @@ CF_STATUS ll_POLY1305_CloneCtx(ll_POLY1305_CTX *ctx_dest, const ll_POLY1305_CTX 
     return CF_SUCCESS;
 }
 
-// Clone and allocate a new Poly1305 context
 ll_POLY1305_CTX* ll_POLY1305_CloneCtxAlloc(const ll_POLY1305_CTX *ctx_src, CF_STATUS *status) {
     if (!ctx_src) {
         if (status) *status = CF_ERR_NULL_PTR;

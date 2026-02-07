@@ -121,6 +121,7 @@ static CF_STATUS poly1305_update_wrapper(CF_MAC_CTX *ctx, const uint8_t *data, s
     return ll_POLY1305_Update((ll_POLY1305_CTX *)ctx->mac_ctx, data, data_len);
 }
 static CF_STATUS poly1305_final_wrapper(CF_MAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
+    UNUSED(tag_len);
     return ll_POLY1305_Final((ll_POLY1305_CTX *)ctx->mac_ctx, tag);
 }
 static CF_STATUS poly1305_reset_wrapper(CF_MAC_CTX *ctx) {
@@ -131,6 +132,7 @@ static CF_STATUS poly1305_verify_wrapper(CF_MAC_CTX *ctx,
                                      const uint8_t *expected_tag, size_t expected_tag_len,
                                      const struct _CF_MAC_OPTS *opts) {
     UNUSED(opts);
+    UNUSED(expected_tag_len);
     return ll_POLY1305_Verify(ctx->key, data, data_len, expected_tag);
 }
 
@@ -414,10 +416,6 @@ CF_STATUS CF_MAC_Final(CF_MAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
     else if (CF_MAC_IS_POLY1305(ctx->mac->id)) {
         if (tag_len != LL_POLY1305_TAG_LEN)
                 return CF_ERR_MAC_BAD_TAG_LEN;
-    }
-    
-    else {
-        return CF_ERR_INVALID_PARAM;
     }
 
     CF_STATUS st = CF_SUCCESS;

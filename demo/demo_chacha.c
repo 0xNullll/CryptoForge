@@ -10,7 +10,7 @@ void test_chacha20_rfc7539(void) {
         0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f
     };
 
-    uint8_t nonce[12] = {
+    uint8_t iv[12] = {
         0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x4a,
         0x00, 0x00, 0x00, 0x00
@@ -60,25 +60,25 @@ void test_chacha20_rfc7539(void) {
 
     ll_CHACHA20_CTX ctx = {0};
 
-    if (!ll_CHACHA20_init(&ctx, key, sizeof(key), nonce, count)) {
-        printf("CHACHA-20 RFC-7539 ll_CHACHA20_init failed\n"); return;
+    if (!ll_CHACHA20_init(&ctx, key, sizeof(key), iv, count)) {
+        printf("CHACHA20 RFC-7539 ll_CHACHA20_init failed\n"); return;
     }
 
     if (!ll_CHACHA20_Cipher(&ctx, plaintext, sizeof(plaintext), ciphertext)) {
-        printf("CHACHA-20 RFC-7539 ll_CHACHA20_Cipher failed\n"); return;
+        printf("CHACHA20 RFC-7539 ll_CHACHA20_Cipher failed\n"); return;
     }
 
     SECURE_ZERO(&ctx, sizeof(ctx));
 
-    if (!ll_CHACHA20_init(&ctx, key, sizeof(key), nonce, count)) {
-        printf("CHACHA-20 RFC-7539 Encrypt ll_CHACHA20_init failed\n"); return;
+    if (!ll_CHACHA20_init(&ctx, key, sizeof(key), iv, count)) {
+        printf("CHACHA20 RFC-7539 Encrypt ll_CHACHA20_init failed\n"); return;
     }
 
     if (!ll_CHACHA20_Cipher(&ctx, ciphertext, sizeof(ciphertext), decrypted)) {
-        printf("CHACHA-20 RFC-7539 Encrypt ll_CHACHA20_Cipher failed\n"); return;
+        printf("CHACHA20 RFC-7539 Encrypt ll_CHACHA20_Cipher failed\n"); return;
     }
 
-    printf("CHACHA-20 RFC-7539 Example Test:\n");
+    printf("CHACHA20 RFC-7539 Example Test:\n");
     printf("Key:       "); DEMO_print_hex(key, AES_BLOCK_SIZE);
     printf("Plaintext: "); DEMO_print_hex(plaintext, sizeof(plaintext));
     printf("Ciphertext:"); DEMO_print_hex(ciphertext, sizeof(expected_ciphertext));
@@ -87,10 +87,175 @@ void test_chacha20_rfc7539(void) {
 
     if (memcmp(ciphertext, expected_ciphertext, sizeof(expected_ciphertext)) == 0 &&
         memcmp(plaintext, decrypted, sizeof(plaintext)) == 0) {
-        printf("CHACHA-20 RFC-7539 Example test PASSED\n");
+        printf("CHACHA20 RFC-7539 Example test PASSED\n");
     } else {
-        printf("CHACHA-20 RFC-7539 Example test FAILED\n");
+        printf("CHACHA20 RFC-7539 Example test FAILED\n");
     }  
+
+}
+
+void test_chacha20_poly1305_wychaproof(void) {
+    ll_CHACHA20_POLY1305_CTX ctx = {0};
+    uint8_t tag[LL_POLY1305_TAG_LEN] = {0};
+    uint8_t ct[CHACHA_BLOCK_SIZE * 2] = {0};
+    uint8_t dec[CHACHA_BLOCK_SIZE * 2] = {0};
+
+    // --- Test Vector 1 ---
+    uint8_t tv1_key[CHACHA_KEY_SIZE_256] = {
+        0x80,0x81,0x82,0x83,0x84,0x85,0x86,0x87,
+        0x88,0x89,0x8a,0x8b,0x8c,0x8d,0x8e,0x8f,
+        0x90,0x91,0x92,0x93,0x94,0x95,0x96,0x97,
+        0x98,0x99,0x9a,0x9b,0x9c,0x9d,0x9e,0x9f
+    };
+
+    uint8_t tv1_iv[CHACHA_IV_SIZE] = {
+        0x07,0x00,0x00,0x00, 0x40,0x41,0x42,0x43,
+        0x44,0x45,0x46,0x47
+    };
+
+    uint8_t tv1_aad[] = {
+        0x50,0x51,0x52,0x53, 0xc0,0xc1,0xc2,0xc3,
+        0xc4,0xc5,0xc6,0xc7
+    };
+
+    uint8_t tv1_msg[] = {
+        0x4c,0x61,0x64,0x69,0x65,0x73,0x20,0x61,
+        0x6e,0x64,0x20,0x47,0x65,0x6e,0x74,0x6c,
+        0x65,0x6d,0x65,0x6e,0x20,0x6f,0x66,0x20,
+        0x74,0x68,0x65,0x20,0x63,0x6c,0x61,0x73,
+        0x73,0x20,0x6f,0x66,0x20,0x27,0x39,0x39,
+        0x3a,0x20,0x49,0x66,0x20,0x49,0x20,0x63,
+        0x6f,0x75,0x6c,0x64,0x20,0x6f,0x66,0x66,
+        0x65,0x72,0x20,0x79,0x6f,0x75,0x20,0x6f,
+        0x6e,0x6c,0x79,0x20,0x6f,0x6e,0x65,0x20,
+        0x74,0x69,0x70,0x20,0x66,0x6f,0x72,0x20,
+        0x74,0x68,0x65,0x20,0x66,0x75,0x74,0x75,
+        0x72,0x65,0x2c,0x20,0x73,0x75,0x6e,0x73,
+        0x63,0x72,0x65,0x65,0x6e,0x20,0x77,0x6f,
+        0x75,0x6c,0x64,0x20,0x62,0x65,0x20,0x69,
+        0x74,0x2e
+    };
+
+    uint8_t tv1_expected_ct[] = {
+        0xd3,0x1a,0x8d,0x34,0x64,0x8e,0x60,0xdb,
+        0x7b,0x86,0xaf,0xbc,0x53,0xef,0x7e,0xc2,
+        0xa4,0xad,0xed,0x51,0x29,0x6e,0x08,0xfe,
+        0xa9,0xe2,0xb5,0xa7,0x36,0xee,0x62,0xd6,
+        0x3d,0xbe,0xa4,0x5e,0x8c,0xa9,0x67,0x12,
+        0x82,0xfa,0xfb,0x69,0xda,0x92,0x72,0x8b,
+        0x1a,0x71,0xde,0x0a,0x9e,0x06,0x0b,0x29,
+        0x05,0xd6,0xa5,0xb6,0x7e,0xcd,0x3b,0x36,
+        0x92,0xdd,0xbd,0x7f,0x2d,0x77,0x8b,0x8c,
+        0x98,0x03,0xae,0xe3,0x28,0x09,0x1b,0x58,
+        0xfa,0xb3,0x24,0xe4,0xfa,0xd6,0x75,0x94,
+        0x55,0x85,0x80,0x8b,0x48,0x31,0xd7,0xbc,
+        0x3f,0xf4,0xde,0xf0,0x8e,0x4b,0x7a,0x9d,
+        0xe5,0x76,0xd2,0x65,0x86,0xce,0xc6,0x4b,
+        0x61,0x16
+    };
+
+    uint8_t tv1_expected_tag[LL_POLY1305_TAG_LEN] = {
+        0x1a,0xe1,0x0b,0x59,0x4f,0x09,0xe2,0x6a,
+        0x7e,0x90,0x2e,0xcb,0xd0,0x60,0x06,0x91
+    };
+
+    if (!ll_CHACHA20_POLY13051305_Init(&ctx, tv1_key, sizeof(tv1_key), tv1_iv, tv1_aad, sizeof(tv1_aad), true)) {
+        printf("CHACHA20-POLY1305 RFC-7539 Encrypt ll_CHACHA20_POLY13051305_Init failed\n"); return;
+    }
+
+    if (!ll_CHACHA20_POLY1305_Update(&ctx, tv1_msg, sizeof(tv1_msg), ct)) {
+        printf("CHACHA20-POLY1305 RFC-7539 Encrypt ll_CHACHA20_POLY1305_Update failed\n"); return;
+    }
+
+    if (!ll_CHACHA20_POLY1305_Final(&ctx, tag)) {
+        printf("CHACHA20-POLY1305 RFC-7539 Encrypt ll_CHACHA20_POLY1305_Final failed\n"); return;
+    }
+
+    SECURE_ZERO(&ctx, sizeof(ctx));
+
+    if (!ll_CHACHA20_POLY13051305_Init(&ctx, tv1_key, sizeof(tv1_key), tv1_iv, tv1_aad, sizeof(tv1_aad), false)) {
+        printf("CHACHA20-POLY1305 RFC-7539 Decrypt ll_CHACHA20_POLY13051305_Init failed\n"); return;
+    }
+
+    if (!ll_CHACHA20_POLY1305_Update(&ctx, tv1_expected_ct, sizeof(tv1_expected_ct), dec)) {
+        printf("CHACHA20-POLY1305 RFC-7539 Decrypt ll_CHACHA20_POLY1305_Update failed\n"); return;
+    }
+
+    if (!ll_CHACHA20_POLY1305_Final(&ctx, tag)) {
+        printf("CHACHA20-POLY1305 RFC-7539 Decrypt ll_CHACHA20_POLY1305_Final failed\n"); return;
+    }
+
+    printf("CHACHA20-POLY1305 RFC-7539 Example Test:\n");
+    printf("Key:       "); DEMO_print_hex(tv1_key, sizeof(tv1_key));
+    printf("Plaintext: "); DEMO_print_hex(tv1_msg, sizeof(tv1_msg));
+    printf("Ciphertext:"); DEMO_print_hex(ct, sizeof(tv1_expected_ct));
+    printf("Tag: "); DEMO_print_hex(tag, sizeof(tag));
+    printf("Expected Tag: "); DEMO_print_hex(tv1_expected_tag, sizeof(tv1_expected_tag));
+    printf("Decrypted: "); DEMO_print_hex(dec, sizeof(tv1_msg));
+    if (memcmp(ct, tv1_expected_ct, sizeof(tv1_expected_ct)) == 0 &&
+        memcmp(dec, tv1_msg, sizeof(tv1_msg)) == 0 &&
+        memcmp(tag, tv1_expected_tag, sizeof(tv1_expected_tag)) == 0) {
+        printf("CHACHA20-POLY1305 RFC-7539 Example test PASSED\n");
+    } else {
+        printf("CHACHA20-POLY1305 RFC-7539 Example test FAILED\n");
+    } 
+
+    SECURE_ZERO(&ctx, sizeof(ctx));
+    SECURE_ZERO(ct, sizeof(ctx));
+    SECURE_ZERO(dec, sizeof(dec));
+
+    // --- Test Vector 2 ---
+    uint8_t tv2_key[CHACHA_KEY_SIZE_256] = {
+        0x80,0xba,0x31,0x92,0xc8,0x03,0xce,0x96,
+        0x5e,0xa3,0x71,0xd5,0xff,0x07,0x3c,0xf0,
+        0xf4,0x3b,0x6a,0x2a,0xb5,0x76,0xb2,0x08,
+        0x42,0x6e,0x11,0x40,0x9c,0x09,0xb9,0xb0
+    };
+
+    uint8_t tv2_iv[CHACHA_IV_SIZE] = {
+        0x4d,0xa5,0xbf,0x8d, 0xfd,0x58,0x52,0xc1,
+        0xea,0x12,0x37,0x9d
+    };
+
+    uint8_t tv2_aad[1] = {0}; // empty
+    uint8_t tv2_msg[1] = {0}; // empty
+    uint8_t tv2_expected_ct[1] = {0};  // empty
+
+    uint8_t tv2_expected_tag[LL_POLY1305_TAG_LEN] = {
+        0x76,0xac,0xb3,0x42,0xcf,0x31,0x66,0xa5,
+        0xb6,0x3c,0x0c,0x0e,0xa1,0x38,0x3c,0x8d
+    };
+
+    if (!ll_CHACHA20_POLY13051305_Init(&ctx, tv2_key, sizeof(tv2_key), tv2_iv, tv2_aad, 0, true)) {
+        printf("CHACHA20-POLY1305 RFC-7539 Encrypt ll_CHACHA20_POLY13051305_Init failed\n"); return;
+    }
+
+    if (!ll_CHACHA20_POLY1305_Final(&ctx, tag)) {
+        printf("CHACHA20-POLY1305 RFC-7539 Encrypt ll_CHACHA20_POLY1305_Final failed\n"); return;
+    }
+
+    if (!ll_CHACHA20_POLY13051305_Init(&ctx, tv2_key, sizeof(tv2_key), tv2_iv, tv2_aad, 0, false)) {
+        printf("CHACHA20-POLY1305 RFC-7539 Decrypt ll_CHACHA20_POLY13051305_Init failed\n"); return;
+    }
+
+    if (!ll_CHACHA20_POLY1305_Final(&ctx, tag)) {
+        printf("CHACHA20-POLY1305 RFC-7539 Decrypt ll_CHACHA20_POLY1305_Final failed\n"); return;
+    }
+
+    printf("CHACHA20-POLY1305 RFC-7539 Example Test:\n");
+    printf("Key:       "); DEMO_print_hex(tv2_key, sizeof(tv2_key));
+    printf("Plaintext: "); DEMO_print_hex(tv2_msg, sizeof(tv2_msg));
+    printf("Ciphertext:"); DEMO_print_hex(ct, sizeof(tv2_expected_ct));
+    printf("Tag: "); DEMO_print_hex(tag, sizeof(tag));
+    printf("Expected Tag: "); DEMO_print_hex(tv2_expected_tag, sizeof(tv2_expected_tag));
+    printf("Decrypted: "); DEMO_print_hex(dec, sizeof(tv2_msg));
+    if (memcmp(ct, tv2_expected_ct, sizeof(tv2_expected_ct)) == 0 &&
+        memcmp(dec, tv2_msg, sizeof(tv2_msg)) == 0 &&
+        memcmp(tag, tv2_expected_tag, sizeof(tv2_expected_tag)) == 0) {
+        printf("CHACHA20-POLY1305 RFC-7539 Example test PASSED\n");
+    } else {
+        printf("CHACHA20-POLY1305 RFC-7539 Example test FAILED\n");
+    } 
 
 }
 

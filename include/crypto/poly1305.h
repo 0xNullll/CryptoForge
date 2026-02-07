@@ -38,7 +38,7 @@ extern "C" {
 // ============================
 typedef struct _ll_POLY1305_CTX {
     /* r and s parts of the key (little-endian) */
-    uint32_t r[5];        // clamped r (130-bit representation)
+    uint32_t r[4];        // clamped r (130-bit representation)
     uint32_t s[4];        // s (128-bit)
 
     /* accumulator (130-bit) */

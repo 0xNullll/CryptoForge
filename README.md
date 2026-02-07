@@ -69,7 +69,7 @@ Do not use for protecting high‑value secrets without independent review.
 - [RFC 6234: US Secure Hash Algorithms (SHA and SHA-based HMAC and HKDF), May 2011](https://datatracker.ietf.org/doc/html/rfc6234)
 - [RFC 7539: ChaCha20 and Poly1305 for IETF Protocols, May 2015](https://datatracker.ietf.org/doc/html/rfc7539)
 
-### NIST / FIPS / SP
+### NIST
 - [FIPS 197: Advanced Encryption Standard (AES), November 2001](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197-upd1.pdf)
 - [FIPS 202: SHA-3 Standard: Permutation-Based Hash and Extendable-Output Functions, August 2015](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf)
 - [SP 800-38A: Recommendation for Block Cipher Modes of Operation: Methods and Techniques, December 2001](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38a.pdf)
