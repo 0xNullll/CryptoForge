@@ -96,8 +96,9 @@ CF_API void test_all_kmacs_verify_array(const uint8_t *key, size_t key_len,
                                  const uint8_t *expected_digests[4],
                                  const size_t expected_digests_len[4]);
 
-CF_API void test_all_gmacs(void);
 CF_API void test_aes_cmac_fips800_38b(void);
+CF_API void test_all_gmacs(void);
+CF_API void test_all_poly1305(void);
 CF_API void test_all_macs_high(void);
 
 CF_API void test_all_hkdfs(
@@ -123,6 +124,7 @@ CF_API void test_hex_base85(const char *label, const uint8_t *input, size_t len,
 CF_API void test_all_encoders_high(const uint8_t *input, size_t input_len);
 
 CF_API void test_chacha20_rfc7539(void);
+CF_API void test_chacha20_poly1305_wychaproof(void);
 
 CF_API void test_aes128_fips197(void);
 CF_API void test_aes192_fips197(void);

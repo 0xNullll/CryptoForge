@@ -229,7 +229,7 @@ CF_STATUS ll_GMAC_CloneCtx(ll_GMAC_CTX *ctx_dest, const ll_GMAC_CTX *ctx_src) {
         return CF_ERR_NULL_PTR;
 
     // Zero the destination first
-    ll_GMAC_Reset(&ctx_dest);
+    ll_GMAC_Reset(ctx_dest);
 
     ctx_dest->key = ctx_src->key;
 

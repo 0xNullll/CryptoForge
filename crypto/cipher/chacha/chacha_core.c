@@ -14,9 +14,9 @@
 #define CHACHA_CONSTANT_3 0x6b206574  // "te k"
 
 bool ll_CHACHA_Init(ll_CHACHA_CTX *ctx, const uint8_t *key, size_t key_len, 
-                    const uint8_t nonce[CHACHA_NONCE_SIZE], uint32_t counter,
+                    const uint8_t iv[CHACHA_IV_SIZE], uint32_t counter,
                     int rounds) {
-    if (!ctx || !key || !nonce)
+    if (!ctx || !key || !iv)
         return false;
 
     // Accept only supported key sizes: 128-bit or 256-bit
@@ -62,10 +62,10 @@ bool ll_CHACHA_Init(ll_CHACHA_CTX *ctx, const uint8_t *key, size_t key_len,
     // Input word 12 is the block counter (usually starts at 0)
     w[12] = counter;
 
-    // Input words 13-15 are the 96-bit nonce
-    w[13] = LOAD32LE(nonce);
-    w[14] = LOAD32LE(nonce + 4);
-    w[15] = LOAD32LE(nonce + 8);
+    // Input words 13-15 are the 96-bit iv
+    w[13] = LOAD32LE(iv);
+    w[14] = LOAD32LE(iv + 4);
+    w[15] = LOAD32LE(iv + 8);
 
     // Initialize keystream position to zero
     ctx->pos = 0;

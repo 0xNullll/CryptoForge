@@ -1367,11 +1367,11 @@ void test_aes_gcm_fips_style(void) {
 
     SECURE_ZERO(&gcm_ctx, sizeof(gcm_ctx));
 
-    if (!ll_AES_GCM_Init(&gcm_ctx, &key_ctx, iv, sizeof(iv), aad, sizeof(aad))) {
+    if (!ll_AES_GCM_Init(&gcm_ctx, &key_ctx, iv, sizeof(iv), aad, sizeof(aad), true)) {
         printf("AES-128 GCM Encrypt ll_AES_GCM_Init failed\n"); return;
     }
 
-    if (!ll_AES_GCM_Update(&gcm_ctx, plain_text, sizeof(plain_text), ct, true)) {
+    if (!ll_AES_GCM_Update(&gcm_ctx, plain_text, sizeof(plain_text), ct)) {
         printf("AES-128 GCM Encrypt ll_AES_GCM_Update failed\n"); return;
     }
 
@@ -1381,11 +1381,11 @@ void test_aes_gcm_fips_style(void) {
 
     SECURE_ZERO(&gcm_ctx, sizeof(gcm_ctx));
 
-    if (!ll_AES_GCM_Init(&gcm_ctx, &key_ctx, iv, sizeof(iv), aad, sizeof(aad))) {
+    if (!ll_AES_GCM_Init(&gcm_ctx, &key_ctx, iv, sizeof(iv), aad, sizeof(aad), false)) {
         printf("AES-128 GCM Decrypt ll_AES_GCM_Init failed\n"); return;
     }
 
-    if (!ll_AES_GCM_Update(&gcm_ctx, ct, sizeof(ct), dec, false)) {
+    if (!ll_AES_GCM_Update(&gcm_ctx, ct, sizeof(ct), dec)) {
         printf("AES-128 GCM Decrypt ll_AES_GCM_Update failed\n"); return;
     }
 
@@ -1447,11 +1447,11 @@ void test_aes_gcm_fips_style(void) {
 
     SECURE_ZERO(&gcm_ctx, sizeof(gcm_ctx));
 
-    if (!ll_AES_GCM_Init(&gcm_ctx, &key_ctx, iv, sizeof(iv), aad, sizeof(aad))) {
+    if (!ll_AES_GCM_Init(&gcm_ctx, &key_ctx, iv, sizeof(iv), aad, sizeof(aad), true)) {
         printf("AES-192 GCM Encrypt ll_AES_GCM_Init failed\n"); return;
     }
 
-    if (!ll_AES_GCM_Update(&gcm_ctx, plain_text, sizeof(plain_text), ct, true)) {
+    if (!ll_AES_GCM_Update(&gcm_ctx, plain_text, sizeof(plain_text), ct)) {
         printf("AES-192 GCM Encrypt ll_AES_GCM_Update failed\n"); return;
     }
 
@@ -1461,11 +1461,11 @@ void test_aes_gcm_fips_style(void) {
 
     SECURE_ZERO(&gcm_ctx, sizeof(gcm_ctx));
 
-    if (!ll_AES_GCM_Init(&gcm_ctx, &key_ctx, iv, sizeof(iv), aad, sizeof(aad))) {
+    if (!ll_AES_GCM_Init(&gcm_ctx, &key_ctx, iv, sizeof(iv), aad, sizeof(aad), false)) {
         printf("AES-192 GCM Decrypt ll_AES_GCM_Init failed\n"); return;
     }
 
-    if (!ll_AES_GCM_Update(&gcm_ctx, ct, sizeof(ct), dec, false)) {
+    if (!ll_AES_GCM_Update(&gcm_ctx, ct, sizeof(ct), dec)) {
         printf("AES-192 GCM Decrypt ll_AES_GCM_Update failed\n"); return;
     }
 
@@ -1527,11 +1527,11 @@ void test_aes_gcm_fips_style(void) {
 
     SECURE_ZERO(&gcm_ctx, sizeof(gcm_ctx));
     
-    if (!ll_AES_GCM_Init(&gcm_ctx, &key_ctx, iv, sizeof(iv), aad, sizeof(aad))) {
+    if (!ll_AES_GCM_Init(&gcm_ctx, &key_ctx, iv, sizeof(iv), aad, sizeof(aad), true)) {
         printf("AES-256 GCM Encrypt ll_AES_GCM_Init failed\n"); return;
     }
 
-    if (!ll_AES_GCM_Update(&gcm_ctx, plain_text, sizeof(plain_text), ct, true)) {
+    if (!ll_AES_GCM_Update(&gcm_ctx, plain_text, sizeof(plain_text), ct)) {
         printf("AES-256 GCM Encrypt ll_AES_GCM_Update failed\n"); return;
     }
 
@@ -1541,11 +1541,11 @@ void test_aes_gcm_fips_style(void) {
 
     SECURE_ZERO(&gcm_ctx, sizeof(gcm_ctx));
 
-    if (!ll_AES_GCM_Init(&gcm_ctx, &key_ctx, iv, sizeof(iv), aad, sizeof(aad))) {
+    if (!ll_AES_GCM_Init(&gcm_ctx, &key_ctx, iv, sizeof(iv), aad, sizeof(aad), false)) {
         printf("AES-256 GCM Decrypt ll_AES_GCM_Init failed\n"); return;
     }
 
-    if (!ll_AES_GCM_Update(&gcm_ctx, ct, sizeof(ct), dec, false)) {
+    if (!ll_AES_GCM_Update(&gcm_ctx, ct, sizeof(ct), dec)) {
         printf("AES-256 GCM Decrypt ll_AES_GCM_Update failed\n"); return;
     }
 
@@ -1625,7 +1625,7 @@ void test_aes_gcm_empty_plaintext(void) {
 
     SECURE_ZERO(&gcm_ctx, sizeof(gcm_ctx));
 
-    if (!ll_AES_GCM_Init(&gcm_ctx, &key_ctx, iv, sizeof(iv), aad, sizeof(aad))) {
+    if (!ll_AES_GCM_Init(&gcm_ctx, &key_ctx, iv, sizeof(iv), aad, sizeof(aad), true)) {
         printf("AES-128 GCM Encrypt ll_AES_GCM_Init failed\n"); return;
     }
 
@@ -1635,7 +1635,7 @@ void test_aes_gcm_empty_plaintext(void) {
 
     SECURE_ZERO(&gcm_ctx, sizeof(gcm_ctx));
 
-    if (!ll_AES_GCM_Init(&gcm_ctx, &key_ctx, iv, sizeof(iv), aad, sizeof(aad))) {
+    if (!ll_AES_GCM_Init(&gcm_ctx, &key_ctx, iv, sizeof(iv), aad, sizeof(aad), false)) {
         printf("AES-128 GCM Decrypt ll_AES_GCM_Init failed\n"); return;
     }
 
@@ -1674,7 +1674,7 @@ void test_aes_gcm_empty_plaintext(void) {
 
     SECURE_ZERO(&gcm_ctx, sizeof(gcm_ctx));
 
-    if (!ll_AES_GCM_Init(&gcm_ctx, &key_ctx, iv, sizeof(iv), aad, sizeof(aad))) {
+    if (!ll_AES_GCM_Init(&gcm_ctx, &key_ctx, iv, sizeof(iv), aad, sizeof(aad), true)) {
         printf("AES-128 GCM Encrypt ll_AES_GCM_Init failed\n"); return;
     }
 
@@ -1684,7 +1684,7 @@ void test_aes_gcm_empty_plaintext(void) {
 
     SECURE_ZERO(&gcm_ctx, sizeof(gcm_ctx));
 
-    if (!ll_AES_GCM_Init(&gcm_ctx, &key_ctx, iv, sizeof(iv), aad, sizeof(aad))) {
+    if (!ll_AES_GCM_Init(&gcm_ctx, &key_ctx, iv, sizeof(iv), aad, sizeof(aad), false)) {
         printf("AES-128 GCM Decrypt ll_AES_GCM_Init failed\n"); return;
     }
 
@@ -1723,7 +1723,7 @@ void test_aes_gcm_empty_plaintext(void) {
 
     SECURE_ZERO(&gcm_ctx, sizeof(gcm_ctx));
 
-    if (!ll_AES_GCM_Init(&gcm_ctx, &key_ctx, iv, sizeof(iv), aad, sizeof(aad))) {
+    if (!ll_AES_GCM_Init(&gcm_ctx, &key_ctx, iv, sizeof(iv), aad, sizeof(aad), true)) {
         printf("AES-128 GCM Encrypt ll_AES_GCM_Init failed\n"); return;
     }
 
@@ -1733,7 +1733,7 @@ void test_aes_gcm_empty_plaintext(void) {
 
     SECURE_ZERO(&gcm_ctx, sizeof(gcm_ctx));
 
-    if (!ll_AES_GCM_Init(&gcm_ctx, &key_ctx, iv, sizeof(iv), aad, sizeof(aad))) {
+    if (!ll_AES_GCM_Init(&gcm_ctx, &key_ctx, iv, sizeof(iv), aad, sizeof(aad), false)) {
         printf("AES-128 GCM Decrypt ll_AES_GCM_Init failed\n"); return;
     }
 
