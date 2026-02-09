@@ -2,16 +2,10 @@
  * CryptoForge - sha3.c / SHA-3 (SHA-3-224, SHA-3-256, SHA3-384, and SHA3-512) Core Implementation
  * Copyright (C) 2026 0xNullll
  *
- * Licensed under the Apache License, Version 2.0 (the "License").
- * You may not use this file except in compliance with the License.
- * You may obtain a copy of the License in the file LICENSE in the
- * source distribution or at:
- * https://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the MIT License. See LICENSE in the project root.
  *
- * This software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES
- * OR CONDITIONS OF ANY KIND, either express or implied. See the License
- * for the specific language governing permissions and limitations under
- * the License.
+ * Note: This library is educational, software-only, and verified only
+ * against WyChaProof test vectors. No hardware optimizations. Use with caution.
  *
  * Project repository: https://github.com/0xNullll/CryptoForge
  */

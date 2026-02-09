@@ -1,43 +1,4 @@
-#include "../../../include/crypto/chacha.h"
-
-bool ll_CHACHA8_init(ll_CHACHA8_CTX *ctx,
-                     const uint8_t *key, size_t key_len,
-                     const uint8_t iv[CHACHA_IV_SIZE],
-                     uint32_t counter) {
-    return ll_CHACHA_Init((ll_CHACHA_CTX *)ctx, key, key_len, iv, counter, CHACHA8_ROUNDS);                 
-}
-
-bool ll_CHACHA8_Cipher(ll_CHACHA8_CTX *ctx,
-                       const uint8_t *in, size_t in_len,
-                       uint8_t *out) {
-    return ll_CHACHA_Cipher((ll_CHACHA_CTX *)ctx, in, in_len, out);
-}
-
-bool ll_CHACHA12_init(ll_CHACHA12_CTX *ctx,
-                     const uint8_t *key, size_t key_len,
-                     const uint8_t iv[CHACHA_IV_SIZE],
-                     uint32_t counter) {
-    return ll_CHACHA_Init((ll_CHACHA_CTX *)ctx, key, key_len, iv, counter, CHACHA12_ROUNDS);                 
-}
-
-bool ll_CHACHA12_Cipher(ll_CHACHA12_CTX *ctx,
-                       const uint8_t *in, size_t in_len,
-                       uint8_t *out) {
-    return ll_CHACHA_Cipher((ll_CHACHA_CTX *)ctx, in, in_len, out);
-}
-
-bool ll_CHACHA20_init(ll_CHACHA20_CTX *ctx,
-                     const uint8_t *key, size_t key_len,
-                     const uint8_t iv[CHACHA_IV_SIZE],
-                     uint32_t counter) {
-    return ll_CHACHA_Init((ll_CHACHA_CTX *)ctx, key, key_len, iv, counter, CHACHA20_ROUNDS);                 
-}
-
-bool ll_CHACHA20_Cipher(ll_CHACHA20_CTX *ctx,
-                       const uint8_t *in, size_t in_len,
-                       uint8_t *out) {
-    return ll_CHACHA_Cipher((ll_CHACHA_CTX *)ctx, in, in_len, out);
-}
+#include "../../../include/crypto/chacha20_poly1305.h"
 
 bool ll_CHACHA20_POLY13051305_Init(
     ll_CHACHA20_POLY1305_CTX *ctx,
@@ -47,7 +8,7 @@ bool ll_CHACHA20_POLY13051305_Init(
     if (!ctx || !key || !iv || (aad_len > 0 && !aad))
         return false;
 
-    if (aad_len > CHACHA20_POLY1305MAX_AAD_LEN)
+    if (aad_len > CHACHA20_POLY1305_MAX_AAD_LEN)
         return false; // exceed ~16 GB
 
     bool ok = false;
@@ -204,68 +165,3 @@ cleanup:
 
     return ok;
 }
-
-// bool ll_CHACHA20_POLY1305_Update(
-//     ll_CHACHA20_POLY1305_CTX *ctx,
-//     const uint8_t *in, size_t in_len,
-//     uint8_t *out) {
-//     if (!ctx || !in || !out)
-//         return false;
-
-//     if (ctx->data_len + in_len > CHACHA20_POLY1305_MAX_DATA_LEN)
-//         return false;
-
-//     bool ok = false;
-
-//     // Encrypt/decrypt the input
-//     if (!ll_CHACHA_Cipher(&ctx->chacha_ctx, in, in_len, out))
-//         goto cleanup;
-
-//     // Feed ciphertext (encryption) or ciphertext (decryption) into Poly1305
-//     if (ll_POLY1305_Update(&ctx->poly1305_ctx, out, in_len) != CF_SUCCESS)
-//         goto cleanup;
-
-//     ctx->data_len += (uint64_t)in_len;
-
-//     ok = true;
-
-// cleanup:
-//     if (!ok)
-//         SECURE_ZERO(ctx, sizeof(*ctx));
-
-//     return ok;
-// }
-
-
-// bool ll_CHACHA20_POLY1305_Update(
-//     ll_CHACHA20_POLY1305_CTX *ctx,
-//     const uint8_t *in, size_t in_len,
-//     uint8_t *out) {
-//     if (!ctx || !in || !out)
-//         return false;
-
-//     //Check that adding this input won't exceed the maximum supported data length (256 GB)
-//     if (ctx->data_len + in_len > CHACHA20_POLY1305_MAX_DATA_LEN)
-//         return false; // exceed 256 GB
-
-//     bool ok = false;
-
-//     //Encrypt/decrypt the input using ChaCha20
-//     //This converts plaintext to ciphertext (or vice versa for decryption)
-//     if (!ll_CHACHA_Cipher(&ctx->chacha_ctx, in, in_len, out))
-//         goto cleanup;
-
-//     //Update the total data length processed so far
-//     //This step is mandatory for final tag computation
-//     ctx->data_len += (uint64_t)in_len;
-
-//     ok = true;
-
-// cleanup:
-//     if (!ok) {
-//         // Only wipe context on failure
-//         SECURE_ZERO(ctx, sizeof(*ctx));
-//     }
-
-//     return ok;
-// }

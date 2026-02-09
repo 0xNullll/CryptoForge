@@ -1,3 +1,15 @@
+/*
+ * CryptoForge - chacha_core.c / ChaCha Core Implementation
+ * Copyright (C) 2026 0xNullll
+ *
+ * Licensed under the MIT License. See LICENSE in the project root.
+ *
+ * Note: This library is educational, software-only, and verified only
+ * against WyChaProof test vectors. No hardware optimizations. Use with caution.
+ *
+ * Project repository: https://github.com/0xNullll/CryptoForge
+ */
+
 #include "../../../include/crypto/chacha_core.h"
 
 // ChaCha quarter-round function
@@ -73,7 +85,7 @@ bool ll_CHACHA_Init(ll_CHACHA_CTX *ctx, const uint8_t *key, size_t key_len,
     return true;
 }
 
-static bool ll_CHACHA_ProcessBlock(ll_CHACHA_CTX *ctx) {
+bool ll_CHACHA_ProcessBlock(ll_CHACHA_CTX *ctx) {
     uint32_t w[16];
     int i;
 
