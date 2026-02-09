@@ -883,9 +883,10 @@ void test_all_macs_high(void) {
     // List of MAC flags to test
     uint32_t mac_flags[] = {
         CF_HMAC,
-        CF_KMAC,
+        CF_KMAC_STD,
         CF_CMAC,
-        CF_GMAC
+        CF_GMAC,
+        CF_POLY1305
     };
 
     // List of hash flags to test
@@ -1369,6 +1370,71 @@ void test_all_macs_high(void) {
         }
 
         CF_MACOpts_Reset(&mac_opts_ctx);
+        CF_MAC_Reset(&mac_ctx);
+    }
+
+    putchar('\n');
+
+    char *test_poly1305_message = "Cryptographic Forum Research Group";
+
+    // // 32-byte Poly1305 key (r + s)
+    uint8_t test_poly1305_key[32] = {
+        0x85, 0xd6, 0xbe, 0x78, 0x57, 0x55, 0x6d, 0x33,
+        0x7f, 0x44, 0x52, 0xfe, 0x42, 0xd5, 0x06, 0xa8,  // r
+        0x01, 0x03, 0x80, 0x8a, 0xfb, 0x0d, 0xb2, 0xfd,
+        0x4a, 0xbf, 0xf6, 0xaf, 0x41, 0x49, 0xf5, 0x1b   // s
+    };
+
+    uint8_t test_poly1305_expected_tag[16] = {
+        0xa8, 0x06, 0x1d, 0xc1, 0x30, 0x51, 0x36, 0xc6,
+        0xc2, 0x2b, 0x8b, 0xaf, 0x0c, 0x01, 0x27, 0xa9
+    };
+
+    // POLY-305 execution path
+    for (size_t i = 0; i < 1; i++) {
+        const CF_MAC *mac = CF_MAC_GetByFlag(mac_flags[4]);
+        if (!mac) { 
+            printf("Unknown MAC flag %u\n", mac_flags[4]); 
+            continue; 
+        }
+
+        CF_MAC_CTX mac_ctx = {0};
+
+        CF_STATUS status = CF_MAC_Init(&mac_ctx, mac, NULL, test_poly1305_key, sizeof(test_poly1305_key), 0);
+        if (status != CF_SUCCESS) { 
+            printf("CF_MAC_Init failed for %s\n", CF_MAC_GetFullName(&mac_ctx)); 
+            continue; 
+        }
+
+        status = CF_MAC_Update(&mac_ctx, (uint8_t *)test_poly1305_message, strlen(test_poly1305_message));
+        if (status != CF_SUCCESS) { 
+
+            printf("CF_MAC_Update failed for %s\n", CF_MAC_GetFullName(&mac_ctx)); 
+            CF_MAC_Reset(&mac_ctx); 
+            continue; 
+        }
+
+        status = CF_MAC_Final(&mac_ctx, tag, mac_ctx.mac->default_tag_len);
+        if (status != CF_SUCCESS) { 
+            printf("CF_MAC_Final failed for %s\n", CF_MAC_GetFullName(&mac_ctx)); 
+            CF_MAC_Reset(&mac_ctx); 
+            continue; 
+        }
+
+        printf("%s: ", CF_MAC_GetFullName(&mac_ctx));
+        DEMO_print_hex(tag, mac_ctx.mac->default_tag_len);
+
+        status = CF_MAC_Verify(mac, test_poly1305_key, sizeof(test_poly1305_key),
+                               (uint8_t *)test_poly1305_message, strlen(test_poly1305_message),
+                               test_poly1305_expected_tag, mac_ctx.mac->default_tag_len,
+                               NULL, 0);
+
+        if (status != CF_SUCCESS) {
+            printf("CF_MAC_Verify failed for %s\n", CF_MAC_GetFullName(&mac_ctx)); 
+        } else {
+            printf("CF_MAC_Verify succeeded for %s\n", CF_MAC_GetFullName(&mac_ctx)); 
+        }
+
         CF_MAC_Reset(&mac_ctx);
     }
 }

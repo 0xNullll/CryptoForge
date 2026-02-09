@@ -85,7 +85,7 @@ typedef enum {
     CF_ERR_KDF_BASE_ERROR      = CF_ERR_KDF_BASE,
     CF_ERR_KDF_ALREADY_EXTRACTED,                    // calling the Extract() again
     CF_ERR_KDF_NOT_EXTRACTED_YET                     // calling the Expand() before Extract()
-} MAC_CF_STATUS;
+} KDF_CF_STATUS;
 
 //
 // 5. Cipher errors

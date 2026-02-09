@@ -174,21 +174,41 @@ static const CF_ENCODER *CF_get_base85(void) {
     return &enc;
 }
 
-// Iternal Lookup encoder descriptor by flag using masks
-static const CF_ENCODER* CF_Enc_GetByFlag(uint32_t encoder_flag) {
-    if (encoder_flag & CF_BASE16_MASK)
-        return CF_get_base16();
-    if (encoder_flag & CF_BASE32_MASK)
-        return CF_get_base32();
-    if (encoder_flag & CF_BASE58_MASK)
-        return CF_get_base58();
-    if (encoder_flag & CF_BASE64_MASK)
-        return CF_get_base64();
-    if (encoder_flag & CF_BASE85_MASK)
-        return CF_get_base85();
+// Table of all supported MACs
+static const CF_ALGO_ENTRY cf_encoder_table[] = {
+    { CF_BASE16_MASK,  (const void* (*)(void))CF_get_base16 },
+    { CF_BASE32_MASK,  (const void* (*)(void))CF_get_base32 },
+    { CF_BASE58_MASK,  (const void* (*)(void))CF_get_base58 },
+    { CF_BASE64_MASK,  (const void* (*)(void))CF_get_base64 },
+    { CF_BASE85_MASK,  (const void* (*)(void))CF_get_base85 }
+};
 
-    return NULL; // no matching encoder found
+static const CF_ENCODER* CF_Enc_GetByFlag(uint32_t algo_flag) {
+    size_t table_len = sizeof(cf_encoder_table) / sizeof(cf_encoder_table[0]);
+    for (size_t i = 0; i < table_len; i++) {
+        if (cf_encoder_table[i].flag & algo_flag) {
+            return (const CF_ENCODER*)cf_encoder_table[i].getter_fn();
+        }
+    }
+    return NULL;
 }
+
+
+// // Iternal Lookup encoder descriptor by flag using masks
+// static const CF_ENCODER* CF_Enc_GetByFlag(uint32_t encoder_flag) {
+//     if (encoder_flag & CF_BASE16_MASK)
+//         return CF_get_base16();
+//     if (encoder_flag & CF_BASE32_MASK)
+//         return CF_get_base32();
+//     if (encoder_flag & CF_BASE58_MASK)
+//         return CF_get_base58();
+//     if (encoder_flag & CF_BASE64_MASK)
+//         return CF_get_base64();
+//     if (encoder_flag & CF_BASE85_MASK)
+//         return CF_get_base85();
+
+//     return NULL; // no matching encoder found
+// }
 
 CF_STATUS CF_Enc_Init(CF_ENCODER_CTX *ctx, uint32_t enc_flags, uint32_t dec_flags) {
     if (!ctx)

@@ -37,13 +37,12 @@ extern "C" {
 typedef struct _CF_KDF {
     uint32_t id;
     size_t ctx_size;
-    size_t default_out_len;
 
-    CF_STATUS (*kdf_init_fn)(struct _CF_KDF_CTX *ctx);
+    CF_STATUS (*kdf_init_fn)(struct _CF_KDF_CTX *ctx, const struct _CF_KDF_OPTS *opts);
     
-    CF_STATUS (*kdf_extract_fn)(struct _CF_KDF_CTX *ctx, const struct _CF_KDF_OPTS *opts, bool new_info);
+    CF_STATUS (*kdf_extract_fn)(struct _CF_KDF_CTX *ctx, const struct _CF_KDF_OPTS *opts);
     
-    CF_STATUS (*kdf_expand_fn)(struct _CF_KDF_CTX *ctx, uint8_t *out, size_t out_len);
+    CF_STATUS (*kdf_expand_fn)(struct _CF_KDF_CTX *ctx, uint8_t *out, size_t out_len, const struct _CF_KDF_OPTS *opts, bool new_info);
     
     CF_STATUS (*kdf_reset_fn)(struct _CF_KDF_CTX *ctx);
 
@@ -72,16 +71,17 @@ typedef struct _CF_KDF_OPTS {
 // KDF context
 // ============================
 typedef struct _CF_KDF_CTX {
-    const CF_KDF *kdf;        // selected KDF algorithm
-    const CF_MD *md;          // NULL for KMAC-based KDFs
-    const CF_KDF_OPTS *opts;  // optional parameters
+    const CF_KDF *kdf;
+    const CF_MD *md;
+    const CF_KDF_OPTS *opts;
 
-    void *kdf_ctx;            // low-level KDF context (internal)
-    const uint8_t *key;       // input keying material
-    size_t key_len;
+    void *kdf_ctx;
 
-    size_t out_len;           // requested output length (copied at init)
-    uint32_t subflags;        // algorithm-specific subflags
+    const uint8_t *ikm;
+    size_t ikm_len;
+
+    size_t out_len;
+    uint32_t subflags;
     int isExtracted;
     int isHeapAlloc;
 } CF_KDF_CTX;
@@ -97,19 +97,20 @@ CF_API const CF_KDF *CF_KDF_GetByFlag(uint32_t kdf_flag);
 CF_API CF_STATUS CF_KDF_Init(
     CF_KDF_CTX *ctx,
     const CF_KDF *kdf,
+    const CF_KDF_OPTS *opts,
     uint32_t subflags
 );
 
 CF_API CF_KDF_CTX* CF_KDF_InitAlloc(
     const CF_KDF *kdf,
+    const CF_KDF_OPTS *opts,
     uint32_t subflags,
     CF_STATUS *status
 );
 
 CF_API CF_STATUS CF_KDF_Extract(
     CF_KDF_CTX *ctx,
-    const uint8_t *key, size_t key_len,
-    const CF_KDF_OPTS *opts
+    const uint8_t *key, size_t key_len
 );
 
 CF_API CF_STATUS CF_KDF_Expand(

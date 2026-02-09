@@ -100,7 +100,8 @@ typedef enum {
 typedef enum {
     CF_CAT_DIGEST  = 0x00000000, // MD5, SHA1, SHA2, SHA3
     CF_CAT_XOF     = 0x10000000, // SHAKE / cSHAKE / RAWXOF
-    CF_CAT_MAC     = 0x20000000, // HMAC / KMAC
+    CF_CAT_MAC     = 0x20000000, // HMAC / KMAC / CMAC / GMAC / POLY1305
+    CF_CAT_KDF     = 0x30000000, // HKDF / PBKDF2 /KDF_KMAC_XOF
     CF_CAT_RNG     = 0x40000000,
     CF_CAT_KECCAK  = 0x08000000  // optional bit to group KECCAK-based algorithms
 } CF_Category;
@@ -138,9 +139,10 @@ typedef enum {
 // ======================
 // Helper macros
 // ======================
-#define CF_IS_DIGEST(id)  (((id) & 0xF0000000) == CF_CAT_DIGEST)
-#define CF_IS_XOF(id)     (((id) & 0xF0000000) == CF_CAT_XOF)
-#define CF_IS_MAC(id)     (((id) & 0xF0000000) == CF_CAT_MAC)
+#define CF_IS_DIGEST(id)   (((id) & 0xF0000000) == CF_CAT_DIGEST)
+#define CF_IS_XOF(id)      (((id) & 0xF0000000) == CF_CAT_XOF)
+#define CF_IS_MAC(id)      (((id) & 0xF0000000) == CF_CAT_MAC)
+#define CF_IS_KMAC_XOF(id) ((id) == CF_KMAC_XOF128 || (id) == CF_KMAC_XOF256)
 #define CF_IS_KECCAK(id) \
     ((id) == CF_SHA3_224    || (id) == CF_SHA3_256   || \
      (id) == CF_SHA3_384    || (id) == CF_SHA3_512   || \
@@ -148,67 +150,47 @@ typedef enum {
      (id) == CF_RAWSHAKE128 || (id) == CF_RAWSHAKE256|| \
      (id) == CF_CSHAKE128   || (id) == CF_CSHAKE256)
 
+
 // ======================
 // MAC flags / subflags
 // ======================
 #define CF_MAC_FLAG_MASK    0xFFFFF000
 #define CF_MAC_SUBFLAG_MASK 0x00000FFF
-#define CF_MAC_XOF_FLAG     0x00100000
-#define CF_MAC_HASH_MASK    0x000000FF
+#define CF_XOF_MASK         0x00100000
+#define CF_HASH_MASK        0x000000FF
 #define CF_MAC_KMAC_MASK    0x00000F00
 
 typedef enum {
     CF_HMAC     = CF_CAT_MAC | 0x1000, // subflags: hash ID
-    CF_KMAC     = CF_CAT_MAC | 0x2000, // subflags: KMAC type
+    CF_KMAC_STD = CF_CAT_MAC | 0x2000, // subflags: KMAC type
     CF_CMAC     = CF_CAT_MAC | 0x3000, // no subflags
     CF_GMAC     = CF_CAT_MAC | 0x4000, // no subflags
     CF_POLY1305 = CF_CAT_MAC | 0x5000  // no subflags
 } CF_MAC_FLAGS;
 
 #define CF_MAC_IS_HMAC(id)      (((id) & CF_MAC_FLAG_MASK) == CF_HMAC)
-#define CF_MAC_IS_KMAC(id)      (((id) & CF_MAC_FLAG_MASK) == CF_KMAC)
+#define CF_MAC_IS_KMAC_STD(id)  (((id) & CF_MAC_FLAG_MASK) == CF_KMAC_STD)
+#define CF_MAC_IS_KMAC_XOF(id)  (((id) & CF_MAC_FLAG_MASK ) == CF_KMAC_XOF)
 #define CF_MAC_IS_CMAC(id)      (((id) & CF_MAC_FLAG_MASK) == CF_CMAC)
 #define CF_MAC_IS_GMAC(id)      (((id) & CF_MAC_FLAG_MASK) == CF_GMAC)
 #define CF_MAC_IS_POLY1305(id)  (((id) & CF_MAC_FLAG_MASK) == CF_POLY1305)
-#define CF_MAC_IS_XOF(id)       (((id) & CF_MAC_XOF_FLAG) != 0)
-#define CF_MAC_GET_HASH(id)     ((id) & CF_MAC_HASH_MASK)
+#define CF_MAC_IS_XOF(id)       (((id) & CF_XOF_MASK) != 0)
+#define CF_MAC_GET_HASH(id)     ((id) & CF_HASH_MASK)
 
 // ============================
 // KDF IDs & Flags
 // ============================
 typedef enum {
-    CF_KDF_PBKDF2       = 0x01000000, // Password-based KDF
-    CF_KDF_HKDF         = 0x02000000, // HKDF (Extract + Expand)
-    CF_KDF_KMAC_XOF      = 0x03000000 // KMAC-based XOF KDF
+    CF_HKDF         = CF_CAT_KDF | 0x1000, // subflags: hash ID
+    CF_PBKDF2       = CF_CAT_KDF | 0x2000, // subflags: hash ID
+    CF_KMAC_XOF     = CF_CAT_KDF | 0x3000, // subflags: KMAC-XOF type
 } CF_KDF_ID;
 
 // Helper macros for KDF
-#define CF_IS_KDF(id)       (((id) & 0xFF000000) != 0)
-#define CF_IS_PBKDF2(id)    ((id) == CF_KDF_PBKDF2)
-#define CF_IS_HKDF(id)      ((id) == CF_KDF_HKDF)
-#define CF_IS_KMAC_XOF(id)  ((id) == CF_KDF_KMAC_XOF)
-
-// ============================
-// KDF default output sizes
-// ============================
-#define CF_KDF_PBKDF2_DEFAULT_OUT_LEN       32
-#define CF_KDF_HKDF_DEFAULT_OUT_LEN         32
-#define CF_KDF_KMAC_XOF_DEFAULT_OUT_LEN     32
-
-// ============================
-// KDF context flags / subflags
-// ============================
-#define CF_KDF_FLAG_NONE       0x00000000
-#define CF_KDF_FLAG_XOF        0x00100000 // For KMAC-XOF or other XOF-based KDFs
-#define CF_KDF_FLAG_HEAPALLOC  0x00200000
-
-// ============================
-// KDF status codes (phase misuse)
-// ============================
-#define CF_ERR_ALREADY_EXTRACTED   ((CF_STATUS)0x8101)
-#define CF_ERR_NOT_EXTRACTED_YET   ((CF_STATUS)0x8102)
-#define CF_ERR_INVALID_KDF_ID      ((CF_STATUS)0x8103)
-#define CF_ERR_INVALID_STATE       ((CF_STATUS)0x8104)
+#define CF_IS_KDF(id)          (((id) & 0xF0000000) == CF_CAT_KDF)
+#define CF_KDF_IS_PBKDF2(id)    ((id) == CF_HKDF)
+#define CF_KDF_IS_HKDF(id)      ((id) == CF_PBKDF2)
+#define CF_KDF_IS_KMAC_XOF(id)  ((id) == CF_KMAC_XOF)
 
 // ======================
 // RNG / DRBG Flags
@@ -284,10 +266,10 @@ typedef enum {
 // Cipher Flags
 // ======================
 
-// #define CF_IS_AES_KEY_VALID(len) \
-//     ((len) == AES_128_KEY_SIZE || \
-//      (len) == AES_192_KEY_SIZE || \
-//      (len) == AES_256_KEY_SIZE)
+#define CF_IS_AES_KEY_VALID(len) \
+    ((len) == AES_128_KEY_SIZE || \
+     (len) == AES_192_KEY_SIZE || \
+     (len) == AES_256_KEY_SIZE)
 
 // // Cipher types
 // typedef enum {
