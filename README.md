@@ -59,17 +59,17 @@ CryptoForge is intended for **educational, experimental, and embedded use**. It 
 
 ### Symmetric Ciphers
 - **AES:** ECB, CBC, CFB, OFB, CTR modes  
-- **ChaCha / XChaCha:** Stream cipher implementations  
+- **ChaCha / XChaCha:**  ChaCha8, ChaCha12, ChaCha20, XChaCha8 XChaCha12, XChaCha20  
 - **AEAD Constructions:** AES-GCM, ChaCha20-Poly1305, XChaCha20-Poly1305  
 
 ### Hash Functions
-- **SHA family:** SHA-1, SHA-256, SHA-512  
+- **SHA family:** SHA-1, SHA-224, SHA-256, SHA-384, SHA-512  
 - **SHA3 / Keccak:** SHA3-224/256/384/512, Keccak, SHAKE128/256  
 - **cSHAKE** cSHAKE128/256
 - **Legacy:** MD5  
 
 ### Message Authentication Codes (MACs)
-- HMAC, CMAC, GMAC, KMAC, Poly1305  
+- HMAC, CMAC, GMAC, KMAC, KMAC-XOF, Poly1305  
 
 ### Key Derivation Functions (KDFs)
 - PBKDF2, HKDF  

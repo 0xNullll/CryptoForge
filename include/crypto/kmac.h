@@ -44,13 +44,6 @@ typedef enum {
 #define LL_KMAC_DEFAULT_OUTPUT_LEN_128 32  // 256‑bit tag
 #define LL_KMAC_DEFAULT_OUTPUT_LEN_256 64  // 512‑bit tag
 
-// typedef enum {
-//     KMAC128      = 0x0002,
-//     KMAC256      = 0x0003,
-//     KMACXOF128   = 0x0004,
-//     KMACXOF256   = 0x0005
-// } ll_KMAC_TYPE;
-
 typedef struct _ll_KMAC_CTX {
     // Core CSHAKE sponge context
     void *cshake_ctx;

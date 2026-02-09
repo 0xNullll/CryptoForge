@@ -47,6 +47,7 @@ typedef struct _ll_HKDF_CTX {
     uint8_t *info;             // Optional context info
     size_t info_len;           // Length of info
 
+    int isExtracted;
     int isHeapAlloc;           // 1 if allocated by library (heap), 0 if user stack
 } ll_HKDF_CTX;
 

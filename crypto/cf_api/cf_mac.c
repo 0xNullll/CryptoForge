@@ -1,5 +1,5 @@
 /*
- * CryptoForge - <short description of this file/module>
+ * CryptoForge - cf_mac.c / High-level MAC context and utility implementation
  * Copyright (C) 2026 0xNullll
  *
  * Licensed under the MIT License. See LICENSE in the project root.
@@ -38,6 +38,9 @@ static CF_STATUS hmac_verify_wrapper(CF_MAC_CTX *ctx,
     return ll_HMAC_Verify((const CF_MD *)ctx->md, ctx->key, ctx->key_len, 
                           data, data_len, expected_tag, expected_tag_len);
 }
+static CF_STATUS hmac_clone_ctx_wrapper(CF_MAC_CTX *dest_ctx, const CF_MAC_CTX *src_ctx) {
+    return ll_HMAC_CloneCtx((ll_HMAC_CTX *)dest_ctx->mac_ctx, (const ll_HMAC_CTX *)src_ctx->mac_ctx);
+}
 
 // KMAC
 static CF_STATUS kmac_init_wrapper(CF_MAC_CTX *ctx, const CF_MAC_OPTS *opts) {
@@ -60,6 +63,9 @@ static CF_STATUS kmac_verify_wrapper(CF_MAC_CTX *ctx,
     return ll_KMAC_Verify(ctx->key, ctx->key_len, data, data_len,
                           opts->custom, opts->custom_len, expected_tag, expected_tag_len,
                           ctx->subflags);
+}
+static CF_STATUS kmac_clone_ctx_wrapper(CF_MAC_CTX *dest_ctx, const CF_MAC_CTX *src_ctx) {
+    return ll_KMAC_CloneCtx((ll_KMAC_CTX *)dest_ctx->mac_ctx, (const ll_KMAC_CTX *)src_ctx->mac_ctx);
 }
 
 // CMAC
@@ -84,6 +90,9 @@ static CF_STATUS cmac_verify_wrapper(CF_MAC_CTX *ctx,
     return ll_CMAC_Verify((const ll_AES_KEY *)ctx->cipher_key, data, data_len,
                           expected_tag, expected_tag_len);
 }
+static CF_STATUS cmac_clone_ctx_wrapper(CF_MAC_CTX *dest_ctx, const CF_MAC_CTX *src_ctx) {
+    return ll_CMAC_CloneCtx((ll_CMAC_CTX *)dest_ctx->mac_ctx, (const ll_CMAC_CTX *)src_ctx->mac_ctx);
+}
 
 // GMAC
 static CF_STATUS gmac_init_wrapper(CF_MAC_CTX *ctx, const CF_MAC_OPTS *opts) {
@@ -104,6 +113,9 @@ static CF_STATUS gmac_verify_wrapper(CF_MAC_CTX *ctx,
                                      const struct _CF_MAC_OPTS *opts) {
     return ll_GMAC_Verify((const ll_AES_KEY *)ctx->cipher_key, opts->iv, opts->iv_len,
                            data, data_len, expected_tag, expected_tag_len);
+}
+static CF_STATUS gmac_clone_ctx_wrapper(CF_MAC_CTX *dest_ctx, const CF_MAC_CTX *src_ctx) {
+    return ll_GMAC_CloneCtx((ll_GMAC_CTX *)dest_ctx->mac_ctx, (const ll_GMAC_CTX *)src_ctx->mac_ctx);
 }
 
 // poly1305
@@ -129,6 +141,9 @@ static CF_STATUS poly1305_verify_wrapper(CF_MAC_CTX *ctx,
     UNUSED(expected_tag_len);
     return ll_POLY1305_Verify(ctx->key, data, data_len, expected_tag);
 }
+static CF_STATUS poly1305_clone_ctx_wrapper(CF_MAC_CTX *dest_ctx, const CF_MAC_CTX *src_ctx) {
+    return ll_POLY1305_CloneCtx((ll_POLY1305_CTX *)dest_ctx->mac_ctx, (const ll_POLY1305_CTX *)src_ctx->mac_ctx);
+}
 
 // --- CF_MAC Return Functions ---
 
@@ -145,7 +160,8 @@ static const CF_MAC *CF_get_hmac(void) {
         .mac_update_fn = hmac_update_wrapper,
         .mac_final_fn = hmac_final_wrapper,
         .mac_reset_fn = hmac_reset_wrapper,
-        .mac_verify_fn = hmac_verify_wrapper
+        .mac_verify_fn = hmac_verify_wrapper,
+        .mac_clone_ctx_fn = hmac_clone_ctx_wrapper
     };
     return &md;
 }
@@ -163,7 +179,8 @@ static const CF_MAC *CF_get_kmac(void) {
         .mac_update_fn = kmac_update_wrapper,
         .mac_final_fn = kmac_final_wrapper,
         .mac_reset_fn = kmac_reset_wrapper,
-        .mac_verify_fn = kmac_verify_wrapper
+        .mac_verify_fn = kmac_verify_wrapper,
+        .mac_clone_ctx_fn = kmac_clone_ctx_wrapper
     };
     return &md;
 }
@@ -181,7 +198,8 @@ static const CF_MAC *CF_get_cmac(void) {
         .mac_update_fn = cmac_update_wrapper,
         .mac_final_fn = cmac_final_wrapper,
         .mac_reset_fn = cmac_reset_wrapper,
-        .mac_verify_fn = cmac_verify_wrapper
+        .mac_verify_fn = cmac_verify_wrapper,
+        .mac_clone_ctx_fn = cmac_clone_ctx_wrapper
     };
     return &md;
 }
@@ -199,7 +217,8 @@ static const CF_MAC *CF_get_gmac(void) {
         .mac_update_fn = gmac_update_wrapper,
         .mac_final_fn = gmac_final_wrapper,
         .mac_reset_fn = gmac_reset_wrapper,
-        .mac_verify_fn = gmac_verify_wrapper
+        .mac_verify_fn = gmac_verify_wrapper,
+        .mac_clone_ctx_fn = gmac_clone_ctx_wrapper
     };
     return &md;
 }
@@ -217,7 +236,8 @@ static const CF_MAC *CF_get_poly1305(void) {
         .mac_update_fn = poly1305_update_wrapper,
         .mac_final_fn = poly1305_final_wrapper,
         .mac_reset_fn = poly1305_reset_wrapper,
-        .mac_verify_fn = poly1305_verify_wrapper
+        .mac_verify_fn = poly1305_verify_wrapper,
+        .mac_clone_ctx_fn = poly1305_clone_ctx_wrapper
     };
     return &md;
 }

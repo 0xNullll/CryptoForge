@@ -81,6 +81,9 @@ CF_STATUS ll_PBKDF2_Extract(
     if (salt && salt_len == 0)
         return CF_ERR_INVALID_PARAM;
 
+    if (ctx->isExtracted)
+        return CF_ERR_KDF_ALREADY_EXTRACTED;
+
     size_t hash_len = ctx->md->digest_size;  // PRK length = hash output size
     CF_STATUS st;
 
@@ -119,6 +122,8 @@ CF_STATUS ll_PBKDF2_Extract(
     // Prepare for Expand: first block index = 1
     ctx->block_index = 1;
     ctx->generated_len = 0;
+
+    ctx->isExtracted = 1;
 
     return CF_SUCCESS;
 }
@@ -236,6 +241,7 @@ CF_STATUS ll_PBKDF2_Reset(ll_PBKDF2_CTX *ctx) {
     ctx->dk_len = 0;
     ctx->block_index = 0;
     ctx->generated_len = 0;
+    ctx->isExtracted = 0;
 
     return CF_SUCCESS;
 }

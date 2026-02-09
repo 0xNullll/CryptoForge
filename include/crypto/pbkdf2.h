@@ -51,6 +51,7 @@ typedef struct _ll_PBKDF2_CTX {
     uint32_t block_index;                             // Block counter (1..N)
     size_t generated_len;                             // Total DK bytes generated
 
+    int isExtracted;
     int isHeapAlloc;          // 1 if allocated by library (heap), 0 if user stack
 } ll_PBKDF2_CTX;
 
