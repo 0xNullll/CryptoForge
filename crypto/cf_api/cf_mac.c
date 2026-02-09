@@ -151,7 +151,7 @@ static CF_STATUS poly1305_clone_ctx_wrapper(CF_MAC_CTX *dest_ctx, const CF_MAC_C
 // HMAC
 //
 static const CF_MAC *CF_get_hmac(void) {
-    static CF_MAC md = {
+    static CF_MAC mac = {
         .id = CF_HMAC,
         .ctx_size = sizeof(ll_HMAC_CTX),
         .key_ctx_size = 0,
@@ -163,15 +163,15 @@ static const CF_MAC *CF_get_hmac(void) {
         .mac_verify_fn = hmac_verify_wrapper,
         .mac_clone_ctx_fn = hmac_clone_ctx_wrapper
     };
-    return &md;
+    return &mac;
 }
 
 //
 // KMAC
 //
 static const CF_MAC *CF_get_kmac(void) {
-    static CF_MAC md = {
-        .id = CF_KMAC,
+    static CF_MAC mac = {
+        .id = CF_KMAC_STD,
         .ctx_size = sizeof(ll_KMAC_CTX),
         .key_ctx_size = 0,
         .default_tag_len = 0,
@@ -182,14 +182,14 @@ static const CF_MAC *CF_get_kmac(void) {
         .mac_verify_fn = kmac_verify_wrapper,
         .mac_clone_ctx_fn = kmac_clone_ctx_wrapper
     };
-    return &md;
+    return &mac;
 }
 
 //
 // CMAC
 //
 static const CF_MAC *CF_get_cmac(void) {
-    static CF_MAC md = {
+    static CF_MAC mac = {
         .id = CF_CMAC,
         .ctx_size = sizeof(ll_CMAC_CTX),
         .key_ctx_size = sizeof(ll_AES_KEY),
@@ -201,14 +201,14 @@ static const CF_MAC *CF_get_cmac(void) {
         .mac_verify_fn = cmac_verify_wrapper,
         .mac_clone_ctx_fn = cmac_clone_ctx_wrapper
     };
-    return &md;
+    return &mac;
 }
 
 //
 // GMAC
 //
 static const CF_MAC *CF_get_gmac(void) {
-    static CF_MAC md = {
+    static CF_MAC mac = {
         .id = CF_GMAC,
         .ctx_size = sizeof(ll_GMAC_CTX),
         .key_ctx_size = sizeof(ll_AES_KEY),
@@ -220,15 +220,15 @@ static const CF_MAC *CF_get_gmac(void) {
         .mac_verify_fn = gmac_verify_wrapper,
         .mac_clone_ctx_fn = gmac_clone_ctx_wrapper
     };
-    return &md;
+    return &mac;
 }
 
 //
 // poly1305
 //
 static const CF_MAC *CF_get_poly1305(void) {
-    static CF_MAC md = {
-        .id = CF_GMAC,
+    static CF_MAC mac = {
+        .id = CF_POLY1305,
         .ctx_size = sizeof(ll_POLY1305_CTX),
         .key_ctx_size = 0,
         .default_tag_len = LL_POLY1305_TAG_LEN,
@@ -239,13 +239,13 @@ static const CF_MAC *CF_get_poly1305(void) {
         .mac_verify_fn = poly1305_verify_wrapper,
         .mac_clone_ctx_fn = poly1305_clone_ctx_wrapper
     };
-    return &md;
+    return &mac;
 }
 
 // Table of all supported MACs
 static const CF_ALGO_ENTRY cf_mac_table[] = {
     { CF_HMAC,      (const void* (*)(void))CF_get_hmac     },
-    { CF_KMAC,      (const void* (*)(void))CF_get_kmac     },
+    { CF_KMAC_STD,  (const void* (*)(void))CF_get_kmac     },
     { CF_CMAC,      (const void* (*)(void))CF_get_cmac     },
     { CF_GMAC,      (const void* (*)(void))CF_get_gmac     },
     { CF_POLY1305,  (const void* (*)(void))CF_get_poly1305 }
@@ -276,19 +276,20 @@ CF_STATUS CF_MAC_Init(CF_MAC_CTX *ctx, const CF_MAC *mac, const CF_MAC_OPTS *opt
     CF_MAC_Reset(ctx);
 
     ctx->mac      = mac;
+    ctx->opts     = opts;
     ctx->key      = key;
     ctx->key_len  = key_len;
     ctx->subflags = subflags;
 
-    if (CF_MAC_IS_HMAC(mac->id)) {
+    if (CF_MAC_IS_HMAC(ctx->mac->id)) {
         // HMAC: requires a hash subflag, cannot have KMAC bits
         if ((subflags & CF_MAC_KMAC_MASK) != 0)
             return CF_ERR_INVALID_PARAM;
 
-        if ((subflags & CF_MAC_HASH_MASK) == 0)
+        if ((subflags & CF_HASH_MASK) == 0)
             return CF_ERR_INVALID_PARAM; // must specify hash
 
-        if (CF_IS_XOF(mac->id))
+        if (CF_IS_XOF(subflags))
             return CF_ERR_UNSUPPORTED;
 
         ctx->md = CF_MD_GetByFlag(subflags);
@@ -297,15 +298,15 @@ CF_STATUS CF_MAC_Init(CF_MAC_CTX *ctx, const CF_MAC *mac, const CF_MAC_OPTS *opt
 
         ctx->tag_len = ctx->md->default_out_len;
 
-    } else if (CF_MAC_IS_KMAC(mac->id)) {
+    } else if (CF_MAC_IS_KMAC_STD(ctx->mac->id)) {
         // KMAC: must have KMAC type, cannot have hash flags
         if ((subflags & CF_MAC_KMAC_MASK) == 0)
             return CF_ERR_INVALID_PARAM;
 
-        if ((subflags & CF_MAC_HASH_MASK) != 0)
+        if ((subflags & CF_HASH_MASK) != 0)
             return CF_ERR_INVALID_PARAM;
 
-    } else if (CF_MAC_IS_CMAC(mac->id) || CF_MAC_IS_GMAC(mac->id)) {
+    } else if (CF_MAC_IS_CMAC(ctx->mac->id) || CF_MAC_IS_GMAC(ctx->mac->id)) {
         // AES MACs: CMAC / GMAC
         if (!CF_IS_AES_KEY_VALID(key_len))
             return CF_ERR_CIPHER_INVALID_KEY_LEN;
@@ -313,21 +314,20 @@ CF_STATUS CF_MAC_Init(CF_MAC_CTX *ctx, const CF_MAC *mac, const CF_MAC_OPTS *opt
         ctx->cipher_key_len = key_len;
         ctx->tag_len = ctx->mac->default_tag_len;
 
-        ctx->cipher_key = (void *)SECURE_ALLOC(mac->key_ctx_size);
+        ctx->cipher_key = (void *)SECURE_ALLOC(ctx->mac->key_ctx_size);
         if (!ctx->cipher_key)
             return CF_ERR_ALLOC_FAILED;
 
         if (!ll_AES_SetEncryptKey((ll_AES_KEY *)ctx->cipher_key, key, ctx->cipher_key_len)) {
-            SECURE_FREE(ctx->cipher_key, mac->key_ctx_size);
+            SECURE_FREE(ctx->cipher_key, ctx->mac->key_ctx_size);
             return CF_ERR_CIPHER_KEY_SETUP;
         }
 
-    else if (CF_MAC_IS_POLY1305(mac->id)) {
+    } else if (CF_MAC_IS_POLY1305(ctx->mac->id)) {
         if (key_len != LL_POLY1305_KEY_LEN)
             return CF_ERR_MAC_INVALID_KEY_LEN;
 
         ctx->tag_len = ctx->mac->default_tag_len;
-    } 
 
     } else {
         return CF_ERR_INVALID_PARAM;
@@ -347,7 +347,7 @@ CF_STATUS CF_MAC_Init(CF_MAC_CTX *ctx, const CF_MAC *mac, const CF_MAC_OPTS *opt
     }
 
     // Initialize context
-    CF_STATUS st = mac->mac_init_fn(ctx, opts);
+    CF_STATUS st = ctx->mac->mac_init_fn(ctx, ctx->opts);
     if (st != CF_SUCCESS) {
         if (ctx->mac_ctx)
             SECURE_FREE(ctx->mac_ctx, ctx->mac->ctx_size);
@@ -406,12 +406,12 @@ CF_STATUS CF_MAC_Final(CF_MAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
         return CF_ERR_INVALID_LEN;
 
     if (ctx->isFinalized) {
-        if (!CF_MAC_IS_KMAC(ctx->mac->id))
+        if (!CF_MAC_IS_KMAC_STD(ctx->mac->id))
             return CF_ERR_HASH_FINALIZED;
-    } else if (CF_MAC_IS_KMAC(ctx->mac->id)) {
+        
         ctx->tag_len = tag_len;
     }
-
+    
     if (CF_MAC_IS_HMAC(ctx->mac->id)) {
         if (ctx->md->default_out_len == 0)
             return CF_ERR_MAC_BAD_TAG_LEN;
@@ -550,11 +550,12 @@ const char* CF_MAC_GetName(const CF_MAC *ctx) {
     if (!ctx) return NULL;
 
     switch (ctx->id) {
-    case CF_HMAC: return "HMAC";
-    case CF_KMAC: return "KMAC";
-    case CF_CMAC: return "CMAC";
-    case CF_GMAC: return "GMAC";
-    default:      return NULL;
+    case CF_HMAC:     return "HMAC";
+    case CF_KMAC_STD: return "KMAC";
+    case CF_CMAC:     return "CMAC";
+    case CF_GMAC:     return "GMAC";
+    case CF_POLY1305: return "POLY-1305";
+    default:          return NULL;
     }
 }
 
@@ -578,7 +579,7 @@ const char* CF_MAC_GetFullName(const CF_MAC_CTX *ctx) {
         default:            return "HMAC-UNKNOWN";
         }
 
-    case CF_KMAC:
+    case CF_KMAC_STD:
         switch (ctx->subflags) {
         case CF_KMAC128:      return "KMAC-128";
         case CF_KMAC256:      return "KMAC-256";
@@ -602,6 +603,8 @@ const char* CF_MAC_GetFullName(const CF_MAC_CTX *ctx) {
         case AES_256_KEY_SIZE: return "GMAC-AES-256";
         default:               return "GMAC-UNKNOWN";
         }
+
+    case CF_POLY1305:          return "POLY-1305";
 
     default:
         return "UNKNOWN-MAC";

@@ -278,3 +278,78 @@ uint32_t ll_PBKDF2_RecommendedIterations(const ll_PBKDF2_CTX *ctx) {
 
     return (uint32_t)(iter + 0.5); // round to nearest integer
 }
+
+CF_STATUS ll_PBKDF2_CloneCtx(ll_PBKDF2_CTX *ctx_dest,
+                            const ll_PBKDF2_CTX *ctx_src) {
+    if (!ctx_dest || !ctx_src)
+        return CF_ERR_NULL_PTR;
+
+    // Temporary shallow copy
+    ll_PBKDF2_CTX tmp = *ctx_src;
+
+    // Reset destination (zero + free owned buffers if any)
+    ll_PBKDF2_Reset(ctx_dest);
+
+    // Copy fixed-size and pointer fields
+    SECURE_MEMCPY(ctx_dest, &tmp, sizeof(*ctx_dest));
+
+    // Cloned context does not own top-level allocation by default
+    ctx_dest->isHeapAlloc = 0;
+
+    // ---- Clone password ----
+    if (ctx_src->password && ctx_src->password_len > 0) {
+        ctx_dest->password = (uint8_t *)SECURE_ALLOC(ctx_src->password_len);
+        if (!ctx_dest->password)
+            return CF_ERR_ALLOC_FAILED;
+
+        SECURE_MEMCPY(ctx_dest->password,
+                      ctx_src->password,
+                      ctx_src->password_len);
+        ctx_dest->password_len = ctx_src->password_len;
+    }
+
+    // ---- Clone salt ----
+    if (ctx_src->salt && ctx_src->salt_len > 0) {
+        ctx_dest->salt = (uint8_t *)SECURE_ALLOC(ctx_src->salt_len);
+        if (!ctx_dest->salt) {
+            SECURE_FREE(ctx_dest->password, ctx_dest->password_len);
+            ctx_dest->password = NULL;
+            return CF_ERR_ALLOC_FAILED;
+        }
+
+        SECURE_MEMCPY(ctx_dest->salt,
+                      ctx_src->salt,
+                      ctx_src->salt_len);
+        ctx_dest->salt_len = ctx_src->salt_len;
+    }
+
+    return CF_SUCCESS;
+}
+
+ll_PBKDF2_CTX *ll_PBKDF2_CloneCtxAlloc(const ll_PBKDF2_CTX *ctx_src,
+                                      CF_STATUS *status) {
+    if (!ctx_src) {
+        if (status) *status = CF_ERR_NULL_PTR;
+        return NULL;
+    }
+
+    // Allocate top-level context
+    ll_PBKDF2_CTX *dst = (ll_PBKDF2_CTX *)SECURE_ALLOC(sizeof(ll_PBKDF2_CTX));
+    if (!dst) {
+        if (status) *status = CF_ERR_ALLOC_FAILED;
+        return NULL;
+    }
+
+    // Clone into newly allocated context
+    CF_STATUS st = ll_PBKDF2_CloneCtx(dst, ctx_src);
+    if (status) *status = st;
+
+    if (st != CF_SUCCESS) {
+        SECURE_FREE(dst, sizeof(*dst));
+        return NULL;
+    }
+
+    // Library owns this allocation
+    dst->isHeapAlloc = 1;
+    return dst;
+}

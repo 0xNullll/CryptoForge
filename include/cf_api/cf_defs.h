@@ -32,6 +32,10 @@ typedef struct _CF_MAC CF_MAC;
 typedef struct _CF_MAC_OPTS CF_MAC_OPTS;
 typedef struct _CF_MAC_CTX CF_MAC_CTX;
 
+typedef struct _CF_KDF CF_KDF;
+typedef struct _CF_KDF_OPTS CF_KDF_OPTS;
+typedef struct _CF_KDF_CTX CF_KDF_CTX;
+
 typedef struct _CF_ENCODER CF_ENCODER;
 typedef struct _CF_ENCODER_CTX CF_ENCODER_CTX;
 
