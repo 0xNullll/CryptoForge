@@ -1,3 +1,15 @@
+/*
+ * CryptoForge - ofb_mode.c / AES-OFB Implementation
+ * Copyright (C) 2026 0xNullll
+ *
+ * Licensed under the MIT License. See LICENSE in the project root.
+ *
+ * Note: This library is educational, software-only, and verified only
+ * against WyChaProof test vectors. No hardware optimizations. Use with caution.
+ *
+ * Project repository: https://github.com/0xNullll/CryptoForge
+ */
+
 #include "../../../include/crypto/ofb_mode.h"
 
 static bool ll_AES_OFB_Process(const ll_AES_KEY *key, uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len_bytes, uint8_t *out) {

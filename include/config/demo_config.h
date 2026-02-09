@@ -1,17 +1,11 @@
 /*
  * CryptoForge - demo_config.h / Demo and Test Configuration
- * Copyright (C) 2025 0xNullll
+ * Copyright (C) 2026 0xNullll
  *
- * Licensed under the Apache License, Version 2.0 (the "License").
- * You may not use this file except in compliance with the License.
- * You may obtain a copy of the License in the file LICENSE in the
- * source distribution or at:
- * https://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the MIT License. See LICENSE in the project root.
  *
- * This software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES
- * OR CONDITIONS OF ANY KIND, either express or implied. See the License
- * for the specific language governing permissions and limitations under
- * the License.
+ * Note: This library is educational, software-only, and verified only
+ * against WyChaProof test vectors. No hardware optimizations. Use with caution.
  *
  * Project repository: https://github.com/0xNullll/CryptoForge
  */
@@ -42,6 +36,7 @@
 #include "../crypto/base85.h"
 
 #include "../crypto/chacha.h"
+#include "../crypto/xchacha.h"
 
 #include "../crypto/aes_core.h"
 #include "../crypto/ecb_mode.h"
@@ -49,7 +44,11 @@
 #include "../crypto/cfb_mode.h"
 #include "../crypto/ofb_mode.h"
 #include "../crypto/ctr_mode.h"
-#include "../crypto/gcm_mode.h"
+
+#include "../crypto/chacha20_poly1305.h"
+#include "../crypto/xchacha20_poly1305.h"
+#include "../crypto/aes_gcm.h"
+
 
 #include "../cf_api/cf_defs.h"
 #include "../cf_api/cf_flags.h"
@@ -125,6 +124,7 @@ CF_API void test_all_encoders_high(const uint8_t *input, size_t input_len);
 
 CF_API void test_chacha20_rfc7539(void);
 CF_API void test_chacha20_poly1305_wychaproof(void);
+CF_API void test_xchacha20_poly1305_wychaproof(void);
 
 CF_API void test_aes128_fips197(void);
 CF_API void test_aes192_fips197(void);

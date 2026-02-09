@@ -1,17 +1,11 @@
 /*
  * CryptoForge - cf_status.h / Global Status Codes and Helpers
- * Copyright (C) 2025 0xNullll
+ * Copyright (C) 2026 0xNullll
  *
- * Licensed under the Apache License, Version 2.0 (the "License").
- * You may not use this file except in compliance with the License.
- * You may obtain a copy of the License in the file LICENSE in the
- * source distribution or at:
- * https://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the MIT License. See LICENSE in the project root.
  *
- * This software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES
- * OR CONDITIONS OF ANY KIND, either express or implied. See the License
- * for the specific language governing permissions and limitations under
- * the License.
+ * Note: This library is educational, software-only, and verified only
+ * against WyChaProof test vectors. No hardware optimizations. Use with caution.
  *
  * Project repository: https://github.com/0xNullll/CryptoForge
  */
@@ -99,22 +93,56 @@ typedef enum {
 } CIPHER_CF_STATUS;
 
 // not updated
-static FORCE_INLINE const char* CF_status_str(CF_STATUS status) {
+FORCE_INLINE const char* CF_status_str(CF_STATUS status) {
     switch (status) {
+        // --- Generic / common ---
         case CF_SUCCESS: return "CF_SUCCESS";
         case CF_ERR_UNKNOWN: return "CF_ERR_UNKNOWN";
+        case CF_ERR_INVALID_PARAM: return "CF_ERR_INVALID_PARAM";
         case CF_ERR_NULL_PTR: return "CF_ERR_NULL_PTR";
         case CF_ERR_INVALID_LEN: return "CF_ERR_INVALID_LEN";
         case CF_ERR_BAD_STATE: return "CF_ERR_BAD_STATE";
         case CF_ERR_UNSUPPORTED: return "CF_ERR_UNSUPPORTED";
         case CF_ERR_OUTPUT_BUFFER_TOO_SMALL: return "CF_ERR_OUTPUT_BUFFER_TOO_SMALL";
         case CF_ERR_LIMIT_EXCEEDED: return "CF_ERR_LIMIT_EXCEEDED";
+
+        // --- Memory / context ---
         case CF_ERR_ALLOC_FAILED: return "CF_ERR_ALLOC_FAILED";
         case CF_ERR_CTX_CORRUPT: return "CF_ERR_CTX_CORRUPT";
+        case CF_ERR_ALREADY_INITIALIZED: return "CF_ERR_ALREADY_INITIALIZED";
+        case CF_ERR_CTX_UNINITIALIZED: return "CF_ERR_CTX_UNINITIALIZED";
+
+        // --- Hash errors ---
         case CF_ERR_HASH_FINALIZED: return "CF_ERR_HASH_FINALIZED";
         case CF_ERR_HASH_STATE_INVALID: return "CF_ERR_HASH_STATE_INVALID";
         case CF_ERR_HASH_PAD_ERROR: return "CF_ERR_HASH_PAD_ERROR";
         case CF_ERR_HASH_BAD_BLOCK_SIZE: return "CF_ERR_HASH_BAD_BLOCK_SIZE";
+
+        // --- MAC / HMAC errors ---
+        case CF_ERR_MAC_FINALIZED: return "CF_ERR_MAC_FINALIZED";
+        case CF_ERR_MAC_VERIFY: return "CF_ERR_MAC_VERIFY";
+        case CF_ERR_MAC_INVALID_KEY_LEN: return "CF_ERR_MAC_INVALID_KEY_LEN";
+        case CF_ERR_MAC_BAD_TAG_LEN: return "CF_ERR_MAC_BAD_TAG_LEN";
+        case CF_ERR_MAC_BAD_IV_LEN: return "CF_ERR_MAC_BAD_IV_LEN";
+        case CF_ERR_MAC_STATE_INVALID: return "CF_ERR_MAC_STATE_INVALID";
+
+        // --- Cipher errors ---
+        case CF_ERR_CIPHER_INVALID_KEY_LEN: return "CF_ERR_CIPHER_INVALID_KEY_LEN";
+        case CF_ERR_CIPHER_KEY_SETUP: return "CF_ERR_CIPHER_KEY_SETUP";
+        case CF_ERR_CIPHER_ENCRYPT: return "CF_ERR_CIPHER_ENCRYPT";
+        case CF_ERR_CIPHER_DECRYPT: return "CF_ERR_CIPHER_DECRYPT";
+        case CF_ERR_CIPHER_STATE_INVALID: return "CF_ERR_CIPHER_STATE_INVALID";
+        case CF_ERR_CIPHER_TAG_VERIFY: return "CF_ERR_CIPHER_TAG_VERIFY";
+        case CF_ERR_CIPHER_FINALIZED: return "CF_ERR_CIPHER_FINALIZED";
+
+        // --- Module base errors ---
+        case CF_ERR_HASH_BASE_ERROR: return "CF_ERR_HASH_BASE_ERROR";
+        case CF_ERR_CIPHER_BASE_ERROR: return "CF_ERR_CIPHER_BASE_ERROR";
+        case CF_ERR_MAC_BASE_ERROR: return "CF_ERR_MAC_BASE_ERROR";
+
+        // --- KDF errors (optional) ---
+        case CF_ERR_KDF_BASE: return "CF_ERR_KDF_BASE";
+
         default: return "CF_ERR_UNKNOWN";
     }
 }

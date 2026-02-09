@@ -301,6 +301,8 @@ int main(void) {
     printf("**************************************\n");
     test_chacha20_poly1305_wychaproof();
     printf("**************************************\n");
+    test_xchacha20_poly1305_wychaproof();
+    printf("**************************************\n");
     test_aes128_fips197();
     printf("**************************************\n");
     test_aes192_fips197();

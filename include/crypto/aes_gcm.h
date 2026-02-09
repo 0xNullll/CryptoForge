@@ -1,5 +1,17 @@
-#ifndef GCM_MODE_H
-#define GCM_MODE_H
+/*
+ * CryptoForge - aes_gcm.h / AES-GCM Interface
+ * Copyright (C) 2026 0xNullll
+ *
+ * Licensed under the MIT License. See LICENSE in the project root.
+ *
+ * Note: This library is educational, software-only, and verified only
+ * against WyChaProof test vectors. No hardware optimizations. Use with caution.
+ *
+ * Project repository: https://github.com/0xNullll/CryptoForge
+ */
+
+#ifndef AES_GCM_H
+#define AES_GCM_H
 
 #include "../utils/mem.h"
 #include "../utils/misc.h"
@@ -79,4 +91,4 @@ bool ll_AES_GCM_Final(ll_AES_GCM_CTX *ctx, uint8_t *tag, size_t tag_len);
 }
 #endif
 
-#endif // GCM_MODE_H
+#endif // AES_GCM_H

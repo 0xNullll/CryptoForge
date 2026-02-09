@@ -2,16 +2,10 @@
  * CryptoForge - poly1305.c / poly1305 Implementation
  * Copyright (C) 2026 0xNullll
  *
- * Licensed under the Apache License, Version 2.0 (the "License").
- * You may not use this file except in compliance with the License.
- * You may obtain a copy of the License in the file LICENSE in the
- * source distribution or at:
- * https://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the MIT License. See LICENSE in the project root.
  *
- * This software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES
- * OR CONDITIONS OF ANY KIND, either express or implied. See the License
- * for the specific language governing permissions and limitations under
- * the License.
+ * Note: This library is educational, software-only, and verified only
+ * against WyChaProof test vectors. No hardware optimizations. Use with caution.
  *
  * Project repository: https://github.com/0xNullll/CryptoForge
  */
@@ -102,8 +96,7 @@ static bool ll_POLY1305_ProcessBlock(ll_POLY1305_CTX *ctx) {
   
     //If the resulting block is not 17 bytes long (the last block),
     //pad it with zeros
-    while(n < 17)
-    {
+    while(n < 17) {
        ctx->buffer[n++] = 0x00;
     }
   
@@ -222,7 +215,7 @@ CF_STATUS ll_POLY1305_Update(ll_POLY1305_CTX *ctx, const uint8_t *data, size_t d
     return CF_SUCCESS;
 }
 
-CF_STATUS ll_POLY1305_Final(ll_POLY1305_CTX *ctx, uint8_t tag[16]) {
+CF_STATUS ll_POLY1305_Final(ll_POLY1305_CTX *ctx, uint8_t tag[LL_POLY1305_TAG_LEN]) {
     if (!ctx || !tag)
         return CF_ERR_NULL_PTR;
 

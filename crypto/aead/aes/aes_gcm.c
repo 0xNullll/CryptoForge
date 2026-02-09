@@ -1,4 +1,4 @@
-#include "../../../include/crypto/gcm_mode.h"
+#include "../../../include/crypto/aes_gcm.h"
 
 void ll_gcm_mult(uint8_t Z[AES_BLOCK_SIZE],
                  const uint8_t X[AES_BLOCK_SIZE],
@@ -274,16 +274,3 @@ cleanup:
     SECURE_ZERO(ctx, sizeof(*ctx));
     return ok;
 }
-
-//     //Compute final tag by XORing GHASH state with EK0
-//     for (size_t i = 0; i < tag_len && i < AES_BLOCK_SIZE; i++)
-//         tag[i] = EK0[i] ^ ctx->X[i];
-
-//     ok = true;
-
-// cleanup:
-//     //Wipe temporary buffers and context to avoid leaking sensitive data
-//     SECURE_ZERO(EK0, sizeof(EK0));
-//     SECURE_ZERO(ctx, sizeof(*ctx));
-//     return ok;
-// }

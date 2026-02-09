@@ -1,3 +1,15 @@
+/*
+ * CryptoForge - ecb_mode.c / AES-ECB Implementation
+ * Copyright (C) 2026 0xNullll
+ *
+ * Licensed under the MIT License. See LICENSE in the project root.
+ *
+ * Note: This library is educational, software-only, and verified only
+ * against WyChaProof test vectors. No hardware optimizations. Use with caution.
+ *
+ * Project repository: https://github.com/0xNullll/CryptoForge
+ */
+
 #include "../../../include/crypto/ecb_mode.h"
 
 bool ll_AES_ECB_Encrypt(const ll_AES_KEY *key, const uint8_t *in, size_t in_len, uint8_t *out) {

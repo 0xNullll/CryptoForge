@@ -1,60 +1,122 @@
 # CryptoForge
 
-A **modular, lightweight C crypto library** including SHA variants, HMAC, KMAC, and Keccak.  
-Designed with **layered APIs** similar to OpenSSL, but smaller scale, where each API layer has its own prefix.
+**CryptoForge** is a **modular, lightweight C cryptographic library** implementing SHA variants, HMAC, KMAC, Keccak, AES, ChaCha, AEAD constructions, KDFs, MACs, and encoding utilities.  
+
+It is designed with **layered APIs** similar to OpenSSL, separating low-level primitives (`ll_*`) from user-facing functions (`cf_*`), while remaining lightweight and portable.  
+
+CryptoForge is intended for **educational, experimental, and embedded use**. It has **not undergone formal audits**.  
 
 ---
 
 ## Directory Structure
 
-```c
+```text
 /CryptoForge
-├─ /include
-│   ├─ /cf_api              <-- top-level API headers (includes the umbrella header file too)
-│   ├─ /utils               <-- utility headers (mem, status, misc)
-│   ├─ /config              <-- config headers (crypto_config, demo_config)
-│   └─ /crypto              <-- all low-level crypto headers
 ├─ /crypto
-│   ├─ /cf_api
-│   ├─ /cipher
-│   │   ├─ /aes
-│   │   └─ /chacha
+│   ├─ /aead
+│   │   ├─ /aes           <-- AES-GCM and AEAD modes
+│   │   └─ /chacha        <-- ChaCha20-Poly1305 and XChaCha20-Poly1305
+│   ├─ /cf_api            <-- Public API implementations
+│   ├─ /enc               <-- Base16/32/58/64/85 encoders
 │   ├─ /hash
-│   │   ├─ /sha
-│   │   │   └─ /keccak
-│   │   └─ /md
-│   ├─ /mac
-│   ├─ /kdf
-│   └─ /enc
-├─ /utils
-├─ /config
-└─ /demo
+│   │   ├─ /md            <-- Legacy hashes (MD5)
+│   │   └─ /sha
+│   │       └─ /keccak    <-- SHA3 / Keccak / SHAKE
+│   ├─ /kdf               <-- PBKDF2, HKDF
+│   ├─ /mac               <-- HMAC, CMAC, GMAC, KMAC, Poly1305
+│   └─ /symmetric
+│       ├─ /aes           <-- AES core + standard modes (ECB, CBC, CFB, OFB, CTR)
+│       └─ /chacha        <-- ChaCha/XChaCha core + stream implementations
+├─ /include
+│   ├─ /cf_api            <-- Public API headers (cf_*)
+│   ├─ /crypto            <-- Internal crypto headers
+│   ├─ /config            <-- Build/runtime configuration headers
+│   └─ /utils             <-- Utility headers
+├─ /utils                 <-- Utility implementations (memory, misc helpers)
+├─ /demo                  <-- Test programs and demos
+└─ LICENSE, README.md
 ```
 
 ---
 
 ## Layered API Design
 
-1. **Low-level & Hybrid / Context Layer**
-   - Implements atomic algorithms (SHAKE, AES, etc.) and builds higher-level contexts
-   - Minimal internal helpers while also maintaining algorithm contexts (e.g., `ll_HMAC_CTX`, `ll_KMAC_CTX`)
-   - Mixes multiple primitives safely and handles internal state and streaming
-   - Fully deterministic, no user-facing key checks or policy enforcement
-   - Some `ll_*` may call other lower-level `ll_*` functions
+1. **Low-Level / Context Layer (`ll_*`)**
+   - Implements atomic primitives: AES, ChaCha, SHA family, SHAKE, HMAC, KMAC, PBKDF2, etc.  
+   - Maintains deterministic state and supports streaming operations.  
+   - Minimal internal helpers; some `ll_*` call other `ll_*` primitives.  
+   - No user-facing checks or policy enforcement.  
 
-2. **Facade Layer / User-Facing Layer (`cf_*`)**
-   - Dispatcher by enum/macro for algorithm selection
-   - Supports streaming, piping, and user-facing APIs
-   - Enforces security policies (e.g., minimum key lengths)
-   - Handles memory management and zeroization
+2. **Facade / User-Facing Layer (`cf_*`)**
+   - Dispatcher layer by enum/macro for algorithm selection.  
+   - Supports streaming, pipelining, and memory-safe APIs.  
+   - Enforces key sizes and nonce rules for AEAD.  
+   - Handles zeroization, error codes, and resource management.  
+
+---
+
+## Main Features
+
+### Symmetric Ciphers
+- **AES:** ECB, CBC, CFB, OFB, CTR modes  
+- **ChaCha / XChaCha:** Stream cipher implementations  
+- **AEAD Constructions:** AES-GCM, ChaCha20-Poly1305, XChaCha20-Poly1305  
+
+### Hash Functions
+- **SHA family:** SHA-1, SHA-256, SHA-512  
+- **SHA3 / Keccak:** SHA3-224/256/384/512, Keccak, SHAKE128/256  
+- **cSHAKE** cSHAKE128/256
+- **Legacy:** MD5  
+
+### Message Authentication Codes (MACs)
+- HMAC, CMAC, GMAC, KMAC, Poly1305  
+
+### Key Derivation Functions (KDFs)
+- PBKDF2, HKDF  
+
+### Encoding / Decoding Utilities
+- Base16, Base32, Base58, Base64, Base85  
+
+### Miscellaneous
+- Modular, layered API for flexibility  
+- Portable and lightweight, suitable for embedded targets  
+- Configurable memory footprint via compile-time options  
 
 ---
 
 ## Security Disclaimer
 
-This library is intended for educational, experimental, and embedded use.
-It has not undergone formal verification or professional security audits.
-Do not use for protecting high‑value secrets without independent review.
+CryptoForge prioritizes **clarity, correctness, and simplicity of implementation** over performance tuning or platform‑specific optimizations.
+
+- The library is **purely software-based** and does **not** include hardware acceleration
+  (e.g. AES-NI, NEON, AVX, or other CPU-specific optimizations).
+- Implementations aim to be **as close as possible to their reference specifications**,
+  favoring readability and auditability over aggressive micro-optimizations.
+- Memory handling is designed to be **explicit and defensive**, using OS-provided memory
+  helpers where appropriate, secure zeroization, and **constant-time comparisons** for
+  sensitive operations.
+- The API is intentionally designed to be **easy to use correctly**, with layered abstractions
+  to reduce common misuse patterns.
+
+However, **CryptoForge is not production-ready** at this stage:
+
+- The library is intended for **educational and experimental use**.
+- It has **not undergone formal security audits, third-party reviews, or certification**
+  by recognized cryptographic authorities.
+- Correctness and edge cases are currently verified using **Wycheproof test vectors**
+  and internal tests only.
+- Side-channel resistance beyond basic constant-time logic
+  (e.g. cache, power, or microarchitectural attacks) has **not been formally evaluated**.
+- The API surface and internal behavior may change as the project evolves.
+
+**Do not use CryptoForge to protect sensitive, high-value, or real-world secrets** without
+independent review and additional hardening.
+
+CryptoForge is best suited for:
+- Learning cryptographic internals
+- Studying algorithm behavior and design tradeoffs
+- Experimentation, prototyping, and embedded research
+- Security education and reverse-engineering practice
 
 ---
 
@@ -68,6 +130,7 @@ Do not use for protecting high‑value secrets without independent review.
 - [RFC 5869: HMAC-based Extract-and-Expand Key Derivation Function (HKDF), May 2010](https://datatracker.ietf.org/doc/html/rfc5869)
 - [RFC 6234: US Secure Hash Algorithms (SHA and SHA-based HMAC and HKDF), May 2011](https://datatracker.ietf.org/doc/html/rfc6234)
 - [RFC 7539: ChaCha20 and Poly1305 for IETF Protocols, May 2015](https://datatracker.ietf.org/doc/html/rfc7539)
+- [draft-arciszewski-xchacha-03: XChaCha: eXtended-nonce ChaCha and AEAD_XChaCha20_Poly1305, December 18, 2018](https://datatracker.ietf.org/doc/html/draft-arciszewski-xchacha-03)
 
 ### NIST
 - [FIPS 197: Advanced Encryption Standard (AES), November 2001](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197-upd1.pdf)

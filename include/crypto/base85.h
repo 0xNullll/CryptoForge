@@ -1,16 +1,11 @@
 /*
  * CryptoForge - Base85.h / Hex encoding and decoding functions
- * Copyright (C) 2025 0xNullll
+ * Copyright (C) 2026 0xNullll
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the MIT License.
+ * Licensed under the MIT License. See LICENSE in the project root.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *
- * You should have received a copy of the MIT License along with this program.
- * If not, see <https://opensource.org/licenses/MIT>.
+ * Note: This library is educational, software-only, and verified only
+ * against WyChaProof test vectors. No hardware optimizations. Use with caution.
  *
  * Project repository: https://github.com/0xNullll/CryptoForge
  */
