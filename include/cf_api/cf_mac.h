@@ -51,6 +51,7 @@ typedef struct _CF_MAC {
                             const uint8_t *data, size_t data_len,
                             const uint8_t *expected_tag, size_t expected_tag_len,
                             const struct _CF_MAC_OPTS *opts);
+    CF_STATUS (*mac_clone_ctx_fn)(struct _CF_MAC_CTX *ctx_dest, const struct _CF_MAC_CTX *ctx_src);
 } CF_MAC;
 
 // ============================

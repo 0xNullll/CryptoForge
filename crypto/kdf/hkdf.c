@@ -72,6 +72,9 @@ CF_STATUS ll_HKDF_Extract(
     if (!ctx || !ctx->md)
         return CF_ERR_NULL_PTR;
 
+    if (ctx->isExtracted)
+        return CF_ERR_KDF_ALREADY_EXTRACTED;
+
     size_t hash_len = ctx->md->digest_size;  // always PRK = hash output size
 
     CF_STATUS st;
@@ -113,6 +116,9 @@ CF_STATUS ll_HKDF_Extract(
     }
 
     ctx->prk_len = hash_len;
+
+    ctx->isExtracted = 1;
+
     return CF_SUCCESS;
 }
 
@@ -243,6 +249,7 @@ CF_STATUS ll_HKDF_Reset(ll_HKDF_CTX *ctx) {
     ctx->prk_len = 0;
     ctx->counter = 0;
     ctx->info_len = 0;
+    ctx->isExtracted = 0;
 
     return CF_SUCCESS;
 }

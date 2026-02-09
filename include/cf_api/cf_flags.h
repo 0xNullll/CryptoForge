@@ -173,18 +173,55 @@ typedef enum {
 #define CF_MAC_IS_XOF(id)       (((id) & CF_MAC_XOF_FLAG) != 0)
 #define CF_MAC_GET_HASH(id)     ((id) & CF_MAC_HASH_MASK)
 
-// ======================
-// 3. RNG / DRBG Flags
-// ======================
+// ============================
+// KDF IDs & Flags
+// ============================
 typedef enum {
-    CF_PRNG_XORSHIFT   = CF_CAT_RNG | 0x0001,
-    CF_PRNG_PCG        = CF_CAT_RNG | 0x0002,
-    CF_DRBG_SHA        = CF_CAT_RNG | 0x0004,
-    CF_SEED_USER       = CF_CAT_RNG | 0x0008
-} CF_RNG_FLAGS;
+    CF_KDF_PBKDF2       = 0x01000000, // Password-based KDF
+    CF_KDF_HKDF         = 0x02000000, // HKDF (Extract + Expand)
+    CF_KDF_KMAC_XOF      = 0x03000000 // KMAC-based XOF KDF
+} CF_KDF_ID;
+
+// Helper macros for KDF
+#define CF_IS_KDF(id)       (((id) & 0xFF000000) != 0)
+#define CF_IS_PBKDF2(id)    ((id) == CF_KDF_PBKDF2)
+#define CF_IS_HKDF(id)      ((id) == CF_KDF_HKDF)
+#define CF_IS_KMAC_XOF(id)  ((id) == CF_KDF_KMAC_XOF)
+
+// ============================
+// KDF default output sizes
+// ============================
+#define CF_KDF_PBKDF2_DEFAULT_OUT_LEN       32
+#define CF_KDF_HKDF_DEFAULT_OUT_LEN         32
+#define CF_KDF_KMAC_XOF_DEFAULT_OUT_LEN     32
+
+// ============================
+// KDF context flags / subflags
+// ============================
+#define CF_KDF_FLAG_NONE       0x00000000
+#define CF_KDF_FLAG_XOF        0x00100000 // For KMAC-XOF or other XOF-based KDFs
+#define CF_KDF_FLAG_HEAPALLOC  0x00200000
+
+// ============================
+// KDF status codes (phase misuse)
+// ============================
+#define CF_ERR_ALREADY_EXTRACTED   ((CF_STATUS)0x8101)
+#define CF_ERR_NOT_EXTRACTED_YET   ((CF_STATUS)0x8102)
+#define CF_ERR_INVALID_KDF_ID      ((CF_STATUS)0x8103)
+#define CF_ERR_INVALID_STATE       ((CF_STATUS)0x8104)
 
 // ======================
-// 4. Encoding / Decoding Flags
+// RNG / DRBG Flags
+// ======================
+// typedef enum {
+//     CF_PRNG_XORSHIFT   = CF_CAT_RNG | 0x0001,
+//     CF_PRNG_PCG        = CF_CAT_RNG | 0x0002,
+//     CF_DRBG_SHA        = CF_CAT_RNG | 0x0004,
+//     CF_SEED_USER       = CF_CAT_RNG | 0x0008
+// } CF_RNG_FLAGS;
+
+// ======================
+// Encoding / Decoding Flags
 // ======================
 
 typedef enum {
@@ -244,36 +281,36 @@ typedef enum {
 #define CF_BASE85_MASK 0x7F0000  // 0b0111111100000000000000
 
 // ======================
-// 5. Cipher Flags
+// Cipher Flags
 // ======================
 
-#define CF_IS_AES_KEY_VALID(len) \
-    ((len) == AES_128_KEY_SIZE || \
-     (len) == AES_192_KEY_SIZE || \
-     (len) == AES_256_KEY_SIZE)
+// #define CF_IS_AES_KEY_VALID(len) \
+//     ((len) == AES_128_KEY_SIZE || \
+//      (len) == AES_192_KEY_SIZE || \
+//      (len) == AES_256_KEY_SIZE)
 
-// Cipher types
-typedef enum {
-    CF_AES_128  = 0x00000001,
-    CF_AES_192  = 0x00000002,
-    CF_AES_256  = 0x00000004,
-    CF_CHACHA20 = 0x00000008
-} CF_CIPHER_TYPE_FLAGS;
+// // Cipher types
+// typedef enum {
+//     CF_AES_128  = 0x00000001,
+//     CF_AES_192  = 0x00000002,
+//     CF_AES_256  = 0x00000004,
+//     CF_CHACHA20 = 0x00000008
+// } CF_CIPHER_TYPE_FLAGS;
 
-// Cipher modes
-typedef enum {
-    CF_MODE_CBC = 0x00000100,
-    CF_MODE_CTR = 0x00000200,
-    CF_MODE_GCM = 0x00000400,
-    CF_MODE_CFB = 0x00000800,
-    CF_MODE_OFB = 0x00001000
-} CF_CIPHER_MODE__FLAGS;
+// // Cipher modes
+// typedef enum {
+//     CF_MODE_CBC = 0x00000100,
+//     CF_MODE_CTR = 0x00000200,
+//     CF_MODE_GCM = 0x00000400,
+//     CF_MODE_CFB = 0x00000800,
+//     CF_MODE_OFB = 0x00001000
+// } CF_CIPHER_MODE__FLAGS;
 
-// Padding / KDF (upper 32 bits)
-#define CF_PADDING_PKCS7 0x000100000000ULL
-#define CF_PADDING_ZERO  0x000200000000ULL
-#define CF_KDF_PBKDF2    0x000400000000ULL
-#define CF_KDF_HKDF      0x000800000000ULL
+// // Padding / KDF (upper 32 bits)
+// #define CF_PADDING_PKCS7 0x000100000000ULL
+// #define CF_PADDING_ZERO  0x000200000000ULL
+// #define CF_KDF_PBKDF2    0x000400000000ULL
+// #define CF_KDF_HKDF      0x000800000000ULL
 
 // typedef enum {
 //     CF_PADDING_PKCS7 = 0x000100000000ULL,

@@ -49,9 +49,9 @@ typedef enum {
     // Reserved base values for modules
     //
     CF_ERR_HASH_BASE   = 0x1000, // Hash-specific errors
-    CF_ERR_CIPHER_BASE = 0x2000, // Ciphers
-    CF_ERR_MAC_BASE    = 0x3000, // HMAC/KMAC/etc
-    CF_ERR_KDF_BASE    = 0x4000, // PBKDF2/Argon/etc
+    CF_ERR_MAC_BASE    = 0x2000, // HMAC/KMAC/etc
+    CF_ERR_KDF_BASE    = 0x3000, // PBKDF2/Argon/etc
+    CF_ERR_CIPHER_BASE = 0x4000, // Ciphers
 } GLOBAL_CF_STATUS;
 
 //
@@ -66,7 +66,7 @@ typedef enum {
 } HASH_CF_STATUS;
 
 //
-// 3. MAC/HMAC-specific errors
+// 3. MAC errors
 //
 typedef enum {
     CF_ERR_MAC_BASE_ERROR      = CF_ERR_MAC_BASE,
@@ -79,7 +79,16 @@ typedef enum {
 } MAC_CF_STATUS;
 
 //
-// 4. Cipher/GCM/GMAC-specific errors
+// 4. KDF errors
+//
+typedef enum {
+    CF_ERR_KDF_BASE_ERROR      = CF_ERR_KDF_BASE,
+    CF_ERR_KDF_ALREADY_EXTRACTED,                    // calling the Extract() again
+    CF_ERR_KDF_NOT_EXTRACTED_YET                     // calling the Expand() before Extract()
+} MAC_CF_STATUS;
+
+//
+// 5. Cipher errors
 //
 typedef enum {
     CF_ERR_CIPHER_BASE_ERROR   = CF_ERR_CIPHER_BASE,    // base for ciphers errors
@@ -126,6 +135,10 @@ FORCE_INLINE const char* CF_status_str(CF_STATUS status) {
         case CF_ERR_MAC_BAD_IV_LEN: return "CF_ERR_MAC_BAD_IV_LEN";
         case CF_ERR_MAC_STATE_INVALID: return "CF_ERR_MAC_STATE_INVALID";
 
+        // --- KDF errors  ---
+        case CF_ERR_KDF_ALREADY_EXTRACTED: return "CF_ERR_KDF_ALREADY_EXTRACTED";
+        case CF_ERR_KDF_NOT_EXTRACTED_YET: return "CF_ERR_KDF_NOT_EXTRACTED_YET";
+
         // --- Cipher errors ---
         case CF_ERR_CIPHER_INVALID_KEY_LEN: return "CF_ERR_CIPHER_INVALID_KEY_LEN";
         case CF_ERR_CIPHER_KEY_SETUP: return "CF_ERR_CIPHER_KEY_SETUP";
@@ -137,12 +150,10 @@ FORCE_INLINE const char* CF_status_str(CF_STATUS status) {
 
         // --- Module base errors ---
         case CF_ERR_HASH_BASE_ERROR: return "CF_ERR_HASH_BASE_ERROR";
-        case CF_ERR_CIPHER_BASE_ERROR: return "CF_ERR_CIPHER_BASE_ERROR";
         case CF_ERR_MAC_BASE_ERROR: return "CF_ERR_MAC_BASE_ERROR";
-
-        // --- KDF errors (optional) ---
-        case CF_ERR_KDF_BASE: return "CF_ERR_KDF_BASE";
-
+        case CF_ERR_KDF_BASE_ERROR: return "CF_ERR_KDF_BASE_ERROR";
+        case CF_ERR_CIPHER_BASE_ERROR: return "CF_ERR_CIPHER_BASE_ERROR";
+        
         default: return "CF_ERR_UNKNOWN";
     }
 }
