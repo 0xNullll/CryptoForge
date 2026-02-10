@@ -72,10 +72,10 @@ CryptoForge is intended for **educational, experimental, and embedded use**. It 
 - HMAC, CMAC, GMAC, KMAC, KMAC-XOF, Poly1305  
 
 ### Key Derivation Functions (KDFs)
-- PBKDF2, HKDF  
+- PBKDF2, HKDF, KMAC-XOF
 
 ### Encoding / Decoding Utilities
-- Base16, Base32, Base58, Base64, Base85  
+- Base16, Base32, Base58, Base64, Base85
 
 ### Miscellaneous
 - Modular, layered API for flexibility  

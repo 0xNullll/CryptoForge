@@ -73,7 +73,7 @@ typedef struct _CF_MAC_OPTS {
 // MAC context
 // ============================
 typedef struct _CF_MAC_CTX {
-    uint64_t magic;               //  CF_CTX_MAGIC
+    uint64_t magic;               // CF_CTX_MAGIC ^ (uintptr_t)mac
 
     const CF_MAC *mac;            // selected MAC algorithm
     const CF_MD *md;              // mandetory for HMAC

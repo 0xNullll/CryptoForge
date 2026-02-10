@@ -56,7 +56,7 @@ typedef struct _CF_ENCODER {
 // Encoder context
 // ============================
 typedef struct _CF_ENCODER_CTX {
-    uint64_t magic;                // CF_CTX_MAGIC ^ 
+    uint64_t magic;                // CF_CTX_MAGIC ^ (uintptr_t)encoder
 
     const CF_ENCODER *encoder;     // Encoder descriptor
     uint32_t encFlags;             // Encoding variant flags

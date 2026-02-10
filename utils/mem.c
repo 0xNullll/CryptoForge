@@ -12,6 +12,17 @@
 
 #include "../include/utils/mem.h"
 
+#if CF_ENABLE_BARRIER
+#if defined(__GNUC__) || defined(__clang__)
+    #define CF_MEM_BARRIER(ptr, len) \
+        __asm__ volatile("" : : "m" (*(volatile char (*)[len]) (ptr)) : "memory")
+#elif defined(_MSC_VER)
+    #define CF_MEM_BARRIER(ptr, len) _ReadWriteBarrier()
+#else
+    #define CF_MEM_BARRIER(ptr, len) do { (void)(ptr); (void)(len); } while(0)
+#endif
+#endif
+
 void secure_zero(void *buf, size_t len) {
     if (!buf || len == 0) return;
 
@@ -61,9 +72,10 @@ void secure_memset(void *dst, int val, size_t len) {
         volatile unsigned char *p = (volatile unsigned char*)dst;
         while (len--) *p++ = (unsigned char)val;
 
-    #if defined(__GNUC__) || defined(__clang__)
-        asm volatile ("" : : "m" (*(char (*)[len]) dst) : "memory");
-    #endif
+#if CF_ENABLE_BARRIER
+    // compiler barrier to prevent reordering/elimination
+    CF_MEM_BARRIER(dst, len);
+#endif
     }
 }
 
@@ -74,22 +86,30 @@ void secure_memcpy(void *dst, const void *src, size_t len) {
     // but can optionally combine with compiler barrier if paranoid
     memcpy(dst, src, len);
 
-#if defined(__GNUC__) || defined(__clang__)
-    asm volatile ("" : : "r,m"(dst), "r,m"(src) : "memory");
+#if CF_ENABLE_BARRIER
+    // compiler barrier to prevent reordering/elimination
+    CF_MEM_BARRIER(dst, len);
 #endif
 }
 
 int secure_mem_equal(const uint8_t *a, const uint8_t *b, size_t len) {
     if (!a || !b) return 0;
-    if (len == 0) return 0;
+    if (len == 0) return 1;
 
     uint8_t diff = 0;
-    for (size_t i = 0; i < len; ++i) {
+    for (size_t i = 0; i < len; i++) {
         diff |= a[i] ^ b[i];
     }
 
-    // return 1 if equal, 0 if not equal
-    return (diff == 0);
+#if defined(__GNUC__) || defined(__clang__)
+    __asm__ volatile("" : "+r"(diff) : : "memory");
+#elif defined(_MSC_VER)
+    _ReadWriteBarrier();
+#else
+    (void)diff;
+#endif
+
+    return diff == 0;
 }
 
 int secure_mem_compare_lex(const uint8_t *a, const uint8_t *b, size_t len) {

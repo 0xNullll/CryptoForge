@@ -38,7 +38,7 @@ extern "C" {
 typedef struct _ll_PBKDF2_CTX {
     const CF_MD *md;          // Low-level hash descriptor
 
-    uint8_t *password;         // Password bytes
+    const uint8_t *password;  // Password bytes
     size_t password_len;       
 
     uint8_t *salt;         // salt bytes
