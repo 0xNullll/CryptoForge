@@ -147,14 +147,20 @@ CF_STATUS CF_KDF_Init(CF_KDF_CTX *ctx, const CF_KDF *kdf, const CF_KDF_OPTS *opt
     if (!ctx || !kdf || !opts)
         return CF_ERR_NULL_PTR;
 
+    if (opts && opts->magic != CF_CTX_MAGIC)
+        return CF_ERR_CTX_CORRUPT;
+
     if (!CF_IS_KDF(kdf->id))
         return CF_ERR_UNSUPPORTED;
 
-    // CF_KDF_Reset(&ctx);
+    if (ctx->isHeapAlloc != 0 && ctx->isHeapAlloc != 1)
+        return CF_ERR_CTX_UNINITIALIZED;
+
+    CF_KDF_Reset(ctx);
 
     ctx->kdf = kdf;
     ctx->opts = opts;
-    
+
     if (CF_KDF_IS_HKDF(ctx->kdf->id) || CF_KDF_IS_PBKDF2(ctx->kdf->id)) {
         // HKDF: requires a hash subflag, cannot have KMAC bits
         if ((subflags & CF_MAC_KMAC_MASK) != 0)
@@ -183,15 +189,13 @@ CF_STATUS CF_KDF_Init(CF_KDF_CTX *ctx, const CF_KDF *kdf, const CF_KDF_OPTS *opt
         return CF_ERR_INVALID_PARAM;
     }
 
-    // Allocate / initialize KDF internal context
-    ctx->kdf_ctx = NULL;
+    // Reject invalid KDF context size
+    if (ctx->kdf->ctx_size == 0) 
+        return CF_ERR_CTX_CORRUPT;
 
-    // Only allocate if context size > 0
-    if (ctx->kdf->ctx_size > 0) {
-        ctx->kdf_ctx = SECURE_ALLOC(ctx->kdf->ctx_size);
-        if (!ctx->kdf_ctx)
-            return CF_ERR_ALLOC_FAILED;
-    }
+    ctx->kdf_ctx = (void *)SECURE_ALLOC(ctx->kdf->ctx_size);
+    if (!ctx->kdf_ctx)
+        return CF_ERR_ALLOC_FAILED;
 
     // Initialize context
     CF_STATUS st = ctx->kdf->kdf_init_fn(ctx, ctx->opts);
@@ -200,6 +204,67 @@ CF_STATUS CF_KDF_Init(CF_KDF_CTX *ctx, const CF_KDF *kdf, const CF_KDF_OPTS *opt
             SECURE_FREE(ctx->kdf_ctx, ctx->kdf->ctx_size);
         return st;
     }
+
+    // Integrity check: bind the KDF pointer to a per-context "magic" value
+    // to detect accidental corruption or misuse of the context.
+    // Note: this does NOT prevent a determined attacker from tampering with memory.
+    ctx->magic = CF_CTX_MAGIC ^ (uintptr_t)ctx->kdf;
+
+    return CF_SUCCESS;
+}
+
+CF_STATUS CF_KDF_Reset(CF_KDF_CTX *ctx) {
+    if (!ctx)
+        return CF_ERR_NULL_PTR;
+
+    if (!ctx->kdf)
+        return CF_ERR_CTX_UNINITIALIZED;
+
+    if (!CF_IS_KDF(ctx->kdf->id))
+        return CF_ERR_UNSUPPORTED;
+
+    CF_STATUS st = CF_SUCCESS;
+
+    if (ctx->kdf_ctx) {
+        st = ctx->kdf->kdf_reset_fn(ctx);  // pass full context
+        if (st != CF_SUCCESS)
+            return st;
+        SECURE_FREE(ctx->kdf_ctx, ctx->kdf->ctx_size);
+    }
+
+    ctx->kdf = NULL;
+    ctx->md = NULL;
+    ctx->opts = NULL;
+    ctx->ikm = NULL;
+    ctx->ikm_len = 0;
+    ctx->subflags = 0;
+    ctx->isExtracted = 0;
+
+    return st;
+}
+
+CF_STATUS CF_KDF_Free(CF_KDF_CTX **p_ctx) {
+    if (!p_ctx || !*p_ctx)
+        return CF_ERR_NULL_PTR;
+
+    CF_KDF_CTX *ctx = *p_ctx;
+
+    CF_KDF_Reset(ctx);
+
+    if (ctx->isHeapAlloc) {
+        SECURE_ZERO(ctx, sizeof(CF_KDF_CTX));
+    }
+
+    return CF_SUCCESS;
+}
+
+CF_STATUS CF_KDF_IsValid(const CF_KDF_CTX *ctx) {
+    if (!ctx)
+        return CF_ERR_NULL_PTR;
+
+    // Verify that the KDF pointer hasn’t been tampered with by checking it against the bound magic value.
+    if ((ctx->magic ^ (uintptr_t)ctx->kdf) != CF_CTX_MAGIC)
+        return CF_ERR_CTX_CORRUPT;
 
     return CF_SUCCESS;
 }

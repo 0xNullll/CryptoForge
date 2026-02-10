@@ -52,6 +52,8 @@ typedef struct _CF_MD {
 } CF_MD;
 
 typedef struct _CF_HASH_OPTS {
+    uint32_t magic; // CF_CTX_MAGIC
+
     // Fixed-size customization strings
     uint8_t N[CF_MAX_CUSTOMIZATION];
     size_t N_len;
@@ -67,14 +69,15 @@ typedef struct _CF_HASH_OPTS {
 } CF_HASH_OPTS;
 
 typedef struct _CF_HASH_CTX {
+    uint64_t magic;
+
     const struct _CF_MD *md;  // selected algorithm
     const void *opts;
-    void *digest_ctx;          // pointer to low-level context
-    size_t out_len;            // optional output length for XOFs
+    void *digest_ctx;         // pointer to low-level context
+    size_t out_len;           // optional output length for XOFs
 
     int isFinalized;
-    int isHeapAlloc;           // 1 if allocated by library (heap), 0 if user stack
-    int isHeapAllocOpts;
+    int isHeapAlloc;          // 1 if allocated by library (heap), 0 if user stack
 } CF_HASH_CTX;
 
 //
@@ -125,6 +128,7 @@ CF_API CF_HASH_CTX *CF_Hash_CloneCtxAlloc(const CF_HASH_CTX *src, CF_STATUS *sta
 CF_API size_t CF_Hash_GetDigestSize(const CF_HASH_CTX *ctx);  // fixed-output hashes
 CF_API size_t CF_Hash_GetBlockSize(const CF_HASH_CTX *ctx);
 CF_API const char* CF_Hash_GetName(const CF_MD *md);
+CF_STATUS CF_Hash_IsValid(const CF_HASH_CTX *ctx);
 
 //
 // options initialization / cleanup

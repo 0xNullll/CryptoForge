@@ -47,7 +47,7 @@ typedef struct _CF_ENCODER {
     const int8_t *rev_table;       // Primary decoding table
     const int8_t *rev_table_alt;   // Alternate table (URL-safe, Z85, etc.)
     char pad;
-
+    
     bool (*encode_fn)(const uint8_t *data, size_t data_len, char *out, size_t *out_len, uint32_t mode);
     bool (*decode_fn)(const char *data, size_t data_len, uint8_t *out, size_t *out_len, uint32_t mode);
 } CF_ENCODER;
@@ -56,6 +56,8 @@ typedef struct _CF_ENCODER {
 // Encoder context
 // ============================
 typedef struct _CF_ENCODER_CTX {
+    uint64_t magic;                // CF_CTX_MAGIC ^ 
+
     const CF_ENCODER *encoder;     // Encoder descriptor
     uint32_t encFlags;             // Encoding variant flags
     uint32_t decFlags;             // Decoding variant flags
@@ -113,23 +115,24 @@ CF_API uint8_t* CF_Enc_DecodeAllocRaw(CF_ENCODER_CTX *ctx,
                                       size_t *out_len, CF_STATUS *status);
 
 // ============================
-// Cloning
-// ============================
-CF_API CF_STATUS CF_Enc_CloneCtx(CF_ENCODER_CTX *dst, const CF_ENCODER_CTX *src);
-CF_API CF_ENCODER_CTX* CF_Enc_CloneCtxAlloc(const CF_ENCODER_CTX *src, CF_STATUS *status);
-
-// ============================
 // Utility functions
 // ============================
 CF_API size_t CF_Enc_RequiredEncLen(uint32_t enc_flags, size_t input_len);
 CF_API size_t CF_Enc_RequiredDecLen(uint32_t dec_flags, size_t input_len);
 
-CF_API bool CF_Enc_IsValid(uint32_t dec_flags, const char *src, size_t len);
+CF_API CF_STATUS CF_Enc_IsValid(const CF_ENCODER_CTX *ctx);
+CF_API bool CF_Enc_IsValidInput(uint32_t dec_flags, const char *src, size_t len);
 
 CF_API const char* CF_Enc_GetName(const CF_ENCODER_CTX *ctx);
 
 CF_API size_t CF_Enc_MinInput(const CF_ENCODER_CTX *ctx);
 CF_API size_t CF_Enc_MinOutput(const CF_ENCODER_CTX *ctx);
+
+// ============================
+// Cloning
+// ============================
+CF_API CF_STATUS CF_Enc_CloneCtx(CF_ENCODER_CTX *dst, const CF_ENCODER_CTX *src);
+CF_API CF_ENCODER_CTX* CF_Enc_CloneCtxAlloc(const CF_ENCODER_CTX *src, CF_STATUS *status);
 
 #ifdef __cplusplus
 }

@@ -686,6 +686,9 @@ const CF_MD *CF_MD_GetByFlag(uint32_t algo_flag) {
 CF_STATUS CF_Hash_Init(CF_HASH_CTX *ctx, const CF_MD *md, const CF_HASH_OPTS *opts) {
     if (!ctx || !md) return CF_ERR_NULL_PTR;
 
+    if (opts && opts->magic != CF_CTX_MAGIC)
+        return CF_ERR_CTX_CORRUPT;
+
     if (ctx->isHeapAlloc != 0 && ctx->isHeapAlloc != 1)
         return CF_ERR_CTX_UNINITIALIZED;
 
@@ -697,7 +700,7 @@ CF_STATUS CF_Hash_Init(CF_HASH_CTX *ctx, const CF_MD *md, const CF_HASH_OPTS *op
     ctx->opts = opts;
 
     // Allocate low-level digest context
-    ctx->digest_ctx = SECURE_ALLOC(md->ctx_size);
+    ctx->digest_ctx = (void *)SECURE_ALLOC(md->ctx_size);
     if (!ctx->digest_ctx) return CF_ERR_ALLOC_FAILED;
 
     // Init low-level hash
@@ -708,7 +711,12 @@ CF_STATUS CF_Hash_Init(CF_HASH_CTX *ctx, const CF_MD *md, const CF_HASH_OPTS *op
     }
 
     ctx->out_len = md->digest_size != 0 ? md->digest_size : md->default_out_len;
-    
+
+    // Integrity check: bind the MD pointer to a per-context "magic" value
+    // to detect accidental corruption or misuse of the context.
+    // Note: this does NOT prevent a determined attacker from tampering with memory.
+    ctx->magic = CF_CTX_MAGIC ^ (uintptr_t)ctx->md;
+
     return CF_SUCCESS;
 }
 
@@ -737,8 +745,15 @@ CF_HASH_CTX* CF_Hash_InitAlloc(const CF_MD *md, const CF_HASH_OPTS *opts, CF_STA
 }
 
 CF_STATUS CF_Hash_Update(CF_HASH_CTX *ctx, const uint8_t *data, size_t data_len) {
-    if (!ctx || !ctx->digest_ctx || !ctx->md || !data)
+    if (!ctx || !data)
         return CF_ERR_NULL_PTR;
+
+    if (!ctx->md || !ctx->digest_ctx)
+        return CF_ERR_CTX_UNINITIALIZED;
+
+    // Verify that the MD pointer hasn’t been tampered with by checking it against the bound magic value.
+    if ((ctx->magic ^ (uintptr_t)ctx->md) != CF_CTX_MAGIC)
+        return CF_ERR_CTX_CORRUPT;
 
     if (ctx->isFinalized)
         return CF_ERR_MAC_FINALIZED;
@@ -750,8 +765,15 @@ CF_STATUS CF_Hash_Update(CF_HASH_CTX *ctx, const uint8_t *data, size_t data_len)
 }
 
 CF_STATUS CF_Hash_Final(CF_HASH_CTX *ctx, uint8_t *digest, size_t digest_len) {
-    if (!ctx || !ctx->digest_ctx || !ctx->md || !digest)
+    if (!ctx || !digest)
         return CF_ERR_NULL_PTR;
+
+    if (!ctx->md || !ctx->digest_ctx)
+        return CF_ERR_CTX_UNINITIALIZED;
+
+    // Verify that the MD pointer hasn’t been tampered with by checking it against the bound magic value.
+    if ((ctx->magic ^ (uintptr_t)ctx->md) != CF_CTX_MAGIC)
+        return CF_ERR_CTX_CORRUPT;
 
     if (CF_IS_XOF(ctx->md->id)) {
         // XOF: variable-length output
@@ -788,27 +810,22 @@ CF_STATUS CF_Hash_Final(CF_HASH_CTX *ctx, uint8_t *digest, size_t digest_len) {
 }
 
 CF_STATUS CF_Hash_Reset(CF_HASH_CTX *ctx) {
-    if (!ctx || !ctx->md)
+    if (!ctx)
         return CF_ERR_NULL_PTR;
 
-    int wasHeapAlloc = ctx->isHeapAlloc;
+    if (!ctx->md)
+        return CF_ERR_CTX_UNINITIALIZED;
 
     if (ctx->digest_ctx) {
-        SECURE_ZERO(ctx->digest_ctx, ctx->md->ctx_size);
         SECURE_FREE(ctx->digest_ctx, ctx->md->ctx_size);
-        ctx->digest_ctx = NULL;
     }
 
-    if (ctx->opts && ctx->isHeapAllocOpts) {
-        CF_HashOpts_Free((CF_HASH_OPTS**)&ctx->opts);
-        ctx->opts = NULL;
-        ctx->isHeapAllocOpts = 0;
-    }
+    ctx->md = NULL;
+    ctx->opts = NULL;
 
-    SECURE_ZERO(ctx, sizeof(*ctx));
+    ctx->out_len = 0;
 
-    ctx->isFinalized = 0;
-    ctx->isHeapAlloc = wasHeapAlloc;
+    ctx->magic = 0;
 
     return CF_SUCCESS;
 }
@@ -840,11 +857,11 @@ CF_STATUS CF_Hash_Compute(const CF_MD *md, const uint8_t *data, size_t data_len,
     CF_STATUS st = CF_SUCCESS;
 
     st = CF_Hash_Init(&ctx, md, opts);
-    if (st != CF_SUCCESS)
+    if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.md) != CF_CTX_MAGIC)
         goto cleanup;
 
     st = CF_Hash_Update(&ctx, data, data_len);
-    if (st != CF_SUCCESS)
+    if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.md) != CF_CTX_MAGIC)
         goto cleanup;
 
     st = CF_Hash_Final(&ctx, digest, digest_len);
@@ -866,11 +883,11 @@ CF_STATUS CF_Hash_ComputeFixed(const CF_MD *md, const uint8_t *data, size_t data
     CF_STATUS st = CF_SUCCESS;
 
     st = CF_Hash_Init(&ctx, md, NULL);
-    if (st != CF_SUCCESS)
+    if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.md) != CF_CTX_MAGIC)
         goto cleanup;
 
     st = CF_Hash_Update(&ctx, data, data_len);
-    if (st != CF_SUCCESS) 
+    if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.md) != CF_CTX_MAGIC) 
         goto cleanup;
 
     // Fixed-length hash uses md->digest_size
@@ -885,9 +902,7 @@ CF_STATUS CF_Hash_CloneCtx(CF_HASH_CTX *dst, const CF_HASH_CTX *src) {
     if (!dst || !src)
         return CF_ERR_NULL_PTR;
 
-    // dst must be uninitialized
-    if (dst->digest_ctx || dst->opts || dst->isHeapAlloc || dst->isHeapAllocOpts)
-        return CF_ERR_ALREADY_INITIALIZED;
+    CF_Hash_Reset(dst);
 
     if (!src->md)
         return CF_ERR_CTX_UNINITIALIZED;
@@ -912,7 +927,6 @@ CF_STATUS CF_Hash_CloneCtx(CF_HASH_CTX *dst, const CF_HASH_CTX *src) {
 
     // XOF options are shallow-copied by design
     dst->opts = src->opts;
-    dst->isHeapAllocOpts = 0;
 
     dst->isHeapAlloc = 0;
 
@@ -977,6 +991,15 @@ const char* CF_Hash_GetName(const CF_MD *md) {
     }
 }
 
+CF_STATUS CF_Hash_IsValid(const CF_HASH_CTX *ctx) {
+    if (!ctx)
+        return CF_ERR_NULL_PTR;
+
+    if ((ctx->magic ^ (uintptr_t)ctx->md) != CF_CTX_MAGIC)
+        return CF_ERR_CTX_CORRUPT;
+
+    return CF_SUCCESS;
+}
 
 CF_STATUS CF_HashOpts_Init(CF_HASH_OPTS *opts,
                              const uint8_t *N, size_t N_len,
@@ -1002,6 +1025,8 @@ CF_STATUS CF_HashOpts_Init(CF_HASH_OPTS *opts,
         SECURE_MEMCPY(opts->S, S, S_len);
         opts->emptyNameCustom = 0;
     }
+
+    opts->magic = CF_CTX_MAGIC;
 
     return CF_SUCCESS;
 }

@@ -301,4 +301,6 @@ typedef enum {
 //     CF_KDF_HKDF      = 0x000800000000ULL
 // } CF_CipherOption;
 
+#define CF_CTX_MAGIC 0x43464D47  // "CFMG"
+
 #endif // CF_FLAGS_H

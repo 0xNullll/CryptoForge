@@ -269,6 +269,9 @@ CF_STATUS CF_MAC_Init(CF_MAC_CTX *ctx, const CF_MAC *mac, const CF_MAC_OPTS *opt
     if (!ctx || !mac || !key)
         return CF_ERR_NULL_PTR;
 
+    if (opts && opts->magic != CF_CTX_MAGIC)
+        return CF_ERR_CTX_CORRUPT;
+
     if (ctx->isHeapAlloc != 0 && ctx->isHeapAlloc != 1)
         return CF_ERR_CTX_UNINITIALIZED;
 
@@ -333,17 +336,15 @@ CF_STATUS CF_MAC_Init(CF_MAC_CTX *ctx, const CF_MAC *mac, const CF_MAC_OPTS *opt
         return CF_ERR_INVALID_PARAM;
     }
 
-    // Allocate / initialize MAC internal context
-    ctx->mac_ctx = NULL;
+    // Reject invalid MAC context size
+    if (ctx->mac->ctx_size == 0) 
+        return CF_ERR_CTX_CORRUPT;
 
-    // Only allocate if context size > 0
-    if (ctx->mac->ctx_size > 0) {
-        ctx->mac_ctx = SECURE_ALLOC(ctx->mac->ctx_size);
-        if (!ctx->mac_ctx) {
-            if (ctx->cipher_key)
-                SECURE_FREE(ctx->cipher_key, ctx->mac->key_ctx_size);
-            return CF_ERR_ALLOC_FAILED;
-        }
+    ctx->mac_ctx = (void *)SECURE_ALLOC(ctx->mac->ctx_size);
+    if (!ctx->mac_ctx) {
+        if (ctx->cipher_key)
+            SECURE_FREE(ctx->cipher_key, ctx->mac->key_ctx_size);
+        return CF_ERR_ALLOC_FAILED;
     }
 
     // Initialize context
@@ -355,6 +356,11 @@ CF_STATUS CF_MAC_Init(CF_MAC_CTX *ctx, const CF_MAC *mac, const CF_MAC_OPTS *opt
             SECURE_FREE(ctx->cipher_key, ctx->mac->key_ctx_size);
         return st;
     }
+
+    // Integrity check: bind the MAC pointer to a per-context "magic" value
+    // to detect accidental corruption or misuse of the context.
+    // Note: this does NOT prevent a determined attacker from tampering with memory.
+    ctx->magic = CF_CTX_MAGIC ^ (uintptr_t)ctx->mac;
 
     return CF_SUCCESS;
 }
@@ -389,11 +395,15 @@ CF_STATUS CF_MAC_Update(CF_MAC_CTX *ctx, const uint8_t *data, size_t data_len) {
     if (!ctx || !data)
         return CF_ERR_NULL_PTR;
 
+    if (!ctx->mac_ctx)
+        return CF_ERR_CTX_UNINITIALIZED;
+
+    // Verify that the MAC pointer hasn’t been tampered with by checking it against the bound magic value.
+    if ((ctx->magic ^ (uintptr_t)ctx->mac) != CF_CTX_MAGIC)
+        return CF_ERR_CTX_CORRUPT;
+
     if (ctx->isFinalized)
         return CF_ERR_MAC_FINALIZED;
-
-    if (!ctx->mac || !ctx->mac_ctx)
-        return CF_ERR_CTX_CORRUPT;
 
     return ctx->mac->mac_update_fn(ctx, data, data_len);
 }
@@ -401,6 +411,13 @@ CF_STATUS CF_MAC_Update(CF_MAC_CTX *ctx, const uint8_t *data, size_t data_len) {
 CF_STATUS CF_MAC_Final(CF_MAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
     if (!ctx || !tag)
         return CF_ERR_NULL_PTR;
+
+    if ((!ctx->md && CF_MAC_IS_HMAC(ctx->mac->id)) || !ctx->mac_ctx)
+        return CF_ERR_CTX_UNINITIALIZED;
+
+    // Verify that the MAC pointer hasn’t been tampered with by checking it against the bound magic value.
+    if ((ctx->magic ^ (uintptr_t)ctx->mac) != CF_CTX_MAGIC)
+        return CF_ERR_CTX_CORRUPT;
 
     if (tag_len == 0)
         return CF_ERR_INVALID_LEN;
@@ -451,19 +468,21 @@ CF_STATUS CF_MAC_Reset(CF_MAC_CTX *ctx) {
         return CF_ERR_CTX_UNINITIALIZED;
 
     if (!CF_IS_MAC(ctx->mac->id))
-        return CF_ERR_CTX_CORRUPT;
+        return CF_ERR_UNSUPPORTED;
 
     CF_STATUS st = CF_SUCCESS;
-    int wasHeapAlloc = ctx->isHeapAlloc;
 
-    if (ctx->cipher_key)
+    if (ctx->cipher_key) {
+        if (ctx->mac->key_ctx_size == 0)
+            return CF_ERR_CTX_CORRUPT;
         SECURE_FREE(ctx->cipher_key, ctx->mac->key_ctx_size);
+    }
 
     if (ctx->mac_ctx) {
         st = ctx->mac->mac_reset_fn(ctx);  // pass full context
         if (st != CF_SUCCESS)
             return st;
-        ctx->mac_ctx = NULL;  // avoid dangling pointer
+        SECURE_FREE(ctx->mac_ctx, ctx->mac->ctx_size);
     }
 
     ctx->md = NULL;
@@ -474,9 +493,8 @@ CF_STATUS CF_MAC_Reset(CF_MAC_CTX *ctx) {
     ctx->tag_len = 0;
     ctx->subflags = 0;
     ctx->isFinalized = 0;
-    ctx->isHeapAlloc = wasHeapAlloc;
 
-    return CF_SUCCESS;
+    return st;
 }
 
 CF_STATUS CF_MAC_Free(CF_MAC_CTX **p_ctx) {
@@ -484,13 +502,11 @@ CF_STATUS CF_MAC_Free(CF_MAC_CTX **p_ctx) {
         return CF_ERR_NULL_PTR;
 
     CF_MAC_CTX *ctx = *p_ctx;
-    int wasHeapAlloc = ctx->isHeapAlloc;
 
     CF_MAC_Reset(ctx);
 
-    if (wasHeapAlloc) {
+    if (ctx->isHeapAlloc) {
         SECURE_ZERO(ctx, sizeof(CF_MAC_CTX));
-        *p_ctx = NULL;
     }
 
     return CF_SUCCESS;
@@ -509,7 +525,7 @@ CF_STATUS CF_MAC_Verify(const CF_MAC *mac,
 
     // Initialize context using standard MAC init
     st = CF_MAC_Init(&ctx, mac, opts, key, key_len, subflags);
-    if (st != CF_SUCCESS)
+    if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.mac) != CF_CTX_MAGIC)
         return st;
 
     st = mac->mac_verify_fn(&ctx, data, data_len, expected_mac, expected_mac_len, opts);
@@ -532,11 +548,11 @@ CF_STATUS CF_MAC_Compute(const CF_MAC *mac,
     CF_STATUS st = CF_SUCCESS;
 
     st = CF_MAC_Init(&ctx, mac, opts, key, key_len, subflags);
-    if (st != CF_SUCCESS)
+    if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.mac) != CF_CTX_MAGIC)
         goto cleanup;
 
     st = CF_MAC_Update(&ctx, data, data_len);
-    if (st != CF_SUCCESS)
+    if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.mac) != CF_CTX_MAGIC)
         goto cleanup;
 
     st = CF_MAC_Final(&ctx, tag, tag_len);
@@ -611,6 +627,17 @@ const char* CF_MAC_GetFullName(const CF_MAC_CTX *ctx) {
     }
 }
 
+CF_STATUS CF_MAC_IsValid(const CF_MAC_CTX *ctx) {
+    if (!ctx)
+        return CF_ERR_NULL_PTR;
+
+    // Verify that the MAC pointer hasn’t been tampered with by checking it against the bound magic value.
+    if ((ctx->magic ^ (uintptr_t)ctx->md) != CF_CTX_MAGIC)
+        return CF_ERR_CTX_CORRUPT;
+
+    return CF_SUCCESS;
+}
+
 CF_STATUS CF_MACOpts_Init(CF_MAC_OPTS *opts,
                           const uint8_t *iv, size_t iv_len,
                           const uint8_t *custom, size_t custom_len) {
@@ -630,6 +657,8 @@ CF_STATUS CF_MACOpts_Init(CF_MAC_OPTS *opts,
 
     if (custom && custom_len > 0)
         SECURE_MEMCPY(opts->custom, custom, custom_len);
+
+    opts->magic = CF_CTX_MAGIC;
 
     return CF_SUCCESS;
 }
