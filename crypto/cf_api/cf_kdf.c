@@ -19,7 +19,8 @@
 
 // HKDF
 static CF_STATUS hkdf_init_wrapper(CF_KDF_CTX *ctx, const CF_KDF_OPTS *opts) {
-    return ll_HKDF_Init((ll_HKDF_CTX *)ctx->kdf_ctx, ctx->md, opts->info, opts->info_len);
+    UNUSED(opts);
+    return ll_HKDF_Init((ll_HKDF_CTX *)ctx->kdf_ctx, ctx->md, ctx->data, ctx->data_len);
 }
 
 static CF_STATUS hkdf_extract_wrapper(CF_KDF_CTX *ctx, const CF_KDF_OPTS *opts) {
@@ -27,7 +28,8 @@ static CF_STATUS hkdf_extract_wrapper(CF_KDF_CTX *ctx, const CF_KDF_OPTS *opts) 
 }
 
 static CF_STATUS hkdf_expand_wrapper(CF_KDF_CTX *ctx, uint8_t *out, size_t out_len, const CF_KDF_OPTS *opts, bool new_info) {
-    return ll_HKDF_Expand((ll_HKDF_CTX *)ctx->kdf_ctx, out, out_len , new_info ? opts->info : NULL, new_info ? opts->info_len : 0);
+    UNUSED(opts);
+    return ll_HKDF_Expand((ll_HKDF_CTX *)ctx->kdf_ctx, out, out_len , new_info ? ctx->data : NULL, new_info ? ctx->data_len : 0);
 }
 static CF_STATUS hkdf_reset_wrapper(CF_KDF_CTX *ctx) {
     return ll_HKDF_Reset((ll_HKDF_CTX *)ctx->kdf_ctx);
@@ -63,7 +65,8 @@ static CF_STATUS kkdf_xof_init_wrapper(CF_KDF_CTX *ctx, const CF_KDF_OPTS *opts)
 }
 
 static CF_STATUS kkdf_xof_extract_wrapper(CF_KDF_CTX *ctx, const CF_KDF_OPTS *opts) {
-    return ll_KMAC_Update((ll_KMAC_CTX *)ctx->kdf_ctx, opts->info, opts->info_len);
+    UNUSED(opts);
+    return ll_KMAC_Update((ll_KMAC_CTX *)ctx->kdf_ctx, ctx->data, ctx->data_len);
 }
 
 static CF_STATUS kkdf_xof_expand_wrapper(CF_KDF_CTX *ctx, uint8_t *out, size_t out_len, const CF_KDF_OPTS *opts, bool new_info) {
@@ -143,8 +146,11 @@ const CF_KDF *CF_KDF_GetByFlag(uint32_t algo_flag) {
     return NULL;
 }
 
-CF_STATUS CF_KDF_Init(CF_KDF_CTX *ctx, const CF_KDF *kdf, const CF_KDF_OPTS *opts, uint32_t subflags) {
-    if (!ctx || !kdf || !opts)
+CF_STATUS CF_KDF_Init(
+    CF_KDF_CTX *ctx, const CF_KDF *kdf,
+    const uint8_t *ikm, size_t ikm_len,
+    const CF_KDF_OPTS *opts, uint32_t subflags) {
+    if (!ctx || !kdf || !ikm)
         return CF_ERR_NULL_PTR;
 
     if (opts && opts->magic != CF_CTX_MAGIC)
@@ -158,17 +164,21 @@ CF_STATUS CF_KDF_Init(CF_KDF_CTX *ctx, const CF_KDF *kdf, const CF_KDF_OPTS *opt
 
     CF_KDF_Reset(ctx);
 
-    ctx->kdf = kdf;
-    ctx->opts = opts;
+    ctx->kdf      = kdf;
+    ctx->opts     = opts;
+    ctx->ikm      = ikm;
+    ctx->data_len = ikm_len;
 
     if (CF_KDF_IS_HKDF(ctx->kdf->id) || CF_KDF_IS_PBKDF2(ctx->kdf->id)) {
         // HKDF: requires a hash subflag, cannot have KMAC bits
         if ((subflags & CF_MAC_KMAC_MASK) != 0)
             return CF_ERR_INVALID_PARAM;
 
+        // HKDF/PBKDF2: must specify a hash flag
         if ((subflags & CF_HASH_MASK) == 0)
-            return CF_ERR_INVALID_PARAM; // must specify hash
+            return CF_ERR_INVALID_PARAM;
 
+        // XOF not supported
         if (CF_IS_XOF(subflags))
             return CF_ERR_UNSUPPORTED;
 
@@ -197,18 +207,113 @@ CF_STATUS CF_KDF_Init(CF_KDF_CTX *ctx, const CF_KDF *kdf, const CF_KDF_OPTS *opt
     if (!ctx->kdf_ctx)
         return CF_ERR_ALLOC_FAILED;
 
-    // Initialize context
-    CF_STATUS st = ctx->kdf->kdf_init_fn(ctx, ctx->opts);
-    if (st != CF_SUCCESS) {
-        if (ctx->kdf_ctx)
-            SECURE_FREE(ctx->kdf_ctx, ctx->kdf->ctx_size);
-        return st;
+    // PBKDF2 and KMAC-XOF can be initialized immediately during Init because their IKM/key is already available,
+    // unlike HKDF which requires 'info' to be set first and is deferred until Extract.
+    if (!CF_KDF_IS_HKDF(ctx->kdf->id)) { 
+        CF_STATUS st = ctx->kdf->kdf_init_fn(ctx, ctx->opts);
+        if (st != CF_SUCCESS) {
+            CF_KDF_Reset(ctx);
+            return st;
+        }
     }
 
     // Integrity check: bind the KDF pointer to a per-context "magic" value
     // to detect accidental corruption or misuse of the context.
     // Note: this does NOT prevent a determined attacker from tampering with memory.
     ctx->magic = CF_CTX_MAGIC ^ (uintptr_t)ctx->kdf;
+
+    return CF_SUCCESS;
+}
+
+ CF_KDF_CTX* CF_KDF_InitAlloc(
+    const CF_KDF *kdf, const CF_KDF_OPTS *opts,
+    const uint8_t *ikm, size_t ikm_len,
+    uint32_t subflags, CF_STATUS *status) {
+    if (!kdf) {
+        if (status) *status = CF_ERR_NULL_PTR;
+        return NULL;
+    }
+
+    CF_KDF_CTX *ctx = (CF_KDF_CTX *)SECURE_ALLOC(sizeof(CF_KDF_CTX));
+    if (!ctx) {
+        if (status) *status = CF_ERR_ALLOC_FAILED;
+        return NULL;
+    }
+
+    CF_STATUS st = CF_KDF_Init(ctx, kdf, ikm, ikm_len, opts, subflags);
+    if (st != CF_SUCCESS) {
+        SECURE_FREE(ctx, sizeof(CF_KDF_CTX));
+        if (status) *status = st;
+        return NULL;
+    }
+
+    ctx->isHeapAlloc = 1;
+    if (status) *status = CF_SUCCESS;
+    return ctx;
+}
+
+CF_STATUS CF_KDF_Extract(CF_KDF_CTX *ctx, const uint8_t *data, size_t data_len) {
+    if (!ctx || !data)
+        return CF_ERR_NULL_PTR;
+
+    if (!ctx->kdf || !ctx->kdf_ctx)
+        return CF_ERR_CTX_UNINITIALIZED;
+
+    // Verify that the KDF pointer hasn’t been tampered with by checking it against the bound magic value.
+    if ((ctx->magic ^ (uintptr_t)ctx->kdf) != CF_CTX_MAGIC)
+        return CF_ERR_CTX_CORRUPT;
+
+    if (ctx->isExtracted)
+        return CF_ERR_KDF_ALREADY_EXTRACTED;
+
+    CF_STATUS st = CF_SUCCESS;
+
+    ctx->data     = data;
+    ctx->data_len = data_len;
+
+    // HKDF requires 'info' to be set before initialization, so we defer calling kdf_init_fn until Extract
+    if (CF_KDF_IS_HKDF(ctx->kdf->id)) { 
+        st = ctx->kdf->kdf_init_fn(ctx, ctx->opts);
+        if (st != CF_SUCCESS) {
+            CF_KDF_Reset(ctx);
+            return st;
+        }
+    }
+
+    st = ctx->kdf->kdf_extract_fn(ctx, ctx->opts);
+    if (st != CF_SUCCESS) {
+        CF_KDF_Reset(ctx);
+        return st;
+    }
+
+    ctx->isExtracted = 1;
+
+    return CF_SUCCESS;
+}
+
+CF_STATUS CF_KDF_Expand(
+    CF_KDF_CTX *ctx,
+    uint8_t *out, size_t out_len,
+    const uint8_t *new_data, size_t new_data_len) {
+    if (!ctx || !out)
+        return CF_ERR_NULL_PTR;
+
+    if (!ctx->kdf || !ctx->kdf_ctx)
+        return CF_ERR_CTX_UNINITIALIZED;
+
+    bool IsNewData = false;
+
+    if (new_data && new_data_len != 0) {
+        ctx->data     = new_data;
+        ctx->data_len = new_data_len;
+        IsNewData     = true;
+    }
+
+    CF_STATUS st = ctx->kdf->kdf_expand_fn(ctx, out, out_len, ctx->opts, IsNewData);
+    if (st != CF_SUCCESS) {
+        CF_KDF_Reset(ctx);
+        return st;
+    }
 
     return CF_SUCCESS;
 }

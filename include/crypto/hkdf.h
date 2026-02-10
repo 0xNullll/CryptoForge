@@ -44,7 +44,7 @@ typedef struct _ll_HKDF_CTX {
     uint8_t prev_block[CF_MAX_DEFAULT_DIGEST_SIZE];  // Last HMAC output (Ti), max hash size
     uint8_t counter;                                 // Block counter (1..255)
 
-    uint8_t *info;             // Optional context info
+    const uint8_t *info;             // Optional context info
     size_t info_len;           // Length of info
 
     int isExtracted;

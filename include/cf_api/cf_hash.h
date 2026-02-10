@@ -69,7 +69,7 @@ typedef struct _CF_HASH_OPTS {
 } CF_HASH_OPTS;
 
 typedef struct _CF_HASH_CTX {
-    uint64_t magic;
+    uint64_t magic;           // CF_CTX_MAGIC ^ (uintptr_t)md
 
     const struct _CF_MD *md;  // selected algorithm
     const void *opts;

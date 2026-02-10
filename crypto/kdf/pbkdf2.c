@@ -23,23 +23,12 @@ CF_STATUS ll_PBKDF2_Init(
     if (CF_IS_XOF(md->id))
         return CF_ERR_UNSUPPORTED;
 
-    // nothing to write
-    if (password && password_len == 0)
-        return CF_ERR_INVALID_PARAM;
-
     ll_PBKDF2_Reset(ctx);
         
     ctx->md = md;
 
-    if (password) {
-        ctx->password = (uint8_t *)SECURE_ALLOC(password_len);
-        SECURE_MEMCPY((void *)ctx->password, password, password_len);
-
-        if (!ctx->password)
-            return CF_ERR_ALLOC_FAILED;
-
-        ctx->password_len = password_len;
-    }
+    ctx->password = password;
+    ctx->password_len = password_len;
 
     return CF_SUCCESS;
 }
@@ -74,12 +63,11 @@ ll_PBKDF2_CTX* ll_PBKDF2_InitAlloc(
 CF_STATUS ll_PBKDF2_Extract(
     ll_PBKDF2_CTX *ctx,
     const uint8_t *salt, size_t salt_len) {
-    if (!ctx || !ctx->md || !ctx->password)
+    if (!ctx)
         return CF_ERR_NULL_PTR;
 
-    // nothing to write
-    if (salt && salt_len == 0)
-        return CF_ERR_INVALID_PARAM;
+    if (!ctx->md)
+        return CF_ERR_CTX_UNINITIALIZED;
 
     if (ctx->isExtracted)
         return CF_ERR_KDF_ALREADY_EXTRACTED;
@@ -132,8 +120,11 @@ CF_STATUS ll_PBKDF2_Expand(
     ll_PBKDF2_CTX *ctx,
     uint8_t *dk, size_t dk_len,
     size_t iterations) {
-    if (!ctx || !ctx->md || !ctx->password || !dk)
+    if (!ctx || !dk)
         return CF_ERR_NULL_PTR;
+
+    if (!ctx->md)
+        return CF_ERR_CTX_UNINITIALIZED;
 
     if (iterations < KDF_PBKDF2_MIN_ITERATIONS || iterations > LL_PBKDF2_MAX_ITERATION)
         return CF_ERR_INVALID_LEN;
@@ -169,13 +160,11 @@ CF_STATUS ll_PBKDF2_Expand(
         st = ll_HMAC_Update(&work_hmac, ctx->salt, ctx->salt_len);
         if (st != CF_SUCCESS) goto cleanup;
 
-        uint8_t block_index_be[4] = {
-            (uint8_t)((block >> 24) & 0xFF),
-            (uint8_t)((block >> 16) & 0xFF),
-            (uint8_t)((block >> 8) & 0xFF),
-            (uint8_t)(block & 0xFF)
-        };
-        st = ll_HMAC_Update(&work_hmac, block_index_be, 4);
+        // Serialize block counter to 4-byte big-endian form
+        uint8_t block_index[4];
+        STORE32BE(block_index, block);
+
+        st = ll_HMAC_Update(&work_hmac, block_index, 4);
         if (st != CF_SUCCESS) goto cleanup;
 
         st = ll_HMAC_Final(&work_hmac, U, hash_len);
@@ -221,12 +210,6 @@ CF_STATUS ll_PBKDF2_Reset(ll_PBKDF2_CTX *ctx) {
     if (!ctx)
         return CF_ERR_NULL_PTR;
 
-    if (ctx->password) {
-        if (ctx->password_len == 0)
-            return CF_ERR_CTX_CORRUPT;
-        SECURE_FREE(ctx->password, ctx->password_len);
-    }
-
     if (ctx->salt) {
         if (ctx->salt_len == 0)
             return CF_ERR_CTX_CORRUPT;
@@ -236,6 +219,7 @@ CF_STATUS ll_PBKDF2_Reset(ll_PBKDF2_CTX *ctx) {
     SECURE_ZERO(ctx->prev_block, sizeof(ctx->prev_block));
 
     ctx->md = NULL;
+    ctx->password = NULL;
     ctx->password_len = 0;
     ctx->iterations = 0;
     ctx->dk_len = 0;
@@ -296,32 +280,21 @@ CF_STATUS ll_PBKDF2_CloneCtx(ll_PBKDF2_CTX *ctx_dest,
     // Cloned context does not own top-level allocation by default
     ctx_dest->isHeapAlloc = 0;
 
-    // ---- Clone password ----
-    if (ctx_src->password && ctx_src->password_len > 0) {
-        ctx_dest->password = (uint8_t *)SECURE_ALLOC(ctx_src->password_len);
-        if (!ctx_dest->password)
-            return CF_ERR_ALLOC_FAILED;
-
-        SECURE_MEMCPY(ctx_dest->password,
-                      ctx_src->password,
-                      ctx_src->password_len);
-        ctx_dest->password_len = ctx_src->password_len;
-    }
-
     // ---- Clone salt ----
     if (ctx_src->salt && ctx_src->salt_len > 0) {
         ctx_dest->salt = (uint8_t *)SECURE_ALLOC(ctx_src->salt_len);
-        if (!ctx_dest->salt) {
-            SECURE_FREE(ctx_dest->password, ctx_dest->password_len);
-            ctx_dest->password = NULL;
+        if (!ctx_dest->salt)
             return CF_ERR_ALLOC_FAILED;
-        }
 
         SECURE_MEMCPY(ctx_dest->salt,
                       ctx_src->salt,
                       ctx_src->salt_len);
         ctx_dest->salt_len = ctx_src->salt_len;
     }
+
+    // ---- Clone password ----
+    ctx_dest->password = ctx_src->password;
+    ctx_dest->password_len = ctx_src->password_len;
 
     return CF_SUCCESS;
 }

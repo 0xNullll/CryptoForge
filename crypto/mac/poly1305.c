@@ -15,8 +15,7 @@
 /**
  * Poly1305 message-authentication code
  * 
- * Implementation copied unmodified from CycloneCRYPTO (Oryx Embedded SARL, GPL-2.0-or-later)
- * Used here for learning/experimentation purposes.
+ * Implementation inspired from CycloneCRYPTO (Oryx Embedded SARL, GPL-2.0-or-later)
  */
 CF_STATUS ll_POLY1305_Init(ll_POLY1305_CTX *ctx, const uint8_t key[LL_POLY1305_KEY_LEN]) {
     if (!ctx || !key)
@@ -88,10 +87,6 @@ static bool ll_POLY1305_ProcessBlock(ll_POLY1305_CTX *ctx) {
     //Retrieve the length of the last block
     n = ctx->buffer_len;
   
-    //Add one bit beyond the number of octets. For a 16-byte block,
-    //this is equivalent to adding 2^128 to the number. For the shorter
-    //block, it can be 2^120, 2^112, or any power of two that is evenly
-    //divisible by 8, all the way down to 2^8
     ctx->buffer[n++] = 0x01;
   
     //If the resulting block is not 17 bytes long (the last block),
@@ -100,7 +95,7 @@ static bool ll_POLY1305_ProcessBlock(ll_POLY1305_CTX *ctx) {
        ctx->buffer[n++] = 0x00;
     }
   
-    //Read the block as a little-endian number
+    //Read the block
     u[0] = LOAD32LE(ctx->buffer);
     u[1] = LOAD32LE(ctx->buffer + 4);
     u[2] = LOAD32LE(ctx->buffer + 8);
@@ -286,7 +281,7 @@ CF_STATUS ll_POLY1305_Final(ll_POLY1305_CTX *ctx, uint8_t tag[LL_POLY1305_TAG_LE
     temp += (uint64_t) ctx->acc[3] + ctx->s[3];
     b[3] = temp & 0xFFFFFFFF;
   
-    //The result is serialized as a little-endian number, producing
+    //The result is serialized, producing
     //the 16 byte tag
     STORE32LE(tag, b[0]);
     STORE32LE(tag + 4, b[1]);

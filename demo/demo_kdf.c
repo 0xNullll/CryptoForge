@@ -98,8 +98,7 @@ void test_all_pbkdf2s(const uint8_t *password, size_t password_len,
             continue;
         }
 
-        ll_PBKDF2_CTX ctx;
-        SECURE_ZERO(&ctx, sizeof(ctx));
+        ll_PBKDF2_CTX ctx = {0};
 
         CF_STATUS status = ll_PBKDF2_Init(&ctx, md, password, password_len);
         if (status != CF_SUCCESS) {

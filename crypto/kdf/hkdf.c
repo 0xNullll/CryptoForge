@@ -20,23 +20,12 @@ CF_STATUS ll_HKDF_Init(ll_HKDF_CTX *ctx, const CF_MD *md, const uint8_t *info, s
     if (CF_IS_XOF(md->id))
         return CF_ERR_UNSUPPORTED;
 
-    // nothing to write
-    if (info && info_len == 0)
-        return CF_ERR_INVALID_PARAM;
-
     ll_HKDF_Reset(ctx);
         
     ctx->md = md;
 
-    if (info) {
-        ctx->info = (uint8_t *)SECURE_ALLOC(info_len);
-        SECURE_MEMCPY((void *)ctx->info, info, info_len);
-
-        if (!ctx->info)
-            return CF_ERR_ALLOC_FAILED;
-
-        ctx->info_len = info_len;
-    }
+    ctx->info = info;
+    ctx->info_len = info_len;
 
     return CF_SUCCESS;
 }
@@ -81,20 +70,24 @@ CF_STATUS ll_HKDF_Extract(
     ll_HMAC_CTX hmac_ctx = {0};
 
     // HMAC key = salt
-    if (salt && salt_len > 0)
-        st = ll_HMAC_Init(&hmac_ctx, ctx->md, salt, salt_len);
-    else
-        st = ll_HMAC_Init(&hmac_ctx, ctx->md, (const uint8_t *)"", 0);
+    st = ll_HMAC_Init(&hmac_ctx, ctx->md, salt, salt_len);
+
+    // if (salt && salt_len > 0)
+    //     st = ll_HMAC_Init(&hmac_ctx, ctx->md, salt, salt_len);
+    // else
+    //     st = ll_HMAC_Init(&hmac_ctx, ctx->md, (const uint8_t *)"", 0);
 
     if (st != CF_SUCCESS) {
         return st;
     }
 
     // Feed the input key material (IKM) into HMAC
-    if (salt && salt_len > 0)
-        st = ll_HMAC_Update(&hmac_ctx, ikm, ikm_len);
-    else
-        st = ll_HMAC_Update(&hmac_ctx, (const uint8_t *)"", 0);
+    st = ll_HMAC_Update(&hmac_ctx, ikm, ikm_len);
+
+    // if (ikm && ikm_len > 0)
+    //     st = ll_HMAC_Update(&hmac_ctx, ikm, ikm_len);
+    // else
+    //     st = ll_HMAC_Update(&hmac_ctx, (const uint8_t *)"", 0);
 
     if (st != CF_SUCCESS) {
         ll_HMAC_Reset(&hmac_ctx);
@@ -142,20 +135,8 @@ CF_STATUS ll_HKDF_Expand(
         return CF_ERR_LIMIT_EXCEEDED;
 
     // Only replace info once, before generating blocks
-    if (new_info) {
-        if (ctx->info) {
-            SECURE_FREE(ctx->info, ctx->info_len);
-            ctx->info = NULL;
-            ctx->info_len = 0;
-        }
-
-        ctx->info = (uint8_t *)SECURE_ALLOC(new_info_len);
-        if (!ctx->info)
-            return CF_ERR_ALLOC_FAILED;
-
-        SECURE_MEMCPY(ctx->info, new_info, new_info_len);
-        ctx->info_len = new_info_len;
-    }
+    ctx->info = new_info;
+    ctx->info_len = new_info_len;
 
     // Prepare for multi-block generation
     SECURE_ZERO(ctx->prev_block, sizeof(ctx->prev_block));
@@ -237,15 +218,11 @@ CF_STATUS ll_HKDF_Reset(ll_HKDF_CTX *ctx) {
         SECURE_FREE(ctx->prk, ctx->prk_len);
     }
 
-    if (ctx->info) {
-        if (ctx->info_len == 0)
-            return CF_ERR_CTX_CORRUPT;
-        SECURE_FREE(ctx->info, ctx->info_len);
-    }
-
     SECURE_ZERO(ctx->prev_block, sizeof(ctx->prev_block));
 
     ctx->md = NULL;
+    ctx->info = NULL;
+    ctx->info_len = 0;
     ctx->prk_len = 0;
     ctx->counter = 0;
     ctx->info_len = 0;
@@ -292,17 +269,9 @@ CF_STATUS ll_HKDF_CloneCtx(ll_HKDF_CTX *ctx_dest, const ll_HKDF_CTX *ctx_src) {
         ctx_dest->prk_len = ctx_src->prk_len;
     }
 
-    // Clone info if exists
-    if (ctx_src->info && ctx_src->info_len > 0) {
-        ctx_dest->info = (uint8_t *)SECURE_ALLOC(ctx_src->info_len);
-        if (!ctx_dest->info) {
-            SECURE_FREE(ctx_dest->prk, ctx_dest->prk_len);
-            ctx_dest->prk = NULL;
-            return CF_ERR_ALLOC_FAILED;
-        }
-        SECURE_MEMCPY(ctx_dest->info, ctx_src->info, ctx_src->info_len);
-        ctx_dest->info_len = ctx_src->info_len;
-    }
+    // Clone pointer
+    ctx_dest->info = ctx_src->info;
+    ctx_dest->info_len = ctx_src->info_len;
 
     return CF_SUCCESS;
 }

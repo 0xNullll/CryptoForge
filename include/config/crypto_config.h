@@ -17,6 +17,11 @@
 #define BUILDING_CF_DLL 1
 #endif
 
+// Enable or disable compiler barriers (1 = on, 0 = off)
+#ifndef CF_ENABLE_BARRIER
+#define CF_ENABLE_BARRIER 0
+#endif
+
 #ifndef CF_DEBUG
 #define CF_DEBUG 1
 #endif
