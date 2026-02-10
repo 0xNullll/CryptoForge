@@ -53,6 +53,8 @@ typedef struct _CF_KDF {
 // Optional KDF parameters
 // ============================
 typedef struct _CF_KDF_OPTS {
+    uint32_t magic;               // CF_CTX_MAGIC
+
     const uint8_t *salt;          // optional salt
     size_t salt_len;
 
@@ -71,6 +73,8 @@ typedef struct _CF_KDF_OPTS {
 // KDF context
 // ============================
 typedef struct _CF_KDF_CTX {
+    uint64_t magic;                // CF_CTX_MAGIC
+
     const CF_KDF *kdf;
     const CF_MD *md;
     const CF_KDF_OPTS *opts;
@@ -80,7 +84,6 @@ typedef struct _CF_KDF_CTX {
     const uint8_t *ikm;
     size_t ikm_len;
 
-    size_t out_len;
     uint32_t subflags;
     int isExtracted;
     int isHeapAlloc;
@@ -132,6 +135,7 @@ CF_API CF_STATUS CF_KDF_Compute(const CF_KDF *kdf,
 
 CF_API const char* CF_KDF_GetName(const CF_KDF *kdf);
 CF_API const char* CF_KDF_GetFullName(const CF_KDF_CTX *ctx);
+CF_API CF_STATUS CF_KDF_IsValid(const CF_KDF_CTX *ctx);
 
 // ============================
 // Cloning

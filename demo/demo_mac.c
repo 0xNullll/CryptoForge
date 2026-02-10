@@ -1390,7 +1390,7 @@ void test_all_macs_high(void) {
         0xc2, 0x2b, 0x8b, 0xaf, 0x0c, 0x01, 0x27, 0xa9
     };
 
-    // POLY-305 execution path
+    // POLY-1305 execution path
     for (size_t i = 0; i < 1; i++) {
         const CF_MAC *mac = CF_MAC_GetByFlag(mac_flags[4]);
         if (!mac) { 
