@@ -63,8 +63,8 @@ typedef struct _CF_MAC_OPTS {
     uint8_t iv[AES_BLOCK_SIZE];           // optional IV for GMAC
     size_t iv_len;
 
-    uint8_t custom[CF_MAX_CUSTOMIZATION]; // optional custom bytes
-    size_t custom_len;
+    uint8_t S[CF_MAX_CUSTOMIZATION]; // optional customization for KMAC
+    size_t S_len;
 
     int isHeapAlloc;
 } CF_MAC_OPTS;

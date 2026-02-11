@@ -739,7 +739,9 @@ CF_HASH_CTX* CF_Hash_InitAlloc(const CF_MD *md, const CF_HASH_OPTS *opts, CF_STA
         return NULL;
     }
 
+    // context is heap-allocated
     ctx->isHeapAlloc = 1;
+    
     if (status) *status = CF_SUCCESS;
     return ctx;
 }
@@ -902,25 +904,28 @@ CF_STATUS CF_Hash_CloneCtx(CF_HASH_CTX *dst, const CF_HASH_CTX *src) {
     if (!dst || !src)
         return CF_ERR_NULL_PTR;
 
+    // Verify that the MD pointer hasn’t been tampered with
+    if ((src->magic ^ (uintptr_t)src->md) != CF_CTX_MAGIC)
+        return CF_ERR_CTX_CORRUPT;
+
+    // Start with a clean slate
     CF_Hash_Reset(dst);
 
     if (!src->md)
         return CF_ERR_CTX_UNINITIALIZED;
 
-    // Verify that the MD pointer hasn’t been tampered with by checking it against the bound magic value.
-    if ((src->magic ^ (uintptr_t)src->md) != CF_CTX_MAGIC)
-
-    // Copy metadata first (no allocation yet)
+    // Copy metadata (shallow)
     dst->magic       = src->magic;
     dst->md          = src->md;
     dst->out_len     = src->out_len;
+    dst->opts        = src->opts;
     dst->isFinalized = src->isFinalized;
 
-    // Deep copy digest context
+    // Deep copy low-level digest context
     if (src->digest_ctx) {
         dst->digest_ctx = SECURE_ALLOC(src->md->ctx_size);
         if (!dst->digest_ctx)
-            return CF_ERR_ALLOC_FAILED;
+            goto cleanup;
 
         SECURE_MEMCPY(dst->digest_ctx,
                       src->digest_ctx,
@@ -929,12 +934,14 @@ CF_STATUS CF_Hash_CloneCtx(CF_HASH_CTX *dst, const CF_HASH_CTX *src) {
         dst->digest_ctx = NULL;
     }
 
-    // XOF options are shallow-copied by design
-    dst->opts = src->opts;
-
-    dst->isHeapAlloc = 0;
-
     return CF_SUCCESS;
+
+cleanup:
+    // Cleanup partially allocated memory
+    if (dst->digest_ctx)
+        SECURE_FREE(dst->digest_ctx, src->md->ctx_size);
+
+    return CF_ERR_ALLOC_FAILED;
 }
 
 CF_HASH_CTX *CF_Hash_CloneCtxAlloc(const CF_HASH_CTX *src, CF_STATUS *status) {
@@ -957,7 +964,9 @@ CF_HASH_CTX *CF_Hash_CloneCtxAlloc(const CF_HASH_CTX *src, CF_STATUS *status) {
         return NULL;
     }
 
+    // cloned context is heap-allocated
     dst->isHeapAlloc = 1;
+
     return dst;
 }
 
@@ -991,7 +1000,7 @@ const char* CF_Hash_GetName(const CF_MD *md) {
         case CF_RAWSHAKE256:  return "RAWSHAKE-256";
         case CF_CSHAKE128:    return "CSHAKE-128";
         case CF_CSHAKE256:    return "CSHAKE-256";
-        default:              return NULL;
+        default:              return "UNKNOWN-HASH";
     }
 }
 
@@ -1016,17 +1025,17 @@ CF_STATUS CF_HashOpts_Init(CF_HASH_OPTS *opts,
 
     CF_HashOpts_Reset(opts);
 
-    opts->N_len = N_len;
-    opts->S_len = S_len;
     opts->emptyNameCustom = 1;
 
     if (N && N_len > 0) {
         SECURE_MEMCPY(opts->N, N, N_len);
+        opts->N_len = N_len;
         opts->emptyNameCustom = 0;
     }
 
     if (S && S_len > 0) {
         SECURE_MEMCPY(opts->S, S, S_len);
+        opts->S_len = S_len;
         opts->emptyNameCustom = 0;
     }
 
@@ -1064,13 +1073,13 @@ CF_STATUS CF_HashOpts_Reset(CF_HASH_OPTS *opts) {
     if (!opts)
         return CF_ERR_NULL_PTR;
 
-    SECURE_ZERO(opts->N, sizeof(opts->N));
-    SECURE_ZERO(opts->S, sizeof(opts->S));
-
     opts->N_len = 0;
     opts->S_len = 0;
     opts->custom_absorbed = 0;
     opts->emptyNameCustom = 1;
+
+    SECURE_ZERO(opts->N, sizeof(opts->N));
+    SECURE_ZERO(opts->S, sizeof(opts->S));
 
     return CF_SUCCESS;
 }
@@ -1085,30 +1094,32 @@ CF_STATUS CF_HashOpts_Free(CF_HASH_OPTS **p_opts) {
     if (ret != CF_SUCCESS)
         return ret;
 
-    if (opts->isHeapAlloc) {
+    if (opts->isHeapAlloc)
         SECURE_FREE(opts, sizeof(*opts));
-        *p_opts = NULL;
-    }
 
     return CF_SUCCESS;
 }
 
 CF_STATUS CF_HashOpts_Clone(CF_HASH_OPTS *dst, const CF_HASH_OPTS *src) {
-    if (!dst || !src) return CF_ERR_NULL_PTR;
+    if (!dst || !src)
+        return CF_ERR_NULL_PTR;
 
     if (src->magic != CF_CTX_MAGIC)
         return CF_ERR_CTX_CORRUPT;
 
-    SECURE_MEMCPY(dst->N, src->N, CF_MAX_CUSTOMIZATION);
-    SECURE_MEMCPY(dst->S, src->S, CF_MAX_CUSTOMIZATION);
+    // Start with a clean slate
+    CF_HashOpts_Reset(dst);
 
+    // Copy metadata
     dst->N_len = src->N_len;
     dst->S_len = src->S_len;
-    // dst->out_len = src->out_len;
     dst->finalized = src->finalized;
     dst->custom_absorbed = src->custom_absorbed;
     dst->emptyNameCustom = src->emptyNameCustom;
-    dst->isHeapAlloc = 0;
+
+    SECURE_MEMCPY(dst->N, src->N, CF_MAX_CUSTOMIZATION);
+    SECURE_MEMCPY(dst->S, src->S, CF_MAX_CUSTOMIZATION);
+
     return CF_SUCCESS;
 }
 
@@ -1132,6 +1143,7 @@ CF_HASH_OPTS *CF_HashOpts_CloneAlloc(const CF_HASH_OPTS *src, CF_STATUS *status)
         return NULL;
     }
 
+    // cloned context is heap-allocated
     dst->isHeapAlloc = 1;
 
     if (status) *status = CF_SUCCESS;

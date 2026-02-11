@@ -60,8 +60,8 @@ typedef struct _CF_KDF_OPTS {
 
     uint32_t iterations;          // iteration count (PBKDF2)
 
-    uint8_t custom[CF_MAX_CUSTOMIZATION]; // optional customization (KMAC-XOF)
-    size_t custom_len;
+    uint8_t S[CF_MAX_CUSTOMIZATION]; // optional customization (KMAC-XOF)
+    size_t S_len;
 
     int isHeapAlloc;
 } CF_KDF_OPTS;
@@ -120,7 +120,7 @@ CF_API CF_STATUS CF_KDF_Extract(
 
 CF_API CF_STATUS CF_KDF_Expand(
     CF_KDF_CTX *ctx,
-    uint8_t *out, size_t out_len,
+    uint8_t *derived_key, size_t derived_key_len,
     const uint8_t *new_data, size_t new_data_len // optional and only for HKDF
 );
 
@@ -131,8 +131,9 @@ CF_API CF_STATUS CF_KDF_Free(CF_KDF_CTX **p_ctx);
 // One-shot KDF computation
 // ============================
 CF_API CF_STATUS CF_KDF_Compute(const CF_KDF *kdf,
-                                const uint8_t *key, size_t key_len,
-                                uint8_t *out, size_t out_len,
+                                const uint8_t *ikm, size_t ikm_len,
+                                const uint8_t *data, size_t data_len,
+                                uint8_t *derived_key, size_t derived_key_len,
                                 const CF_KDF_OPTS *opts, uint32_t subflags);
 
 CF_API const char* CF_KDF_GetName(const CF_KDF *kdf);
@@ -150,15 +151,12 @@ CF_API CF_KDF_CTX* CF_KDF_CloneCtxAlloc(const CF_KDF_CTX *src, CF_STATUS *status
 // ============================
 CF_API CF_STATUS CF_KDFOpts_Init(CF_KDF_OPTS *opts,
                                  const uint8_t *salt, size_t salt_len,
-                                 const uint8_t *info, size_t info_len,
-                                 uint32_t iterations,
-                                 const uint8_t *custom, size_t custom_len);
+                                 const uint8_t *custom, size_t custom_len,
+                                 uint32_t iterations);
 
 CF_API CF_KDF_OPTS* CF_KDFOpts_InitAlloc(const uint8_t *salt, size_t salt_len,
-                                         const uint8_t *info, size_t info_len,
-                                         uint32_t iterations,
                                          const uint8_t *custom, size_t custom_len,
-                                         CF_STATUS *status);
+                                         uint32_t iterations, CF_STATUS *status);
 
 CF_API CF_STATUS CF_KDFOpts_Reset(CF_KDF_OPTS *opts);
 CF_API CF_STATUS CF_KDFOpts_Free(CF_KDF_OPTS **p_opts);

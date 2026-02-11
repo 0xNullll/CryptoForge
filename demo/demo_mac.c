@@ -1369,7 +1369,6 @@ void test_all_macs_high(void) {
             printf("CF_MAC_Verify succeeded for %s\n", CF_MAC_GetFullName(&mac_ctx)); 
         }
 
-
         CF_MAC_CTX test_copy_ctx = {0};
 
         status = CF_MAC_CloneCtx(&test_copy_ctx, &mac_ctx);

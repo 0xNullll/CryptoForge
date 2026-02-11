@@ -244,6 +244,7 @@ CF_ENCODER_CTX *CF_Enc_InitAlloc(uint32_t enc_flags, uint32_t dec_flags, CF_STAT
         return NULL;
     }
 
+    // context is heap-allocated
     ctx->isHeapAlloc = 1;
 
     if (status) *status = CF_SUCCESS;
@@ -586,7 +587,7 @@ const char *CF_Enc_GetName(const CF_ENCODER_CTX *ctx) {
         return "Base85-ASCII85";
     }
 
-    return NULL;
+    return "UNKNOWN-ENCODER";
 }
 
 size_t CF_Enc_MinInput(const CF_ENCODER_CTX *ctx) {
@@ -619,15 +620,14 @@ CF_STATUS CF_Enc_CloneCtx(CF_ENCODER_CTX *dst, const CF_ENCODER_CTX *src) {
     if ((src->magic ^ (uintptr_t)src->encoder) != CF_CTX_MAGIC)
         return CF_ERR_CTX_CORRUPT;
 
-    // Deep clean dst context
+    // Start with a clean slate
     CF_Enc_Reset(dst);
 
-    // Copy all fields
+    // Copy metadata (shallow)
     dst->magic       = src->magic;
     dst->encoder     = src->encoder;
     dst->encFlags    = src->encFlags;
     dst->decFlags    = src->decFlags;
-    dst->isHeapAlloc = 0; // clone itself is not heap-allocated
 
     return CF_SUCCESS;
 }
@@ -652,6 +652,8 @@ CF_ENCODER_CTX *CF_Enc_CloneCtxAlloc(const CF_ENCODER_CTX *src, CF_STATUS *statu
         return NULL;
     }
 
+    // cloned context is heap-allocated
     dst->isHeapAlloc = 1;
+
     return dst;
 }
