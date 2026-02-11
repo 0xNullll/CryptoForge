@@ -1381,6 +1381,8 @@ void test_all_macs_high(void) {
 
         CF_MACOpts_Reset(&mac_opts_ctx);
         CF_MAC_Reset(&mac_ctx);
+
+    CF_MAC_Reset(&test_copy_ctx);
     }
 
     putchar('\n');
