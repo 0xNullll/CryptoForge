@@ -61,7 +61,7 @@ static CF_STATUS pbkdf2_clone_ctx_wrapper(CF_KDF_CTX *ctx_dest, const CF_KDF_CTX
 
 // KMAC-XOF
 static CF_STATUS kkdf_xof_init_wrapper(CF_KDF_CTX *ctx, const CF_KDF_OPTS *opts) {
-    return ll_KMAC_Init((ll_KMAC_CTX *)ctx->kdf_ctx, ctx->ikm, ctx->ikm_len, opts->custom, opts->custom_len, ctx->subflags);
+    return ll_KMAC_Init((ll_KMAC_CTX *)ctx->kdf_ctx, ctx->ikm, ctx->ikm_len, opts->S, opts->S_len, ctx->subflags);
 }
 
 static CF_STATUS kkdf_xof_extract_wrapper(CF_KDF_CTX *ctx, const CF_KDF_OPTS *opts) {
@@ -247,7 +247,9 @@ CF_STATUS CF_KDF_Init(
         return NULL;
     }
 
+    // context is heap-allocated
     ctx->isHeapAlloc = 1;
+    
     if (status) *status = CF_SUCCESS;
     return ctx;
 }
@@ -293,13 +295,16 @@ CF_STATUS CF_KDF_Extract(CF_KDF_CTX *ctx, const uint8_t *data, size_t data_len) 
 
 CF_STATUS CF_KDF_Expand(
     CF_KDF_CTX *ctx,
-    uint8_t *out, size_t out_len,
+    uint8_t *derived_key, size_t derived_key_len,
     const uint8_t *new_data, size_t new_data_len) {
-    if (!ctx || !out)
+    if (!ctx || !derived_key)
         return CF_ERR_NULL_PTR;
 
     if (!ctx->kdf || !ctx->kdf_ctx)
         return CF_ERR_CTX_UNINITIALIZED;
+
+    if (derived_key_len == 0)
+        return CF_ERR_INVALID_LEN;
 
     bool IsNewData = false;
 
@@ -309,7 +314,7 @@ CF_STATUS CF_KDF_Expand(
         IsNewData     = true;
     }
 
-    CF_STATUS st = ctx->kdf->kdf_expand_fn(ctx, out, out_len, ctx->opts, IsNewData);
+    CF_STATUS st = ctx->kdf->kdf_expand_fn(ctx, derived_key, derived_key_len, ctx->opts, IsNewData);
     if (st != CF_SUCCESS) {
         CF_KDF_Reset(ctx);
         return st;
@@ -363,6 +368,100 @@ CF_STATUS CF_KDF_Free(CF_KDF_CTX **p_ctx) {
     return CF_SUCCESS;
 }
 
+CF_STATUS CF_KDF_Compute(
+    const CF_KDF *kdf,
+    const uint8_t *ikm, size_t ikm_len,
+    const uint8_t *data, size_t data_len,
+    uint8_t *derived_key, size_t derived_key_len,
+    const CF_KDF_OPTS *opts, uint32_t subflags) {
+    if (!kdf || !ikm || !derived_key)
+        return CF_ERR_NULL_PTR;
+
+    if (derived_key_len == 0)
+        return CF_ERR_INVALID_LEN;
+
+    CF_KDF_CTX ctx = {0};
+    CF_STATUS st = CF_SUCCESS;
+
+    st = CF_KDF_Init(&ctx, kdf, ikm, ikm_len, opts, subflags);
+    if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.kdf) != CF_CTX_MAGIC)
+        goto cleanup;
+
+    st = CF_KDF_Extract(&ctx, data, data_len);
+    if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.kdf) != CF_CTX_MAGIC)
+        goto cleanup;
+
+    st = CF_KDF_Expand(&ctx, derived_key, derived_key_len, NULL, 0);
+
+cleanup:
+    CF_KDF_Reset(&ctx);
+    return st;        
+}
+
+const char* CF_KDF_GetName(const CF_KDF *kdf) {
+    if (!kdf)
+        return NULL;
+
+    switch (kdf->id) {
+        case CF_HKDF: return "HKDF";
+        case CF_PBKDF2: return "PBKDF2";
+        case CF_KMAC_XOF: return "KMAC-XOF";
+
+        default:
+            return "UNKNOWN-KDF";
+    }
+}
+
+const char* CF_KDF_GetFullName(const CF_KDF_CTX *ctx) {
+    if (!ctx || !ctx->kdf)
+        return NULL;
+
+    switch (ctx->kdf->id) {
+
+    case CF_HKDF:
+        switch (ctx->subflags) {
+            case CF_SHA1:       return "HKDF-SHA-1";
+            case CF_SHA224:     return "HKDF-SHA-224";
+            case CF_SHA256:     return "HKDF-SHA-256";
+            case CF_SHA384:     return "HKDF-SHA-384";
+            case CF_SHA512:     return "HKDF-SHA-512";
+            case CF_SHA512_224: return "HKDF-SHA-512/224";
+            case CF_SHA512_256: return "HKDF-SHA-512/256";
+            case CF_SHA3_224:   return "HKDF-SHA-3/224";
+            case CF_SHA3_256:   return "HKDF-SHA-3/256";
+            case CF_SHA3_384:   return "HKDF-SHA-3/384";
+            case CF_SHA3_512:   return "HKDF-SHA-3/512";
+            default:            return "HKDF-UNKNOWN";
+        }
+
+    case CF_PBKDF2:
+        switch (ctx->subflags) {
+            case CF_SHA1:       return "PBKDF2-SHA-1";
+            case CF_SHA224:     return "PBKDF2-SHA-224";
+            case CF_SHA256:     return "PBKDF2-SHA-256";
+            case CF_SHA384:     return "PBKDF2-SHA-384";
+            case CF_SHA512:     return "PBKDF2-SHA-512";
+            case CF_SHA512_224: return "PBKDF2-SHA-512/224";
+            case CF_SHA512_256: return "PBKDF2-SHA-512/256";
+            case CF_SHA3_224:   return "PBKDF2-SHA-3/224";
+            case CF_SHA3_256:   return "PBKDF2-SHA-3/256";
+            case CF_SHA3_384:   return "PBKDF2-SHA-3/384";
+            case CF_SHA3_512:   return "PBKDF2-SHA-3/512";
+            default:            return "PBKDF2-UNKNOWN";
+        }
+
+        case CF_KMAC_XOF:
+            switch (ctx->subflags) {
+                case CF_KMAC_XOF128:  return "KMAC-XOF-128";
+                case CF_KMAC_XOF256:  return "KMAC-XOF-256";
+                default:              return "KMAC-UNKNOWN";
+            }
+
+        default:
+            return "UNKNOWN-KDF";
+    }
+}
+
 CF_STATUS CF_KDF_IsValid(const CF_KDF_CTX *ctx) {
     if (!ctx)
         return CF_ERR_NULL_PTR;
@@ -372,4 +471,204 @@ CF_STATUS CF_KDF_IsValid(const CF_KDF_CTX *ctx) {
         return CF_ERR_CTX_CORRUPT;
 
     return CF_SUCCESS;
+}
+
+CF_STATUS CF_KDF_CloneCtx(CF_KDF_CTX *dst, const CF_KDF_CTX *src) {
+    if (!dst || !src)
+        return CF_ERR_NULL_PTR;
+
+    if ((src->magic ^ (uintptr_t)src->kdf) != CF_CTX_MAGIC)
+        return CF_ERR_CTX_CORRUPT;
+
+    // Start with a clean slate
+    CF_KDF_Reset(dst);
+
+    // Copy metadata
+    dst->magic       = src->magic;
+    dst->kdf         = src->kdf;
+    dst->md          = src->md;
+    dst->opts        = src->opts;
+    dst->subflags    = src->subflags;
+    dst->isExtracted = src->isExtracted;
+
+    // Copy IKM pointer and length (shallow copy)
+    dst->ikm     = src->ikm;
+    dst->ikm_len = src->ikm_len;
+
+    // Deep copy low-level KDF context
+    if (src->kdf_ctx) {
+        dst->kdf_ctx = SECURE_ALLOC(src->kdf->ctx_size);
+        if (!dst->kdf_ctx)
+            goto cleanup;  // Allocation failed
+        SECURE_MEMCPY(dst->kdf_ctx, src->kdf_ctx, src->kdf->ctx_size);
+    }
+
+    return CF_SUCCESS;
+
+cleanup:
+    // Cleanup any partially allocated memory
+    if (dst->kdf_ctx)
+        SECURE_FREE(dst->kdf_ctx, src->kdf->ctx_size);
+
+    return CF_ERR_ALLOC_FAILED;
+}
+
+CF_KDF_CTX *CF_KDF_CloneCtxAlloc(const CF_KDF_CTX *src, CF_STATUS *status) {
+    if (!src) {
+        if (status) *status = CF_ERR_NULL_PTR;
+        return NULL;
+    }
+
+    CF_KDF_CTX *dst = (CF_KDF_CTX *)SECURE_ALLOC(sizeof(CF_KDF_CTX));
+    if (!dst) {
+        if (status) *status = CF_ERR_ALLOC_FAILED;
+        return NULL;
+    }
+
+    CF_STATUS st = CF_KDF_CloneCtx(dst, src);
+    if (status) *status = st;
+    
+    if (st != CF_SUCCESS) {
+        SECURE_FREE(dst, sizeof(*dst));
+        return NULL;
+    }
+
+    // cloned context is heap-allocated
+    dst->isHeapAlloc = 1;
+
+    return dst;
+}
+
+CF_STATUS CF_KDFOpts_Init(
+    CF_KDF_OPTS *opts,
+    const uint8_t *salt, size_t salt_len,
+    const uint8_t *custom, size_t custom_len,
+    uint32_t iterations) {
+    if (!opts)
+        return CF_ERR_NULL_PTR;
+
+    if (custom_len > CF_MAX_CUSTOMIZATION)
+        return CF_ERR_INVALID_LEN;
+
+    CF_KDFOpts_Reset(opts);
+
+    opts->salt       = salt;
+    opts->salt_len   = salt_len;
+    opts->iterations = iterations;
+
+    if (custom && custom_len > 0) {
+        SECURE_MEMCPY(opts->S, custom, custom_len);
+        opts->S_len = custom_len;
+    }
+
+    opts->magic = CF_CTX_MAGIC;
+
+    return CF_SUCCESS;
+}
+
+CF_KDF_OPTS* CF_KDFOpts_InitAlloc(
+    const uint8_t *salt, size_t salt_len,
+    const uint8_t *custom, size_t custom_len,
+    uint32_t iterations, CF_STATUS *status) {
+    if (custom_len > CF_MAX_CUSTOMIZATION) {
+        if (status) *status = CF_ERR_INVALID_LEN;
+        return NULL;
+    }
+
+    CF_KDF_OPTS *opts = (CF_KDF_OPTS *)SECURE_ALLOC(sizeof(CF_KDF_OPTS));
+    if (!opts) {
+        if (status) *status = CF_ERR_ALLOC_FAILED;
+        return NULL;
+    }
+
+    CF_STATUS st = CF_KDFOpts_Init(opts, salt, salt_len, custom, custom_len, iterations);
+    if (st != CF_SUCCESS) {
+        SECURE_FREE(opts, sizeof(CF_KDF_OPTS));
+        if (status) *status = st;
+        return NULL;
+    }
+
+    opts->isHeapAlloc = 1;
+    if (status) *status = CF_SUCCESS;
+    return opts;
+}
+
+CF_STATUS CF_KDFOpts_Reset(CF_KDF_OPTS *opts) {
+    if (!opts)
+        return CF_ERR_NULL_PTR;
+
+    opts->salt = NULL;
+    opts->salt_len = 0;
+    opts->S_len = 0;
+    opts->iterations = 0;
+
+    SECURE_ZERO(opts->S, sizeof(opts->S));
+
+    return CF_SUCCESS;
+}
+
+CF_STATUS CF_KDFOpts_Free(CF_KDF_OPTS **p_opts) {
+    if (!p_opts || !*p_opts)
+        return CF_ERR_NULL_PTR;
+
+    CF_KDF_OPTS *opts = *p_opts;
+
+    CF_STATUS ret = CF_KDFOpts_Reset(opts);
+    if (ret != CF_SUCCESS)
+        return ret;
+
+    if (opts->isHeapAlloc)
+        SECURE_FREE(opts, sizeof(*opts));
+
+    return CF_SUCCESS;
+}
+
+CF_STATUS CF_KDFOpts_CloneCtx(CF_KDF_OPTS *dst, const CF_KDF_OPTS *src) {
+    if (!dst || !src)
+        return CF_ERR_NULL_PTR;
+
+    if (src->magic != CF_CTX_MAGIC)
+        return CF_ERR_CTX_CORRUPT;
+
+    // Start with a clean slate
+    CF_KDFOpts_Reset(dst);
+
+    // Shallow copy salt (caller manages lifetime)
+    dst->salt     = src->salt;
+    dst->salt_len = src->salt_len;
+
+    // Copy iteration count (PBKDF2)
+    dst->iterations = src->iterations;
+
+    // Deep copy customization string (KMAC-XOF)
+    dst->S_len = src->S_len;
+    SECURE_MEMCPY(dst->S, src->S, CF_MAX_CUSTOMIZATION);
+
+    return CF_SUCCESS;
+}
+
+CF_KDF_OPTS* CF_KDFOpts_CloneCtxAlloc(const CF_KDF_OPTS *src, CF_STATUS *status) {
+    if (!src) {
+        if (status) *status = CF_ERR_NULL_PTR;
+        return NULL;
+    }
+
+    CF_KDF_OPTS *dst = (CF_KDF_OPTS *)SECURE_ALLOC(sizeof(CF_KDF_OPTS));
+    if (!dst) {
+        if (status) *status = CF_ERR_ALLOC_FAILED;
+        return NULL;
+    }
+
+    CF_STATUS st = CF_KDFOpts_CloneCtx(dst, src);
+    if (status) *status = st;
+
+    if (st != CF_SUCCESS) {
+        SECURE_FREE(dst, sizeof(*dst));
+        return NULL;
+    }
+
+    // Cloned context is heap-allocated
+    dst->isHeapAlloc = 1;
+
+    return dst;
 }
