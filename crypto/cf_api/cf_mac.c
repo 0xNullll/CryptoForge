@@ -632,10 +632,86 @@ CF_STATUS CF_MAC_IsValid(const CF_MAC_CTX *ctx) {
         return CF_ERR_NULL_PTR;
 
     // Verify that the MAC pointer hasn’t been tampered with by checking it against the bound magic value.
-    if ((ctx->magic ^ (uintptr_t)ctx->md) != CF_CTX_MAGIC)
+    if ((ctx->magic ^ (uintptr_t)ctx->mac) != CF_CTX_MAGIC)
         return CF_ERR_CTX_CORRUPT;
 
     return CF_SUCCESS;
+}
+
+CF_STATUS CF_MAC_CloneCtx(CF_MAC_CTX *dst, const CF_MAC_CTX *src) {
+    if (!dst || !src)
+        return CF_ERR_NULL_PTR;
+
+    // Verify that the MAC pointer hasn’t been tampered with by checking it against the bound magic value.
+    if ((src->magic ^ (uintptr_t)src->mac) != CF_CTX_MAGIC)
+        return CF_ERR_CTX_CORRUPT;
+
+    // Deep clean dst context
+    CF_MAC_Reset(dst);
+
+    // Copy metadata first
+    dst->magic       = src->magic;
+    dst->mac         = src->mac;
+    dst->md          = src->md;
+    dst->opts        = src->opts;
+    dst->tag_len     = src->tag_len;
+    dst->subflags    = src->subflags;
+    dst->isFinalized = src->isFinalized;
+    dst->isHeapAlloc = 0;
+
+    // Copy user-supplied key pointer and length
+    dst->key     = src->key;
+    dst->key_len = src->key_len;
+
+    // Deep copy cipher_key if it exists
+    if (src->cipher_key && src->cipher_key_len > 0) {
+        dst->cipher_key = SECURE_ALLOC(src->mac->key_ctx_size);
+        if (!dst->cipher_key)
+            return CF_ERR_ALLOC_FAILED;
+        SECURE_MEMCPY(dst->cipher_key, src->cipher_key, src->mac->key_ctx_size);
+        dst->cipher_key_len = src->cipher_key_len;
+    } else {
+        dst->cipher_key = NULL;
+        dst->cipher_key_len = 0;
+    }
+
+    // Deep copy low-level MAC context
+    if (src->mac_ctx) {
+        dst->mac_ctx = SECURE_ALLOC(src->mac->ctx_size);
+        if (!dst->mac_ctx) {
+            if (dst->cipher_key) SECURE_FREE(dst->cipher_key, src->mac->key_ctx_size);
+            return CF_ERR_ALLOC_FAILED;
+        }
+        SECURE_MEMCPY(dst->mac_ctx, src->mac_ctx, src->mac->ctx_size);
+    } else {
+        dst->mac_ctx = NULL;
+    }
+
+    return CF_SUCCESS;
+}
+
+CF_MAC_CTX *CF_MAC_CloneCtxAlloc(const CF_MAC_CTX *src, CF_STATUS *status) {
+    if (!src) {
+        if (status) *status = CF_ERR_NULL_PTR;
+        return NULL;
+    }
+
+    CF_MAC_CTX *dst = (CF_MAC_CTX *)SECURE_ALLOC(sizeof(CF_MAC_CTX));
+    if (!dst) {
+        if (status) *status = CF_ERR_ALLOC_FAILED;
+        return NULL;
+    }
+
+    CF_STATUS st = CF_MAC_CloneCtx(dst, src);
+    if (status) *status = st;
+    
+    if (st != CF_SUCCESS) {
+        SECURE_FREE(dst, sizeof(*dst));
+        return NULL;
+    }
+
+    dst->isHeapAlloc = 1;
+    return dst;
 }
 
 CF_STATUS CF_MACOpts_Init(CF_MAC_OPTS *opts,

@@ -443,6 +443,14 @@ void test_all_encoders_high(const uint8_t *input, size_t input_len) {
         SECURE_FREE(enc_buf, out_len);
         SECURE_FREE(dec_buf, dec_len);
 
+        CF_ENCODER_CTX test_copy_ctx = {0};
+            
+        status = CF_Enc_CloneCtx(&test_copy_ctx, ctx);
+        if (status != CF_SUCCESS) {
+            printf("[FAIL] Copying test failed\n");
+        } else {
+            printf("[PASS] Copying test succeeded\n");
+        }
 
         CF_Enc_Free(&ctx);
     }

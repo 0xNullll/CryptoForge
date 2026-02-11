@@ -217,7 +217,10 @@ CF_STATUS CF_Enc_Init(CF_ENCODER_CTX *ctx, uint32_t enc_flags, uint32_t dec_flag
     ctx->encFlags = enc_flags;
     ctx->decFlags = dec_flags;
 
-    ctx->magic = CF_CTX_MAGIC;
+    // Integrity check: bind the encoder pointer to a per-context "magic" value
+    // to detect accidental corruption or misuse of the context.
+    // Note: this does NOT prevent a determined attacker from tampering with memory.
+    ctx->magic = CF_CTX_MAGIC ^ (uintptr_t)ctx->encoder;
 
     return CF_SUCCESS;
 }
@@ -276,7 +279,8 @@ CF_STATUS CF_Enc_Encode(CF_ENCODER_CTX *ctx, const uint8_t *src, size_t src_len,
     if (!ctx || !ctx->encoder || !src || !dst || !dst_len)
         return CF_ERR_NULL_PTR;
 
-    if (ctx->magic != CF_CTX_MAGIC)
+    // Verify that the encoder pointer hasn’t been tampered with by checking it against the bound magic value.
+    if ((ctx->magic ^ (uintptr_t)ctx->encoder) != CF_CTX_MAGIC)
         return CF_ERR_CTX_CORRUPT;
 
     if (src_len == 0)
@@ -338,7 +342,8 @@ CF_STATUS CF_Enc_Decode(CF_ENCODER_CTX *ctx, const char *src, size_t src_len, ui
     if (!ctx || !ctx->encoder || !src || !dst || !dst_len)
         return CF_ERR_NULL_PTR;
 
-    if (ctx->magic != CF_CTX_MAGIC)
+    // Verify that the encoder pointer hasn’t been tampered with by checking it against the bound magic value.
+    if ((ctx->magic ^ (uintptr_t)ctx->encoder) != CF_CTX_MAGIC)
         return CF_ERR_CTX_CORRUPT;
 
     if (src_len == 0)
@@ -588,6 +593,10 @@ size_t CF_Enc_MinInput(const CF_ENCODER_CTX *ctx) {
     if (!ctx || !ctx->encoder)
         return 0;
 
+    // Verify that the encoder pointer hasn’t been tampered with by checking it against the bound magic value.
+    if ((ctx->magic ^ (uintptr_t)ctx->encoder) != CF_CTX_MAGIC)
+        return CF_ERR_CTX_CORRUPT;
+
     return ctx->encoder->min_input;
 }
 
@@ -595,5 +604,54 @@ size_t CF_Enc_MinOutput(const CF_ENCODER_CTX *ctx) {
     if (!ctx || !ctx->encoder)
         return 0;
 
+    // Verify that the encoder pointer hasn’t been tampered with by checking it against the bound magic value.
+    if ((ctx->magic ^ (uintptr_t)ctx->encoder) != CF_CTX_MAGIC)
+        return CF_ERR_CTX_CORRUPT;
+
     return ctx->encoder->min_output;
+}
+
+CF_STATUS CF_Enc_CloneCtx(CF_ENCODER_CTX *dst, const CF_ENCODER_CTX *src) {
+    if (!dst || !src)
+        return CF_ERR_NULL_PTR;
+
+    // Verify that the encoder pointer hasn’t been tampered with by checking it against the bound magic value.
+    if ((src->magic ^ (uintptr_t)src->encoder) != CF_CTX_MAGIC)
+        return CF_ERR_CTX_CORRUPT;
+
+    // Deep clean dst context
+    CF_Enc_Reset(dst);
+
+    // Copy all fields
+    dst->magic       = src->magic;
+    dst->encoder     = src->encoder;
+    dst->encFlags    = src->encFlags;
+    dst->decFlags    = src->decFlags;
+    dst->isHeapAlloc = 0; // clone itself is not heap-allocated
+
+    return CF_SUCCESS;
+}
+
+CF_ENCODER_CTX *CF_Enc_CloneCtxAlloc(const CF_ENCODER_CTX *src, CF_STATUS *status) {
+    if (!src) {
+        if (status) *status = CF_ERR_NULL_PTR;
+        return NULL;
+    }
+
+    CF_ENCODER_CTX *dst = (CF_ENCODER_CTX *)SECURE_ALLOC(sizeof(CF_ENCODER_CTX));
+    if (!dst) {
+        if (status) *status = CF_ERR_ALLOC_FAILED;
+        return NULL;
+    }
+
+    CF_STATUS st = CF_Enc_CloneCtx(dst, src);
+    if (status) *status = st;
+    
+    if (st != CF_SUCCESS) {
+        SECURE_FREE(dst, sizeof(*dst));
+        return NULL;
+    }
+
+    dst->isHeapAlloc = 1;
+    return dst;
 }

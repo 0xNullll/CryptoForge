@@ -152,6 +152,26 @@ void test_all_hashes_high(const uint8_t *input, size_t input_len, const CF_HASH_
         printf("%s digest: ", CF_Hash_GetName(md));
         DEMO_print_hex(digest, digest_len);
         printf("\n");
+
+        CF_HASH_CTX test_copy_ctx = {0};
+        CF_HASH_CTX test_copy_ctx2 = {0};
+
+        status = CF_Hash_Init(&test_copy_ctx2, md, opts);
+        if (status != CF_SUCCESS) {
+            printf("[FAIL] Init copying test failed\n");
+        } else {
+            printf("[PASS] init copying test succeeded\n");
+        }
+
+        status = CF_Hash_CloneCtx(&test_copy_ctx, &test_copy_ctx2);
+        if (status != CF_SUCCESS) {
+            printf("[FAIL] Copying test failed\n");
+        } else {
+            printf("[PASS] Copying test succeeded\n");
+        }
+
+        CF_Hash_Reset(&test_copy_ctx2);
+        CF_Hash_Reset(&test_copy_ctx);
     }
 }
 
