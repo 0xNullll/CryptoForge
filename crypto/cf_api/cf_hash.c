@@ -907,7 +907,11 @@ CF_STATUS CF_Hash_CloneCtx(CF_HASH_CTX *dst, const CF_HASH_CTX *src) {
     if (!src->md)
         return CF_ERR_CTX_UNINITIALIZED;
 
+    // Verify that the MD pointer hasn’t been tampered with by checking it against the bound magic value.
+    if ((src->magic ^ (uintptr_t)src->md) != CF_CTX_MAGIC)
+
     // Copy metadata first (no allocation yet)
+    dst->magic       = src->magic;
     dst->md          = src->md;
     dst->out_len     = src->out_len;
     dst->isFinalized = src->isFinalized;
@@ -1091,6 +1095,9 @@ CF_STATUS CF_HashOpts_Free(CF_HASH_OPTS **p_opts) {
 
 CF_STATUS CF_HashOpts_Clone(CF_HASH_OPTS *dst, const CF_HASH_OPTS *src) {
     if (!dst || !src) return CF_ERR_NULL_PTR;
+
+    if (src->magic != CF_CTX_MAGIC)
+        return CF_ERR_CTX_CORRUPT;
 
     SECURE_MEMCPY(dst->N, src->N, CF_MAX_CUSTOMIZATION);
     SECURE_MEMCPY(dst->S, src->S, CF_MAX_CUSTOMIZATION);

@@ -185,7 +185,7 @@ int main(void) {
         0x73, 0x61, 0x6C, 0x74, 0x31, 0x31, 0x31
     };
 
-    size_t iterations = 100;
+    size_t iterations = 1000;
 
     test_all_pbkdf2s(password_hex, sizeof(password_hex), salt_hex, sizeof(salt_hex), 32, iterations);
 
