@@ -642,14 +642,13 @@ CF_STATUS CF_MAC_CloneCtx(CF_MAC_CTX *dst, const CF_MAC_CTX *src) {
     if (!dst || !src)
         return CF_ERR_NULL_PTR;
 
-    // Verify that the MAC pointer hasn’t been tampered with by checking it against the bound magic value.
     if ((src->magic ^ (uintptr_t)src->mac) != CF_CTX_MAGIC)
         return CF_ERR_CTX_CORRUPT;
 
-    // Deep clean dst context
+    // Start with a clean slate
     CF_MAC_Reset(dst);
 
-    // Copy metadata first
+    // Copy metadata
     dst->magic       = src->magic;
     dst->mac         = src->mac;
     dst->md          = src->md;
@@ -659,7 +658,7 @@ CF_STATUS CF_MAC_CloneCtx(CF_MAC_CTX *dst, const CF_MAC_CTX *src) {
     dst->isFinalized = src->isFinalized;
     dst->isHeapAlloc = 0;
 
-    // Copy user-supplied key pointer and length
+    // Copy key pointer and length (shallow copy)
     dst->key     = src->key;
     dst->key_len = src->key_len;
 
@@ -667,27 +666,33 @@ CF_STATUS CF_MAC_CloneCtx(CF_MAC_CTX *dst, const CF_MAC_CTX *src) {
     if (src->cipher_key && src->cipher_key_len > 0) {
         dst->cipher_key = SECURE_ALLOC(src->mac->key_ctx_size);
         if (!dst->cipher_key)
-            return CF_ERR_ALLOC_FAILED;
+            goto fail;  // Allocation failed
         SECURE_MEMCPY(dst->cipher_key, src->cipher_key, src->mac->key_ctx_size);
         dst->cipher_key_len = src->cipher_key_len;
-    } else {
-        dst->cipher_key = NULL;
-        dst->cipher_key_len = 0;
     }
 
     // Deep copy low-level MAC context
     if (src->mac_ctx) {
         dst->mac_ctx = SECURE_ALLOC(src->mac->ctx_size);
-        if (!dst->mac_ctx) {
-            if (dst->cipher_key) SECURE_FREE(dst->cipher_key, src->mac->key_ctx_size);
-            return CF_ERR_ALLOC_FAILED;
-        }
+        if (!dst->mac_ctx)
+            goto fail;  // Allocation failed
         SECURE_MEMCPY(dst->mac_ctx, src->mac_ctx, src->mac->ctx_size);
-    } else {
-        dst->mac_ctx = NULL;
     }
 
     return CF_SUCCESS;
+
+fail:
+    // Cleanup any partially allocated memory
+    if (dst->cipher_key)
+        SECURE_FREE(dst->cipher_key, src->mac->key_ctx_size);
+    if (dst->mac_ctx)
+        SECURE_FREE(dst->mac_ctx, src->mac->ctx_size);
+
+    dst->cipher_key = NULL;
+    dst->cipher_key_len = 0;
+    dst->mac_ctx = NULL;
+
+    return CF_ERR_ALLOC_FAILED;
 }
 
 CF_MAC_CTX *CF_MAC_CloneCtxAlloc(const CF_MAC_CTX *src, CF_STATUS *status) {
