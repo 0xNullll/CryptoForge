@@ -191,6 +191,10 @@ int main(void) {
 
     printf("**************************************\n");
 
+    test_all_kdf_high();
+
+    printf("**************************************\n");
+
     // All Base64 characters for testing
     const char *all_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/-_";
 

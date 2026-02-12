@@ -19,17 +19,17 @@
 
 // HKDF
 static CF_STATUS hkdf_init_wrapper(CF_KDF_CTX *ctx, const CF_KDF_OPTS *opts) {
-    UNUSED(opts);
-    return ll_HKDF_Init((ll_HKDF_CTX *)ctx->kdf_ctx, ctx->md, ctx->data, ctx->data_len);
+    return ll_HKDF_Init((ll_HKDF_CTX *)ctx->kdf_ctx, ctx->md, opts->info, opts->info_len);
 }
 
 static CF_STATUS hkdf_extract_wrapper(CF_KDF_CTX *ctx, const CF_KDF_OPTS *opts) {
-    return ll_HKDF_Extract((ll_HKDF_CTX *)ctx->kdf_ctx, opts->salt, opts->salt_len, ctx->ikm, ctx->ikm_len);
+    UNUSED(opts);
+    return ll_HKDF_Extract((ll_HKDF_CTX *)ctx->kdf_ctx, ctx->salt, ctx->salt_len, ctx->ikm, ctx->ikm_len);
 }
 
-static CF_STATUS hkdf_expand_wrapper(CF_KDF_CTX *ctx, uint8_t *out, size_t out_len, const CF_KDF_OPTS *opts, bool new_info) {
+static CF_STATUS hkdf_expand_wrapper(CF_KDF_CTX *ctx, uint8_t *out, size_t out_len, const CF_KDF_OPTS *opts) {
     UNUSED(opts);
-    return ll_HKDF_Expand((ll_HKDF_CTX *)ctx->kdf_ctx, out, out_len , new_info ? ctx->data : NULL, new_info ? ctx->data_len : 0);
+    return ll_HKDF_Expand((ll_HKDF_CTX *)ctx->kdf_ctx, out, out_len , opts->isNewInfo ? opts->info : NULL, opts->isNewInfo ? opts->info_len : 0);
 }
 static CF_STATUS hkdf_reset_wrapper(CF_KDF_CTX *ctx) {
     return ll_HKDF_Reset((ll_HKDF_CTX *)ctx->kdf_ctx);
@@ -45,11 +45,11 @@ static CF_STATUS pbkdf2_init_wrapper(CF_KDF_CTX *ctx, const CF_KDF_OPTS *opts) {
 }
 
 static CF_STATUS pbkdf2_extract_wrapper(CF_KDF_CTX *ctx, const CF_KDF_OPTS *opts) {
-    return ll_PBKDF2_Extract((ll_PBKDF2_CTX *)ctx->kdf_ctx, opts->salt, opts->salt_len);
+    UNUSED(opts);
+    return ll_PBKDF2_Extract((ll_PBKDF2_CTX *)ctx->kdf_ctx, ctx->salt, ctx->salt_len);
 }
 
-static CF_STATUS pbkdf2_expand_wrapper(CF_KDF_CTX *ctx, uint8_t *out, size_t out_len, const CF_KDF_OPTS *opts, bool new_info) {
-    UNUSED(new_info);
+static CF_STATUS pbkdf2_expand_wrapper(CF_KDF_CTX *ctx, uint8_t *out, size_t out_len, const CF_KDF_OPTS *opts) {
     return ll_PBKDF2_Expand((ll_PBKDF2_CTX *)ctx->kdf_ctx, out, out_len, opts->iterations);
 }
 static CF_STATUS pbkdf2_reset_wrapper(CF_KDF_CTX *ctx) {
@@ -66,12 +66,11 @@ static CF_STATUS kkdf_xof_init_wrapper(CF_KDF_CTX *ctx, const CF_KDF_OPTS *opts)
 
 static CF_STATUS kkdf_xof_extract_wrapper(CF_KDF_CTX *ctx, const CF_KDF_OPTS *opts) {
     UNUSED(opts);
-    return ll_KMAC_Update((ll_KMAC_CTX *)ctx->kdf_ctx, ctx->data, ctx->data_len);
+    return ll_KMAC_Update((ll_KMAC_CTX *)ctx->kdf_ctx, ctx->salt, ctx->salt_len);
 }
 
-static CF_STATUS kkdf_xof_expand_wrapper(CF_KDF_CTX *ctx, uint8_t *out, size_t out_len, const CF_KDF_OPTS *opts, bool new_info) {
+static CF_STATUS kkdf_xof_expand_wrapper(CF_KDF_CTX *ctx, uint8_t *out, size_t out_len, const CF_KDF_OPTS *opts) {
     UNUSED(opts);
-    UNUSED(new_info);
     return ll_KMAC_Final((ll_KMAC_CTX *)ctx->kdf_ctx, out, out_len);
 }
 static CF_STATUS kkdf_xof_reset_wrapper(CF_KDF_CTX *ctx) {
@@ -167,32 +166,33 @@ CF_STATUS CF_KDF_Init(
     ctx->kdf      = kdf;
     ctx->opts     = opts;
     ctx->ikm      = ikm;
-    ctx->data_len = ikm_len;
+    ctx->ikm_len  = ikm_len;
+    ctx->subflags = subflags;
 
     if (CF_KDF_IS_HKDF(ctx->kdf->id) || CF_KDF_IS_PBKDF2(ctx->kdf->id)) {
         // HKDF: requires a hash subflag, cannot have KMAC bits
-        if ((subflags & CF_MAC_KMAC_MASK) != 0)
+        if ((ctx->subflags & CF_MAC_KMAC_MASK) != 0)
             return CF_ERR_INVALID_PARAM;
 
         // HKDF/PBKDF2: must specify a hash flag
-        if ((subflags & CF_HASH_MASK) == 0)
+        if ((ctx->subflags & CF_HASH_MASK) == 0)
             return CF_ERR_INVALID_PARAM;
 
         // XOF not supported
-        if (CF_IS_XOF(subflags))
+        if (CF_IS_XOF(ctx->subflags))
             return CF_ERR_UNSUPPORTED;
 
-        ctx->md = CF_MD_GetByFlag(subflags);
+        ctx->md = CF_MD_GetByFlag(ctx->subflags);
         if (!ctx->md)
             return CF_ERR_UNSUPPORTED;
 
     } else if (CF_MAC_IS_KMAC_XOF(ctx->kdf->id)) {
         // KMAC: must have KMAC type, cannot have hash flags
-        if ((subflags & CF_MAC_KMAC_MASK) == 0)
+        if ((ctx->subflags & CF_MAC_KMAC_MASK) == 0)
             return CF_ERR_INVALID_PARAM;
 
         // KDF only accepts KMAC-XOF
-        if (!CF_IS_KMAC_XOF(subflags))
+        if (!CF_IS_KMAC_XOF(ctx->subflags))
             return CF_ERR_INVALID_PARAM;
 
     } else {
@@ -207,14 +207,10 @@ CF_STATUS CF_KDF_Init(
     if (!ctx->kdf_ctx)
         return CF_ERR_ALLOC_FAILED;
 
-    // PBKDF2 and KMAC-XOF can be initialized immediately during Init because their IKM/key is already available,
-    // unlike HKDF which requires 'info' to be set first and is deferred until Extract.
-    if (!CF_KDF_IS_HKDF(ctx->kdf->id)) { 
-        CF_STATUS st = ctx->kdf->kdf_init_fn(ctx, ctx->opts);
-        if (st != CF_SUCCESS) {
-            CF_KDF_Reset(ctx);
-            return st;
-        }
+    CF_STATUS st = ctx->kdf->kdf_init_fn(ctx, ctx->opts);
+    if (st != CF_SUCCESS) {
+        CF_KDF_Reset(ctx);
+        return st;
     }
 
     // Integrity check: bind the KDF pointer to a per-context "magic" value
@@ -254,8 +250,8 @@ CF_STATUS CF_KDF_Init(
     return ctx;
 }
 
-CF_STATUS CF_KDF_Extract(CF_KDF_CTX *ctx, const uint8_t *data, size_t data_len) {
-    if (!ctx || !data)
+CF_STATUS CF_KDF_Extract(CF_KDF_CTX *ctx, const uint8_t *salt, size_t salt_len) {
+    if (!ctx)
         return CF_ERR_NULL_PTR;
 
     if (!ctx->kdf || !ctx->kdf_ctx)
@@ -270,17 +266,8 @@ CF_STATUS CF_KDF_Extract(CF_KDF_CTX *ctx, const uint8_t *data, size_t data_len) 
 
     CF_STATUS st = CF_SUCCESS;
 
-    ctx->data     = data;
-    ctx->data_len = data_len;
-
-    // HKDF requires 'info' to be set before initialization, so we defer calling kdf_init_fn until Extract
-    if (CF_KDF_IS_HKDF(ctx->kdf->id)) { 
-        st = ctx->kdf->kdf_init_fn(ctx, ctx->opts);
-        if (st != CF_SUCCESS) {
-            CF_KDF_Reset(ctx);
-            return st;
-        }
-    }
+    ctx->salt     = salt;
+    ctx->salt_len = salt_len;
 
     st = ctx->kdf->kdf_extract_fn(ctx, ctx->opts);
     if (st != CF_SUCCESS) {
@@ -295,8 +282,7 @@ CF_STATUS CF_KDF_Extract(CF_KDF_CTX *ctx, const uint8_t *data, size_t data_len) 
 
 CF_STATUS CF_KDF_Expand(
     CF_KDF_CTX *ctx,
-    uint8_t *derived_key, size_t derived_key_len,
-    const uint8_t *new_data, size_t new_data_len) {
+    uint8_t *derived_key, size_t derived_key_len) {
     if (!ctx || !derived_key)
         return CF_ERR_NULL_PTR;
 
@@ -306,15 +292,7 @@ CF_STATUS CF_KDF_Expand(
     if (derived_key_len == 0)
         return CF_ERR_INVALID_LEN;
 
-    bool IsNewData = false;
-
-    if (new_data && new_data_len != 0) {
-        ctx->data     = new_data;
-        ctx->data_len = new_data_len;
-        IsNewData     = true;
-    }
-
-    CF_STATUS st = ctx->kdf->kdf_expand_fn(ctx, derived_key, derived_key_len, ctx->opts, IsNewData);
+    CF_STATUS st = ctx->kdf->kdf_expand_fn(ctx, derived_key, derived_key_len, ctx->opts);
     if (st != CF_SUCCESS) {
         CF_KDF_Reset(ctx);
         return st;
@@ -346,7 +324,9 @@ CF_STATUS CF_KDF_Reset(CF_KDF_CTX *ctx) {
     ctx->md = NULL;
     ctx->opts = NULL;
     ctx->ikm = NULL;
+    ctx->salt = NULL;
     ctx->ikm_len = 0;
+    ctx->salt_len = 0;
     ctx->subflags = 0;
     ctx->isExtracted = 0;
 
@@ -371,7 +351,7 @@ CF_STATUS CF_KDF_Free(CF_KDF_CTX **p_ctx) {
 CF_STATUS CF_KDF_Compute(
     const CF_KDF *kdf,
     const uint8_t *ikm, size_t ikm_len,
-    const uint8_t *data, size_t data_len,
+    const uint8_t *salt, size_t salt_len,
     uint8_t *derived_key, size_t derived_key_len,
     const CF_KDF_OPTS *opts, uint32_t subflags) {
     if (!kdf || !ikm || !derived_key)
@@ -387,11 +367,11 @@ CF_STATUS CF_KDF_Compute(
     if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.kdf) != CF_CTX_MAGIC)
         goto cleanup;
 
-    st = CF_KDF_Extract(&ctx, data, data_len);
+    st = CF_KDF_Extract(&ctx, salt, salt_len);
     if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.kdf) != CF_CTX_MAGIC)
         goto cleanup;
 
-    st = CF_KDF_Expand(&ctx, derived_key, derived_key_len, NULL, 0);
+    st = CF_KDF_Expand(&ctx, derived_key, derived_key_len);
 
 cleanup:
     CF_KDF_Reset(&ctx);
@@ -541,25 +521,28 @@ CF_KDF_CTX *CF_KDF_CloneCtxAlloc(const CF_KDF_CTX *src, CF_STATUS *status) {
 
 CF_STATUS CF_KDFOpts_Init(
     CF_KDF_OPTS *opts,
-    const uint8_t *salt, size_t salt_len,
+    const uint8_t *info, size_t info_len,
     const uint8_t *custom, size_t custom_len,
     uint32_t iterations) {
     if (!opts)
         return CF_ERR_NULL_PTR;
+
+    if ((info && info_len == 0) || (custom && custom_len == 0))
+        return CF_ERR_INVALID_PARAM;
 
     if (custom_len > CF_MAX_CUSTOMIZATION)
         return CF_ERR_INVALID_LEN;
 
     CF_KDFOpts_Reset(opts);
 
-    opts->salt       = salt;
-    opts->salt_len   = salt_len;
+    opts->info       = info;
+    opts->info_len   = info_len;
+    opts->isNewInfo   = 0;
+
     opts->iterations = iterations;
 
-    if (custom && custom_len > 0) {
-        SECURE_MEMCPY(opts->S, custom, custom_len);
-        opts->S_len = custom_len;
-    }
+    SECURE_MEMCPY(opts->S, custom, custom_len);
+    opts->S_len = custom_len;
 
     opts->magic = CF_CTX_MAGIC;
 
@@ -567,9 +550,14 @@ CF_STATUS CF_KDFOpts_Init(
 }
 
 CF_KDF_OPTS* CF_KDFOpts_InitAlloc(
-    const uint8_t *salt, size_t salt_len,
+    const uint8_t *info, size_t info_len,
     const uint8_t *custom, size_t custom_len,
     uint32_t iterations, CF_STATUS *status) {
+    if ((info && info_len == 0) || (custom && custom_len == 0)) {
+        if (status) *status = CF_ERR_INVALID_PARAM;
+        return NULL;
+    }
+
     if (custom_len > CF_MAX_CUSTOMIZATION) {
         if (status) *status = CF_ERR_INVALID_LEN;
         return NULL;
@@ -581,7 +569,7 @@ CF_KDF_OPTS* CF_KDFOpts_InitAlloc(
         return NULL;
     }
 
-    CF_STATUS st = CF_KDFOpts_Init(opts, salt, salt_len, custom, custom_len, iterations);
+    CF_STATUS st = CF_KDFOpts_Init(opts, info, info_len, custom, custom_len, iterations);
     if (st != CF_SUCCESS) {
         SECURE_FREE(opts, sizeof(CF_KDF_OPTS));
         if (status) *status = st;
@@ -597,9 +585,10 @@ CF_STATUS CF_KDFOpts_Reset(CF_KDF_OPTS *opts) {
     if (!opts)
         return CF_ERR_NULL_PTR;
 
-    opts->salt = NULL;
-    opts->salt_len = 0;
-    opts->S_len = 0;
+    opts->info       = NULL;
+    opts->info_len   = 0;
+    opts->isNewInfo  = 0;
+    opts->S_len      = 0;
     opts->iterations = 0;
 
     SECURE_ZERO(opts->S, sizeof(opts->S));
@@ -633,9 +622,10 @@ CF_STATUS CF_KDFOpts_CloneCtx(CF_KDF_OPTS *dst, const CF_KDF_OPTS *src) {
     // Start with a clean slate
     CF_KDFOpts_Reset(dst);
 
-    // Shallow copy salt (caller manages lifetime)
-    dst->salt     = src->salt;
-    dst->salt_len = src->salt_len;
+    // Shallow copy info (caller manages lifetime)
+    dst->info      = src->info;
+    dst->info_len  = src->info_len;
+    dst->isNewInfo = 0;
 
     // Copy iteration count (PBKDF2)
     dst->iterations = src->iterations;

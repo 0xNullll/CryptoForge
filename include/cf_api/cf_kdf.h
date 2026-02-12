@@ -42,7 +42,7 @@ typedef struct _CF_KDF {
     
     CF_STATUS (*kdf_extract_fn)(struct _CF_KDF_CTX *ctx, const struct _CF_KDF_OPTS *opts);
     
-    CF_STATUS (*kdf_expand_fn)(struct _CF_KDF_CTX *ctx, uint8_t *out, size_t out_len, const struct _CF_KDF_OPTS *opts, bool new_info);
+    CF_STATUS (*kdf_expand_fn)(struct _CF_KDF_CTX *ctx, uint8_t *out, size_t out_len, const struct _CF_KDF_OPTS *opts);
     
     CF_STATUS (*kdf_reset_fn)(struct _CF_KDF_CTX *ctx);
 
@@ -55,8 +55,9 @@ typedef struct _CF_KDF {
 typedef struct _CF_KDF_OPTS {
     uint32_t magic;               // CF_CTX_MAGIC
 
-    const uint8_t *salt;          // optional salt (HKDF/PBKDF2)
-    size_t salt_len;
+    const uint8_t *info;          // optional salt (HKDF)
+    size_t info_len;
+    int isNewInfo;
 
     uint32_t iterations;          // iteration count (PBKDF2)
 
@@ -81,8 +82,8 @@ typedef struct _CF_KDF_CTX {
     const uint8_t *ikm;
     size_t ikm_len;
 
-    const uint8_t *data;
-    size_t data_len;
+    const uint8_t *salt;          // optional salt (HKDF/PBKDF2/KMAC-XOF)
+    size_t salt_len;
 
     uint32_t subflags;
     int isExtracted;
@@ -115,13 +116,12 @@ CF_API CF_KDF_CTX* CF_KDF_InitAlloc(
 
 CF_API CF_STATUS CF_KDF_Extract(
     CF_KDF_CTX *ctx,
-    const uint8_t *data, size_t data_len // data/info/password
+    const uint8_t *salt, size_t salt_len // salt/data
 );
 
 CF_API CF_STATUS CF_KDF_Expand(
     CF_KDF_CTX *ctx,
-    uint8_t *derived_key, size_t derived_key_len,
-    const uint8_t *new_data, size_t new_data_len // optional and only for HKDF
+    uint8_t *derived_key, size_t derived_key_len
 );
 
 CF_API CF_STATUS CF_KDF_Reset(CF_KDF_CTX *ctx);
@@ -132,7 +132,7 @@ CF_API CF_STATUS CF_KDF_Free(CF_KDF_CTX **p_ctx);
 // ============================
 CF_API CF_STATUS CF_KDF_Compute(const CF_KDF *kdf,
                                 const uint8_t *ikm, size_t ikm_len,
-                                const uint8_t *data, size_t data_len,
+                                const uint8_t *salt, size_t salt_len,
                                 uint8_t *derived_key, size_t derived_key_len,
                                 const CF_KDF_OPTS *opts, uint32_t subflags);
 
@@ -150,13 +150,15 @@ CF_API CF_KDF_CTX* CF_KDF_CloneCtxAlloc(const CF_KDF_CTX *src, CF_STATUS *status
 // Optional parameters init / cleanup
 // ============================
 CF_API CF_STATUS CF_KDFOpts_Init(CF_KDF_OPTS *opts,
-                                 const uint8_t *salt, size_t salt_len,
+                                 const uint8_t *info, size_t info_len,
                                  const uint8_t *custom, size_t custom_len,
                                  uint32_t iterations);
 
-CF_API CF_KDF_OPTS* CF_KDFOpts_InitAlloc(const uint8_t *salt, size_t salt_len,
+CF_API CF_KDF_OPTS* CF_KDFOpts_InitAlloc(const uint8_t *info, size_t info_len,
                                          const uint8_t *custom, size_t custom_len,
                                          uint32_t iterations, CF_STATUS *status);
+
+CF_API CF_STATUS CF_KDFOpts_NewInfo(CF_KDF_OPTS *opts, const uint8_t *new_info, size_t new_info_len);
 
 CF_API CF_STATUS CF_KDFOpts_Reset(CF_KDF_OPTS *opts);
 CF_API CF_STATUS CF_KDFOpts_Free(CF_KDF_OPTS **p_opts);

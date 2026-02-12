@@ -54,7 +54,7 @@ typedef enum {
     // cSHAKE
     CF_CSHAKE128_BLOCK_SIZE   = 168,
     CF_CSHAKE256_BLOCK_SIZE   = 136
-} CF_BlockSize;
+} CF_BLOCK_SIZE;
 
 // ======================
 // Digest / Output Sizes (bytes)
@@ -76,7 +76,7 @@ typedef enum {
     CF_SHA3_256_DIGEST_SIZE   = 32,
     CF_SHA3_384_DIGEST_SIZE   = 48,
     CF_SHA3_512_DIGEST_SIZE   = 64,
-} CF_DigestSize;
+} CF_DIGEST_SIZE;
 
 // ======================
 // Default Digest Sizes for XOFs (bytes)
@@ -92,7 +92,7 @@ typedef enum {
     CF_KMAC_DEFAULT_OUTPUT_LEN_256     = 64,
     CF_KMAC_XOF_DEFAULT_OUTPUT_LEN_128 = 32,
     CF_KMAC_XOF_DEFAULT_OUTPUT_LEN_256 = 64
-} CF_DigestDefaultSize;
+} CF_DIGEST_DEFAULT_SIZE;
 
 // ======================
 // 1. Hash / Digest IDs & Flags
@@ -104,7 +104,7 @@ typedef enum {
     CF_CAT_KDF     = 0x30000000, // HKDF / PBKDF2 /KDF_KMAC_XOF
     CF_CAT_RNG     = 0x40000000,
     CF_CAT_KECCAK  = 0x08000000  // optional bit to group KECCAK-based algorithms
-} CF_Category;
+} CF_CATEGORY;
 
 typedef enum {
     CF_MD5         = CF_CAT_DIGEST  | 0x0001,
