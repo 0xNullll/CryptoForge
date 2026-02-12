@@ -57,7 +57,6 @@ typedef struct _CF_KDF_OPTS {
 
     const uint8_t *info;          // optional salt (HKDF)
     size_t info_len;
-    int isNewInfo;
 
     uint32_t iterations;          // iteration count (PBKDF2)
 
@@ -158,7 +157,7 @@ CF_API CF_KDF_OPTS* CF_KDFOpts_InitAlloc(const uint8_t *info, size_t info_len,
                                          const uint8_t *custom, size_t custom_len,
                                          uint32_t iterations, CF_STATUS *status);
 
-CF_API CF_STATUS CF_KDFOpts_NewInfo(CF_KDF_OPTS *opts, const uint8_t *new_info, size_t new_info_len);
+CF_API CF_STATUS CF_KDFOpts_SetNewInfo(CF_KDF_OPTS *opts, const uint8_t *new_info, size_t new_info_len);
 
 CF_API CF_STATUS CF_KDFOpts_Reset(CF_KDF_OPTS *opts);
 CF_API CF_STATUS CF_KDFOpts_Free(CF_KDF_OPTS **p_opts);

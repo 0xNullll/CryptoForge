@@ -29,7 +29,7 @@ static CF_STATUS hkdf_extract_wrapper(CF_KDF_CTX *ctx, const CF_KDF_OPTS *opts) 
 
 static CF_STATUS hkdf_expand_wrapper(CF_KDF_CTX *ctx, uint8_t *out, size_t out_len, const CF_KDF_OPTS *opts) {
     UNUSED(opts);
-    return ll_HKDF_Expand((ll_HKDF_CTX *)ctx->kdf_ctx, out, out_len , opts->isNewInfo ? opts->info : NULL, opts->isNewInfo ? opts->info_len : 0);
+    return ll_HKDF_Expand((ll_HKDF_CTX *)ctx->kdf_ctx, out, out_len , opts->info, opts->info_len);
 }
 static CF_STATUS hkdf_reset_wrapper(CF_KDF_CTX *ctx) {
     return ll_HKDF_Reset((ll_HKDF_CTX *)ctx->kdf_ctx);
@@ -537,8 +537,6 @@ CF_STATUS CF_KDFOpts_Init(
 
     opts->info       = info;
     opts->info_len   = info_len;
-    opts->isNewInfo   = 0;
-
     opts->iterations = iterations;
 
     SECURE_MEMCPY(opts->S, custom, custom_len);
@@ -581,13 +579,25 @@ CF_KDF_OPTS* CF_KDFOpts_InitAlloc(
     return opts;
 }
 
+CF_STATUS CF_KDFOpts_SetNewInfo(CF_KDF_OPTS *opts, const uint8_t *new_info, size_t new_info_len) {
+    if (!opts)
+        return CF_ERR_NULL_PTR;
+
+    if (new_info && new_info_len == 0)
+        return CF_ERR_INVALID_PARAM;
+
+    opts->info = new_info;
+    opts->info_len = new_info_len;
+
+    return CF_SUCCESS;
+}
+
 CF_STATUS CF_KDFOpts_Reset(CF_KDF_OPTS *opts) {
     if (!opts)
         return CF_ERR_NULL_PTR;
 
     opts->info       = NULL;
     opts->info_len   = 0;
-    opts->isNewInfo  = 0;
     opts->S_len      = 0;
     opts->iterations = 0;
 
@@ -625,7 +635,6 @@ CF_STATUS CF_KDFOpts_CloneCtx(CF_KDF_OPTS *dst, const CF_KDF_OPTS *src) {
     // Shallow copy info (caller manages lifetime)
     dst->info      = src->info;
     dst->info_len  = src->info_len;
-    dst->isNewInfo = 0;
 
     // Copy iteration count (PBKDF2)
     dst->iterations = src->iterations;
