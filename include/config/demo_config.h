@@ -13,11 +13,11 @@
 #ifndef DEMO_CONFIG_H
 #define DEMO_CONFIG_H
 
-#include "crypto_config.h"  // include high-level flags
+#include "crypto_config.h"
 #include "../utils/cf_status.h"
 #include "../utils/misc.h"
 
-#if ENABLE_TESTS  // only include/demo code if tests are enabled
+#if ENABLE_TESTS
 
 #include "../crypto/shake.h"
 
@@ -54,6 +54,7 @@
 #include "../cf_api/cf_flags.h"
 #include "../cf_api/cf_hash.h"
 #include "../cf_api/cf_mac.h"
+#include "../cf_api/cf_kdf.h"
 #include "../cf_api/cf_enc.h"
 
 #ifdef __cplusplus
@@ -105,10 +106,10 @@ CF_API void test_all_hkdfs(
     const uint8_t *salt, size_t salt_len,
     const uint8_t *ikm, size_t ikm_len,
     size_t okm_len);
-
 CF_API void test_all_pbkdf2s(const uint8_t *password, size_t password_len,
                              const uint8_t *salt, size_t salt_len,
                              size_t dk_len, size_t iteration_count);
+CF_API void test_all_kdf_high(void);
 
 CF_API void test_base16(const char *label, const uint8_t *input, size_t len, uint32_t mode);
 CF_API void test_hex_base16(const char *label, const uint8_t *input, size_t len, uint32_t mode);
