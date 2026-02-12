@@ -71,24 +71,12 @@ CF_STATUS ll_HKDF_Extract(
 
     // HMAC key = salt
     st = ll_HMAC_Init(&hmac_ctx, ctx->md, salt, salt_len);
-
-    // if (salt && salt_len > 0)
-    //     st = ll_HMAC_Init(&hmac_ctx, ctx->md, salt, salt_len);
-    // else
-    //     st = ll_HMAC_Init(&hmac_ctx, ctx->md, (const uint8_t *)"", 0);
-
     if (st != CF_SUCCESS) {
         return st;
     }
 
     // Feed the input key material (IKM) into HMAC
     st = ll_HMAC_Update(&hmac_ctx, ikm, ikm_len);
-
-    // if (ikm && ikm_len > 0)
-    //     st = ll_HMAC_Update(&hmac_ctx, ikm, ikm_len);
-    // else
-    //     st = ll_HMAC_Update(&hmac_ctx, (const uint8_t *)"", 0);
-
     if (st != CF_SUCCESS) {
         ll_HMAC_Reset(&hmac_ctx);
         return st;
@@ -135,8 +123,10 @@ CF_STATUS ll_HKDF_Expand(
         return CF_ERR_LIMIT_EXCEEDED;
 
     // Only replace info once, before generating blocks
-    ctx->info = new_info;
-    ctx->info_len = new_info_len;
+    if (new_info) {
+        ctx->info = new_info;
+        ctx->info_len = new_info_len;
+    }
 
     // Prepare for multi-block generation
     SECURE_ZERO(ctx->prev_block, sizeof(ctx->prev_block));
