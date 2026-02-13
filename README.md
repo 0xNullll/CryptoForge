@@ -2,9 +2,9 @@
 
 **CryptoForge** is a **modular, lightweight C cryptographic library** implementing SHA variants, HMAC, KMAC, Keccak, AES, ChaCha, AEAD constructions, KDFs, MACs, and encoding utilities.  
 
-It is designed with **layered APIs** similar to OpenSSL, separating low-level primitives (`ll_*`) from user-facing functions (`cf_*`), while remaining lightweight and portable.  
+It is designed with **layered APIs**, separating low-level primitives (`ll_*`) from user-facing functions (`CF_*`), while remaining lightweight and portable.
 
-CryptoForge is intended for **educational, experimental, and embedded use**. It has **not undergone formal audits**.  
+CryptoForge is intended for **educational, experimental**. It has **not undergone formal audits**.  
 
 ---
 
@@ -24,7 +24,7 @@ CryptoForge is intended for **educational, experimental, and embedded use**. It 
 │   │       └─ /keccak    <-- SHA3 / Keccak / SHAKE
 │   ├─ /kdf               <-- PBKDF2, HKDF
 │   ├─ /mac               <-- HMAC, CMAC, GMAC, KMAC, Poly1305
-│   └─ /symmetric
+│   └─ /cipher
 │       ├─ /aes           <-- AES core + standard modes (ECB, CBC, CFB, OFB, CTR)
 │       └─ /chacha        <-- ChaCha/XChaCha core + stream implementations
 ├─ /include

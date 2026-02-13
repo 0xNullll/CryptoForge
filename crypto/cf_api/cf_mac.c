@@ -633,7 +633,7 @@ const char* CF_MAC_GetFullName(const CF_MAC_CTX *ctx) {
     }
 }
 
-CF_STATUS CF_MAC_IsValid(const CF_MAC_CTX *ctx) {
+CF_STATUS CF_MAC_ValidateCtx(const CF_MAC_CTX *ctx) {
     if (!ctx)
         return CF_ERR_NULL_PTR;
 
@@ -667,11 +667,15 @@ CF_STATUS CF_MAC_CloneCtx(CF_MAC_CTX *dst, const CF_MAC_CTX *src) {
     dst->key     = src->key;
     dst->key_len = src->key_len;
 
+    CF_STATUS st = CF_SUCCESS;
+
     // Deep copy cipher_key if it exists
     if (src->cipher_key && src->cipher_key_len > 0) {
         dst->cipher_key = SECURE_ALLOC(src->mac->key_ctx_size);
-        if (!dst->cipher_key)
-            goto cleanup;  // Allocation failed
+        if (!dst->cipher_key) {
+            st = CF_ERR_ALLOC_FAILED;
+            goto cleanup;
+        }
         SECURE_MEMCPY(dst->cipher_key, src->cipher_key, src->mac->key_ctx_size);
         dst->cipher_key_len = src->cipher_key_len;
     }
@@ -681,10 +685,13 @@ CF_STATUS CF_MAC_CloneCtx(CF_MAC_CTX *dst, const CF_MAC_CTX *src) {
         dst->mac_ctx = SECURE_ALLOC(src->mac->ctx_size);
         if (!dst->mac_ctx)
             goto cleanup;  // Allocation failed
-        SECURE_MEMCPY(dst->mac_ctx, src->mac_ctx, src->mac->ctx_size);
+        
+        st = src->mac->mac_clone_ctx_fn(dst, src);
+        if (st != CF_SUCCESS)
+            goto cleanup;
     }
 
-    return CF_SUCCESS;
+    return st;
 
 cleanup:
     // Cleanup any partially allocated memory
@@ -695,7 +702,7 @@ cleanup:
 
     dst->cipher_key_len = 0;
 
-    return CF_ERR_ALLOC_FAILED;
+    return st;
 }
 
 CF_MAC_CTX *CF_MAC_CloneCtxAlloc(const CF_MAC_CTX *src, CF_STATUS *status) {
@@ -729,21 +736,21 @@ CF_STATUS CF_MACOpts_Init(CF_MAC_OPTS *opts,
     if (!opts)
         return CF_ERR_NULL_PTR;
 
-    if (iv_len > CF_MAX_CUSTOMIZATION || custom_len > CF_MAX_CUSTOMIZATION)
+    if (iv_len > AES_BLOCK_SIZE || custom_len > CF_MAX_CUSTOMIZATION)
         return CF_ERR_INVALID_LEN;
 
     CF_MACOpts_Reset(opts);
 
+    // Shallow copy (caller manages lifetime)
+    opts->S     = custom;
+    opts->S_len = custom_len;
+
+    // Deep copy of IV
     if (iv && iv_len > 0) {
         SECURE_MEMCPY(opts->iv, iv, iv_len);
         opts->iv_len = iv_len;
     }
-
-    if (custom && custom_len > 0) {
-        SECURE_MEMCPY(opts->S, custom, custom_len);
-        opts->S_len = custom_len;
-    }
-
+    
     opts->magic = CF_CTX_MAGIC;
 
     return CF_SUCCESS;
@@ -779,11 +786,11 @@ CF_STATUS CF_MACOpts_Reset(CF_MAC_OPTS *opts) {
     if (!opts)
         return CF_ERR_NULL_PTR;
 
+    opts->S      = NULL;
+    opts->S_len  = 0;
     opts->iv_len = 0;
-    opts->S_len = 0;
 
     SECURE_ZERO(opts->iv, sizeof(opts->iv));
-    SECURE_ZERO(opts->S, sizeof(opts->S));
 
     return CF_SUCCESS;
 }
@@ -814,12 +821,15 @@ CF_STATUS CF_MACOpts_CloneCtx(CF_MAC_OPTS *dst, const CF_MAC_OPTS *src) {
     // Start with a clean slate
     CF_MACOpts_Reset(dst);
 
-    // Copy metadata
-    dst->iv_len = src->iv_len;
+    // Shallow copy (caller manages lifetime)
+    dst->S     = src->S;
     dst->S_len = src->S_len;
 
-    SECURE_MEMCPY(dst->iv, src->iv, CF_MAX_CUSTOMIZATION);
-    SECURE_MEMCPY(dst->S, src->S, CF_MAX_CUSTOMIZATION);
+    // Deep copy IV
+    if (src->iv_len != 0) {
+        SECURE_MEMCPY(dst->iv, src->iv, sizeof(dst->iv));
+        dst->iv_len = src->iv_len;
+    }
 
     return CF_SUCCESS;
 }

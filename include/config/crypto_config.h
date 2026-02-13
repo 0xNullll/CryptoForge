@@ -22,16 +22,16 @@
 #define CF_ENABLE_BARRIER 0
 #endif
 
-#ifndef CF_DEBUG
-#define CF_DEBUG 1
-#endif
+// #ifndef CF_DEBUG
+// #define CF_DEBUG 1
+// #endif
 
 // enable demo/test code (1 = on, 0 = off)
 #ifndef ENABLE_TESTS
 #define ENABLE_TESTS 1
 #endif
 
-// Check every input byte and enforce max length / null termination (1 = on, 0 = off)
+// Check every input byte in cf_enc and enforce max length / null termination (1 = on, 0 = off)
 #ifndef BASE_TRUNCATE_ON_NULL
 #define BASE_TRUNCATE_ON_NULL 0
 #endif

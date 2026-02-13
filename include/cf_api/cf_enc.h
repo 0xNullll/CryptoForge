@@ -120,7 +120,7 @@ CF_API uint8_t* CF_Enc_DecodeAllocRaw(CF_ENCODER_CTX *ctx,
 CF_API size_t CF_Enc_RequiredEncLen(uint32_t enc_flags, size_t input_len);
 CF_API size_t CF_Enc_RequiredDecLen(uint32_t dec_flags, size_t input_len);
 
-CF_API CF_STATUS CF_Enc_IsValid(const CF_ENCODER_CTX *ctx);
+CF_API CF_STATUS CF_Enc_ValidateCtx(const CF_ENCODER_CTX *ctx);
 CF_API bool CF_Enc_IsValidInput(uint32_t dec_flags, const char *src, size_t len);
 
 CF_API const char* CF_Enc_GetName(const CF_ENCODER_CTX *ctx);

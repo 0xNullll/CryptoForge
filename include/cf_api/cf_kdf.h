@@ -53,14 +53,14 @@ typedef struct _CF_KDF {
 // Optional KDF parameters
 // ============================
 typedef struct _CF_KDF_OPTS {
-    uint32_t magic;               // CF_CTX_MAGIC
+    uint32_t magic;         // CF_CTX_MAGIC
 
-    const uint8_t *info;          // optional salt (HKDF)
+    const uint8_t *info;    // optional salt (HKDF)
     size_t info_len;
 
-    uint32_t iterations;          // iteration count (PBKDF2)
+    uint32_t iterations;    // iteration count (PBKDF2)
 
-    uint8_t S[CF_MAX_CUSTOMIZATION]; // optional customization (KMAC-XOF)
+    const uint8_t *S;       // optional customization (KMAC-XOF)
     size_t S_len;
 
     int isHeapAlloc;
@@ -137,7 +137,7 @@ CF_API CF_STATUS CF_KDF_Compute(const CF_KDF *kdf,
 
 CF_API const char* CF_KDF_GetName(const CF_KDF *kdf);
 CF_API const char* CF_KDF_GetFullName(const CF_KDF_CTX *ctx);
-CF_API CF_STATUS CF_KDF_IsValid(const CF_KDF_CTX *ctx);
+CF_API CF_STATUS CF_KDF_ValidateCtx(const CF_KDF_CTX *ctx);
 
 // ============================
 // Cloning
