@@ -14,7 +14,7 @@
 
 bool ll_AES_CTR_Process(
     const ll_AES_KEY *key,
-    uint8_t counter[16],
+    const uint8_t counter[AES_BLOCK_SIZE],
     const uint8_t *in,
     size_t in_len_bytes,
     uint8_t *out) {
@@ -29,7 +29,8 @@ bool ll_AES_CTR_Process(
     for (size_t i = 0; i < in_len_bytes; ) {
         // generate new keystream block if needed
         if (keystream_used == AES_BLOCK_SIZE) {
-            if (!ll_AES_EncryptBlock(key, counter, keystream)) goto cleanup;
+            if (!ll_AES_EncryptBlock(key, counter, keystream))
+                goto cleanup;
 
             // increment 16-byte counter (big-endian)
             uint64_t hi = LOAD64BE(counter);
@@ -62,10 +63,10 @@ cleanup:
     return ok;
 }
 
-bool ll_AES_CTR_Encrypt(const ll_AES_KEY *key, uint8_t counter[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len, uint8_t *out) {
+bool ll_AES_CTR_Encrypt(const ll_AES_KEY *key, const uint8_t counter[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len, uint8_t *out) {
     return ll_AES_CTR_Process(key, counter, in, in_len, out);
 }
 
-bool ll_AES_CTR_Decrypt(const ll_AES_KEY *key, uint8_t counter[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len, uint8_t *out) {
+bool ll_AES_CTR_Decrypt(const ll_AES_KEY *key, const uint8_t counter[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len, uint8_t *out) {
     return ll_AES_CTR_Process(key, counter, in, in_len, out);   
 }

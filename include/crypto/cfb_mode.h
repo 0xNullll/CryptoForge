@@ -29,7 +29,7 @@ extern "C" {
 
 bool ll_AES_CFB8_Encrypt(
     const ll_AES_KEY *key,
-    uint8_t iv[AES_BLOCK_SIZE],
+    const uint8_t iv[AES_BLOCK_SIZE],
     const uint8_t *in,
     size_t in_len,
     uint8_t *out
@@ -37,7 +37,7 @@ bool ll_AES_CFB8_Encrypt(
 
 bool ll_AES_CFB8_Decrypt(
     const ll_AES_KEY *key,
-    uint8_t iv[AES_BLOCK_SIZE],
+    const uint8_t iv[AES_BLOCK_SIZE],
     const uint8_t *in,
     size_t in_len,
     uint8_t *out
@@ -45,7 +45,7 @@ bool ll_AES_CFB8_Decrypt(
 
 bool ll_AES_CFB128_Encrypt(
     const ll_AES_KEY *key,
-    uint8_t iv[AES_BLOCK_SIZE],
+    const uint8_t iv[AES_BLOCK_SIZE],
     const uint8_t *in,
     size_t in_len,
     uint8_t *out
@@ -53,7 +53,7 @@ bool ll_AES_CFB128_Encrypt(
 
 bool ll_AES_CFB128_Decrypt(
     const ll_AES_KEY *key,
-    uint8_t iv[AES_BLOCK_SIZE],
+    const uint8_t iv[AES_BLOCK_SIZE],
     const uint8_t *in,
     size_t in_len,
     uint8_t *out

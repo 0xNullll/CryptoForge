@@ -125,7 +125,7 @@ static const CF_KDF *CF_get_kkdf_xof(void) {
     return &kdf;
 }
 
-// Table of all supported MACs
+// Table of all supported KDFs
 static const CF_ALGO_ENTRY cf_kdf_table[] = {
     { CF_HKDF,      (const void* (*)(void))CF_get_hkdf     },
     { CF_PBKDF2,    (const void* (*)(void))CF_get_pbkdf2   },

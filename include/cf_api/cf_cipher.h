@@ -26,8 +26,8 @@
 #include "../crypto/aes_core.h"
 #include "../crypto/ecb_mode.h"
 #include "../crypto/cbc_mode.h"
-#include "../crypto/ofb_mode.h"
 #include "../crypto/cfb_mode.h"
+#include "../crypto/ofb_mode.h"
 #include "../crypto/ctr_mode.h"
 #include "../crypto/chacha_core.h"
 #include "../crypto/chacha.h"
@@ -48,11 +48,9 @@ typedef struct _CF_CIPHER {
     size_t block_size;            // cipher block size (0 for stream ciphers)
 
     // Low-level function pointers
-    CF_STATUS (*cipher_init_fn)(struct _CF_CIPHER_CTX *ctx, const uint8_t *key, size_t key_len);
-    CF_STATUS (*cipher_update_fn)(struct _CF_CIPHER_CTX *ctx, const uint8_t *in, uint8_t *out, size_t len);
-    CF_STATUS (*cipher_final_fn)(struct _CF_CIPHER_CTX *ctx);
-    CF_STATUS (*cipher_reset_fn)(struct _CF_CIPHER_CTX *ctx);
-    CF_STATUS (*cipher_clone_ctx_fn)(struct _CF_CIPHER_CTX *dst, const struct _CF_CIPHER_CTX *src);
+    bool (*cipher_init_fn)(CF_CIPHER_CTX *ctx, CF_CIPHER_OPTS *opts);
+    bool (*cipher_enc_fn)(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, const CF_CIPHER_OPTS *opts);
+    bool (*cipher_dec_fn)(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len,uint8_t *out, const CF_CIPHER_OPTS *opts);
 } CF_CIPHER;
 
 // ============================
@@ -64,26 +62,38 @@ typedef struct _CF_CIPHER_OPTS {
     uint8_t iv[CF_MAX_CIPHER_IV_SIZE]; // optional IV / nonce
     size_t iv_len;
 
+    // AES/CTR
+    uint8_t ctr_block[AES_BLOCK_SIZE]; // 16-byte counter/IV array for AES-CTR
+
+    // ChaCha / XChaCha
+    uint32_t chacha_counter;     // 32-bit counter for ChaCha
+
     int isHeapAlloc;
 } CF_CIPHER_OPTS;
+
+typedef enum {
+    CF_CIPHER_OP_ENCRYPT = 0,
+    CF_CIPHER_OP_DECRYPT = 1
+} CF_CIPHER_OPERATION;
 
 // ============================
 // High-level cipher context
 // ============================
 typedef struct _CF_CIPHER_CTX {
-    uint64_t magic;               // CF_CTX_MAGIC ^ (uintptr_t)cipher
+    uint64_t magic;                 // CF_CTX_MAGIC ^ (uintptr_t)cipher
 
-    const CF_CIPHER *cipher;      // selected algorithm
+    const CF_CIPHER *cipher;        // selected algorithm
     const CF_CIPHER_OPTS *opts;
 
-    void *key_ctx;                // internal expanded key
-    void *cipher_ctx;             // low-level cipher state
+    void *key_ctx;                  // internal expanded key
+    void *cipher_ctx;               // low-level cipher state
 
-    const uint8_t *key;           // user-supplied raw key
+    const uint8_t *key;             // user-supplied raw key
     size_t key_len;
 
-    uint32_t subflags;            // e.g., streaming, padding, mode flags
+    uint32_t subflags;              // e.g., streaming, padding, mode flags
 
+    CF_CIPHER_OPERATION operation;  // encrypt or decrypt
     int isFinalized;
     int isHeapAlloc;
 } CF_CIPHER_CTX;
@@ -98,7 +108,8 @@ CF_API const CF_CIPHER *CF_Cipher_GetByFlag(uint32_t cipher_flag);
 // ============================
 CF_API CF_STATUS CF_Cipher_Init(CF_CIPHER_CTX *ctx, const CF_CIPHER *cipher,
                                 const CF_CIPHER_OPTS *opts,
-                                const uint8_t *key, size_t key_len);
+                                const uint8_t *key, size_t key_len,
+                                CF_CIPHER_OPERATION op);
 
 CF_API CF_CIPHER_CTX* CF_Cipher_InitAlloc(const CF_CIPHER *cipher,
                                           const CF_CIPHER_OPTS *opts,

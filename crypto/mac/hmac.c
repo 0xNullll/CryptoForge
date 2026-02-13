@@ -34,7 +34,7 @@ CF_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const CF_MD *md, const uint8_t *key, si
     if (key_len > md->block_size) {
         if (!md->hash_init_fn(ctx->ipad_ctx, NULL) ||
             !md->hash_update_fn(ctx->ipad_ctx, key, key_len) ||
-            !md->hash_final_fn(ctx->ipad_ctx, ctx->key, md->digest_size)) {
+            !md->hash_final_fn(ctx->ipad_ctx, ctx->key)) {
             goto cleanup;
         }
         if (md->hash_squeeze_fn && !md->hash_squeeze_fn(ctx->ipad_ctx, ctx->key, md->digest_size))
@@ -129,7 +129,7 @@ CF_STATUS ll_HMAC_Final(ll_HMAC_CTX *ctx, uint8_t *digest, size_t digest_len) {
     uint8_t inner_hash[CF_MAX_DEFAULT_DIGEST_SIZE] = {0};
 
     // compute inner hash
-    if (!ctx->md->hash_final_fn(ctx->ipad_ctx, inner_hash, ctx->md->digest_size)) {
+    if (!ctx->md->hash_final_fn(ctx->ipad_ctx, inner_hash)) {
         ret = CF_ERR_CTX_CORRUPT;
         goto cleanup;
     }
@@ -149,7 +149,7 @@ CF_STATUS ll_HMAC_Final(ll_HMAC_CTX *ctx, uint8_t *digest, size_t digest_len) {
     }
 
     // compute final HMAC
-    if (!ctx->md->hash_final_fn(ctx->opad_ctx, digest, hash_len)) {
+    if (!ctx->md->hash_final_fn(ctx->opad_ctx, digest)) {
         ret = CF_ERR_CTX_CORRUPT;
         goto cleanup;
     }
