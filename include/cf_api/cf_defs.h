@@ -36,6 +36,10 @@ typedef struct _CF_KDF CF_KDF;
 typedef struct _CF_KDF_OPTS CF_KDF_OPTS;
 typedef struct _CF_KDF_CTX CF_KDF_CTX;
 
+typedef struct _CF_CIPHER CF_CIPHER;
+typedef struct _CF_CIPHER_OPTS CF_CIPHER_OPTS;
+typedef struct _CF_CIPHER_CTX CF_CIPHER_CTX;
+
 typedef struct _CF_ENCODER CF_ENCODER;
 typedef struct _CF_ENCODER_CTX CF_ENCODER_CTX;
 

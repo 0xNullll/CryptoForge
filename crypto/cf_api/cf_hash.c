@@ -927,11 +927,7 @@ CF_STATUS CF_Hash_CloneCtx(CF_HASH_CTX *dst, const CF_HASH_CTX *src) {
         if (!dst->digest_ctx)
             goto cleanup;
 
-        SECURE_MEMCPY(dst->digest_ctx,
-                      src->digest_ctx,
-                      src->md->ctx_size);
-    } else {
-        dst->digest_ctx = NULL;
+        SECURE_MEMCPY(dst->digest_ctx, src->digest_ctx, src->md->ctx_size);
     }
 
     return CF_SUCCESS;
@@ -1004,7 +1000,7 @@ const char* CF_Hash_GetName(const CF_MD *md) {
     }
 }
 
-CF_STATUS CF_Hash_IsValid(const CF_HASH_CTX *ctx) {
+CF_STATUS CF_Hash_ValidateCtx(const CF_HASH_CTX *ctx) {
     if (!ctx)
         return CF_ERR_NULL_PTR;
 
@@ -1028,13 +1024,13 @@ CF_STATUS CF_HashOpts_Init(CF_HASH_OPTS *opts,
     opts->emptyNameCustom = 1;
 
     if (N && N_len > 0) {
-        SECURE_MEMCPY(opts->N, N, N_len);
+        opts->N = N;
         opts->N_len = N_len;
         opts->emptyNameCustom = 0;
     }
 
     if (S && S_len > 0) {
-        SECURE_MEMCPY(opts->S, S, S_len);
+        opts->S = S;
         opts->S_len = S_len;
         opts->emptyNameCustom = 0;
     }
@@ -1073,13 +1069,12 @@ CF_STATUS CF_HashOpts_Reset(CF_HASH_OPTS *opts) {
     if (!opts)
         return CF_ERR_NULL_PTR;
 
-    opts->N_len = 0;
-    opts->S_len = 0;
+    opts->N               = NULL;
+    opts->S               = NULL;
+    opts->N_len           = 0;
+    opts->S_len           = 0;
     opts->custom_absorbed = 0;
     opts->emptyNameCustom = 1;
-
-    SECURE_ZERO(opts->N, sizeof(opts->N));
-    SECURE_ZERO(opts->S, sizeof(opts->S));
 
     return CF_SUCCESS;
 }
@@ -1111,14 +1106,15 @@ CF_STATUS CF_HashOpts_Clone(CF_HASH_OPTS *dst, const CF_HASH_OPTS *src) {
     CF_HashOpts_Reset(dst);
 
     // Copy metadata
-    dst->N_len = src->N_len;
-    dst->S_len = src->S_len;
     dst->finalized = src->finalized;
     dst->custom_absorbed = src->custom_absorbed;
     dst->emptyNameCustom = src->emptyNameCustom;
 
-    SECURE_MEMCPY(dst->N, src->N, CF_MAX_CUSTOMIZATION);
-    SECURE_MEMCPY(dst->S, src->S, CF_MAX_CUSTOMIZATION);
+    // Shallow copy (caller manages lifetime)
+    dst->N         = src->N;
+    dst->N_len     = src->N_len;
+    dst->S         = src->S;
+    dst->S_len     = src->S_len;
 
     return CF_SUCCESS;
 }

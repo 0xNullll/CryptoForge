@@ -442,7 +442,7 @@ const char* CF_KDF_GetFullName(const CF_KDF_CTX *ctx) {
     }
 }
 
-CF_STATUS CF_KDF_IsValid(const CF_KDF_CTX *ctx) {
+CF_STATUS CF_KDF_ValidateCtx(const CF_KDF_CTX *ctx) {
     if (!ctx)
         return CF_ERR_NULL_PTR;
 
@@ -475,22 +475,29 @@ CF_STATUS CF_KDF_CloneCtx(CF_KDF_CTX *dst, const CF_KDF_CTX *src) {
     dst->ikm     = src->ikm;
     dst->ikm_len = src->ikm_len;
 
+    CF_STATUS st = CF_SUCCESS;
+
     // Deep copy low-level KDF context
     if (src->kdf_ctx) {
         dst->kdf_ctx = SECURE_ALLOC(src->kdf->ctx_size);
-        if (!dst->kdf_ctx)
-            goto cleanup;  // Allocation failed
-        SECURE_MEMCPY(dst->kdf_ctx, src->kdf_ctx, src->kdf->ctx_size);
+        if (!dst->kdf_ctx) {
+            st = CF_ERR_ALLOC_FAILED;
+            goto cleanup;
+        }
+
+        st = src->kdf->kdf_clone_ctx_fn(dst, src);
+        if (st != CF_SUCCESS)
+            goto cleanup;
     }
 
-    return CF_SUCCESS;
+    return st;
 
 cleanup:
     // Cleanup any partially allocated memory
     if (dst->kdf_ctx)
         SECURE_FREE(dst->kdf_ctx, src->kdf->ctx_size);
 
-    return CF_ERR_ALLOC_FAILED;
+    return st;
 }
 
 CF_KDF_CTX *CF_KDF_CloneCtxAlloc(const CF_KDF_CTX *src, CF_STATUS *status) {
@@ -537,10 +544,9 @@ CF_STATUS CF_KDFOpts_Init(
 
     opts->info       = info;
     opts->info_len   = info_len;
+    opts->S          = custom;
+    opts->S_len      = custom_len;
     opts->iterations = iterations;
-
-    SECURE_MEMCPY(opts->S, custom, custom_len);
-    opts->S_len = custom_len;
 
     opts->magic = CF_CTX_MAGIC;
 
@@ -597,11 +603,10 @@ CF_STATUS CF_KDFOpts_Reset(CF_KDF_OPTS *opts) {
         return CF_ERR_NULL_PTR;
 
     opts->info       = NULL;
+    opts->S          = NULL;
     opts->info_len   = 0;
     opts->S_len      = 0;
     opts->iterations = 0;
-
-    SECURE_ZERO(opts->S, sizeof(opts->S));
 
     return CF_SUCCESS;
 }
@@ -632,16 +637,14 @@ CF_STATUS CF_KDFOpts_CloneCtx(CF_KDF_OPTS *dst, const CF_KDF_OPTS *src) {
     // Start with a clean slate
     CF_KDFOpts_Reset(dst);
 
-    // Shallow copy info (caller manages lifetime)
+    // Shallow copy (caller manages lifetime)
     dst->info      = src->info;
     dst->info_len  = src->info_len;
+    dst->S         = src->S;
+    dst->S_len     = src->S_len;
 
     // Copy iteration count (PBKDF2)
     dst->iterations = src->iterations;
-
-    // Deep copy customization string (KMAC-XOF)
-    dst->S_len = src->S_len;
-    SECURE_MEMCPY(dst->S, src->S, CF_MAX_CUSTOMIZATION);
 
     return CF_SUCCESS;
 }

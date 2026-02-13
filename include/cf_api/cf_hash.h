@@ -55,9 +55,9 @@ typedef struct _CF_HASH_OPTS {
     uint32_t magic; // CF_CTX_MAGIC
 
     // Fixed-size customization strings
-    uint8_t N[CF_MAX_CUSTOMIZATION];
+    const uint8_t *N;
     size_t N_len;
-    uint8_t S[CF_MAX_CUSTOMIZATION];
+    const  uint8_t *S;
     size_t S_len;
 
     // Bookkeeping
@@ -128,7 +128,7 @@ CF_API CF_HASH_CTX *CF_Hash_CloneCtxAlloc(const CF_HASH_CTX *src, CF_STATUS *sta
 CF_API size_t CF_Hash_GetDigestSize(const CF_HASH_CTX *ctx);  // fixed-output hashes
 CF_API size_t CF_Hash_GetBlockSize(const CF_HASH_CTX *ctx);
 CF_API const char* CF_Hash_GetName(const CF_MD *md);
-CF_STATUS CF_Hash_IsValid(const CF_HASH_CTX *ctx);
+CF_STATUS CF_Hash_ValidateCtx(const CF_HASH_CTX *ctx);
 
 //
 // options initialization / cleanup

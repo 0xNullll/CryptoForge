@@ -450,7 +450,7 @@ size_t CF_Enc_RequiredDecLen(uint32_t dec_flags, size_t input_len) {
     return 0;
 }
 
-CF_STATUS CF_Enc_IsValid(const CF_ENCODER_CTX *ctx) {
+CF_STATUS CF_Enc_ValidateCtx(const CF_ENCODER_CTX *ctx) {
     if (!ctx)
         return CF_ERR_NULL_PTR;
 

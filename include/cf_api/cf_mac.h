@@ -58,12 +58,12 @@ typedef struct _CF_MAC {
 // Optional MAC parameters
 // ============================
 typedef struct _CF_MAC_OPTS {
-    uint32_t magic;                       //  CF_CTX_MAGIC
+    uint32_t magic;             //  CF_CTX_MAGIC
 
-    uint8_t iv[AES_BLOCK_SIZE];           // optional IV for GMAC
+    uint8_t iv[AES_BLOCK_SIZE]; // optional IV for GMAC
     size_t iv_len;
 
-    uint8_t S[CF_MAX_CUSTOMIZATION]; // optional customization for KMAC
+    const uint8_t *S;           // optional customization for KMAC
     size_t S_len;
 
     int isHeapAlloc;
@@ -131,7 +131,7 @@ CF_API CF_STATUS CF_MAC_Compute(const CF_MAC *mac,
 
 CF_API const char* CF_MAC_GetName(const CF_MAC *ctx);
 CF_API const char* CF_MAC_GetFullName(const CF_MAC_CTX *ctx);
-CF_API CF_STATUS CF_MAC_IsValid(const CF_MAC_CTX *ctx);
+CF_API CF_STATUS CF_MAC_ValidateCtx(const CF_MAC_CTX *ctx);
 
 // ============================
 // Cloning
