@@ -64,6 +64,8 @@ static bool base85_decode_wrapper(const char *data, size_t data_len, uint8_t *ou
     return ll_BASE85_Decode(data, data_len, out, out_len, mode);
 }
 
+// --- CF_ENCODER Return Functions ---
+
 static const CF_ENCODER *CF_get_base16(void) {
     static CF_ENCODER enc = {
         .enc_mask = CF_BASE16_UPPER | CF_BASE16_LOWER,

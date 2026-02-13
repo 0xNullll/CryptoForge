@@ -61,7 +61,7 @@ void test_all_hashes(const uint8_t *input, size_t input_len, const CF_HASH_OPTS 
         size_t out_len = md->digest_size != 0 ? md->digest_size : md->default_out_len;
 
         // Finalize hash
-        if (!md->hash_final_fn(ctx, digest, out_len)) {
+        if (!md->hash_final_fn(ctx, digest)) {
             printf("%s final failed\n", CF_Hash_GetName(md));
             free(ctx);
             continue;
