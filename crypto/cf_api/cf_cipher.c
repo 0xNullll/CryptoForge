@@ -345,3 +345,313 @@ const CF_CIPHER *CF_Cipher_GetByFlag(uint32_t algo_flag) {
     }
     return NULL;
 }
+
+CF_STATUS CF_Cipher_Init(
+    CF_CIPHER_CTX *ctx, const CF_CIPHER *cipher, CF_CIPHER_OPTS *opts,
+    const uint8_t *key, size_t key_len, CF_CIPHER_OPERATION op) {
+    if (!ctx || !cipher || !key)
+        return CF_ERR_NULL_PTR;
+
+    if (!CF_IS_CIPHER(cipher->id))
+        return CF_ERR_UNSUPPORTED;
+
+    if (opts && opts->magic != CF_CTX_MAGIC)
+        return CF_ERR_CTX_CORRUPT;
+
+    if (ctx->isHeapAlloc != 0 && ctx->isHeapAlloc != 1)
+        return CF_ERR_CTX_UNINITIALIZED;
+
+    if (op != CF_CIPHER_OP_ENCRYPT && op != CF_CIPHER_OP_DECRYPT)
+        return CF_ERR_INVALID_PARAM;
+
+    // Fresh cleanup
+    CF_Cipher_Reset(ctx);
+
+    ctx->cipher    = cipher;
+    ctx->opts      = opts;
+    ctx->key       = key;
+    ctx->key_len   = key_len;
+    ctx->operation = op;
+
+    if (CF_IS_AES(ctx->cipher->id)) {
+        if (!CF_IS_AES_KEY_VALID(key_len))
+            return CF_ERR_CIPHER_INVALID_KEY_LEN;
+
+        ctx->key_ctx = (void *)SECURE_ALLOC(ctx->cipher->key_ctx_size);
+        if (!ctx->key_ctx)
+            return CF_ERR_ALLOC_FAILED;
+
+        if (!ll_AES_SetEncryptKey((ll_AES_KEY *)ctx->key_ctx, key, ctx->key_len)) {
+            CF_Cipher_Reset(ctx);
+            return CF_ERR_CIPHER_KEY_SETUP;
+        }
+    } else if (CF_IS_CHACHA(ctx->cipher->id)) {
+        if (!CF_IS_CHACHA_KEY_VALID(key_len))
+            return CF_ERR_CIPHER_INVALID_KEY_LEN;
+
+        // Reject invalid cipher context size
+        if (ctx->cipher->ctx_size == 0) 
+            return CF_ERR_CTX_CORRUPT;
+
+        ctx->cipher_ctx = (void *)SECURE_ALLOC(ctx->cipher->ctx_size);
+        if (!ctx->cipher_ctx)
+            return CF_ERR_ALLOC_FAILED;
+
+        // Initialize context
+        CF_STATUS st = ctx->cipher->cipher_init_fn(ctx, ctx->opts);
+        if (st != CF_SUCCESS) {
+            CF_Cipher_Reset(ctx);
+            return st;
+        }
+
+    } else {
+        return CF_ERR_UNSUPPORTED;
+    }
+
+    // Bind a per-context "magic" value for integrity checking
+    // Detects accidental misuse or corruption of the context
+    ctx->magic = CF_CTX_MAGIC ^ (uintptr_t)ctx->cipher;
+
+    return CF_SUCCESS;
+}
+
+CF_CIPHER_CTX* CF_Cipher_InitAlloc(
+    const CF_CIPHER *cipher, CF_CIPHER_OPTS *opts,
+    const uint8_t *key, size_t key_len, 
+    CF_CIPHER_OPERATION op, CF_STATUS *status) {
+    if (!cipher) {
+        if (status) *status = CF_ERR_NULL_PTR;
+        return NULL;
+    }
+
+    if (op != CF_CIPHER_OP_ENCRYPT && op != CF_CIPHER_OP_DECRYPT) {
+        if (status) *status = CF_ERR_INVALID_PARAM;
+        return NULL;
+    }
+
+    // Allocate memory for a new cipher context on the heap
+    CF_CIPHER_CTX *ctx = (CF_CIPHER_CTX *)SECURE_ALLOC(sizeof(CF_CIPHER_CTX));
+    if (!ctx) {
+        if (status) *status = CF_ERR_ALLOC_FAILED;
+        return NULL;
+    }
+
+    // Initialize the newly allocated cipher context
+    CF_STATUS st = CF_Cipher_Init(ctx, cipher, opts, key, key_len, op);
+    if (st != CF_SUCCESS) {
+        // Clean up on failure
+        SECURE_FREE(ctx, sizeof(CF_CIPHER_CTX));
+        if (status) *status = st;
+        return NULL;
+    }
+
+    // Mark context as heap-allocated for proper cleanup later
+    ctx->isHeapAlloc = 1;
+    
+    if (status) *status = CF_SUCCESS;
+    return ctx;
+}
+
+CF_STATUS CF_Cipher_Process(CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out) {
+    if (!ctx || !out)
+        return CF_ERR_NULL_PTR;
+
+    // Ensure the cipher or key context and descriptor are initialized
+    if (!ctx->cipher || (!ctx->cipher_ctx && !ctx->key_ctx))
+        return CF_ERR_CTX_UNINITIALIZED;
+
+    // Verify integrity of the context using the bound "magic" value
+    // Detects accidental corruption or misuse of the context
+    if ((ctx->magic ^ (uintptr_t)ctx->cipher) != CF_CTX_MAGIC)
+        return CF_ERR_CTX_CORRUPT;
+
+    /*
+     * NOTE: PADDING IS NOT HANDLED YET, AWAITING FOR PADDING MODULE TO BE IMPLEMENTED FIRST.
+     */
+
+    if (ctx->operation == CF_CIPHER_OP_ENCRYPT) {
+        if (!ctx->cipher->cipher_enc_fn(ctx, in, in_len, out, (const CF_CIPHER_OPTS *)ctx->opts))
+            return CF_ERR_CIPHER_ENCRYPT;
+    } else if (ctx->operation == CF_CIPHER_OP_DECRYPT) {
+        if (!ctx->cipher->cipher_dec_fn(ctx, in, in_len, out, (const CF_CIPHER_OPTS *)ctx->opts))
+            return CF_ERR_CIPHER_DECRYPT;
+    } else {
+        return CF_ERR_CTX_CORRUPT;
+    }
+
+    return CF_SUCCESS;
+}
+
+CF_STATUS CF_Cipher_Reset(CF_CIPHER_CTX *ctx) {
+    if (!ctx)
+        return CF_ERR_NULL_PTR;
+
+    if (!ctx->cipher)
+        return CF_ERR_CTX_UNINITIALIZED;
+
+    if (ctx->cipher_ctx) {
+        if (ctx->cipher->ctx_size == 0)
+            return CF_ERR_CTX_CORRUPT;
+        SECURE_FREE(ctx->cipher_ctx, ctx->cipher->ctx_size);
+    }
+
+    if (ctx->key_ctx) {
+        if (ctx->cipher->key_ctx_size == 0)
+            return CF_ERR_CTX_CORRUPT;
+        SECURE_FREE(ctx->key_ctx, ctx->cipher->key_ctx_size);
+    }
+
+    ctx->cipher    = NULL;
+    ctx->opts      = NULL;
+    ctx->key       = NULL;
+    ctx->key_len   = 0;
+    ctx->operation = 0;
+    ctx->magic     = 0;
+
+    return CF_SUCCESS;
+}
+
+CF_STATUS CF_Cipher_Free(CF_CIPHER_CTX **p_ctx) {
+    if (!p_ctx || !*p_ctx)
+        return CF_ERR_NULL_PTR;
+
+    CF_CIPHER_CTX *ctx = *p_ctx;
+
+    CF_Cipher_Reset(ctx);
+
+    if (ctx->isHeapAlloc) {
+        SECURE_ZERO(ctx, sizeof(CF_CIPHER_CTX));
+        *p_ctx = NULL;
+    }
+
+    return CF_SUCCESS; 
+}
+
+FORCE_INLINE CF_STATUS CF_Cipher_EncDec(
+    const CF_CIPHER *cipher,
+    const uint8_t *key, size_t key_len,
+    const uint8_t *in, size_t in_len, uint8_t *out,
+    CF_CIPHER_OPTS *opts, CF_CIPHER_OPERATION op) {
+    if (!cipher || !key || !out)
+        return CF_ERR_NULL_PTR;
+
+    CF_CIPHER_CTX ctx = {0};
+    CF_STATUS st = CF_SUCCESS;
+
+    st = CF_Cipher_Init(&ctx, cipher, opts, key, key_len, op);
+    if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.cipher) != CF_CTX_MAGIC)
+        goto cleanup;
+
+    st = CF_Cipher_Process(&ctx, in, in_len, out);
+
+cleanup:
+    CF_Cipher_Reset(&ctx);
+    return st;
+}
+
+CF_STATUS CF_Cipher_Encrypt(
+    const CF_CIPHER *cipher,
+    const uint8_t *key, size_t key_len,
+    const uint8_t *in, size_t in_len, uint8_t *out,
+    CF_CIPHER_OPTS *opts) {
+    return CF_Cipher_EncDec(cipher, key, key_len, in, in_len, out, opts, CF_CIPHER_OP_ENCRYPT);
+}
+
+CF_STATUS CF_Cipher_Decrypt(
+    const CF_CIPHER *cipher,
+    const uint8_t *key, size_t key_len,
+    const uint8_t *in, size_t in_len, uint8_t *out,
+    CF_CIPHER_OPTS *opts) {
+    return CF_Cipher_EncDec(cipher, key, key_len, in, in_len, out, opts, CF_CIPHER_OP_DECRYPT);
+}
+
+CF_STATUS CF_Cipher_CloneCtx(CF_CIPHER_CTX *dst, const CF_CIPHER_CTX *src) {
+    if (!dst || !src)
+        return CF_ERR_NULL_PTR;
+
+    // Ensure the cipher descriptor exists
+    if (!src->cipher)
+        return CF_ERR_CTX_UNINITIALIZED;
+
+    // Verify integrity of the context using the bound "magic" value
+    // Detects accidental corruption or misuse of the context
+    if ((src->magic ^ (uintptr_t)src->cipher) != CF_CTX_MAGIC)
+        return CF_ERR_CTX_CORRUPT;
+
+    // Reset the cipher context to a clean state
+    CF_Cipher_Reset(dst);
+
+    // Copy metadata (shallow)
+    dst->magic     = src->magic;
+    dst->cipher    = src->cipher;
+    dst->opts      = src->opts;
+    dst->key       = src->key;
+    dst->key_len   = src->key_len;
+    dst->operation = src->operation;
+
+    CF_STATUS st = CF_SUCCESS;
+
+    // Deep copy low-level key context
+    if (src->key_ctx) {
+        if (src->cipher->key_ctx_size == 0)
+            return CF_ERR_CTX_CORRUPT;
+
+        dst->key_ctx = SECURE_ALLOC(src->cipher->key_ctx_size);
+        if (!dst->key_ctx) {
+            st = CF_ERR_ALLOC_FAILED;
+            goto cleanup;
+        }
+
+        SECURE_MEMCPY(dst->key_ctx, src->key_ctx, src->cipher->key_ctx_size);
+    }
+
+    // Deep copy low-level cipher context
+    if (src->cipher_ctx) {
+        dst->cipher_ctx = SECURE_ALLOC(src->cipher->ctx_size);
+        if (!dst->cipher_ctx) {
+            st = CF_ERR_ALLOC_FAILED;
+            goto cleanup;
+        }
+
+        SECURE_MEMCPY(dst->cipher_ctx, src->cipher_ctx, src->cipher->ctx_size);
+    }
+
+    return st;
+
+cleanup:
+    // Cleanup partially allocated memory
+    if (dst->key_ctx && src->cipher->key_ctx_size)
+        SECURE_FREE(dst->key_ctx, src->cipher->key_ctx_size);
+
+    if (dst->cipher_ctx && src->cipher->ctx_size)
+        SECURE_FREE(dst->cipher_ctx, src->cipher->ctx_size);
+
+    return st;
+}
+
+CF_CIPHER_CTX* CF_Cipher_CloneCtxAlloc(const CF_CIPHER_CTX *src, CF_STATUS *status) {
+    if (!src) {
+        if (status) *status = CF_ERR_NULL_PTR;
+        return NULL;
+    }
+
+    CF_CIPHER_CTX *dst = (CF_CIPHER_CTX *)SECURE_ALLOC(sizeof(CF_CIPHER_CTX));
+    if (!dst) {
+        if (status) *status = CF_ERR_ALLOC_FAILED;
+        return NULL;
+    }
+
+    // Deep copy contents
+    CF_STATUS ret = CF_Cipher_CloneCtx(dst, src);
+    if (ret != CF_SUCCESS) {
+        if (status) *status = ret;
+        CF_Cipher_Free(&dst);
+        return NULL;
+    }
+
+    // cloned context is heap-allocated
+    dst->isHeapAlloc = 1;
+
+    if (status) *status = CF_SUCCESS;
+    return dst;
+}

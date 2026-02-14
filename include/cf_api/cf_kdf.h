@@ -100,8 +100,8 @@ CF_API const CF_KDF *CF_KDF_GetByFlag(uint32_t kdf_flag);
 CF_API CF_STATUS CF_KDF_Init(
     CF_KDF_CTX *ctx,
     const CF_KDF *kdf,
-    const uint8_t *ikm, size_t ikm_len,
     const CF_KDF_OPTS *opts,
+    const uint8_t *ikm, size_t ikm_len,
     uint32_t subflags
 );
 
