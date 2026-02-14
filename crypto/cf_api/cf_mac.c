@@ -71,7 +71,7 @@ static CF_STATUS kmac_clone_ctx_wrapper(CF_MAC_CTX *dest_ctx, const CF_MAC_CTX *
 // CMAC
 static CF_STATUS cmac_init_wrapper(CF_MAC_CTX *ctx, const CF_MAC_OPTS *opts) {
     UNUSED(opts);
-    return ll_CMAC_Init((ll_CMAC_CTX *)ctx->mac_ctx, (const ll_AES_KEY *)ctx->cipher_key);
+    return ll_CMAC_Init((ll_CMAC_CTX *)ctx->mac_ctx, (const ll_AES_KEY *)ctx->key_ctx);
 }
 static CF_STATUS cmac_update_wrapper(CF_MAC_CTX *ctx, const uint8_t *data, size_t data_len) {
     return ll_CMAC_Update((ll_CMAC_CTX *)ctx->mac_ctx, data, data_len);
@@ -87,7 +87,7 @@ static CF_STATUS cmac_verify_wrapper(CF_MAC_CTX *ctx,
                                      const uint8_t *expected_tag, size_t expected_tag_len,
                                      const struct _CF_MAC_OPTS *opts) {
     UNUSED(opts);
-    return ll_CMAC_Verify((const ll_AES_KEY *)ctx->cipher_key, data, data_len,
+    return ll_CMAC_Verify((const ll_AES_KEY *)ctx->key_ctx, data, data_len,
                           expected_tag, expected_tag_len);
 }
 static CF_STATUS cmac_clone_ctx_wrapper(CF_MAC_CTX *dest_ctx, const CF_MAC_CTX *src_ctx) {
@@ -96,7 +96,7 @@ static CF_STATUS cmac_clone_ctx_wrapper(CF_MAC_CTX *dest_ctx, const CF_MAC_CTX *
 
 // GMAC
 static CF_STATUS gmac_init_wrapper(CF_MAC_CTX *ctx, const CF_MAC_OPTS *opts) {
-    return ll_GMAC_Init((ll_GMAC_CTX *)ctx->mac_ctx, (const ll_AES_KEY *)ctx->cipher_key, opts->iv, opts->iv_len);
+    return ll_GMAC_Init((ll_GMAC_CTX *)ctx->mac_ctx, (const ll_AES_KEY *)ctx->key_ctx, opts->iv, opts->iv_len);
 }
 static CF_STATUS gmac_update_wrapper(CF_MAC_CTX *ctx, const uint8_t *data, size_t data_len) {
     return ll_GMAC_Update((ll_GMAC_CTX *)ctx->mac_ctx, data, data_len);
@@ -111,7 +111,7 @@ static CF_STATUS gmac_verify_wrapper(CF_MAC_CTX *ctx,
                                      const uint8_t *data, size_t data_len,
                                      const uint8_t *expected_tag, size_t expected_tag_len,
                                      const struct _CF_MAC_OPTS *opts) {
-    return ll_GMAC_Verify((const ll_AES_KEY *)ctx->cipher_key, opts->iv, opts->iv_len,
+    return ll_GMAC_Verify((const ll_AES_KEY *)ctx->key_ctx, opts->iv, opts->iv_len,
                            data, data_len, expected_tag, expected_tag_len);
 }
 static CF_STATUS gmac_clone_ctx_wrapper(CF_MAC_CTX *dest_ctx, const CF_MAC_CTX *src_ctx) {
@@ -269,144 +269,171 @@ CF_STATUS CF_MAC_Init(CF_MAC_CTX *ctx, const CF_MAC *mac, const CF_MAC_OPTS *opt
     if (!ctx || !mac || !key)
         return CF_ERR_NULL_PTR;
 
+    // Ensure the provided MAC ID is valid
+    if (!CF_IS_MAC(mac->id))
+        return CF_ERR_UNSUPPORTED;
+
+    // Validate optional context flags if provided
     if (opts && opts->magic != CF_CTX_MAGIC)
         return CF_ERR_CTX_CORRUPT;
 
+    // Ensure ctx->isHeapAlloc has a valid state (0 or 1)
     if (ctx->isHeapAlloc != 0 && ctx->isHeapAlloc != 1)
         return CF_ERR_CTX_UNINITIALIZED;
 
-    // Fresh cleanup
+    // Reset context to a clean state before initialization
     CF_MAC_Reset(ctx);
 
+    // Store core parameters in context
     ctx->mac      = mac;
     ctx->opts     = opts;
     ctx->key      = key;
     ctx->key_len  = key_len;
     ctx->subflags = subflags;
 
+    // HMAC initialization
     if (CF_MAC_IS_HMAC(ctx->mac->id)) {
-        // HMAC: requires a hash subflag, cannot have KMAC bits
+        // HMAC must have a hash subflag and cannot have KMAC flags
         if ((subflags & CF_MAC_KMAC_MASK) != 0)
             return CF_ERR_INVALID_PARAM;
 
+        // Require a hash flag to be specified
         if ((subflags & CF_HASH_MASK) == 0)
-            return CF_ERR_INVALID_PARAM; // must specify hash
+            return CF_ERR_INVALID_PARAM;
 
+        // Extended output functions (XOF) are not supported for HMAC
         if (CF_IS_XOF(subflags))
             return CF_ERR_UNSUPPORTED;
 
+        // Retrieve hash function by subflag
         ctx->md = CF_MD_GetByFlag(subflags);
         if (!ctx->md)
             return CF_ERR_UNSUPPORTED;
 
+        // Set the default tag length from the hash output length
         ctx->tag_len = ctx->md->default_out_len;
 
     } else if (CF_MAC_IS_KMAC_STD(ctx->mac->id)) {
-        // KMAC: must have KMAC type, cannot have hash flags
+        // KMAC initialization
+        // Must specify a KMAC type, cannot have standard hash flags
         if ((subflags & CF_MAC_KMAC_MASK) == 0)
             return CF_ERR_INVALID_PARAM;
-
         if ((subflags & CF_HASH_MASK) != 0)
             return CF_ERR_INVALID_PARAM;
 
     } else if (CF_MAC_IS_CMAC(ctx->mac->id) || CF_MAC_IS_GMAC(ctx->mac->id)) {
-        // AES MACs: CMAC / GMAC
+        // AES-based MACs (CMAC / GMAC)
+        // Validate AES key length
         if (!CF_IS_AES_KEY_VALID(key_len))
             return CF_ERR_CIPHER_INVALID_KEY_LEN;
 
-        ctx->cipher_key_len = key_len;
+        // Set default MAC tag length
         ctx->tag_len = ctx->mac->default_tag_len;
 
-        ctx->cipher_key = (void *)SECURE_ALLOC(ctx->mac->key_ctx_size);
-        if (!ctx->cipher_key)
+        // Allocate memory for AES key context
+        ctx->key_ctx = (void *)SECURE_ALLOC(ctx->mac->key_ctx_size);
+        if (!ctx->key_ctx)
             return CF_ERR_ALLOC_FAILED;
 
-        if (!ll_AES_SetEncryptKey((ll_AES_KEY *)ctx->cipher_key, key, ctx->cipher_key_len)) {
-            SECURE_FREE(ctx->cipher_key, ctx->mac->key_ctx_size);
+        // Set AES encryption key; cleanup on failure
+        if (!ll_AES_SetEncryptKey((ll_AES_KEY *)ctx->key_ctx, key, ctx->key_len)) {
+            // Reset context on key expansion failure
+            CF_MAC_Reset(ctx);
             return CF_ERR_CIPHER_KEY_SETUP;
         }
 
     } else if (CF_MAC_IS_POLY1305(ctx->mac->id)) {
+        // Poly1305 MAC initialization
+        // Key must be exactly 32 bytes
         if (key_len != LL_POLY1305_KEY_LEN)
             return CF_ERR_MAC_INVALID_KEY_LEN;
 
+        // Set default tag length
         ctx->tag_len = ctx->mac->default_tag_len;
 
     } else {
-        return CF_ERR_INVALID_PARAM;
+        // Unsupported MAC type
+        return CF_ERR_UNSUPPORTED;
     }
 
-    // Reject invalid MAC context size
+    // Reject contexts with invalid size
     if (ctx->mac->ctx_size == 0) 
         return CF_ERR_CTX_CORRUPT;
 
+    // Allocate memory for MAC context
     ctx->mac_ctx = (void *)SECURE_ALLOC(ctx->mac->ctx_size);
     if (!ctx->mac_ctx) {
-        if (ctx->cipher_key)
-            SECURE_FREE(ctx->cipher_key, ctx->mac->key_ctx_size);
+        // Reset context on allocation failure
+        CF_MAC_Reset(ctx);
         return CF_ERR_ALLOC_FAILED;
     }
 
-    // Initialize context
+    // Call the MAC-specific initialization function
     CF_STATUS st = ctx->mac->mac_init_fn(ctx, ctx->opts);
     if (st != CF_SUCCESS) {
-        if (ctx->mac_ctx)
-            SECURE_FREE(ctx->mac_ctx, ctx->mac->ctx_size);
-        if (ctx->cipher_key)
-            SECURE_FREE(ctx->cipher_key, ctx->mac->key_ctx_size);
+        // Reset context on init failure
+        CF_MAC_Reset(ctx);
         return st;
     }
 
-    // Integrity check: bind the MAC pointer to a per-context "magic" value
-    // to detect accidental corruption or misuse of the context.
-    // Note: this does NOT prevent a determined attacker from tampering with memory.
+    // Bind a per-context "magic" value for integrity checking
+    // Detects accidental misuse or corruption of the context
     ctx->magic = CF_CTX_MAGIC ^ (uintptr_t)ctx->mac;
 
     return CF_SUCCESS;
 }
 
-CF_MAC_CTX* CF_MAC_InitAlloc(const CF_MAC *mac, const CF_MAC_OPTS *opts,
-                             const uint8_t *key, size_t key_len, uint32_t subflags,
-                             CF_STATUS *status) {
+CF_MAC_CTX* CF_MAC_InitAlloc(
+    const CF_MAC *mac, const CF_MAC_OPTS *opts,
+    const uint8_t *key, size_t key_len, uint32_t subflags,
+    CF_STATUS *status) {
     if (!mac || !key) {
         if (status) *status = CF_ERR_NULL_PTR;
         return NULL;
     }
 
+    // Allocate memory for a new MAC context on the heap
     CF_MAC_CTX *ctx = (CF_MAC_CTX *)SECURE_ALLOC(sizeof(CF_MAC_CTX));
     if (!ctx) {
         if (status) *status = CF_ERR_ALLOC_FAILED;
         return NULL;
     }
 
+    // Initialize the newly allocated MAC context
     CF_STATUS st = CF_MAC_Init(ctx, mac, opts, key, key_len, subflags);
     if (st != CF_SUCCESS) {
-        SECURE_FREE(ctx, sizeof(CF_MAC_CTX));
         if (status) *status = st;
+        // Clean up on failure
+        CF_MAC_Free(&ctx);
         return NULL;
     }
 
-    // context is heap-allocated
+    // Mark context as heap-allocated for later safe cleanup
     ctx->isHeapAlloc = 1;
     
     if (status) *status = CF_SUCCESS;
     return ctx;
 }
 
+
 CF_STATUS CF_MAC_Update(CF_MAC_CTX *ctx, const uint8_t *data, size_t data_len) {
     if (!ctx)
         return CF_ERR_NULL_PTR;
 
+    // Ensure the MAC context has been initialized
     if (!ctx->mac_ctx)
         return CF_ERR_CTX_UNINITIALIZED;
 
-    // Verify that the MAC pointer hasn’t been tampered with by checking it against the bound magic value.
+    // Verify context integrity using the bound "magic" value
+    // Detects accidental corruption or misuse of the context
     if ((ctx->magic ^ (uintptr_t)ctx->mac) != CF_CTX_MAGIC)
         return CF_ERR_CTX_CORRUPT;
 
+    // Prevent updates after finalization
     if (ctx->isFinalized)
         return CF_ERR_MAC_FINALIZED;
 
+    // Call the low-level MAC update function
     return ctx->mac->mac_update_fn(ctx, data, data_len);
 }
 
@@ -414,87 +441,108 @@ CF_STATUS CF_MAC_Final(CF_MAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
     if (!ctx || !tag)
         return CF_ERR_NULL_PTR;
 
-    if ((!ctx->md && CF_MAC_IS_HMAC(ctx->mac->id)) || !ctx->mac_ctx)
+    // Ensure the MAC context and descriptor are initialized
+    if (!ctx->mac || !ctx->mac_ctx)
         return CF_ERR_CTX_UNINITIALIZED;
 
-    // Verify that the MAC pointer hasn’t been tampered with by checking it against the bound magic value.
+    // Verify integrity of the context using the bound "magic" value
+    // Detects accidental corruption or misuse of the context
     if ((ctx->magic ^ (uintptr_t)ctx->mac) != CF_CTX_MAGIC)
         return CF_ERR_CTX_CORRUPT;
 
+    // Ensure the MAC context is properly initialized
+    // For HMAC, md must be set; mac_ctx must exist for all MACs
+    if ((!ctx->md && CF_MAC_IS_HMAC(ctx->mac->id)) || !ctx->mac_ctx)
+        return CF_ERR_CTX_UNINITIALIZED;
+
+    // Validate requested tag length
     if (tag_len == 0)
         return CF_ERR_INVALID_LEN;
 
+    // Handle previously finalized contexts
     if (ctx->isFinalized) {
+        // Only KMAC can be re-finalized with a different tag length
         if (!CF_MAC_IS_KMAC_STD(ctx->mac->id))
             return CF_ERR_HASH_FINALIZED;
         
-        ctx->tag_len = tag_len;
+        ctx->tag_len = tag_len; // Update tag length for KMAC
     }
-    
+
+    // Validate tag length based on MAC type
     if (CF_MAC_IS_HMAC(ctx->mac->id)) {
         if (ctx->md->default_out_len == 0)
             return CF_ERR_MAC_BAD_TAG_LEN;
-    }
 
-    else if (CF_MAC_IS_CMAC(ctx->mac->id)) {
+    } else if (CF_MAC_IS_CMAC(ctx->mac->id)) {
+        // CMAC requires tag length between 4 and AES block size
         if (tag_len < 4 || tag_len > AES_BLOCK_SIZE)
+            return CF_ERR_MAC_BAD_TAG_LEN;
+
+    } else if (CF_MAC_IS_GMAC(ctx->mac->id)) {
+        // GMAC tag length must be valid for GCM
+        if (!IS_VALID_GCM_TAG_SIZE(tag_len))
+            return CF_ERR_MAC_BAD_TAG_LEN;
+
+    } else if (CF_MAC_IS_POLY1305(ctx->mac->id)) {
+        // Poly1305 always uses a fixed 16-byte tag
+        if (tag_len != LL_POLY1305_TAG_LEN)
             return CF_ERR_MAC_BAD_TAG_LEN;
     }
 
-    else if (CF_MAC_IS_GMAC(ctx->mac->id)) {
-        if (!IS_VALID_GCM_TAG_SIZE(tag_len))
-                return CF_ERR_MAC_BAD_TAG_LEN;
-    }
-
-    else if (CF_MAC_IS_POLY1305(ctx->mac->id)) {
-        if (tag_len != LL_POLY1305_TAG_LEN)
-                return CF_ERR_MAC_BAD_TAG_LEN;
-    }
-
-    CF_STATUS st = CF_SUCCESS;
+    // Determine output length: prefer ctx->tag_len if set, otherwise user-specified
     size_t out_len = ctx->tag_len != 0 ? ctx->tag_len : tag_len;
-    st = ctx->mac->mac_final_fn(ctx, tag, out_len);
+
+    // Call the MAC-specific finalization function to compute the tag
+    CF_STATUS st = ctx->mac->mac_final_fn(ctx, tag, out_len);
     if (st != CF_SUCCESS)
         return st;
 
+    // Mark context as finalized to prevent accidental reuse
     ctx->isFinalized = 1;
 
     return CF_SUCCESS;
 }
 
+
 CF_STATUS CF_MAC_Reset(CF_MAC_CTX *ctx) {
     if (!ctx)
         return CF_ERR_NULL_PTR;
 
+    // Ensure the MAC descriptor exists
     if (!ctx->mac)
         return CF_ERR_CTX_UNINITIALIZED;
 
+    // Ensure the MAC type is valid
     if (!CF_IS_MAC(ctx->mac->id))
         return CF_ERR_UNSUPPORTED;
 
     CF_STATUS st = CF_SUCCESS;
 
-    if (ctx->cipher_key) {
+    // Free the key context if it exists
+    if (ctx->key_ctx) {
         if (ctx->mac->key_ctx_size == 0)
             return CF_ERR_CTX_CORRUPT;
-        SECURE_FREE(ctx->cipher_key, ctx->mac->key_ctx_size);
+        SECURE_FREE(ctx->key_ctx, ctx->mac->key_ctx_size);
     }
 
+    // Free the MAC-specific context if it exists
     if (ctx->mac_ctx) {
-        st = ctx->mac->mac_reset_fn(ctx);  // pass full context
+        // Call the MAC-specific reset function to clear internal state
+        st = ctx->mac->mac_reset_fn(ctx);
         if (st != CF_SUCCESS)
             return st;
         SECURE_FREE(ctx->mac_ctx, ctx->mac->ctx_size);
     }
 
+    // Clear all context fields to prevent accidental reuse or leakage
     ctx->md = NULL;
     ctx->mac = NULL;
-    ctx->cipher_key_len = 0;
     ctx->key = NULL;
     ctx->key_len = 0;
     ctx->tag_len = 0;
     ctx->subflags = 0;
     ctx->isFinalized = 0;
+    ctx->magic = 0;
 
     return st;
 }
@@ -525,14 +573,16 @@ CF_STATUS CF_MAC_Verify(const CF_MAC *mac,
     CF_STATUS st = CF_SUCCESS;
     CF_MAC_CTX ctx = {0};
 
-    // Initialize context using standard MAC init
+    // Initialize the MAC context
     st = CF_MAC_Init(&ctx, mac, opts, key, key_len, subflags);
+    // Check initialization success and context integrity
     if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.mac) != CF_CTX_MAGIC)
         return st;
 
+    // Call the MAC-specific verify function
     st = mac->mac_verify_fn(&ctx, data, data_len, expected_mac, expected_mac_len, opts);
 
-    // Always securely clear context
+    // Always securely clear the context to prevent sensitive data leakage
     CF_MAC_Reset(&ctx);
 
     return st;
@@ -669,23 +719,32 @@ CF_STATUS CF_MAC_CloneCtx(CF_MAC_CTX *dst, const CF_MAC_CTX *src) {
 
     CF_STATUS st = CF_SUCCESS;
 
-    // Deep copy cipher_key if it exists
-    if (src->cipher_key && src->cipher_key_len > 0) {
-        dst->cipher_key = SECURE_ALLOC(src->mac->key_ctx_size);
-        if (!dst->cipher_key) {
+    // Deep copy key_ctx if it exists
+    if (src->key_ctx) {
+        if (src->mac->key_ctx_size == 0)
+            return CF_ERR_CTX_CORRUPT;
+
+        dst->key_ctx = SECURE_ALLOC(src->mac->key_ctx_size);
+        if (!dst->key_ctx) {
             st = CF_ERR_ALLOC_FAILED;
             goto cleanup;
         }
-        SECURE_MEMCPY(dst->cipher_key, src->cipher_key, src->mac->key_ctx_size);
-        dst->cipher_key_len = src->cipher_key_len;
+        SECURE_MEMCPY(dst->key_ctx, src->key_ctx, src->mac->key_ctx_size);
     }
 
     // Deep copy low-level MAC context
     if (src->mac_ctx) {
+        if (src->mac->ctx_size == 0) {
+            st = CF_ERR_CTX_CORRUPT;
+            goto cleanup;
+        }
+
         dst->mac_ctx = SECURE_ALLOC(src->mac->ctx_size);
-        if (!dst->mac_ctx)
-            goto cleanup;  // Allocation failed
-        
+        if (!dst->mac_ctx) {
+            st = CF_ERR_ALLOC_FAILED;
+            goto cleanup;
+        }
+
         st = src->mac->mac_clone_ctx_fn(dst, src);
         if (st != CF_SUCCESS)
             goto cleanup;
@@ -695,12 +754,10 @@ CF_STATUS CF_MAC_CloneCtx(CF_MAC_CTX *dst, const CF_MAC_CTX *src) {
 
 cleanup:
     // Cleanup any partially allocated memory
-    if (dst->cipher_key)
-        SECURE_FREE(dst->cipher_key, src->mac->key_ctx_size);
-    if (dst->mac_ctx)
+    if (dst->key_ctx && src->mac->key_ctx_size)
+        SECURE_FREE(dst->key_ctx, src->mac->key_ctx_size);
+    if (dst->mac_ctx && src->mac->ctx_size)
         SECURE_FREE(dst->mac_ctx, src->mac->ctx_size);
-
-    dst->cipher_key_len = 0;
 
     return st;
 }
@@ -717,16 +774,18 @@ CF_MAC_CTX *CF_MAC_CloneCtxAlloc(const CF_MAC_CTX *src, CF_STATUS *status) {
         return NULL;
     }
 
-    CF_STATUS st = CF_MAC_CloneCtx(dst, src);
-    if (status) *status = st;
-    
-    if (st != CF_SUCCESS) {
-        SECURE_FREE(dst, sizeof(*dst));
+    // Deep copy contents
+    CF_STATUS ret = CF_MAC_CloneCtx(dst, src);
+    if (ret != CF_SUCCESS) {
+        if (status) *status = ret;
+        CF_MAC_Free(&dst);
         return NULL;
     }
 
     // cloned context is heap-allocated
     dst->isHeapAlloc = 1;
+
+    if (status) *status = CF_SUCCESS;
     return dst;
 }
 
@@ -772,8 +831,9 @@ CF_MAC_OPTS* CF_MACOpts_InitAlloc(const uint8_t *iv, size_t iv_len,
 
     CF_STATUS st = CF_MACOpts_Init(opts, iv, iv_len, custom, custom_len);
     if (st != CF_SUCCESS) {
-        SECURE_FREE(opts, sizeof(CF_MAC_OPTS));
         if (status) *status = st;
+        // Clean up on failure
+        CF_MACOpts_Free(&opts);
         return NULL;
     }
 
@@ -846,16 +906,17 @@ CF_MAC_OPTS* CF_MACOpts_CloneCtxAlloc(const CF_MAC_OPTS *src, CF_STATUS *status)
         return NULL;
     }
 
-    CF_STATUS st = CF_MACOpts_CloneCtx(dst, src);
-    if (status) *status = st;
-    
-    if (st != CF_SUCCESS) {
-        SECURE_FREE(dst, sizeof(*dst));
+    // Deep copy contents
+    CF_STATUS ret = CF_MACOpts_CloneCtx(dst, src);
+    if (ret != CF_SUCCESS) {
+        if (status) *status = ret;
+        CF_MACOpts_Free(&dst);
         return NULL;
     }
 
     // cloned context is heap-allocated
     dst->isHeapAlloc = 1;
 
+    if (status) *status = CF_SUCCESS;
     return dst;
 }

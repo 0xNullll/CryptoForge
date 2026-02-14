@@ -79,8 +79,7 @@ typedef struct _CF_MAC_CTX {
     const CF_MD *md;              // mandetory for HMAC
     const CF_MAC_OPTS *opts;      // optional parameters
 
-    void *cipher_key;             // optional low-level key for CMAC/GMAC
-    size_t cipher_key_len;
+    void *key_ctx;                // optional low-level key for CMAC/GMAC
 
     void *mac_ctx;                // low-level MAC context (internal)
     const uint8_t *key;           // user-supplied key bits

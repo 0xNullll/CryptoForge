@@ -199,66 +199,80 @@ CF_STATUS CF_Enc_Init(CF_ENCODER_CTX *ctx, uint32_t enc_flags, uint32_t dec_flag
     if (!ctx)
         return CF_ERR_NULL_PTR;
     
+    // Ensure heap allocation flag is valid (0 or 1)
     if (ctx->isHeapAlloc != 0 && ctx->isHeapAlloc != 1)
         return CF_ERR_CTX_UNINITIALIZED;
 
+    // Reset the encoder context to a clean state
     CF_Enc_Reset(ctx);
 
+    // Validate encoder and decoder flags
     if (!CF_IS_ENC(enc_flags) || !CF_IS_DEC(dec_flags))
         return CF_ERR_INVALID_PARAM;
 
+    // Retrieve encoder descriptor by flags
     const CF_ENCODER *encoder = CF_Enc_GetByFlag(enc_flags);
     if (!encoder)
         return CF_ERR_INVALID_PARAM;
 
-    // Check that decoder is compatible with the same family
+    // Ensure decoder flags are compatible with the selected encoder
     if ((encoder->dec_mask & dec_flags) == 0)
         return CF_ERR_INVALID_PARAM;
 
-    ctx->encoder = encoder;
+    // Store encoder information and flags in context
+    ctx->encoder  = encoder;
     ctx->encFlags = enc_flags;
     ctx->decFlags = dec_flags;
 
-    // Integrity check: bind the encoder pointer to a per-context "magic" value
-    // to detect accidental corruption or misuse of the context.
-    // Note: this does NOT prevent a determined attacker from tampering with memory.
+    // Bind a per-context "magic" value for integrity checking
+    // Helps detect accidental misuse or memory corruption
     ctx->magic = CF_CTX_MAGIC ^ (uintptr_t)ctx->encoder;
 
     return CF_SUCCESS;
 }
 
 CF_ENCODER_CTX *CF_Enc_InitAlloc(uint32_t enc_flags, uint32_t dec_flags, CF_STATUS *status) {
+    // Validate encoder and decoder flags
     if (!CF_IS_ENC(enc_flags) || !CF_IS_DEC(dec_flags)) {
         if (status) *status = CF_ERR_INVALID_PARAM;
         return NULL;
     }
 
+    // Allocate memory for a new encoder context on the heap
     CF_ENCODER_CTX *ctx = (CF_ENCODER_CTX *)SECURE_ALLOC(sizeof(CF_ENCODER_CTX));
     if (!ctx) {
         if (status) *status = CF_ERR_ALLOC_FAILED;
         return NULL;
     }
 
+    // Initialize the encoder context
     CF_STATUS st = CF_Enc_Init(ctx, enc_flags, dec_flags);
     if (st != CF_SUCCESS) {
-        SECURE_FREE(ctx, sizeof(CF_ENCODER_CTX));
         if (status) *status = st;
+        // Clean up on failure
+        CF_Enc_Free(&ctx);
         return NULL;
     }
 
-    // context is heap-allocated
+    // Mark context as heap-allocated for proper cleanup
     ctx->isHeapAlloc = 1;
 
     if (status) *status = CF_SUCCESS;
     return ctx;
 }
 
+
 CF_STATUS CF_Enc_Reset(CF_ENCODER_CTX *ctx) {
+    // Validate input pointer
     if (!ctx) return CF_ERR_NULL_PTR;
 
+    // Clear encoder-specific fields
     ctx->encoder = NULL;
     ctx->encFlags = 0;
     ctx->decFlags = 0;
+
+    // Clear magic field to prevent accidental misuse
+    ctx->magic = 0;
 
     return CF_SUCCESS;
 }
@@ -279,129 +293,167 @@ CF_STATUS CF_Enc_Free(CF_ENCODER_CTX **p_ctx) {
 }
 
 CF_STATUS CF_Enc_Encode(CF_ENCODER_CTX *ctx, const uint8_t *src, size_t src_len,  char *dst, size_t *dst_len) {
-    if (!ctx || !ctx->encoder || !src || !dst || !dst_len)
+    if (!ctx || !src || !dst || !dst_len)
         return CF_ERR_NULL_PTR;
 
-    // Verify that the encoder pointer hasn’t been tampered with by checking it against the bound magic value.
+    // Ensure the encoder descriptor exists
+    if (!ctx->encoder)
+        return CF_ERR_CTX_UNINITIALIZED;
+
+    // Verify context integrity using the bound magic value
+    // Detects accidental corruption or misuse of the encoder context
     if ((ctx->magic ^ (uintptr_t)ctx->encoder) != CF_CTX_MAGIC)
         return CF_ERR_CTX_CORRUPT;
 
+    // Check that input length is non-zero
     if (src_len == 0)
         return CF_ERR_INVALID_LEN;
 
-    // Only enforce min_input if bypass flag is NOT set
+    // Enforce minimum input length if bypass flag is NOT set
+    // Ensures encoder requirements are met for block-based encoders
     if (!(ctx->encFlags & ctx->encoder->no_min_flags) &&
         ctx->encoder->min_input > 0 &&
         src_len % ctx->encoder->min_input != 0) {
         return CF_ERR_INVALID_LEN;
     }
 
-    if (!ctx->encoder->encode_fn(src, src_len, dst, dst_len, ctx->encFlags)) {
+    // Call the low-level encoder function
+    // This function performs the actual encoding based on ctx->encFlags
+    if (!ctx->encoder->encode_fn(src, src_len, dst, dst_len, ctx->encFlags))
         return CF_ERR_CTX_CORRUPT;
-    }
 
     return CF_SUCCESS;
 }
 
 CF_STATUS CF_Enc_EncodeRaw(CF_ENCODER_CTX *ctx, const void *src, size_t src_len, char *dst, size_t *dst_len) {
+    // Wrapper for raw void* input; simply casts to uint8_t* and calls standard encode
     return CF_Enc_Encode(ctx, (const uint8_t *)src, src_len, dst, dst_len);
 }
 
 char* CF_Enc_EncodeAlloc(CF_ENCODER_CTX *ctx, const uint8_t *src, size_t src_len, size_t *out_len, CF_STATUS *status) {
-    if (!ctx || !ctx->encoder || !src || !out_len) {
+    if (!ctx || !src || !out_len) {
         if (status) *status = CF_ERR_NULL_PTR;
         return NULL;
     }
 
-    // Calculate required output length
+    // Ensure the encoder descriptor exists
+    if (!ctx->encoder) {
+        if (status) *status = CF_ERR_CTX_UNINITIALIZED;
+        return NULL;
+    }
+
+    // Compute required output buffer size for this encoding operation
     size_t required_len = CF_Enc_RequiredEncLen(ctx->encFlags, src_len);
 
-    // Allocate memory
+    // Allocate memory for output
     char *dst = (char*)SECURE_ALLOC(required_len);
     if (!dst) {
         if (status) *status = CF_ERR_ALLOC_FAILED;
         return NULL;
     }
 
+    // Encode the data into the allocated buffer
     size_t written = 0;
     CF_STATUS res = CF_Enc_Encode(ctx, src, src_len, dst, &written);
     if (status) *status = res;
 
+    // Free allocated memory on failure to prevent leaks
     if (res != CF_SUCCESS) {
         SECURE_FREE(dst, required_len);
         return NULL;
     }
 
+    // Return number of bytes actually written
     *out_len = written;
+
     return dst;
 }
 
 char *CF_Enc_EncodeAllocRaw(CF_ENCODER_CTX *ctx, const void *src, size_t src_len, size_t *out_len, CF_STATUS *status) {
+    // Wrapper for raw void* input; calls Allocate + Encode
     return CF_Enc_EncodeAlloc(ctx, (const uint8_t *)src, src_len, out_len, status);
 }
 
 
 CF_STATUS CF_Enc_Decode(CF_ENCODER_CTX *ctx, const char *src, size_t src_len, uint8_t *dst, size_t *dst_len)  {
-    if (!ctx || !ctx->encoder || !src || !dst || !dst_len)
+    if (!ctx || !src || !dst || !dst_len)
         return CF_ERR_NULL_PTR;
 
-    // Verify that the encoder pointer hasn’t been tampered with by checking it against the bound magic value.
+    // Ensure the encoder descriptor exists
+    if (!ctx->encoder)
+        return CF_ERR_CTX_UNINITIALIZED;
+
+    // Verify context integrity using the bound magic value
+    // Detects accidental corruption or misuse of the encoder context
     if ((ctx->magic ^ (uintptr_t)ctx->encoder) != CF_CTX_MAGIC)
         return CF_ERR_CTX_CORRUPT;
 
+    // Check that input length is non-zero
     if (src_len == 0)
         return CF_ERR_INVALID_LEN;
 
-    const CF_ENCODER *enc = ctx->encoder;
-
-    // Only enforce min_output if bypass flag is NOT set
-    if (!(ctx->decFlags & enc->no_min_flags) &&
-        enc->min_output > 0 &&
-        src_len % enc->min_output != 0) {
+    // Enforce minimum output length if bypass flag is NOT set
+    // Ensures decoder requirements are met for block-based encoders
+    if (!(ctx->decFlags & ctx->encoder->no_min_flags) &&
+        ctx->encoder->min_output > 0 &&
+        src_len % ctx->encoder->min_output != 0) {
         return CF_ERR_INVALID_LEN;
     }
 
-    if (!enc->decode_fn(src, src_len, dst, dst_len, ctx->decFlags)) {
+    // Call the low-level decoder function
+    // This function performs the actual decoding based on ctx->encFlags
+    if (!ctx->encoder->decode_fn(src, src_len, dst, dst_len, ctx->decFlags))
         return CF_ERR_CTX_CORRUPT;
-    }
 
     return CF_SUCCESS;
 }
 
 CF_STATUS CF_Enc_DecodeRaw(CF_ENCODER_CTX *ctx, const void *src, size_t src_len, uint8_t *dst, size_t *dst_len) {
+    // Wrapper for raw void* input; casts input to char* and calls standard decode
     return CF_Enc_Decode(ctx, (const char *)src, src_len, dst, dst_len);
 }
 
 uint8_t* CF_Enc_DecodeAlloc(CF_ENCODER_CTX *ctx, const char *src, size_t src_len, size_t *out_len, CF_STATUS *status) {
-    if (!ctx || !ctx->encoder || !src || !out_len) {
+    if (!ctx || !src || !out_len) {
         if (status) *status = CF_ERR_NULL_PTR;
         return NULL;
     }
 
-    // Calculate required output length
+    // Ensure the encoder descriptor exists
+    if (!ctx->encoder) {
+        if (status) *status = CF_ERR_CTX_UNINITIALIZED;
+        return NULL;
+    }
+
+    // Compute required output buffer size for decoding
     size_t required_len = CF_Enc_RequiredDecLen(ctx->decFlags, src_len);
 
-    // Allocate memory
+    // Allocate memory for decoded output
     uint8_t *dst = (uint8_t *)SECURE_ALLOC(required_len);
     if (!dst) {
         if (status) *status = CF_ERR_ALLOC_FAILED;
         return NULL;
     }
 
+    // Decode data into allocated buffer
     size_t written = 0;
     CF_STATUS res = CF_Enc_Decode(ctx, src, src_len, dst, &written);
     if (status) *status = res;
 
+    // Free allocated memory on failure
     if (res != CF_SUCCESS) {
         SECURE_FREE(dst, required_len);
         return NULL;
     }
 
+    // Return number of bytes actually written
     *out_len = written;
+
     return dst;
 }
 
 uint8_t* CF_Enc_DecodeAllocRaw(CF_ENCODER_CTX *ctx, const void *src, size_t src_len, size_t *out_len, CF_STATUS *status) {
+    // Wrapper for raw void* input; calls Allocate + Decode
     return CF_Enc_DecodeAlloc(ctx, (const char *)src, src_len, out_len, status);
 }
 
@@ -646,16 +698,17 @@ CF_ENCODER_CTX *CF_Enc_CloneCtxAlloc(const CF_ENCODER_CTX *src, CF_STATUS *statu
         return NULL;
     }
 
-    CF_STATUS st = CF_Enc_CloneCtx(dst, src);
-    if (status) *status = st;
-    
-    if (st != CF_SUCCESS) {
-        SECURE_FREE(dst, sizeof(*dst));
+    // Deep copy contents
+    CF_STATUS ret = CF_Enc_CloneCtx(dst, src);
+    if (ret != CF_SUCCESS) {
+        if (status) *status = ret;
+        CF_Enc_Free(&dst);
         return NULL;
     }
 
     // cloned context is heap-allocated
     dst->isHeapAlloc = 1;
 
+    if (status) *status = CF_SUCCESS;
     return dst;
 }

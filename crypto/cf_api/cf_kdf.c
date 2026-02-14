@@ -146,76 +146,90 @@ const CF_KDF *CF_KDF_GetByFlag(uint32_t algo_flag) {
 }
 
 CF_STATUS CF_KDF_Init(
-    CF_KDF_CTX *ctx, const CF_KDF *kdf,
-    const uint8_t *ikm, size_t ikm_len,
-    const CF_KDF_OPTS *opts, uint32_t subflags) {
+    CF_KDF_CTX *ctx, const CF_KDF *kdf, const CF_KDF_OPTS *opts,
+    const uint8_t *ikm, size_t ikm_len, uint32_t subflags) {
     if (!ctx || !kdf || !ikm)
         return CF_ERR_NULL_PTR;
 
+    // Validate optional context options if provided
     if (opts && opts->magic != CF_CTX_MAGIC)
         return CF_ERR_CTX_CORRUPT;
 
+    // Ensure the KDF type is supported
     if (!CF_IS_KDF(kdf->id))
         return CF_ERR_UNSUPPORTED;
 
+    // Check that heap allocation flag is valid (0 or 1)
     if (ctx->isHeapAlloc != 0 && ctx->isHeapAlloc != 1)
         return CF_ERR_CTX_UNINITIALIZED;
 
+    // Reset the context to a clean state before initialization
     CF_KDF_Reset(ctx);
 
+    // Store core parameters in the context
     ctx->kdf      = kdf;
     ctx->opts     = opts;
     ctx->ikm      = ikm;
     ctx->ikm_len  = ikm_len;
     ctx->subflags = subflags;
 
+    // HKDF or PBKDF2 initialization
     if (CF_KDF_IS_HKDF(ctx->kdf->id) || CF_KDF_IS_PBKDF2(ctx->kdf->id)) {
-        // HKDF: requires a hash subflag, cannot have KMAC bits
+        // Cannot use KMAC flags for these KDFs
         if ((ctx->subflags & CF_MAC_KMAC_MASK) != 0)
             return CF_ERR_INVALID_PARAM;
 
-        // HKDF/PBKDF2: must specify a hash flag
+        // Require a hash flag
         if ((ctx->subflags & CF_HASH_MASK) == 0)
             return CF_ERR_INVALID_PARAM;
 
-        // XOF not supported
+        // Extended output functions (XOF) not supported
         if (CF_IS_XOF(ctx->subflags))
             return CF_ERR_UNSUPPORTED;
 
+        // Retrieve the hash function based on flags
         ctx->md = CF_MD_GetByFlag(ctx->subflags);
         if (!ctx->md)
             return CF_ERR_UNSUPPORTED;
 
     } else if (CF_MAC_IS_KMAC_XOF(ctx->kdf->id)) {
-        // KMAC: must have KMAC type, cannot have hash flags
+        // KMAC-XOF initialization
+        // Must specify a KMAC type
         if ((ctx->subflags & CF_MAC_KMAC_MASK) == 0)
             return CF_ERR_INVALID_PARAM;
 
-        // KDF only accepts KMAC-XOF
+        // Must be XOF variant
         if (!CF_IS_KMAC_XOF(ctx->subflags))
             return CF_ERR_INVALID_PARAM;
 
     } else {
-        return CF_ERR_INVALID_PARAM;
+        // Unsupported KDF type
+        return CF_ERR_UNSUPPORTED;
     }
 
-    // Reject invalid KDF context size
+    // Reject contexts with invalid context size
     if (ctx->kdf->ctx_size == 0) 
         return CF_ERR_CTX_CORRUPT;
 
+    // Allocate memory for KDF context
     ctx->kdf_ctx = (void *)SECURE_ALLOC(ctx->kdf->ctx_size);
-    if (!ctx->kdf_ctx)
+    if (!ctx->kdf_ctx) {
+        // Reset context if allocation fails
+        CF_KDF_Reset(ctx);
         return CF_ERR_ALLOC_FAILED;
+    }
 
+    // Call the KDF-specific initialization function
     CF_STATUS st = ctx->kdf->kdf_init_fn(ctx, ctx->opts);
     if (st != CF_SUCCESS) {
+        // Reset context on init failure
         CF_KDF_Reset(ctx);
         return st;
     }
 
-    // Integrity check: bind the KDF pointer to a per-context "magic" value
-    // to detect accidental corruption or misuse of the context.
-    // Note: this does NOT prevent a determined attacker from tampering with memory.
+
+    // Bind a per-context "magic" value for integrity checking
+    // Detects accidental misuse or corruption of the context
     ctx->magic = CF_CTX_MAGIC ^ (uintptr_t)ctx->kdf;
 
     return CF_SUCCESS;
@@ -230,20 +244,23 @@ CF_STATUS CF_KDF_Init(
         return NULL;
     }
 
+    // Allocate memory for a new KDF context on the heap
     CF_KDF_CTX *ctx = (CF_KDF_CTX *)SECURE_ALLOC(sizeof(CF_KDF_CTX));
     if (!ctx) {
         if (status) *status = CF_ERR_ALLOC_FAILED;
         return NULL;
     }
 
-    CF_STATUS st = CF_KDF_Init(ctx, kdf, ikm, ikm_len, opts, subflags);
+    // Initialize the newly allocated KDF context
+    CF_STATUS st = CF_KDF_Init(ctx, kdf, opts, ikm, ikm_len, subflags);
     if (st != CF_SUCCESS) {
-        SECURE_FREE(ctx, sizeof(CF_KDF_CTX));
         if (status) *status = st;
+        // Clean up on failure
+        CF_KDF_Free(&ctx);
         return NULL;
     }
 
-    // context is heap-allocated
+    // Mark context as heap-allocated for proper cleanup later
     ctx->isHeapAlloc = 1;
     
     if (status) *status = CF_SUCCESS;
@@ -254,31 +271,37 @@ CF_STATUS CF_KDF_Extract(CF_KDF_CTX *ctx, const uint8_t *salt, size_t salt_len) 
     if (!ctx)
         return CF_ERR_NULL_PTR;
 
+    // Ensure the KDF context and descriptor are initialized
     if (!ctx->kdf || !ctx->kdf_ctx)
         return CF_ERR_CTX_UNINITIALIZED;
 
-    // Verify that the KDF pointer hasn’t been tampered with by checking it against the bound magic value.
+    // Verify context integrity using the bound magic value
+    // Detects accidental corruption or tampering
     if ((ctx->magic ^ (uintptr_t)ctx->kdf) != CF_CTX_MAGIC)
         return CF_ERR_CTX_CORRUPT;
 
+    // Prevent double extraction
     if (ctx->isExtracted)
         return CF_ERR_KDF_ALREADY_EXTRACTED;
 
-    CF_STATUS st = CF_SUCCESS;
-
+    // Store salt and length in the context
     ctx->salt     = salt;
     ctx->salt_len = salt_len;
 
-    st = ctx->kdf->kdf_extract_fn(ctx, ctx->opts);
+    // Call the KDF-specific extract function
+    CF_STATUS st = ctx->kdf->kdf_extract_fn(ctx, ctx->opts);
     if (st != CF_SUCCESS) {
+        // Reset context on failure to avoid partially initialized state
         CF_KDF_Reset(ctx);
         return st;
     }
 
+    // Mark context as extracted
     ctx->isExtracted = 1;
 
     return CF_SUCCESS;
 }
+
 
 CF_STATUS CF_KDF_Expand(
     CF_KDF_CTX *ctx,
@@ -286,14 +309,18 @@ CF_STATUS CF_KDF_Expand(
     if (!ctx || !derived_key)
         return CF_ERR_NULL_PTR;
 
+    // Ensure the KDF context and descriptor are initialized
     if (!ctx->kdf || !ctx->kdf_ctx)
         return CF_ERR_CTX_UNINITIALIZED;
 
+    // Validate output length
     if (derived_key_len == 0)
         return CF_ERR_INVALID_LEN;
 
+    // Call the KDF-specific expand function to generate the derived key
     CF_STATUS st = ctx->kdf->kdf_expand_fn(ctx, derived_key, derived_key_len, ctx->opts);
     if (st != CF_SUCCESS) {
+        // Reset context on failure to avoid partially derived keys
         CF_KDF_Reset(ctx);
         return st;
     }
@@ -305,21 +332,28 @@ CF_STATUS CF_KDF_Reset(CF_KDF_CTX *ctx) {
     if (!ctx)
         return CF_ERR_NULL_PTR;
 
+    // Ensure the KDF descriptor exists
     if (!ctx->kdf)
         return CF_ERR_CTX_UNINITIALIZED;
 
+    // Ensure the KDF type is valid
     if (!CF_IS_KDF(ctx->kdf->id))
         return CF_ERR_UNSUPPORTED;
 
     CF_STATUS st = CF_SUCCESS;
 
+    // Free the KDF-specific context if it exists
     if (ctx->kdf_ctx) {
-        st = ctx->kdf->kdf_reset_fn(ctx);  // pass full context
+        // Call the KDF-specific reset function to clear internal state
+        st = ctx->kdf->kdf_reset_fn(ctx);
         if (st != CF_SUCCESS)
             return st;
+
+        // Free allocated memory for the KDF context
         SECURE_FREE(ctx->kdf_ctx, ctx->kdf->ctx_size);
     }
 
+    // Clear all context fields to prevent accidental reuse or leakage
     ctx->kdf = NULL;
     ctx->md = NULL;
     ctx->opts = NULL;
@@ -329,6 +363,7 @@ CF_STATUS CF_KDF_Reset(CF_KDF_CTX *ctx) {
     ctx->salt_len = 0;
     ctx->subflags = 0;
     ctx->isExtracted = 0;
+    ctx->magic = 0;
 
     return st;
 }
@@ -363,7 +398,7 @@ CF_STATUS CF_KDF_Compute(
     CF_KDF_CTX ctx = {0};
     CF_STATUS st = CF_SUCCESS;
 
-    st = CF_KDF_Init(&ctx, kdf, ikm, ikm_len, opts, subflags);
+    st = CF_KDF_Init(&ctx, kdf, opts, ikm, ikm_len, subflags);
     if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.kdf) != CF_CTX_MAGIC)
         goto cleanup;
 
@@ -479,6 +514,9 @@ CF_STATUS CF_KDF_CloneCtx(CF_KDF_CTX *dst, const CF_KDF_CTX *src) {
 
     // Deep copy low-level KDF context
     if (src->kdf_ctx) {
+        if (src->kdf->ctx_size == 0)
+            return CF_ERR_CTX_CORRUPT;
+
         dst->kdf_ctx = SECURE_ALLOC(src->kdf->ctx_size);
         if (!dst->kdf_ctx) {
             st = CF_ERR_ALLOC_FAILED;
@@ -494,7 +532,7 @@ CF_STATUS CF_KDF_CloneCtx(CF_KDF_CTX *dst, const CF_KDF_CTX *src) {
 
 cleanup:
     // Cleanup any partially allocated memory
-    if (dst->kdf_ctx)
+    if (dst->kdf_ctx && src->kdf->ctx_size)
         SECURE_FREE(dst->kdf_ctx, src->kdf->ctx_size);
 
     return st;
@@ -512,17 +550,18 @@ CF_KDF_CTX *CF_KDF_CloneCtxAlloc(const CF_KDF_CTX *src, CF_STATUS *status) {
         return NULL;
     }
 
-    CF_STATUS st = CF_KDF_CloneCtx(dst, src);
-    if (status) *status = st;
-    
-    if (st != CF_SUCCESS) {
-        SECURE_FREE(dst, sizeof(*dst));
+    // Deep copy contents
+    CF_STATUS ret = CF_KDF_CloneCtx(dst, src);
+    if (ret != CF_SUCCESS) {
+        if (status) *status = ret;
+        CF_KDF_Free(&dst);
         return NULL;
     }
 
     // cloned context is heap-allocated
     dst->isHeapAlloc = 1;
 
+    if (status) *status = CF_SUCCESS;
     return dst;
 }
 
@@ -575,8 +614,9 @@ CF_KDF_OPTS* CF_KDFOpts_InitAlloc(
 
     CF_STATUS st = CF_KDFOpts_Init(opts, info, info_len, custom, custom_len, iterations);
     if (st != CF_SUCCESS) {
-        SECURE_FREE(opts, sizeof(CF_KDF_OPTS));
         if (status) *status = st;
+        // Clean up on failure
+        CF_KDFOpts_Free(&opts);
         return NULL;
     }
 
@@ -661,16 +701,17 @@ CF_KDF_OPTS* CF_KDFOpts_CloneCtxAlloc(const CF_KDF_OPTS *src, CF_STATUS *status)
         return NULL;
     }
 
-    CF_STATUS st = CF_KDFOpts_CloneCtx(dst, src);
-    if (status) *status = st;
-
-    if (st != CF_SUCCESS) {
-        SECURE_FREE(dst, sizeof(*dst));
+    // Deep copy contents
+    CF_STATUS ret = CF_KDFOpts_CloneCtx(dst, src);
+    if (ret != CF_SUCCESS) {
+        if (status) *status = ret;
+        CF_KDFOpts_Free(&dst);
         return NULL;
     }
 
-    // Cloned context is heap-allocated
+    // cloned context is heap-allocated
     dst->isHeapAlloc = 1;
 
+    if (status) *status = CF_SUCCESS;
     return dst;
 }

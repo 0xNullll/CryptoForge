@@ -55,6 +55,7 @@
 #include "../cf_api/cf_hash.h"
 #include "../cf_api/cf_mac.h"
 #include "../cf_api/cf_kdf.h"
+#include "../cf_api/cf_cipher.h"
 #include "../cf_api/cf_enc.h"
 
 #ifdef __cplusplus
@@ -139,6 +140,8 @@ CF_API void test_aes_ofb_fips800_38a(void);
 CF_API void test_aes_ctr_fips800_38a(void);
 CF_API void test_aes_gcm_fips_style(void);
 CF_API void test_aes_gcm_empty_plaintext(void);
+
+CF_API void test_all_cipher_high(void);
 
 #ifdef __cplusplus
 }

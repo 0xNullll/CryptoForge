@@ -189,7 +189,7 @@ void test_all_kdf_high(void) {
             continue;
         }
 
-        status = CF_KDF_Init(&ctx, kdf, hkdf_ikm, sizeof(hkdf_ikm), &ctxOpts, hash_flags[i]);
+        status = CF_KDF_Init(&ctx, kdf, &ctxOpts, hkdf_ikm, sizeof(hkdf_ikm), hash_flags[i]);
         if (status != CF_SUCCESS) {
             CF_KDFOpts_Reset(&ctxOpts);
             printf("CF_KDF_Init failed for %s\n", CF_KDF_GetName(kdf));
@@ -254,7 +254,7 @@ void test_all_kdf_high(void) {
             continue;
         }
 
-        status = CF_KDF_Init(&ctx, kdf, pbkdf2_password, sizeof(pbkdf2_password), &ctxOpts, hash_flags[i]);
+        status = CF_KDF_Init(&ctx, kdf, &ctxOpts, pbkdf2_password, sizeof(pbkdf2_password), hash_flags[i]);
         if (status != CF_SUCCESS) {
             CF_KDFOpts_Reset(&ctxOpts);
             printf("CF_KDF_Init failed for %s\n", CF_KDF_GetName(kdf));
@@ -353,7 +353,7 @@ void test_all_kdf_high(void) {
             continue;
         }
 
-        status = CF_KDF_Init(&ctx, kdf, test_vector_kmac_key, sizeof(test_vector_kmac_key), &ctxOpts, kmac_flags[i]);
+        status = CF_KDF_Init(&ctx, kdf, &ctxOpts, test_vector_kmac_key, sizeof(test_vector_kmac_key), kmac_flags[i]);
         if (status != CF_SUCCESS) {
             CF_KDFOpts_Reset(&ctxOpts);
             printf("CF_KDF_Init failed for %s\n", CF_KDF_GetName(kdf));

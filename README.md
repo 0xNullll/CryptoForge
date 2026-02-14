@@ -14,7 +14,7 @@ CryptoForge is intended for **educational, experimental**. It has **not undergon
 /CryptoForge
 ├─ /crypto
 │   ├─ /aead
-│   │   ├─ /aes           <-- AES-GCM and AEAD modes
+│   │   ├─ /aes           <-- AES-GCM
 │   │   └─ /chacha        <-- ChaCha20-Poly1305 and XChaCha20-Poly1305
 │   ├─ /cf_api            <-- Public API implementations
 │   ├─ /enc               <-- Base16/32/58/64/85 encoders
@@ -64,9 +64,9 @@ CryptoForge is intended for **educational, experimental**. It has **not undergon
 
 ### Hash Functions
 - **SHA family:** SHA-1, SHA-224, SHA-256, SHA-384, SHA-512  
-- **SHA3 / Keccak:** SHA3-224/256/384/512, Keccak, SHAKE128/256  
+- **SHA3 / Keccak:** SHA3-224/256/384/512, Keccak, rawSHAKE128/256, SHAKE128/256
 - **cSHAKE** cSHAKE128/256
-- **Legacy:** MD5  
+- **Legacy:** MD5
 
 ### Message Authentication Codes (MACs)
 - HMAC, CMAC, GMAC, KMAC, KMAC-XOF, Poly1305  

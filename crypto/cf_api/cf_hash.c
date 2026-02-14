@@ -650,35 +650,37 @@ const CF_MD *CF_MD_GetByFlag(uint32_t algo_flag) {
 CF_STATUS CF_Hash_Init(CF_HASH_CTX *ctx, const CF_MD *md, const CF_HASH_OPTS *opts) {
     if (!ctx || !md) return CF_ERR_NULL_PTR;
 
+    // Validate optional context options if provided
     if (opts && opts->magic != CF_CTX_MAGIC)
         return CF_ERR_CTX_CORRUPT;
 
+    // Ensure the heap allocation flag is valid (0 or 1)
     if (ctx->isHeapAlloc != 0 && ctx->isHeapAlloc != 1)
         return CF_ERR_CTX_UNINITIALIZED;
 
+    // Reset the hash context to a clean state
     CF_Hash_Reset(ctx);
 
-    ctx->md = md;
+    // Store core parameters in the context
+    ctx->md      = md;
+    ctx->opts    = opts;
+    // Determine output length: prefer digest_size if set, otherwise use default_out_len
+    ctx->out_len = md->digest_size != 0 ? md->digest_size : md->default_out_len;
 
-    // Use opts directly; caller owns memory
-    ctx->opts = opts;
-
-    // Allocate low-level digest context
+    // Allocate memory for low-level hash context
     ctx->digest_ctx = (void *)SECURE_ALLOC(md->ctx_size);
-    if (!ctx->digest_ctx) return CF_ERR_ALLOC_FAILED;
+    if (!ctx->digest_ctx)
+        return CF_ERR_ALLOC_FAILED;
 
-    // Init low-level hash
-    if (!md->hash_init_fn(ctx->digest_ctx, ctx->opts)) {
-        SECURE_FREE(ctx->digest_ctx, md->ctx_size);
-        ctx->digest_ctx = NULL;
+    // Initialize the low-level hash context
+    if (!ctx->md->hash_init_fn(ctx->digest_ctx, ctx->opts)) {
+        // Reset context on failure to avoid dangling pointers
+        CF_Hash_Reset(ctx);
         return CF_ERR_BAD_STATE;
     }
 
-    ctx->out_len = md->digest_size != 0 ? md->digest_size : md->default_out_len;
-
-    // Integrity check: bind the MD pointer to a per-context "magic" value
-    // to detect accidental corruption or misuse of the context.
-    // Note: this does NOT prevent a determined attacker from tampering with memory.
+    // Bind a per-context "magic" value for integrity checking
+    // Helps detect accidental misuse or memory corruption
     ctx->magic = CF_CTX_MAGIC ^ (uintptr_t)ctx->md;
 
     return CF_SUCCESS;
@@ -690,20 +692,23 @@ CF_HASH_CTX* CF_Hash_InitAlloc(const CF_MD *md, const CF_HASH_OPTS *opts, CF_STA
         return NULL;
     }
 
+    // Allocate memory for a new hash context on the heap
     CF_HASH_CTX *ctx = (CF_HASH_CTX *)SECURE_ALLOC(sizeof(CF_HASH_CTX));
     if (!ctx) {
         if (status) *status = CF_ERR_ALLOC_FAILED;
         return NULL;
     }
 
+    // Initialize the newly allocated hash context
     CF_STATUS st = CF_Hash_Init(ctx, md, opts);
     if (st != CF_SUCCESS) {
-        SECURE_FREE(ctx, sizeof(CF_HASH_CTX));
         if (status) *status = st;
+        // Clean up on failure
+        CF_Hash_Free(&ctx);
         return NULL;
     }
 
-    // context is heap-allocated
+    // Mark context as heap-allocated for later cleanup
     ctx->isHeapAlloc = 1;
     
     if (status) *status = CF_SUCCESS;
@@ -714,16 +719,20 @@ CF_STATUS CF_Hash_Update(CF_HASH_CTX *ctx, const uint8_t *data, size_t data_len)
     if (!ctx || !data)
         return CF_ERR_NULL_PTR;
 
+    // Ensure the hash context and descriptor are initialized
     if (!ctx->md || !ctx->digest_ctx)
         return CF_ERR_CTX_UNINITIALIZED;
 
-    // Verify that the MD pointer hasn’t been tampered with by checking it against the bound magic value.
+    // Verify context integrity using the bound "magic" value
+    // Detects accidental corruption or misuse of the context
     if ((ctx->magic ^ (uintptr_t)ctx->md) != CF_CTX_MAGIC)
         return CF_ERR_CTX_CORRUPT;
 
+    // Prevent updates after the context has been finalized
     if (ctx->isFinalized)
         return CF_ERR_MAC_FINALIZED;
 
+    // Call the low-level hash update function to process data
     if (!ctx->md->hash_update_fn(ctx->digest_ctx, data, data_len))
         return CF_ERR_CTX_CORRUPT;
 
@@ -734,40 +743,48 @@ CF_STATUS CF_Hash_Final(CF_HASH_CTX *ctx, uint8_t *digest, size_t digest_len) {
     if (!ctx || !digest)
         return CF_ERR_NULL_PTR;
 
+    // Ensure the hash context and descriptor are properly initialized
     if (!ctx->md || !ctx->digest_ctx)
         return CF_ERR_CTX_UNINITIALIZED;
 
-    // Verify that the MD pointer hasn’t been tampered with by checking it against the bound magic value.
+    // Verify context integrity using the bound "magic" value
+    // Detects accidental corruption or misuse of the context
     if ((ctx->magic ^ (uintptr_t)ctx->md) != CF_CTX_MAGIC)
         return CF_ERR_CTX_CORRUPT;
 
+    // Handle XOF (Extendable-Output Function) hashes
     if (CF_IS_XOF(ctx->md->id)) {
-        // XOF: variable-length output
+        // Variable-length output requires non-zero length
         if (digest_len == 0)
             return CF_ERR_INVALID_LEN;
 
-        // Only allow first final once
+        // First call to final produces the initial output
         if (!ctx->isFinalized) {
             if (!ctx->md->hash_final_fn(ctx->digest_ctx, digest))
                 return CF_ERR_CTX_CORRUPT;
             ctx->isFinalized = 1;
         } else {
-            // After final, only squeeze is allowed
-            if (!ctx->md->hash_squeeze_fn || !ctx->md->hash_squeeze_fn(ctx->digest_ctx, digest, digest_len))
+            // Subsequent calls use the squeeze function to extend output
+            if (!ctx->md->hash_squeeze_fn || 
+                !ctx->md->hash_squeeze_fn(ctx->digest_ctx, digest, digest_len))
                 return CF_ERR_CTX_CORRUPT;
         }
 
     } else {
-        // Non-XOF: fixed length hash
+        // Non-XOF hash: fixed-length output
+        // Prevent multiple finalizations
         if (ctx->isFinalized)
             return CF_ERR_HASH_FINALIZED;
 
+        // Validate that output buffer is large enough
         if (digest_len != 0 && digest_len < ctx->md->default_out_len)
             return CF_ERR_OUTPUT_BUFFER_TOO_SMALL;
 
+        // Finalize the hash and write output
         if (!ctx->md->hash_final_fn(ctx->digest_ctx, digest))
             return CF_ERR_CTX_CORRUPT;
 
+        // Mark context as finalized to prevent reuse
         ctx->isFinalized = 1;
     }
 
@@ -778,18 +795,24 @@ CF_STATUS CF_Hash_Reset(CF_HASH_CTX *ctx) {
     if (!ctx)
         return CF_ERR_NULL_PTR;
 
+    // Ensure the hash descriptor exists
     if (!ctx->md)
         return CF_ERR_CTX_UNINITIALIZED;
 
+    // Free the low-level digest context if it exists
     if (ctx->digest_ctx) {
+        // Ensure the context size is valid
+        if (ctx->md->ctx_size == 0)
+            return CF_ERR_CTX_CORRUPT;
+
+        // Securely free allocated memory for the digest context
         SECURE_FREE(ctx->digest_ctx, ctx->md->ctx_size);
     }
 
+    // Clear all context fields to prevent accidental reuse or leakage
     ctx->md = NULL;
     ctx->opts = NULL;
-
     ctx->out_len = 0;
-
     ctx->magic = 0;
 
     return CF_SUCCESS;
@@ -800,14 +823,11 @@ CF_STATUS CF_Hash_Free(CF_HASH_CTX **p_ctx) {
         return CF_ERR_NULL_PTR;
 
     CF_HASH_CTX *ctx = *p_ctx;
-    int wasHeapAlloc = ctx->isHeapAlloc;
 
     CF_Hash_Reset(ctx);
 
-    if (wasHeapAlloc) {
+    if (ctx->isHeapAlloc)
         SECURE_ZERO(ctx, sizeof(CF_HASH_CTX));
-        *p_ctx = NULL;
-    }
 
     return CF_SUCCESS;
 }
@@ -867,15 +887,17 @@ CF_STATUS CF_Hash_CloneCtx(CF_HASH_CTX *dst, const CF_HASH_CTX *src) {
     if (!dst || !src)
         return CF_ERR_NULL_PTR;
 
-    // Verify that the MD pointer hasn’t been tampered with
+    // Ensure the hash descriptor exists
+    if (!src->md)
+        return CF_ERR_CTX_UNINITIALIZED;
+
+    // Verify context integrity using the bound "magic" value
+    // Detects accidental corruption or misuse of the context
     if ((src->magic ^ (uintptr_t)src->md) != CF_CTX_MAGIC)
         return CF_ERR_CTX_CORRUPT;
 
-    // Start with a clean slate
+    // Reset the hash context to a clean state
     CF_Hash_Reset(dst);
-
-    if (!src->md)
-        return CF_ERR_CTX_UNINITIALIZED;
 
     // Copy metadata (shallow)
     dst->magic       = src->magic;
@@ -886,6 +908,9 @@ CF_STATUS CF_Hash_CloneCtx(CF_HASH_CTX *dst, const CF_HASH_CTX *src) {
 
     // Deep copy low-level digest context
     if (src->digest_ctx) {
+        if (src->md->ctx_size == 0)
+            return CF_ERR_CTX_CORRUPT;
+
         dst->digest_ctx = SECURE_ALLOC(src->md->ctx_size);
         if (!dst->digest_ctx)
             goto cleanup;
@@ -897,7 +922,7 @@ CF_STATUS CF_Hash_CloneCtx(CF_HASH_CTX *dst, const CF_HASH_CTX *src) {
 
 cleanup:
     // Cleanup partially allocated memory
-    if (dst->digest_ctx)
+    if (dst->digest_ctx && src->md->ctx_size)
         SECURE_FREE(dst->digest_ctx, src->md->ctx_size);
 
     return CF_ERR_ALLOC_FAILED;
@@ -915,17 +940,18 @@ CF_HASH_CTX *CF_Hash_CloneCtxAlloc(const CF_HASH_CTX *src, CF_STATUS *status) {
         return NULL;
     }
 
-    CF_STATUS st = CF_Hash_CloneCtx(dst, src);
-    if (status) *status = st;
-    
-    if (st != CF_SUCCESS) {
-        SECURE_FREE(dst, sizeof(*dst));
+    // Deep copy contents
+    CF_STATUS ret = CF_Hash_CloneCtx(dst, src);
+    if (ret != CF_SUCCESS) {
+        if (status) *status = ret;
+        CF_Hash_Free(&dst);
         return NULL;
     }
 
     // cloned context is heap-allocated
     dst->isHeapAlloc = 1;
 
+    if (status) *status = CF_SUCCESS;
     return dst;
 }
 
@@ -1018,8 +1044,9 @@ CF_HASH_OPTS* CF_HashOpts_InitAlloc(const uint8_t *N, size_t N_len,
 
     CF_STATUS st = CF_HashOpts_Init(opts, N, N_len, S, S_len);
     if (st != CF_SUCCESS) {
-        SECURE_FREE(opts, sizeof(CF_HASH_OPTS));
         if (status) *status = st;
+        // Clean up on failure
+        CF_HashOpts_Free(&opts);
         return NULL;
     }
 
