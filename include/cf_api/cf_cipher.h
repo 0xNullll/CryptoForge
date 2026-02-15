@@ -142,23 +142,32 @@ CF_API CF_CIPHER_CTX* CF_Cipher_CloneCtxAlloc(const CF_CIPHER_CTX *src, CF_STATU
 // ============================
 // helper / utilities
 // ============================
+CF_API CF_STATUS CF_Cipher_ValidateCtx(const CF_CIPHER_CTX *ctx);
 CF_API const char* CF_Cipher_GetName(const CF_CIPHER *cipher);
 CF_API const char* CF_Cipher_GetFullName(const CF_CIPHER_CTX *ctx);
 CF_API bool CF_Cipher_IsValidKeyLength(const CF_CIPHER *cipher, size_t key_len);
 CF_API const size_t* CF_Cipher_GetValidKeySizes(const CF_CIPHER *cipher, size_t *count);
 CF_API size_t CF_Cipher_GetBlockSize(const CF_CIPHER_CTX *ctx);
 CF_API size_t CF_Cipher_GetOutputLength(const CF_CIPHER_CTX *ctx, size_t input_len);
-CF_API CF_STATUS CF_Cipher_ValidateCtx(const CF_CIPHER_CTX *ctx);
 
 // ============================
 // Optional parameters init / cleanup
 // ============================
+
+/*
+ * NOTE: INVALID SUBFLAGS ARE NOT HANDLED YET
+*/
 CF_API CF_STATUS CF_CipherOpts_Init(CF_CIPHER_OPTS *opts,
                                     const uint8_t *iv, size_t iv_len,
-                                    uint32_t subflags);
+                                    const uint8_t ctr_block[AES_BLOCK_SIZE], // optional, can be NULL
+                                    uint32_t chacha_counter,                 // optional, pass 0 for default
+                                    uint32_t subflags);                      // optional, for padding
 
 CF_API CF_CIPHER_OPTS* CF_CipherOpts_InitAlloc(const uint8_t *iv, size_t iv_len,
-                                               uint32_t subflags, CF_STATUS *status);
+                                               const uint8_t ctr_block[AES_BLOCK_SIZE], // optional, can be NULL
+                                               uint32_t chacha_counter,                 // optional, pass 0 for default
+                                               uint32_t subflags,                       // optional, for padding
+                                               CF_STATUS *status);
 
 CF_API CF_STATUS CF_CipherOpts_Reset(CF_CIPHER_OPTS *opts);
 CF_API CF_STATUS CF_CipherOpts_Free(CF_CIPHER_OPTS **p_opts);

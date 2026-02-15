@@ -330,6 +330,10 @@ int main(void) {
     test_aes_gcm_empty_plaintext();
     printf("**************************************\n");
 
+    printf("------------High Level API------------\n");
+    test_all_cipher_high();
+    printf("---------End Of High Level API---------\n");
+
 #endif // ENABLE_TESTS
 
     return 0;

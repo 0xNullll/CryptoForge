@@ -40,10 +40,11 @@ typedef enum {
     //
     // Memory / allocation issues
     //
-    CF_ERR_ALLOC_FAILED,        // malloc/calloc failed
-    CF_ERR_CTX_CORRUPT,         // Context memory corrupted
-    CF_ERR_ALREADY_INITIALIZED, // Context initialized memory
-    CF_ERR_CTX_UNINITIALIZED,   // Context uninitialized memory
+    CF_ERR_ALLOC_FAILED,            // malloc/calloc failed
+    CF_ERR_CTX_CORRUPT,             // Context memory corrupted
+    CF_ERR_ALREADY_INITIALIZED,     // Context initialized memory
+    CF_ERR_CTX_UNINITIALIZED,       // Context uninitialized memory
+    CF_ERR_CTX_OPTS_UNINITIALIZED,  // Context optional uninitialized memory
 
     //
     // Reserved base values for modules

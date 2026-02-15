@@ -285,21 +285,16 @@ typedef enum {
 // AES / ChaCha Key Sizes
 // ======================
 typedef enum {
-    CF_AES_KEY_128 = 16,
-    CF_AES_KEY_192 = 24,
-    CF_AES_KEY_256 = 32
-} CF_AES_KEY_SIZE;
-
-typedef enum {
-    CF_CHACHA_KEY_128 = 16,
-    CF_CHACHA_KEY_256 = 32
-} CF_CHACHA_KEY_SIZE;
+    CF_KEY_128_SIZE = 16,
+    CF_KEY_192_SIZE = 24,
+    CF_KEY_256_SIZE = 32
+} CF_KEY_SIZE;
 
 #define CF_IS_AES_KEY_VALID(len) \
-    ((len) == CF_AES_KEY_128 || (len) == CF_AES_KEY_192 || (len) == CF_AES_KEY_256)
+    ((len) == CF_KEY_128_SIZE || (len) == CF_KEY_192_SIZE || (len) == CF_KEY_256_SIZE)
 
 #define CF_IS_CHACHA_KEY_VALID(len) \
-    ((len) == CF_CHACHA_KEY_128 || (len) == CF_CHACHA_KEY_256)
+    ((len) == CF_KEY_128_SIZE || (len) == CF_KEY_256_SIZE)
 
 #define CF_CTX_MAGIC 0x43464D47  // "CFMG"
 

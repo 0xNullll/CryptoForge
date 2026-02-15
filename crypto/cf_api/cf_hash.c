@@ -838,21 +838,35 @@ CF_STATUS CF_Hash_Compute(const CF_MD *md, const uint8_t *data, size_t data_len,
     if (!md || !digest || !data)
         return CF_ERR_NULL_PTR;
 
+    // Stack-allocated hash context for one-shot operation
     CF_HASH_CTX ctx = {0};
     CF_STATUS st = CF_SUCCESS;
 
+    // Initialize hash context with provided descriptor and options
     st = CF_Hash_Init(&ctx, md, opts);
+
+    // Verify initialization success and context integrity
+    // Magic check detects accidental corruption or misuse
     if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.md) != CF_CTX_MAGIC)
         goto cleanup;
 
+    // Process input data
     st = CF_Hash_Update(&ctx, data, data_len);
+
+    // Re-verify integrity after update
+    // Ensures context was not corrupted during processing
     if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.md) != CF_CTX_MAGIC)
         goto cleanup;
 
+    // Finalize hash computation and write digest
+    // digest_len must match expected size for fixed hashes,
+    // or desired output size for XOF algorithms
     st = CF_Hash_Final(&ctx, digest, digest_len);
 
 cleanup:
+    // Securely clear context regardless of success or failure
     CF_Hash_Reset(&ctx);
+
     return st;
 }
 
@@ -860,26 +874,38 @@ CF_STATUS CF_Hash_ComputeFixed(const CF_MD *md, const uint8_t *data, size_t data
     if (!md || !digest || !data)
         return CF_ERR_NULL_PTR;
 
-    // Doest accept XOF algorthims
+    // Fixed-length helper does NOT support XOF algorithms
+    // XOFs require explicit output length selection
     if (CF_IS_XOF(md->id))
         return CF_ERR_UNSUPPORTED;
 
+    // Stack-allocated hash context for one-shot operation
     CF_HASH_CTX ctx = {0};
     CF_STATUS st = CF_SUCCESS;
 
+    // Initialize hash context without special options
     st = CF_Hash_Init(&ctx, md, NULL);
+
+    // Verify initialization success and context integrity
+    // Magic check detects accidental corruption or misuse
     if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.md) != CF_CTX_MAGIC)
         goto cleanup;
 
+    // Process entire input buffer
     st = CF_Hash_Update(&ctx, data, data_len);
-    if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.md) != CF_CTX_MAGIC) 
-        goto cleanup;
 
-    // Fixed-length hash uses md->digest_size
+    // Re-verify integrity after update
+    // Ensures context was not corrupted during processing
+    if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.md) != CF_CTX_MAGIC)
+        goto cleanup;
+    
+    // Finalize using fixed digest size defined by the descriptor
     st = CF_Hash_Final(&ctx, digest, md->digest_size);
 
 cleanup:
+    // Securely clear context regardless of success or failure
     CF_Hash_Reset(&ctx);
+
     return st;
 }
 

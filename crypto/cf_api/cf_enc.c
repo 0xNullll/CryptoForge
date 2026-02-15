@@ -508,6 +508,8 @@ CF_STATUS CF_Enc_ValidateCtx(const CF_ENCODER_CTX *ctx) {
     if (!ctx)
         return CF_ERR_NULL_PTR;
 
+    // Verify context integrity using the bound magic value
+    // Detects accidental corruption or misuse of the encoder context
     if ((ctx->magic ^ (uintptr_t)ctx->encoder) != CF_CTX_MAGIC)
         return CF_ERR_CTX_CORRUPT;
 
@@ -518,18 +520,21 @@ bool CF_Enc_IsValidInput(uint32_t dec_flags, const char *src, size_t len) {
     if (!CF_IS_DEC(dec_flags) || !src || len == 0)
         return false;
 
+    // Retrieve encoder descriptor associated with the decode flags
     const CF_ENCODER *encoder = CF_Enc_GetByFlag(dec_flags);
     if (!encoder || !encoder->rev_table)
         return false;
 
-    // defaults from encoder
+    // Default character validation parameters from encoder descriptor
     const int8_t *table = encoder->rev_table;
     char minc = encoder->min_char;
     char maxc = encoder->max_char;
     char pad  = encoder->pad;
 
     //
-    // Base64 URL-safe
+    // Base64 URL-safe handling
+    //
+    // Override reverse table and character range if URL-safe variant is selected
     //
     if (dec_flags & CF_BASE64_URL_DEC) {
 
@@ -539,18 +544,21 @@ bool CF_Enc_IsValidInput(uint32_t dec_flags, const char *src, size_t len) {
         minc = BASE64_URL_SAFE_MIN;
         maxc = BASE64_URL_SAFE_MAX;
 
+        // Padding may be disabled depending on flags
         pad = (dec_flags & CF_BASE64_NOPAD_DEC) ? 0 : BASE64_PAD_CHAR;
     }
 
     //
-    // Base64 NO-PAD
+    // Base64 without padding
     //
     else if (dec_flags & CF_BASE64_NOPAD_DEC) {
         pad = 0;
     }
 
     //
-    // Base85 Z85
+    // Base85 Z85 variant
+    //
+    // Uses alternate reverse table and fixed ASCII range
     //
     else if (dec_flags & CF_BASE85_Z85_DEC) {
 
@@ -559,29 +567,33 @@ bool CF_Enc_IsValidInput(uint32_t dec_flags, const char *src, size_t len) {
 
         minc = BASE85_Z85_MIN;
         maxc = BASE85_Z85_MAX;
-        pad  = 0;
+        pad  = 0; // Z85 does not use padding
     }
 
     //
-    // Validate characters
+    // Character validation loop
+    //
+    // Ensures every character belongs to the allowed encoding set
     //
     for (size_t i = 0; i < len; i++) {
         char c = src[i];
 
-        // padding allowed?
+        // Allow padding character if enabled
         if (pad != 0 && c == pad)
             continue;
 
-        // must be within encoding range
+        // Character must fall within configured ASCII bounds
         if (c < minc || c > maxc)
             return false;
 
-        // lookup via reverse table
+        // Lookup character in reverse table
+        // Value -1 indicates invalid character
         int8_t val = table[(unsigned char)(c - minc)];
         if (val == -1)
             return false;
     }
 
+    // All characters passed validation
     return true;
 }
 
@@ -598,7 +610,7 @@ const char *CF_Enc_GetName(const CF_ENCODER_CTX *ctx) {
         return "Base16";
 
     //
-    // Base32
+    // Base32 (with optional NoPad variant)
     //
     if (f & CF_BASE32_MASK) {
         if (f & CF_BASE32_ENC_NOPAD)
@@ -613,34 +625,40 @@ const char *CF_Enc_GetName(const CF_ENCODER_CTX *ctx) {
         return "Base58";
 
     //
-    // Base64
+    // Base64 family
     //
     if (f & CF_BASE64_MASK) {
+
+        // URL-safe Base64
         if (f & CF_BASE64_URL_ENC)
             return (f & CF_BASE64_NOPAD_ENC)
                 ? "Base64-URL (NoPad)"
                 : "Base64-URL";
 
+        // Standard Base64 without padding
         if (f & CF_BASE64_NOPAD_ENC)
             return "Base64 (NoPad)";
 
+        // Default Base64
         return "Base64";
     }
 
     //
-    // Base85 (ASCII85 & Z85)
+    // Base85 family (ASCII85, Z85, Extended)
     //
     if (f & CF_BASE85_MASK) {
+
         if (f & CF_BASE85_Z85_ENC)
             return "Base85-Z85";
 
         if (f & CF_BASE85_EXT_ENC)
             return "Base85-Extended";
 
-        // default
+        // Default ASCII85 variant
         return "Base85-ASCII85";
     }
 
+    // Fallback if flags do not match any known encoder
     return "UNKNOWN-ENCODER";
 }
 

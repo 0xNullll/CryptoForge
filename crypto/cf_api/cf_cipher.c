@@ -352,40 +352,55 @@ CF_STATUS CF_Cipher_Init(
     if (!ctx || !cipher || !key)
         return CF_ERR_NULL_PTR;
 
+   // Validate that the cipher type is recognized
     if (!CF_IS_CIPHER(cipher->id))
         return CF_ERR_UNSUPPORTED;
 
+    // Validate options context if provided
     if (opts && opts->magic != CF_CTX_MAGIC)
         return CF_ERR_CTX_CORRUPT;
 
+    // Validate heap allocation flag
     if (ctx->isHeapAlloc != 0 && ctx->isHeapAlloc != 1)
         return CF_ERR_CTX_UNINITIALIZED;
 
+    // Ensure operation is either encryption or decryption
     if (op != CF_CIPHER_OP_ENCRYPT && op != CF_CIPHER_OP_DECRYPT)
         return CF_ERR_INVALID_PARAM;
 
-    // Fresh cleanup
+    // Reset context to a clean state
     CF_Cipher_Reset(ctx);
 
+    // Store core context parameters
     ctx->cipher    = cipher;
     ctx->opts      = opts;
     ctx->key       = key;
     ctx->key_len   = key_len;
     ctx->operation = op;
 
+    // AES-specific initialization
     if (CF_IS_AES(ctx->cipher->id)) {
+
+        // Check AES key length
         if (!CF_IS_AES_KEY_VALID(key_len))
             return CF_ERR_CIPHER_INVALID_KEY_LEN;
 
+        // Allocate memory for AES key schedule
         ctx->key_ctx = (void *)SECURE_ALLOC(ctx->cipher->key_ctx_size);
         if (!ctx->key_ctx)
             return CF_ERR_ALLOC_FAILED;
 
-        if (!ll_AES_SetEncryptKey((ll_AES_KEY *)ctx->key_ctx, key, ctx->key_len)) {
+        // Initialize AES key schedule
+        if (!ll_AES_SetEncryptKey((ll_AES_KEY *)ctx->key_ctx, key, key_len)) {
             CF_Cipher_Reset(ctx);
             return CF_ERR_CIPHER_KEY_SETUP;
         }
-    } else if (CF_IS_CHACHA(ctx->cipher->id)) {
+
+    } 
+    // ChaCha-specific initialization
+    else if (CF_IS_CHACHA(ctx->cipher->id)) {
+
+        // Check ChaCha key length
         if (!CF_IS_CHACHA_KEY_VALID(key_len))
             return CF_ERR_CIPHER_INVALID_KEY_LEN;
 
@@ -393,23 +408,25 @@ CF_STATUS CF_Cipher_Init(
         if (ctx->cipher->ctx_size == 0) 
             return CF_ERR_CTX_CORRUPT;
 
+        // Allocate memory for ChaCha context
         ctx->cipher_ctx = (void *)SECURE_ALLOC(ctx->cipher->ctx_size);
         if (!ctx->cipher_ctx)
             return CF_ERR_ALLOC_FAILED;
 
-        // Initialize context
-        CF_STATUS st = ctx->cipher->cipher_init_fn(ctx, ctx->opts);
-        if (st != CF_SUCCESS) {
+        // Initialize ChaCha low-level context
+        bool ok = ctx->cipher->cipher_init_fn(ctx, ctx->opts);
+        if (ok != true) {
             CF_Cipher_Reset(ctx);
-            return st;
+            return CF_ERR_CTX_CORRUPT;
         }
 
     } else {
+        // Unsupported cipher type
         return CF_ERR_UNSUPPORTED;
     }
 
-    // Bind a per-context "magic" value for integrity checking
-    // Detects accidental misuse or corruption of the context
+    // Bind magic value for context integrity checking
+    // Detects accidental misuse or memory corruption
     ctx->magic = CF_CTX_MAGIC ^ (uintptr_t)ctx->cipher;
 
     return CF_SUCCESS;
@@ -424,6 +441,7 @@ CF_CIPHER_CTX* CF_Cipher_InitAlloc(
         return NULL;
     }
 
+    // Validate operation mode
     if (op != CF_CIPHER_OP_ENCRYPT && op != CF_CIPHER_OP_DECRYPT) {
         if (status) *status = CF_ERR_INVALID_PARAM;
         return NULL;
@@ -439,7 +457,8 @@ CF_CIPHER_CTX* CF_Cipher_InitAlloc(
     // Initialize the newly allocated cipher context
     CF_STATUS st = CF_Cipher_Init(ctx, cipher, opts, key, key_len, op);
     if (st != CF_SUCCESS) {
-        // Clean up on failure
+        // Reset and free memory if initialization failed
+        CF_Cipher_Reset(ctx);
         SECURE_FREE(ctx, sizeof(CF_CIPHER_CTX));
         if (status) *status = st;
         return NULL;
@@ -447,7 +466,8 @@ CF_CIPHER_CTX* CF_Cipher_InitAlloc(
 
     // Mark context as heap-allocated for proper cleanup later
     ctx->isHeapAlloc = 1;
-    
+
+    // Return success status to caller
     if (status) *status = CF_SUCCESS;
     return ctx;
 }
@@ -465,18 +485,64 @@ CF_STATUS CF_Cipher_Process(CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len
     if ((ctx->magic ^ (uintptr_t)ctx->cipher) != CF_CTX_MAGIC)
         return CF_ERR_CTX_CORRUPT;
 
-    /*
-     * NOTE: PADDING IS NOT HANDLED YET, AWAITING FOR PADDING MODULE TO BE IMPLEMENTED FIRST.
-     */
+    size_t block = ctx->cipher->block_size;
 
-    if (ctx->operation == CF_CIPHER_OP_ENCRYPT) {
-        if (!ctx->cipher->cipher_enc_fn(ctx, in, in_len, out, (const CF_CIPHER_OPTS *)ctx->opts))
-            return CF_ERR_CIPHER_ENCRYPT;
-    } else if (ctx->operation == CF_CIPHER_OP_DECRYPT) {
-        if (!ctx->cipher->cipher_dec_fn(ctx, in, in_len, out, (const CF_CIPHER_OPTS *)ctx->opts))
-            return CF_ERR_CIPHER_DECRYPT;
-    } else {
-        return CF_ERR_CTX_CORRUPT;
+    // Stream cipher: block_size = 0, no padding required
+    if (block == 0) {
+        if (ctx->operation == CF_CIPHER_OP_ENCRYPT) {
+            if (!ctx->cipher->cipher_enc_fn(ctx, in, in_len, out, ctx->opts))
+                return CF_ERR_CIPHER_ENCRYPT;
+        } else if (ctx->operation == CF_CIPHER_OP_DECRYPT) {
+            if (!ctx->cipher->cipher_dec_fn(ctx, in, in_len, out, ctx->opts))
+                return CF_ERR_CIPHER_DECRYPT;
+        } else {
+            return CF_ERR_CTX_CORRUPT;
+        }
+        // At this point, all input has been processed correctly and no further
+        // block padding or remainder handling is needed.
+        return CF_SUCCESS;
+    }
+
+    // Block cipher: Compute remainder and full block lengths
+    size_t remainder_len = in_len % block;
+    size_t full_blocks_len = in_len - remainder_len;
+
+    // Phase 1: process full blocks
+    if (full_blocks_len > 0) {
+        if (ctx->operation == CF_CIPHER_OP_ENCRYPT) {
+            if (!ctx->cipher->cipher_enc_fn(ctx, in, full_blocks_len, out, ctx->opts))
+                return CF_ERR_CIPHER_ENCRYPT;
+        } else if (ctx->operation == CF_CIPHER_OP_DECRYPT) {
+            if (!ctx->cipher->cipher_dec_fn(ctx, in, full_blocks_len, out, ctx->opts))
+                return CF_ERR_CIPHER_DECRYPT;
+        } else {
+            return CF_ERR_CTX_CORRUPT;
+        }
+    }
+
+    // Phase 2: handle final block with padding
+    if (remainder_len > 0) {
+        // verify options structure for padding subflags
+        if (!ctx->opts)
+            return CF_ERR_CTX_OPTS_UNINITIALIZED;
+
+        uint8_t pad_block[AES_BLOCK_SIZE]; // maximum block size for padding
+
+        // Copy the remainder bytes into the padding buffer
+        SECURE_MEMCPY(pad_block, in + full_blocks_len, remainder_len);
+
+        //
+        // TODO: apply padding here using your padding module
+        //
+
+        // Encrypt or decrypt the padded block
+        if (ctx->operation == CF_CIPHER_OP_ENCRYPT) {
+            if (!ctx->cipher->cipher_enc_fn(ctx, pad_block, block, out + full_blocks_len, ctx->opts))
+                return CF_ERR_CIPHER_ENCRYPT;
+        } else if (ctx->operation == CF_CIPHER_OP_DECRYPT) {
+            if (!ctx->cipher->cipher_dec_fn(ctx, pad_block, block, out + full_blocks_len, ctx->opts))
+                return CF_ERR_CIPHER_DECRYPT;
+        }
     }
 
     return CF_SUCCESS;
@@ -527,7 +593,7 @@ CF_STATUS CF_Cipher_Free(CF_CIPHER_CTX **p_ctx) {
     return CF_SUCCESS; 
 }
 
-FORCE_INLINE CF_STATUS CF_Cipher_EncDec(
+static FORCE_INLINE CF_STATUS CF_Cipher_EncDec(
     const CF_CIPHER *cipher,
     const uint8_t *key, size_t key_len,
     const uint8_t *in, size_t in_len, uint8_t *out,
@@ -535,17 +601,26 @@ FORCE_INLINE CF_STATUS CF_Cipher_EncDec(
     if (!cipher || !key || !out)
         return CF_ERR_NULL_PTR;
 
+    // Stack-allocated cipher context for one-shot operation
     CF_CIPHER_CTX ctx = {0};
     CF_STATUS st = CF_SUCCESS;
 
+    // Initialize cipher context with provided key, options, and operation
     st = CF_Cipher_Init(&ctx, cipher, opts, key, key_len, op);
+
+    // Verify initialization succeeded and context integrity is intact
+    // The magic check detects accidental corruption or misuse
     if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.cipher) != CF_CTX_MAGIC)
         goto cleanup;
 
+    // Process input buffer (encrypt or decrypt depending on 'op')
+    // Output is written to 'out'
     st = CF_Cipher_Process(&ctx, in, in_len, out);
 
 cleanup:
+    // Securely clear context regardless of success or failure
     CF_Cipher_Reset(&ctx);
+
     return st;
 }
 
@@ -564,6 +639,7 @@ CF_STATUS CF_Cipher_Decrypt(
     CF_CIPHER_OPTS *opts) {
     return CF_Cipher_EncDec(cipher, key, key_len, in, in_len, out, opts, CF_CIPHER_OP_DECRYPT);
 }
+
 
 CF_STATUS CF_Cipher_CloneCtx(CF_CIPHER_CTX *dst, const CF_CIPHER_CTX *src) {
     if (!dst || !src)
@@ -654,4 +730,249 @@ CF_CIPHER_CTX* CF_Cipher_CloneCtxAlloc(const CF_CIPHER_CTX *src, CF_STATUS *stat
 
     if (status) *status = CF_SUCCESS;
     return dst;
+}
+
+CF_STATUS CF_Cipher_ValidateCtx(const CF_CIPHER_CTX *ctx) {
+    if (!ctx)
+        return CF_ERR_NULL_PTR;
+
+    // Verify context integrity using the bound magic value
+    // Detects accidental corruption or misuse of the encoder context
+    if ((ctx->magic ^ (uintptr_t)ctx->cipher) != CF_CTX_MAGIC)
+        return CF_ERR_CTX_CORRUPT;
+
+    return CF_SUCCESS;
+}
+
+const char* CF_Cipher_GetName(const CF_CIPHER *cipher) {
+    if (!cipher)
+        return "NULL";
+
+    switch (cipher->id) {
+        case CF_AES_ECB:    return "AES-ECB";
+        case CF_AES_CBC:    return "AES-CBC";
+        case CF_AES_OFB:    return "AES-OFB";
+        case CF_AES_CFB8:   return "AES-CFB8";
+        case CF_AES_CFB128: return "AES-CFB128";
+
+        case CF_CHACHA8:    return "ChaCha8";
+        case CF_CHACHA12:   return "ChaCha12";
+        case CF_CHACHA20:   return "ChaCha20";
+        case CF_XCHACHA8:   return "XChaCha8";
+        case CF_XCHACHA12:  return "XChaCha12";
+        case CF_XCHACHA20:  return "XChaCha20";
+        
+        default:            return "UNKNOWN-CIPHER";
+    }
+}
+
+const char* CF_Cipher_GetFullName(const CF_CIPHER_CTX *ctx) {
+    if (!ctx || !ctx->cipher)
+        return "NULL";
+
+    switch (ctx->key_len) {
+        case CF_KEY_128_SIZE:
+            switch (ctx->cipher->id) {
+                case CF_AES_ECB:    return "AES-128-ECB";
+                case CF_AES_CBC:    return "AES-128-CBC";
+                case CF_AES_OFB:    return "AES-128-OFB";
+                case CF_AES_CFB8:   return "AES-128-CFB8";
+                case CF_AES_CFB128: return "AES-128-CFB128";
+                case CF_AES_CTR:    return "AES-192-CTR";
+
+                case CF_CHACHA8:    return "ChaCha8-128";
+                case CF_CHACHA12:   return "ChaCha12-128";
+                case CF_CHACHA20:   return "ChaCha20-128";
+
+                default:            return "UNKNOWN-CIPHER-128";
+            }
+
+        case CF_KEY_192_SIZE:
+            switch (ctx->cipher->id) {
+                case CF_AES_ECB:    return "AES-192-ECB";
+                case CF_AES_CBC:    return "AES-192-CBC";
+                case CF_AES_OFB:    return "AES-192-OFB";
+                case CF_AES_CFB8:   return "AES-192-CFB8";
+                case CF_AES_CFB128: return "AES-192-CFB128";
+                case CF_AES_CTR:    return "AES-192-CTR";
+
+                default:            return "UNKNOWN-CIPHER-192";
+            }
+
+        case CF_KEY_256_SIZE:
+            switch (ctx->cipher->id) {
+                case CF_AES_ECB:    return "AES-256-ECB";
+                case CF_AES_CBC:    return "AES-256-CBC";
+                case CF_AES_CFB8:   return "AES-256-CFB8";
+                case CF_AES_CFB128: return "AES-256-CFB128";
+                case CF_AES_OFB:    return "AES-256-OFB";
+                case CF_AES_CTR:    return "AES-192-CTR";
+
+                case CF_CHACHA8:    return "ChaCha8-256";
+                case CF_CHACHA12:   return "ChaCha12-256";
+                case CF_CHACHA20:   return "ChaCha20-256";
+                case CF_XCHACHA8:   return "XChaCha8-256";
+                case CF_XCHACHA12:  return "XChaCha12-256";
+                case CF_XCHACHA20:  return "XChaCha20-256";
+
+                default: 
+                    return "UNKNOWN-CIPHER-256";
+            }
+
+            default: 
+                return "UNKNOWN-CIPHER";
+    }
+}
+
+ bool CF_Cipher_IsValidKeyLength(const CF_CIPHER *cipher, size_t key_len) {
+    if (!cipher)
+        return false;
+
+    if (CF_IS_AES(cipher->id)) {
+       if (CF_IS_AES_KEY_VALID(key_len))
+        return true;
+    }
+    else if (CF_IS_CHACHA(cipher->id)) {
+       if (CF_IS_CHACHA_KEY_VALID(key_len))
+        return true;
+    }
+
+    return false;
+}
+
+const size_t* CF_Cipher_GetValidKeySizes(const CF_CIPHER *cipher, size_t *count) {
+    if (!cipher || !count)
+        return NULL;
+
+    static const size_t aes_sizes[3] = {CF_KEY_128_SIZE, CF_KEY_192_SIZE, CF_KEY_256_SIZE};
+    static const size_t chacha_sizes[2] = {CF_KEY_128_SIZE, CF_KEY_256_SIZE};
+
+    if (CF_IS_AES(cipher->id)) {
+        *count = 3;
+        return aes_sizes;
+    } else if (CF_IS_CHACHA(cipher->id)) {
+        *count = 2;
+        return chacha_sizes;
+    }
+
+    *count = 0;
+    return NULL;
+}
+
+size_t CF_Cipher_GetBlockSize(const CF_CIPHER_CTX *ctx) {
+    return ctx ? (ctx->cipher ? ctx->cipher->block_size : 0) : 0;
+}
+
+size_t CF_Cipher_GetOutputLength(const CF_CIPHER_CTX *ctx, size_t input_len) {
+    if (!ctx || !ctx->cipher || input_len == 0)
+        return 0;
+
+    size_t block = ctx->cipher->block_size;
+
+    if (block == 0) // stream cipher, no padding
+        return input_len;
+
+    // Round up to next multiple of block size
+    size_t rem = input_len % block;
+    if (rem == 0)
+        return input_len; // already aligned
+    return input_len + (block - rem); // pad to next block
+}
+
+CF_STATUS CF_CipherOpts_Init(
+    CF_CIPHER_OPTS *opts,
+    const uint8_t *iv, size_t iv_len,
+    const uint8_t ctr_block[AES_BLOCK_SIZE],
+    uint32_t chacha_counter,
+    uint32_t subflags) {
+    if (!opts)
+        return CF_ERR_NULL_PTR;
+
+    if (iv_len > CF_MAX_CIPHER_IV_SIZE)
+        return CF_ERR_INVALID_LEN;
+
+    //
+    // NOTE: invalid subflags are not handled yet
+    //
+
+    CF_CipherOpts_Reset(opts);
+
+    // Shallow copy (caller manages lifetime)
+    opts->chacha_counter = chacha_counter;
+    opts->subflags       = subflags;
+
+    // Deep copy of IV
+    if (iv && iv_len > 0) {
+        SECURE_MEMCPY(opts->iv, iv, iv_len);
+        opts->iv_len = iv_len;
+    }
+    
+    // Deep copy of AES Counter
+    if (ctr_block) {
+        SECURE_MEMCPY(opts->ctr_block, ctr_block, sizeof(opts->ctr_block));
+    }
+
+    opts->magic = CF_CTX_MAGIC;
+
+    return CF_SUCCESS;
+}
+
+CF_CIPHER_OPTS* CF_CipherOpts_InitAlloc(
+    const uint8_t *iv, size_t iv_len,
+    const uint8_t ctr_block[AES_BLOCK_SIZE], // optional, can be NULL
+    uint32_t chacha_counter,                 // optional, pass 0 for default
+    uint32_t subflags,                       // optional, for padding
+    CF_STATUS *status) {
+    if (iv_len > CF_MAX_CIPHER_IV_SIZE) {
+        if (status) *status = CF_ERR_INVALID_LEN;
+        return NULL;
+    }
+
+    CF_CIPHER_OPTS *opts = (CF_CIPHER_OPTS *)SECURE_ALLOC(sizeof(CF_CIPHER_OPTS));
+    if (!opts) {
+        if (status) *status = CF_ERR_ALLOC_FAILED;
+        return NULL;
+    }
+
+    CF_STATUS st = CF_CipherOpts_Init(opts, iv, iv_len, ctr_block, chacha_counter, subflags);
+    if (st != CF_SUCCESS) {
+        if (status) *status = st;
+        // Clean up on failure
+        CF_CipherOpts_Free(&opts);
+        return NULL;
+    }
+
+    opts->isHeapAlloc = 1;
+    if (status) *status = CF_SUCCESS;
+    return opts;
+}
+
+CF_STATUS CF_CipherOpts_Reset(CF_CIPHER_OPTS *opts) {
+    if (opts)
+        return CF_ERR_NULL_PTR;
+
+    SECURE_ZERO(opts->iv, sizeof(opts->iv));
+    SECURE_ZERO(opts->ctr_block, sizeof(opts->ctr_block));
+
+    opts->chacha_counter = 0;
+    opts->iv_len = 0;
+    opts->subflags = 0;
+    opts->magic = 0;
+
+    return CF_SUCCESS;;
+}
+
+CF_STATUS CF_CipherOpts_Free(CF_CIPHER_OPTS **p_opts) {
+    if (!p_opts || !*p_opts)
+        return CF_ERR_NULL_PTR;
+
+    CF_CIPHER_OPTS *ctx = *p_opts;
+
+    CF_CipherOpts_Reset(ctx);
+
+    if (ctx->isHeapAlloc) {
+        SECURE_ZERO(ctx, sizeof(CF_CIPHER_OPTS));
+    }
+
+    return CF_SUCCESS;
 }
