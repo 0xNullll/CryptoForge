@@ -175,30 +175,32 @@ CF_STATUS CF_KDF_Init(
 
     // HKDF or PBKDF2 initialization
     if (CF_KDF_IS_HKDF(ctx->kdf->id) || CF_KDF_IS_PBKDF2(ctx->kdf->id)) {
-        // Cannot use KMAC flags for these KDFs
+
+        // These KDFs cannot use KMAC flags
         if ((ctx->subflags & CF_MAC_KMAC_MASK) != 0)
             return CF_ERR_INVALID_PARAM;
 
-        // Require a hash flag
+        // Require a valid hash flag
         if ((ctx->subflags & CF_HASH_MASK) == 0)
             return CF_ERR_INVALID_PARAM;
 
-        // Extended output functions (XOF) not supported
+        // Extended output functions (XOF) are not supported
         if (CF_IS_XOF(ctx->subflags))
             return CF_ERR_UNSUPPORTED;
 
-        // Retrieve the hash function based on flags
+        // Retrieve hash function by subflag
         ctx->md = CF_MD_GetByFlag(ctx->subflags);
         if (!ctx->md)
             return CF_ERR_UNSUPPORTED;
 
-    } else if (CF_MAC_IS_KMAC_XOF(ctx->kdf->id)) {
-        // KMAC-XOF initialization
+    } 
+    // KMAC-XOF initialization
+    else if (CF_MAC_IS_KMAC_XOF(ctx->kdf->id)) {
         // Must specify a KMAC type
         if ((ctx->subflags & CF_MAC_KMAC_MASK) == 0)
             return CF_ERR_INVALID_PARAM;
 
-        // Must be XOF variant
+        // Must be an XOF variant
         if (!CF_IS_KMAC_XOF(ctx->subflags))
             return CF_ERR_INVALID_PARAM;
 
@@ -207,14 +209,14 @@ CF_STATUS CF_KDF_Init(
         return CF_ERR_UNSUPPORTED;
     }
 
-    // Reject contexts with invalid context size
-    if (ctx->kdf->ctx_size == 0) 
+    // Reject contexts with invalid size
+    if (ctx->kdf->ctx_size == 0)
         return CF_ERR_CTX_CORRUPT;
 
-    // Allocate memory for KDF context
+    // Allocate memory for KDF internal context
     ctx->kdf_ctx = (void *)SECURE_ALLOC(ctx->kdf->ctx_size);
     if (!ctx->kdf_ctx) {
-        // Reset context if allocation fails
+        // Reset context on allocation failure
         CF_KDF_Reset(ctx);
         return CF_ERR_ALLOC_FAILED;
     }
@@ -222,14 +224,13 @@ CF_STATUS CF_KDF_Init(
     // Call the KDF-specific initialization function
     CF_STATUS st = ctx->kdf->kdf_init_fn(ctx, ctx->opts);
     if (st != CF_SUCCESS) {
-        // Reset context on init failure
+        // Reset context if initialization fails
         CF_KDF_Reset(ctx);
         return st;
     }
 
-
-    // Bind a per-context "magic" value for integrity checking
-    // Detects accidental misuse or corruption of the context
+    // Bind magic value for context integrity checking
+    // Detects accidental misuse or memory corruption
     ctx->magic = CF_CTX_MAGIC ^ (uintptr_t)ctx->kdf;
 
     return CF_SUCCESS;
@@ -392,24 +393,38 @@ CF_STATUS CF_KDF_Compute(
     if (!kdf || !ikm || !derived_key)
         return CF_ERR_NULL_PTR;
 
+    // Output length must be non-zero
     if (derived_key_len == 0)
         return CF_ERR_INVALID_LEN;
 
+    // Stack-allocated KDF context for one-shot derive operation
     CF_KDF_CTX ctx = {0};
     CF_STATUS st = CF_SUCCESS;
 
+    // Initialize KDF context with descriptor, options, IKM, and subflags
     st = CF_KDF_Init(&ctx, kdf, opts, ikm, ikm_len, subflags);
+
+    // Verify initialization success and context integrity
+    // Magic check detects accidental corruption or misuse
     if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.kdf) != CF_CTX_MAGIC)
         goto cleanup;
 
+    // Perform extract phase (if applicable for the selected KDF)
+    // Salt may be NULL depending on KDF design
     st = CF_KDF_Extract(&ctx, salt, salt_len);
+
+    // Re-verify integrity after extract phase
     if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.kdf) != CF_CTX_MAGIC)
         goto cleanup;
 
+    // Perform expand phase to generate the derived key material
+    // Writes derived_key_len bytes into derived_key
     st = CF_KDF_Expand(&ctx, derived_key, derived_key_len);
 
 cleanup:
+    // Securely clear context regardless of success or failure
     CF_KDF_Reset(&ctx);
+
     return st;        
 }
 

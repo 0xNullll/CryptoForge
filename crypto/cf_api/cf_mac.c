@@ -313,16 +313,18 @@ CF_STATUS CF_MAC_Init(CF_MAC_CTX *ctx, const CF_MAC *mac, const CF_MAC_OPTS *opt
         // Set the default tag length from the hash output length
         ctx->tag_len = ctx->md->default_out_len;
 
-    } else if (CF_MAC_IS_KMAC_STD(ctx->mac->id)) {
-        // KMAC initialization
+    }
+    // KMAC initialization 
+    else if (CF_MAC_IS_KMAC_STD(ctx->mac->id)) {
         // Must specify a KMAC type, cannot have standard hash flags
         if ((subflags & CF_MAC_KMAC_MASK) == 0)
             return CF_ERR_INVALID_PARAM;
         if ((subflags & CF_HASH_MASK) != 0)
             return CF_ERR_INVALID_PARAM;
 
-    } else if (CF_MAC_IS_CMAC(ctx->mac->id) || CF_MAC_IS_GMAC(ctx->mac->id)) {
-        // AES-based MACs (CMAC / GMAC)
+    }
+    // AES-based MACs (CMAC / GMAC)
+    else if (CF_MAC_IS_CMAC(ctx->mac->id) || CF_MAC_IS_GMAC(ctx->mac->id)) {
         // Validate AES key length
         if (!CF_IS_AES_KEY_VALID(key_len))
             return CF_ERR_CIPHER_INVALID_KEY_LEN;
@@ -342,8 +344,9 @@ CF_STATUS CF_MAC_Init(CF_MAC_CTX *ctx, const CF_MAC *mac, const CF_MAC_OPTS *opt
             return CF_ERR_CIPHER_KEY_SETUP;
         }
 
-    } else if (CF_MAC_IS_POLY1305(ctx->mac->id)) {
-        // Poly1305 MAC initialization
+    }
+    // Poly1305 MAC initialization
+    else if (CF_MAC_IS_POLY1305(ctx->mac->id)) {
         // Key must be exactly 32 bytes
         if (key_len != LL_POLY1305_KEY_LEN)
             return CF_ERR_MAC_INVALID_KEY_LEN;
@@ -596,21 +599,35 @@ CF_STATUS CF_MAC_Compute(const CF_MAC *mac,
     if (!mac || !key || !tag)
         return CF_ERR_NULL_PTR;
 
+    // Stack-allocated MAC context for one-shot computation
     CF_MAC_CTX ctx = {0};
     CF_STATUS st = CF_SUCCESS;
 
+    // Initialize MAC context with descriptor, key, options, and subflags
     st = CF_MAC_Init(&ctx, mac, opts, key, key_len, subflags);
+
+    // Verify initialization success and context integrity
+    // Magic check detects accidental corruption or misuse
     if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.mac) != CF_CTX_MAGIC)
         goto cleanup;
 
+    // Process input data through MAC update phase
+    // This feeds the entire message into the MAC state
     st = CF_MAC_Update(&ctx, data, data_len);
+
+    // Re-verify context integrity after update
+    // Ensures state was not corrupted during processing
     if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.mac) != CF_CTX_MAGIC)
         goto cleanup;
 
+    // Finalize MAC computation and produce authentication tag
+    // tag_len must match algorithm requirements (or allowed truncated size)
     st = CF_MAC_Final(&ctx, tag, tag_len);
 
 cleanup:
+    // Securely clear context regardless of success or failure
     CF_MAC_Reset(&ctx);
+
     return st;
 }
 
