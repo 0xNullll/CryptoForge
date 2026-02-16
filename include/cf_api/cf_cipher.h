@@ -22,6 +22,7 @@
 
 #include "cf_defs.h"
 #include "cf_flags.h"
+#include "cf_utils.h"
 
 #include "../crypto/aes_core.h"
 #include "../crypto/ecb_mode.h"
@@ -73,11 +74,6 @@ typedef struct _CF_CIPHER_OPTS {
     int isHeapAlloc;
 } CF_CIPHER_OPTS;
 
-typedef enum {
-    CF_CIPHER_OP_ENCRYPT = 0,
-    CF_CIPHER_OP_DECRYPT = 1
-} CF_CIPHER_OPERATION;
-
 // ============================
 // High-level cipher context
 // ============================
@@ -93,7 +89,7 @@ typedef struct _CF_CIPHER_CTX {
     const uint8_t *key;             // user-supplied raw key
     size_t key_len;
 
-    CF_CIPHER_OPERATION operation;  // encrypt or decrypt
+    CF_OPERATION operation;  // encrypt or decrypt
     int isHeapAlloc;
 } CF_CIPHER_CTX;
 
@@ -106,11 +102,11 @@ CF_API const CF_CIPHER *CF_Cipher_GetByFlag(uint32_t cipher_flag);
 // Context initialization & cleanup
 // ============================
 CF_API CF_STATUS CF_Cipher_Init(CF_CIPHER_CTX *ctx, const CF_CIPHER *cipher, CF_CIPHER_OPTS *opts,
-                                const uint8_t *key, size_t key_len, CF_CIPHER_OPERATION op);
+                                const uint8_t *key, size_t key_len, CF_OPERATION op);
 
 CF_API CF_CIPHER_CTX* CF_Cipher_InitAlloc(const CF_CIPHER *cipher, CF_CIPHER_OPTS *opts,
                                           const uint8_t *key, size_t key_len, 
-                                          CF_CIPHER_OPERATION op, CF_STATUS *status);
+                                          CF_OPERATION op, CF_STATUS *status);
 
 /*
 * NOTE: PADDING IS NOT HANDLED YET, AWAITING FOR PADDING MODULE TO BE IMPLEMENTED FIRST.
@@ -148,7 +144,7 @@ CF_API const char* CF_Cipher_GetFullName(const CF_CIPHER_CTX *ctx);
 CF_API bool CF_Cipher_IsValidKeyLength(const CF_CIPHER *cipher, size_t key_len);
 CF_API const size_t* CF_Cipher_GetValidKeySizes(const CF_CIPHER *cipher, size_t *count);
 CF_API size_t CF_Cipher_GetBlockSize(const CF_CIPHER_CTX *ctx);
-CF_API size_t CF_Cipher_GetOutputLength(const CF_CIPHER_CTX *ctx, size_t input_len);
+CF_API size_t CF_Cipher_GetOutputLength(const CF_CIPHER_CTX *ctx, size_t in_len);
 
 // ============================
 // Optional parameters init / cleanup

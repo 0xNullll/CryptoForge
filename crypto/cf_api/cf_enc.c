@@ -267,12 +267,10 @@ CF_STATUS CF_Enc_Reset(CF_ENCODER_CTX *ctx) {
     if (!ctx) return CF_ERR_NULL_PTR;
 
     // Clear encoder-specific fields
-    ctx->encoder = NULL;
+    ctx->encoder  = NULL;
     ctx->encFlags = 0;
     ctx->decFlags = 0;
-
-    // Clear magic field to prevent accidental misuse
-    ctx->magic = 0;
+    ctx->magic    = 0;
 
     return CF_SUCCESS;
 }
@@ -700,7 +698,8 @@ CF_STATUS CF_Enc_CloneCtx(CF_ENCODER_CTX *dst, const CF_ENCODER_CTX *src) {
     dst->encoder     = src->encoder;
     dst->encFlags    = src->encFlags;
     dst->decFlags    = src->decFlags;
-
+    dst->isHeapAlloc = 0;
+    
     return CF_SUCCESS;
 }
 

@@ -348,7 +348,7 @@ const CF_CIPHER *CF_Cipher_GetByFlag(uint32_t algo_flag) {
 
 CF_STATUS CF_Cipher_Init(
     CF_CIPHER_CTX *ctx, const CF_CIPHER *cipher, CF_CIPHER_OPTS *opts,
-    const uint8_t *key, size_t key_len, CF_CIPHER_OPERATION op) {
+    const uint8_t *key, size_t key_len, CF_OPERATION op) {
     if (!ctx || !cipher || !key)
         return CF_ERR_NULL_PTR;
 
@@ -365,7 +365,7 @@ CF_STATUS CF_Cipher_Init(
         return CF_ERR_CTX_UNINITIALIZED;
 
     // Ensure operation is either encryption or decryption
-    if (op != CF_CIPHER_OP_ENCRYPT && op != CF_CIPHER_OP_DECRYPT)
+    if (op != CF_OP_ENCRYPT && op != CF_OP_DECRYPT)
         return CF_ERR_INVALID_PARAM;
 
     // Reset context to a clean state
@@ -435,14 +435,14 @@ CF_STATUS CF_Cipher_Init(
 CF_CIPHER_CTX* CF_Cipher_InitAlloc(
     const CF_CIPHER *cipher, CF_CIPHER_OPTS *opts,
     const uint8_t *key, size_t key_len, 
-    CF_CIPHER_OPERATION op, CF_STATUS *status) {
+    CF_OPERATION op, CF_STATUS *status) {
     if (!cipher) {
         if (status) *status = CF_ERR_NULL_PTR;
         return NULL;
     }
 
     // Validate operation mode
-    if (op != CF_CIPHER_OP_ENCRYPT && op != CF_CIPHER_OP_DECRYPT) {
+    if (op != CF_OP_ENCRYPT && op != CF_OP_DECRYPT) {
         if (status) *status = CF_ERR_INVALID_PARAM;
         return NULL;
     }
@@ -489,10 +489,10 @@ CF_STATUS CF_Cipher_Process(CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len
 
     // Stream cipher: block_size = 0, no padding required
     if (block == 0) {
-        if (ctx->operation == CF_CIPHER_OP_ENCRYPT) {
+        if (ctx->operation == CF_OP_ENCRYPT) {
             if (!ctx->cipher->cipher_enc_fn(ctx, in, in_len, out, ctx->opts))
                 return CF_ERR_CIPHER_ENCRYPT;
-        } else if (ctx->operation == CF_CIPHER_OP_DECRYPT) {
+        } else if (ctx->operation == CF_OP_DECRYPT) {
             if (!ctx->cipher->cipher_dec_fn(ctx, in, in_len, out, ctx->opts))
                 return CF_ERR_CIPHER_DECRYPT;
         } else {
@@ -509,10 +509,10 @@ CF_STATUS CF_Cipher_Process(CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len
 
     // Phase 1: process full blocks
     if (full_blocks_len > 0) {
-        if (ctx->operation == CF_CIPHER_OP_ENCRYPT) {
+        if (ctx->operation == CF_OP_ENCRYPT) {
             if (!ctx->cipher->cipher_enc_fn(ctx, in, full_blocks_len, out, ctx->opts))
                 return CF_ERR_CIPHER_ENCRYPT;
-        } else if (ctx->operation == CF_CIPHER_OP_DECRYPT) {
+        } else if (ctx->operation == CF_OP_DECRYPT) {
             if (!ctx->cipher->cipher_dec_fn(ctx, in, full_blocks_len, out, ctx->opts))
                 return CF_ERR_CIPHER_DECRYPT;
         } else {
@@ -520,29 +520,52 @@ CF_STATUS CF_Cipher_Process(CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len
         }
     }
 
-    // Phase 2: handle final block with padding
-    if (remainder_len > 0) {
-        // verify options structure for padding subflags
+    // Phase 2: handle final block (with padding if needed)
+    if (remainder_len > 0 && ctx->operation == CF_OP_ENCRYPT) {
         if (!ctx->opts)
             return CF_ERR_CTX_OPTS_UNINITIALIZED;
 
-        uint8_t pad_block[AES_BLOCK_SIZE]; // maximum block size for padding
+        uint8_t pad_block[CF_CIPHER_MAX_BLOCK_SIZE] = {0}; // generic max block size
+        size_t data_len = remainder_len;
 
-        // Copy the remainder bytes into the padding buffer
-        SECURE_MEMCPY(pad_block, in + full_blocks_len, remainder_len);
+        // Copy remainder into pad buffer (for both encrypt & decrypt)
+        if (remainder_len > 0)
+            SECURE_MEMCPY(pad_block, in + full_blocks_len, remainder_len);
 
-        //
-        // TODO: apply padding here using your padding module
-        //
+        CF_STATUS st = CF_SUCCESS;
 
-        // Encrypt or decrypt the padded block
-        if (ctx->operation == CF_CIPHER_OP_ENCRYPT) {
-            if (!ctx->cipher->cipher_enc_fn(ctx, pad_block, block, out + full_blocks_len, ctx->opts))
+        if (ctx->operation == CF_OP_ENCRYPT) {
+            // Apply padding to final block
+            st = CF_Pad_Apply(pad_block, sizeof(pad_block), remainder_len, block, ctx->opts->subflags);
+            if (st != CF_SUCCESS) {
+                SECURE_ZERO(pad_block, sizeof(pad_block));
+                return st;
+            }
+
+            // Encrypt padded block
+            if (!ctx->cipher->cipher_enc_fn(ctx, pad_block, block, out + full_blocks_len, ctx->opts)) {
+                SECURE_ZERO(pad_block, sizeof(pad_block));
                 return CF_ERR_CIPHER_ENCRYPT;
-        } else if (ctx->operation == CF_CIPHER_OP_DECRYPT) {
-            if (!ctx->cipher->cipher_dec_fn(ctx, pad_block, block, out + full_blocks_len, ctx->opts))
+            }
+        } else if (ctx->operation == CF_OP_DECRYPT) {
+            // Decrypt final block first
+            if (!ctx->cipher->cipher_dec_fn(ctx, pad_block, block, pad_block, ctx->opts)) {
+                SECURE_ZERO(pad_block, sizeof(pad_block));
                 return CF_ERR_CIPHER_DECRYPT;
+            }
+
+            // Remove padding
+            st = CF_Pad_Remove(pad_block, sizeof(pad_block), &data_len, block, ctx->opts->subflags);
+            if (st != CF_SUCCESS) {
+                SECURE_ZERO(pad_block, sizeof(pad_block));
+                return st;
+            }
+
+            // Copy unpadded plaintext to output
+            SECURE_MEMCPY(out + full_blocks_len, pad_block, data_len);
         }
+
+        SECURE_ZERO(pad_block, sizeof(pad_block));
     }
 
     return CF_SUCCESS;
@@ -597,7 +620,7 @@ static FORCE_INLINE CF_STATUS CF_Cipher_EncDec(
     const CF_CIPHER *cipher,
     const uint8_t *key, size_t key_len,
     const uint8_t *in, size_t in_len, uint8_t *out,
-    CF_CIPHER_OPTS *opts, CF_CIPHER_OPERATION op) {
+    CF_CIPHER_OPTS *opts, CF_OPERATION op) {
     if (!cipher || !key || !out)
         return CF_ERR_NULL_PTR;
 
@@ -629,7 +652,7 @@ CF_STATUS CF_Cipher_Encrypt(
     const uint8_t *key, size_t key_len,
     const uint8_t *in, size_t in_len, uint8_t *out,
     CF_CIPHER_OPTS *opts) {
-    return CF_Cipher_EncDec(cipher, key, key_len, in, in_len, out, opts, CF_CIPHER_OP_ENCRYPT);
+    return CF_Cipher_EncDec(cipher, key, key_len, in, in_len, out, opts, CF_OP_ENCRYPT);
 }
 
 CF_STATUS CF_Cipher_Decrypt(
@@ -637,7 +660,7 @@ CF_STATUS CF_Cipher_Decrypt(
     const uint8_t *key, size_t key_len,
     const uint8_t *in, size_t in_len, uint8_t *out,
     CF_CIPHER_OPTS *opts) {
-    return CF_Cipher_EncDec(cipher, key, key_len, in, in_len, out, opts, CF_CIPHER_OP_DECRYPT);
+    return CF_Cipher_EncDec(cipher, key, key_len, in, in_len, out, opts, CF_OP_DECRYPT);
 }
 
 
@@ -863,20 +886,20 @@ size_t CF_Cipher_GetBlockSize(const CF_CIPHER_CTX *ctx) {
     return ctx ? (ctx->cipher ? ctx->cipher->block_size : 0) : 0;
 }
 
-size_t CF_Cipher_GetOutputLength(const CF_CIPHER_CTX *ctx, size_t input_len) {
-    if (!ctx || !ctx->cipher || input_len == 0)
+size_t CF_Cipher_GetOutputLength(const CF_CIPHER_CTX *ctx, size_t in_len) {
+    if (!ctx || !ctx->cipher || in_len == 0)
         return 0;
 
     size_t block = ctx->cipher->block_size;
 
     if (block == 0) // stream cipher, no padding
-        return input_len;
+        return in_len;
 
     // Round up to next multiple of block size
-    size_t rem = input_len % block;
+    size_t rem = in_len % block;
     if (rem == 0)
-        return input_len; // already aligned
-    return input_len + (block - rem); // pad to next block
+        return in_len; // already aligned
+    return in_len + (block - rem); // pad to next block
 }
 
 CF_STATUS CF_CipherOpts_Init(
@@ -955,9 +978,9 @@ CF_STATUS CF_CipherOpts_Reset(CF_CIPHER_OPTS *opts) {
     SECURE_ZERO(opts->ctr_block, sizeof(opts->ctr_block));
 
     opts->chacha_counter = 0;
-    opts->iv_len = 0;
-    opts->subflags = 0;
-    opts->magic = 0;
+    opts->iv_len         = 0;
+    opts->subflags       = 0;
+    opts->magic          = 0;
 
     return CF_SUCCESS;;
 }
@@ -975,4 +998,57 @@ CF_STATUS CF_CipherOpts_Free(CF_CIPHER_OPTS **p_opts) {
     }
 
     return CF_SUCCESS;
+}
+CF_STATUS CF_CipherOpts_CloneCtx(CF_CIPHER_OPTS *dst, const CF_CIPHER_OPTS *src) {
+    if (!dst || !src)
+        return CF_ERR_NULL_PTR;
+
+    if (src->magic != CF_CTX_MAGIC)
+        return CF_ERR_CTX_CORRUPT;
+
+    // Start with a clean slate
+    CF_CipherOpts_Reset(dst);
+
+    // Deep copy IV
+    if (src->iv_len != 0) {
+        SECURE_MEMCPY(dst->iv, src->iv, sizeof(dst->iv));
+        dst->iv_len = src->iv_len;
+    }
+
+    // Deep copy of AES Counter
+    SECURE_MEMCPY(dst->ctr_block, src->ctr_block, sizeof(dst->ctr_block));
+
+    dst->chacha_counter = src->chacha_counter;
+    dst->subflags       = src->subflags;
+    dst->magic          = src->magic;
+    dst->isHeapAlloc    = 0;
+
+    return CF_SUCCESS;
+}
+
+CF_CIPHER_OPTS* CF_CipherOpts_CloneCtxAlloc(const CF_CIPHER_OPTS *src, CF_STATUS *status) {
+    if (!src) {
+        if (status) *status = CF_ERR_NULL_PTR;
+        return NULL;
+    }
+
+    CF_CIPHER_OPTS *dst = (CF_CIPHER_OPTS *)SECURE_ALLOC(sizeof(CF_CIPHER_OPTS));
+    if (!dst) {
+        if (status) *status = CF_ERR_ALLOC_FAILED;
+        return NULL;
+    }
+
+    // Deep copy contents
+    CF_STATUS ret = CF_CipherOpts_CloneCtx(dst, src);
+    if (ret != CF_SUCCESS) {
+        if (status) *status = ret;
+        CF_CipherOpts_Free(&dst);
+        return NULL;
+    }
+
+    // cloned context is heap-allocated
+    dst->isHeapAlloc = 1;
+
+    if (status) *status = CF_SUCCESS;
+    return dst;
 }

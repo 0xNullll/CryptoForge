@@ -40,6 +40,9 @@ typedef struct _CF_CIPHER CF_CIPHER;
 typedef struct _CF_CIPHER_OPTS CF_CIPHER_OPTS;
 typedef struct _CF_CIPHER_CTX CF_CIPHER_CTX;
 
+typedef struct _CF_AEAD CF_AEAD;
+typedef struct _CF_AEAD_CTX CF_AEAD_CTX;
+
 typedef struct _CF_ENCODER CF_ENCODER;
 typedef struct _CF_ENCODER_CTX CF_ENCODER_CTX;
 

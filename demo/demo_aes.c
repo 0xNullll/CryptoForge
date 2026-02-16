@@ -176,15 +176,15 @@ void test_aes_ecb_fist800_38a(void) {
         0xa8, 0x9e, 0xca, 0xf3,
         0x24, 0x66, 0xef, 0x97,
 
-        0xae, 0x2d, 0x8a, 0x57,
-        0x1e, 0x03, 0xac, 0x9c,
-        0x9e, 0xb7, 0x6f, 0xac,
-        0x45, 0xaf, 0x8e, 0x51,
+        0xf5, 0xd3, 0xd5, 0x85,
+        0x03, 0xb9, 0x69, 0x9d,
+        0xe7, 0x85, 0x89, 0x5a,
+        0x96, 0xfd, 0xba, 0xaf,
 
-        0x30, 0xc8, 0x1c, 0x46,
-        0xa3, 0x5c, 0xe4, 0x11,
-        0xe5, 0xfb, 0xc1, 0x19,
-        0x1a, 0x0a, 0x52, 0xef,
+        0x43, 0xb1, 0xcd, 0x7f,
+        0x59, 0x8e, 0xce, 0x23,
+        0x88, 0x1b, 0x00, 0xe3,
+        0xed, 0x03, 0x06, 0x88,
 
         0x7b, 0x0c, 0x78, 0x5e,
         0x27, 0xe8, 0xad, 0x3f,
@@ -209,7 +209,7 @@ void test_aes_ecb_fist800_38a(void) {
     printf("Ciphertext:"); DEMO_print_hex(ct, sizeof(ct));
     printf("Expected:  "); DEMO_print_hex(expected_ct128, sizeof(expected_ct128));
     printf("Decrypted: "); DEMO_print_hex(dec, sizeof(dec));
-    printf("AES-128 ECB FIPS-800-38a test %s\n", (memcmp(ct, expected_ct128, AES_BLOCK_SIZE)==0 && memcmp(plain_text, dec, AES_BLOCK_SIZE)==0) ? "PASSED" : "FAILED");
+    printf("AES-128 ECB FIPS-800-38a test %s\n", (memcmp(ct, expected_ct128, AES_BLOCK_SIZE * 4)==0 && memcmp(plain_text, dec, AES_BLOCK_SIZE * 4)==0) ? "PASSED" : "FAILED");
 
     // ---------------- AES-192 ----------------
     uint8_t key192[AES_192_KEY_SIZE] = {
@@ -235,8 +235,8 @@ void test_aes_ecb_fist800_38a(void) {
         0xef, 0x7a, 0xfd, 0x22,
         0x70, 0xe2, 0xe6, 0x0a,
         0xdc, 0xe0, 0xba, 0x2f,
-        0xac, 0xec, 0x64, 0x44,
-
+        0xac, 0xe6, 0x44, 0x4e,
+ 
         0x9a, 0x4b, 0x41, 0xba,
         0x73, 0x8d, 0x6c, 0x72,
         0xfb, 0x16, 0x69, 0x16,
@@ -253,7 +253,7 @@ void test_aes_ecb_fist800_38a(void) {
     printf("Ciphertext:"); DEMO_print_hex(ct, sizeof(ct));
     printf("Expected:  "); DEMO_print_hex(expected_ct192, sizeof(expected_ct192));
     printf("Decrypted: "); DEMO_print_hex(dec, sizeof(dec));
-    printf("AES-192 ECB FIPS-800-38a test %s\n", (memcmp(ct, expected_ct192, AES_BLOCK_SIZE)==0 && memcmp(plain_text, dec, AES_BLOCK_SIZE)==0) ? "PASSED" : "FAILED");
+    printf("AES-192 ECB FIPS-800-38a test %s\n", (memcmp(ct, expected_ct192, AES_BLOCK_SIZE * 4)==0 && memcmp(plain_text, dec, AES_BLOCK_SIZE * 4)==0) ? "PASSED" : "FAILED");
 
     // ---------------- AES-256 ----------------
     uint8_t key256[AES_256_KEY_SIZE] = {
@@ -299,7 +299,7 @@ void test_aes_ecb_fist800_38a(void) {
     printf("Ciphertext:"); DEMO_print_hex(ct, sizeof(ct));
     printf("Expected:  "); DEMO_print_hex(expected_ct256, sizeof(expected_ct256));
     printf("Decrypted: "); DEMO_print_hex(dec, sizeof(dec));
-    printf("AES-256 ECB FIPS-800-38a test %s\n", (memcmp(ct, expected_ct256, AES_BLOCK_SIZE)==0 && memcmp(plain_text, dec, AES_BLOCK_SIZE)==0) ? "PASSED" : "FAILED");
+    printf("AES-256 ECB FIPS-800-38a test %s\n", (memcmp(ct, expected_ct256, AES_BLOCK_SIZE * 4)==0 && memcmp(plain_text, dec, AES_BLOCK_SIZE * 4)==0) ? "PASSED" : "FAILED");
 }
 
 void test_aes_cbc_fips800_38a(void) {

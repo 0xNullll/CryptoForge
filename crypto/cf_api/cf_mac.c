@@ -538,14 +538,14 @@ CF_STATUS CF_MAC_Reset(CF_MAC_CTX *ctx) {
     }
 
     // Clear all context fields to prevent accidental reuse or leakage
-    ctx->md = NULL;
-    ctx->mac = NULL;
-    ctx->key = NULL;
-    ctx->key_len = 0;
-    ctx->tag_len = 0;
-    ctx->subflags = 0;
+    ctx->md          = NULL;
+    ctx->mac         = NULL;
+    ctx->key         = NULL;
+    ctx->key_len     = 0;
+    ctx->tag_len     = 0;
+    ctx->subflags    = 0;
     ctx->isFinalized = 0;
-    ctx->magic = 0;
+    ctx->magic       = 0;
 
     return st;
 }
@@ -729,7 +729,8 @@ CF_STATUS CF_MAC_CloneCtx(CF_MAC_CTX *dst, const CF_MAC_CTX *src) {
     dst->tag_len     = src->tag_len;
     dst->subflags    = src->subflags;
     dst->isFinalized = src->isFinalized;
-
+    dst->isHeapAlloc = 0;
+    
     // Copy key pointer and length (shallow copy)
     dst->key     = src->key;
     dst->key_len = src->key_len;
@@ -863,11 +864,12 @@ CF_STATUS CF_MACOpts_Reset(CF_MAC_OPTS *opts) {
     if (!opts)
         return CF_ERR_NULL_PTR;
 
+    SECURE_ZERO(opts->iv, sizeof(opts->iv));
+
     opts->S      = NULL;
     opts->S_len  = 0;
     opts->iv_len = 0;
-
-    SECURE_ZERO(opts->iv, sizeof(opts->iv));
+    opts->magic  = 0;
 
     return CF_SUCCESS;
 }
@@ -907,6 +909,9 @@ CF_STATUS CF_MACOpts_CloneCtx(CF_MAC_OPTS *dst, const CF_MAC_OPTS *src) {
         SECURE_MEMCPY(dst->iv, src->iv, sizeof(dst->iv));
         dst->iv_len = src->iv_len;
     }
+
+    dst->magic       = src->magic;
+    dst->isHeapAlloc = 0;
 
     return CF_SUCCESS;
 }

@@ -19,7 +19,7 @@ CF_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const CF_MD *md, const uint8_t *key, si
     if (CF_IS_XOF(md->id))
         return CF_ERR_UNSUPPORTED;
 
-    if (md->block_size == 0 || md->block_size > CF_MAX_DEFAULT_BLOCK_SIZE)
+    if (md->block_size == 0 || md->block_size > CF_MAX_DEFAULT_HASH_BLOCK_SIZE)
         return CF_ERR_UNSUPPORTED;
 
     if (ctx->isHeapAlloc != 0 && ctx->isHeapAlloc != 1)
@@ -51,7 +51,7 @@ CF_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const CF_MD *md, const uint8_t *key, si
     ctx->key_len = md->block_size;
 
     // apply XOR pads
-    uint8_t ipad[CF_MAX_DEFAULT_BLOCK_SIZE], opad[CF_MAX_DEFAULT_BLOCK_SIZE];
+    uint8_t ipad[CF_MAX_DEFAULT_HASH_BLOCK_SIZE], opad[CF_MAX_DEFAULT_HASH_BLOCK_SIZE];
     for (size_t i = 0; i < md->block_size; i++) {
         ipad[i] = ctx->key[i] ^ 0x36;
         opad[i] = ctx->key[i] ^ 0x5c;

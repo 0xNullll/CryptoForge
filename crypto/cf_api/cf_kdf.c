@@ -355,16 +355,16 @@ CF_STATUS CF_KDF_Reset(CF_KDF_CTX *ctx) {
     }
 
     // Clear all context fields to prevent accidental reuse or leakage
-    ctx->kdf = NULL;
-    ctx->md = NULL;
-    ctx->opts = NULL;
-    ctx->ikm = NULL;
-    ctx->salt = NULL;
-    ctx->ikm_len = 0;
-    ctx->salt_len = 0;
-    ctx->subflags = 0;
+    ctx->kdf         = NULL;
+    ctx->md          = NULL;
+    ctx->opts        = NULL;
+    ctx->ikm         = NULL;
+    ctx->salt        = NULL;
+    ctx->ikm_len     = 0;
+    ctx->salt_len    = 0;
+    ctx->subflags    = 0;
     ctx->isExtracted = 0;
-    ctx->magic = 0;
+    ctx->magic       = 0;
 
     return st;
 }
@@ -520,6 +520,7 @@ CF_STATUS CF_KDF_CloneCtx(CF_KDF_CTX *dst, const CF_KDF_CTX *src) {
     dst->opts        = src->opts;
     dst->subflags    = src->subflags;
     dst->isExtracted = src->isExtracted;
+    dst->isHeapAlloc = 0;
 
     // Copy IKM pointer and length (shallow copy)
     dst->ikm     = src->ikm;
@@ -662,6 +663,7 @@ CF_STATUS CF_KDFOpts_Reset(CF_KDF_OPTS *opts) {
     opts->info_len   = 0;
     opts->S_len      = 0;
     opts->iterations = 0;
+    opts->magic      = 0;
 
     return CF_SUCCESS;
 }
@@ -700,6 +702,9 @@ CF_STATUS CF_KDFOpts_CloneCtx(CF_KDF_OPTS *dst, const CF_KDF_OPTS *src) {
 
     // Copy iteration count (PBKDF2)
     dst->iterations = src->iterations;
+
+    dst->magic       = src->magic;
+    dst->isHeapAlloc = 0;
 
     return CF_SUCCESS;
 }

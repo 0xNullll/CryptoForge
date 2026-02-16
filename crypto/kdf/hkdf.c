@@ -139,7 +139,7 @@ CF_STATUS ll_HKDF_Expand(
 
     CF_STATUS st;
     size_t generated = 0;
-    uint8_t block[CF_MAX_DEFAULT_BLOCK_SIZE];
+    uint8_t block[CF_MAX_DEFAULT_HASH_BLOCK_SIZE];
 
     while (generated < okm_len) {
         if (ctx->counter >= LL_HKDF_MAX_BLOCKS) { // RFC 5869 max 255 blocks
