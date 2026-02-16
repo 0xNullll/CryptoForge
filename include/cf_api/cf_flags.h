@@ -21,9 +21,10 @@
 #define CF_MAX_CUSTOMIZATION         MAX_CUSTOMIZATION
 #define CF_MAX_ENCODED_HEADER_LEN    MAX_ENCODED_HEADER_LEN
 #define CF_MAX_CIPHER_IV_SIZE        XCHACHA_EXTENDED_IV_SIZE
+#define CF_CIPHER_MAX_BLOCK_SIZE     AES_BLOCK_SIZE
 
-#define CF_MAX_DEFAULT_BLOCK_SIZE    168
-#define CF_MAX_DEFAULT_DIGEST_SIZE   64
+#define CF_MAX_DEFAULT_HASH_BLOCK_SIZE 168
+#define CF_MAX_DEFAULT_DIGEST_SIZE     64
 
 // ======================
 // Digest / Hash Sizes
@@ -57,7 +58,7 @@ typedef enum {
     /* cSHAKE */
     CF_CSHAKE128_BLOCK_SIZE   = 168,
     CF_CSHAKE256_BLOCK_SIZE   = 136
-} CF_BLOCK_SIZE;
+} CF_HASH_BLOCK_SIZE;
 
 typedef enum {
     CF_MD5_DIGEST_SIZE        = 16,
@@ -123,14 +124,14 @@ typedef enum {
     CF_RAWSHAKE256 = CF_CAT_DIGEST | CF_CAT_XOF | 0x0021,
     CF_CSHAKE128   = CF_CAT_DIGEST | CF_CAT_XOF | 0x0030,
     CF_CSHAKE256   = CF_CAT_DIGEST | CF_CAT_XOF | 0x0031
-} CF_Algorithm;
+} CF_HASH_FLAGS;
 
 typedef enum {
     CF_KMAC128      = 0x100,
     CF_KMAC256      = 0x200,
     CF_KMAC_XOF128  = 0x300,
     CF_KMAC_XOF256  = 0x400
-} CF_KMAC_TYPE;
+} CF_KMAC_TYPE_FLAGS;
 
 // ======================
 // Digest / MAC helper macros
@@ -180,7 +181,7 @@ typedef enum {
     CF_HKDF         = CF_CAT_KDF | 0x1000, // HKDF with hash subflags
     CF_PBKDF2       = CF_CAT_KDF | 0x2000, // PBKDF2 with hash subflags
     CF_KMAC_XOF     = CF_CAT_KDF | 0x3000  // KMAC-XOF type
-} CF_KDF_ID;
+} CF_KDF_FLAGS;
 
 #define CF_IS_KDF(id)          (((id) & 0xF0000000) == CF_CAT_KDF)
 #define CF_KDF_IS_PBKDF2(id)    ((id) == CF_HKDF)
@@ -248,15 +249,21 @@ typedef enum {
 // Cipher Families
 // ======================
 typedef enum {
+    CF_OP_ENCRYPT = 0,
+    CF_OP_DECRYPT = 1
+} CF_OPERATION;
+
+typedef enum {
     CF_CAT_AES    = 0x00010000, // AES family
-    CF_CAT_CHACHA = 0x00020000  // ChaCha family
+    CF_CAT_CHACHA = 0x00020000, // ChaCha family
+    CF_CAT_AEAD   = 0x00040000  // AEAD family
 } CF_CIPHER_CATEGORY;
 
 // ======================
 // AES / ChaCha Mode Flags
 // ======================
 typedef enum {
-    /* AES Modes */
+    /* AES Block Cipher Modes */
     CF_AES_ECB    = CF_CAT_AES | 0x0001,
     CF_AES_CBC    = CF_CAT_AES | 0x0002,
     CF_AES_OFB    = CF_CAT_AES | 0x0004,
@@ -264,7 +271,7 @@ typedef enum {
     CF_AES_CFB128 = CF_CAT_AES | 0x0010,
     CF_AES_CTR    = CF_CAT_AES | 0x0020,
 
-    /* ChaCha Variants */
+    /* ChaCha Stream Cipher Modes */
     CF_CHACHA8    = CF_CAT_CHACHA | 0x0001,
     CF_CHACHA12   = CF_CAT_CHACHA | 0x0002,
     CF_CHACHA20   = CF_CAT_CHACHA | 0x0004,
@@ -273,13 +280,37 @@ typedef enum {
     CF_XCHACHA20  = CF_CAT_CHACHA | 0x0020
 } CF_CIPHER_MODE_FLAGS;
 
+// ======================
+// AEAD Mode Flags (split AES vs ChaCha families)
+// ======================
+typedef enum {
+    /* AES-GCM Modes */
+    CF_AEAD_AES_GCM_128 = CF_CAT_AEAD | 0x0001,  // AES-GCM 128-bit key
+    CF_AEAD_AES_GCM_192 = CF_CAT_AEAD | 0x0002,  // AES-GCM 192-bit key
+    CF_AEAD_AES_GCM_256 = CF_CAT_AEAD | 0x0004,  // AES-GCM 256-bit key
+
+    /* ChaCha20-Poly1305 Modes */
+    CF_AEAD_CHACHA20_POLY1305  = CF_CAT_AEAD | 0x0010, // ChaCha20-Poly1305
+    CF_AEAD_XCHACHA20_POLY1305 = CF_CAT_AEAD | 0x0020  // XChaCha20-Poly1305
+} CF_AEAD_MODE_FLAGS;
+
+// ======================
+// Masks & helpers
+// ======================
 #define CF_CIPHER_FAMILY_MASK 0xFFFF0000
 #define CF_CIPHER_MODE_MASK   0x0000FFFF
 
-#define CF_IS_CIPHER(mode)   (((mode) & 0x000F0000) == CF_CAT_AES || ((mode) & 0x000F0000) == CF_CAT_CHACHA)
-#define CF_IS_AES(mode)      (((mode) & CF_CIPHER_FAMILY_MASK) == CF_CAT_AES)
-#define CF_IS_CHACHA(mode)   (((mode) & CF_CIPHER_FAMILY_MASK) == CF_CAT_CHACHA)
-#define CF_GET_MODE(mode)    ((mode) & CF_CIPHER_MODE_MASK)
+#define CF_IS_CIPHER(mode)     (((mode) & CF_CIPHER_FAMILY_MASK) == CF_CAT_AES || \
+                                ((mode) & CF_CIPHER_FAMILY_MASK) == CF_CAT_CHACHA)
+
+#define CF_IS_AES(mode)         (((mode) & CF_CIPHER_FAMILY_MASK) == CF_CAT_AES)
+#define CF_IS_CHACHA(mode)      (((mode) & CF_CIPHER_FAMILY_MASK) == CF_CAT_CHACHA)
+#define CF_IS_AEAD(mode)        (((mode) & CF_CIPHER_FAMILY_MASK) == CF_CAT_AEAD)
+
+#define CF_IS_AES_AEAD(mode)    (CF_IS_AEAD(mode) && ((mode) & 0x00F0) == 0x0000)
+#define CF_IS_CHACHA_AEAD(mode) (CF_IS_AEAD(mode) && ((mode) & 0x00F0) != 0x0000)
+
+#define CF_GET_MODE(mode)       ((mode) & CF_CIPHER_MODE_MASK)
 
 // ======================
 // AES / ChaCha Key Sizes
@@ -295,6 +326,15 @@ typedef enum {
 
 #define CF_IS_CHACHA_KEY_VALID(len) \
     ((len) == CF_KEY_128_SIZE || (len) == CF_KEY_256_SIZE)
+
+// ======================
+// Padding
+// ======================
+typedef enum {
+    CF_PAD_PKCS7,
+    CF_PAD_ISO7816_4,
+    CF_PAD_X923
+} CF_PADDING_TYPE;
 
 #define CF_CTX_MAGIC 0x43464D47  // "CFMG"
 

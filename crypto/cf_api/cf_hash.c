@@ -810,10 +810,10 @@ CF_STATUS CF_Hash_Reset(CF_HASH_CTX *ctx) {
     }
 
     // Clear all context fields to prevent accidental reuse or leakage
-    ctx->md = NULL;
-    ctx->opts = NULL;
+    ctx->md      = NULL;
+    ctx->opts    = NULL;
     ctx->out_len = 0;
-    ctx->magic = 0;
+    ctx->magic   = 0;
 
     return CF_SUCCESS;
 }
@@ -931,6 +931,7 @@ CF_STATUS CF_Hash_CloneCtx(CF_HASH_CTX *dst, const CF_HASH_CTX *src) {
     dst->out_len     = src->out_len;
     dst->opts        = src->opts;
     dst->isFinalized = src->isFinalized;
+    dst->isHeapAlloc = 0;
 
     // Deep copy low-level digest context
     if (src->digest_ctx) {
@@ -1091,6 +1092,7 @@ CF_STATUS CF_HashOpts_Reset(CF_HASH_OPTS *opts) {
     opts->S_len           = 0;
     opts->custom_absorbed = 0;
     opts->emptyNameCustom = 1;
+    opts->magic           = 0;
 
     return CF_SUCCESS;
 }
@@ -1122,9 +1124,11 @@ CF_STATUS CF_HashOpts_Clone(CF_HASH_OPTS *dst, const CF_HASH_OPTS *src) {
     CF_HashOpts_Reset(dst);
 
     // Copy metadata
-    dst->finalized = src->finalized;
+    dst->magic           = src->magic;
+    dst->finalized       = src->finalized;
     dst->custom_absorbed = src->custom_absorbed;
     dst->emptyNameCustom = src->emptyNameCustom;
+    dst->isHeapAlloc     = 0;
 
     // Shallow copy (caller manages lifetime)
     dst->N         = src->N;

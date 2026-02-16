@@ -16,7 +16,8 @@
 #include "../config/libs.h"
 #include "../utils/mem.h"
 #include "../utils/cf_status.h"
-#include "cf_defs.h"
+
+#include "cf_flags.h"
 
 /**
  * @brief Constant-time hash comparison
@@ -44,5 +45,14 @@ CF_API int CF_IsEqual(const uint8_t *a, const uint8_t *b, size_t len);
  * @return int Comparison result or error code
  */
 CF_API int CF_CompareLex(const uint8_t *a, const uint8_t *b, size_t len);
+
+// ========================
+// Padding Helpers
+// ========================
+CF_API CF_STATUS CF_Pad_Apply(uint8_t *buf, size_t buf_len, size_t data_len,
+                              size_t block_size, CF_PADDING_TYPE type);
+
+CF_API CF_STATUS CF_Pad_Remove(uint8_t *buf, size_t buf_len, size_t *data_len,
+                               size_t block_size, CF_PADDING_TYPE type);
 
 #endif // CF_UTILS_H
