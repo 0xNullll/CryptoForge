@@ -330,7 +330,7 @@ static const CF_ALGO_ENTRY cf_Cipher_table[] = {
 
     { CF_XCHACHA8,    (const void* (*)(void))CF_get_xchacha8    },
     { CF_XCHACHA12,   (const void* (*)(void))CF_get_xchacha12   },
-    { CF_XCHACHA20,   (const void* (*)(void))CF_get_xchacha20   },
+    { CF_XCHACHA20,   (const void* (*)(void))CF_get_xchacha20   }
 };
 
 const CF_CIPHER *CF_Cipher_GetByFlag(uint32_t algo_flag) {

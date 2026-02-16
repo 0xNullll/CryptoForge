@@ -249,8 +249,8 @@ typedef enum {
 // Cipher Families
 // ======================
 typedef enum {
-    CF_OP_ENCRYPT = 0,
-    CF_OP_DECRYPT = 1
+    CF_OP_DECRYPT = 0,
+    CF_OP_ENCRYPT = 1
 } CF_OPERATION;
 
 typedef enum {

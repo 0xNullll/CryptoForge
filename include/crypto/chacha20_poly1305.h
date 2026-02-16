@@ -45,7 +45,7 @@ typedef struct {
 } ll_CHACHA20_POLY1305_CTX;
 
 // Initialize streaming AEAD context
-bool ll_CHACHA20_POLY13051305_Init(
+bool ll_CHACHA20_POLY1305_Init(
     ll_CHACHA20_POLY1305_CTX *ctx,
     const uint8_t *key, size_t key_len,
     const uint8_t iv[CHACHA20_POLY1305_IV_SIZE],
