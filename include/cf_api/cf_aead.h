@@ -42,10 +42,7 @@ typedef struct _CF_AEAD {
 
     // Low-level function pointers
     bool (*aead_init_fn)(CF_AEAD_CTX *ctx);
-    bool (*aead_enc_fn)(const CF_AEAD_CTX *ctx,
-                        const uint8_t *in, size_t in_len,
-                        uint8_t *out);
-    bool (*aead_dec_fn)(const CF_AEAD_CTX *ctx,
+    bool (*aead_update_fn)(const CF_AEAD_CTX *ctx,
                         const uint8_t *in, size_t in_len,
                         uint8_t *out);
     bool (*aead_final_fn)(CF_AEAD_CTX *ctx,
@@ -79,7 +76,7 @@ typedef struct _CF_AEAD_CTX {
 // ============================
 // Algorithm selection
 // ============================
-CF_API const CF_AEAD *CF_AEAD_GetByFlag(uint32_t aead_flag);
+CF_API const CF_AEAD *CF_AEAD_GetByFlag(uint32_t algo_flag);
 
 // ============================
 // Context initialization & cleanup

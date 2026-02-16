@@ -159,7 +159,7 @@ void test_chacha20_poly1305_wychaproof(void) {
         0x7e,0x90,0x2e,0xcb,0xd0,0x60,0x06,0x91
     };
 
-    if (!ll_CHACHA20_POLY13051305_Init(&ctx, tv1_key, sizeof(tv1_key), tv1_iv, tv1_aad, sizeof(tv1_aad), true)) {
+    if (!ll_CHACHA20_POLY1305_Init(&ctx, tv1_key, sizeof(tv1_key), tv1_iv, tv1_aad, sizeof(tv1_aad), true)) {
         printf("CHACHA20-POLY1305 RFC-7539 Encrypt ll_CHACHA20_POLY13051305_Init failed\n"); return;
     }
 
@@ -173,7 +173,7 @@ void test_chacha20_poly1305_wychaproof(void) {
 
     SECURE_ZERO(&ctx, sizeof(ctx));
 
-    if (!ll_CHACHA20_POLY13051305_Init(&ctx, tv1_key, sizeof(tv1_key), tv1_iv, tv1_aad, sizeof(tv1_aad), false)) {
+    if (!ll_CHACHA20_POLY1305_Init(&ctx, tv1_key, sizeof(tv1_key), tv1_iv, tv1_aad, sizeof(tv1_aad), false)) {
         printf("CHACHA20-POLY1305 RFC-7539 Decrypt ll_CHACHA20_POLY13051305_Init failed\n"); return;
     }
 
@@ -226,7 +226,7 @@ void test_chacha20_poly1305_wychaproof(void) {
         0xb6,0x3c,0x0c,0x0e,0xa1,0x38,0x3c,0x8d
     };
 
-    if (!ll_CHACHA20_POLY13051305_Init(&ctx, tv2_key, sizeof(tv2_key), tv2_iv, tv2_aad, 0, true)) {
+    if (!ll_CHACHA20_POLY1305_Init(&ctx, tv2_key, sizeof(tv2_key), tv2_iv, tv2_aad, 0, true)) {
         printf("CHACHA20-POLY1305 RFC-7539 Encrypt ll_CHACHA20_POLY13051305_Init failed\n"); return;
     }
 
@@ -234,7 +234,7 @@ void test_chacha20_poly1305_wychaproof(void) {
         printf("CHACHA20-POLY1305 RFC-7539 Encrypt ll_CHACHA20_POLY1305_Final failed\n"); return;
     }
 
-    if (!ll_CHACHA20_POLY13051305_Init(&ctx, tv2_key, sizeof(tv2_key), tv2_iv, tv2_aad, 0, false)) {
+    if (!ll_CHACHA20_POLY1305_Init(&ctx, tv2_key, sizeof(tv2_key), tv2_iv, tv2_aad, 0, false)) {
         printf("CHACHA20-POLY1305 RFC-7539 Decrypt ll_CHACHA20_POLY13051305_Init failed\n"); return;
     }
 
