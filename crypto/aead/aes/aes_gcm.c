@@ -122,11 +122,12 @@ bool ll_AES_GCM_Init(ll_AES_GCM_CTX *ctx,
                      const ll_AES_KEY *key,
                      const uint8_t *iv, size_t iv_len,
                      const uint8_t *aad, size_t aad_len, bool encrypt) {
-    if (!ctx || !key || !iv || iv_len < AES_GCM_IV_MIN || !aad)
+    if (!ctx || !key || !iv || !aad)
         return false;
 
-    // Length limits (from NIST SP 800‑38D)
-    if (aad_len > ((U64(0x1) << 61) - 1)) return false;
+    // Length minimum/limit (from NIST SP 800‑38D)
+    if (iv_len < AES_GCM_IV_MIN || aad_len > AES_GCM_AAD_MAX_DATA_LEN)
+        return false;
 
     ctx->isEncrypt = encrypt;
     ctx->key = key;
@@ -182,7 +183,7 @@ bool ll_AES_GCM_Update(ll_AES_GCM_CTX *ctx,
         return false;
 
     //Enforce maximum input length per NIST SP 800‑38D
-    if (in_len > ((U64(0x1) << 36) - 32))
+    if (in_len > AES_GCM_MAX_DATA_LEN)
         return false;
 
     bool ok = false;
@@ -217,7 +218,10 @@ cleanup:
 }
 
 bool ll_AES_GCM_Final(ll_AES_GCM_CTX *ctx, uint8_t *tag, size_t tag_len) {
-    if (!ctx || !tag || !IS_VALID_GCM_TAG_SIZE(tag_len))
+    if (!ctx || !tag)
+        return false;
+
+    if (!IS_VALID_GCM_TAG_SIZE(tag_len))
         return false;
 
     bool ok = false;

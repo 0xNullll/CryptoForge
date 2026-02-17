@@ -34,21 +34,24 @@ extern "C" {
 // - Prevent NULL pointers for non-zero inputs
 //
 
+#define AES_GCM_MAX_DATA_LEN      ((U64(1) << 36) - U64(32)) // ~64 GiB (2^36 - 32 bytes)
+#define AES_GCM_AAD_MAX_DATA_LEN  ((U64(1) << 61) - U64(1))  // ~2 EiB (2^61 - 1 bytes)
+
 /* Recommended IV size (per NIST SP 800-38D) */
 #define AES_GCM_IV_MIN 12
 
-#define AES_GCM_TAG_SIZE_4   4    // 32-bit tag
-#define AES_GCM_TAG_SIZE_8   8    // 64-bit tag
-#define AES_GCM_TAG_SIZE_12 12    // 96-bit tag (recommended default)
-#define AES_GCM_TAG_SIZE_16 16    // 128-bit tag (maximum)
-#define AES_GCM_TAG_SIZE_DEFAULT AES_GCM_TAG_SIZE_16  // default tag size
+#define AES_GCM_TAG_32_SIZE   4    // 32-bit tag
+#define AES_GCM_TAG_64_SIZE   8    // 64-bit tag
+#define AES_GCM_TAG_96_SIZE  12    // 96-bit tag (recommended default)
+#define AES_GCM_TAG_128_SIZE 16    // 128-bit tag (maximum)
+#define AES_GCM_TAG_SIZE_DEFAULT AES_GCM_TAG_96_SIZE  // default tag size
 
 // macro to check if a tag length is valid
 #define IS_VALID_GCM_TAG_SIZE(len) \
-    ((len) == AES_GCM_TAG_SIZE_4  || \
-     (len) == AES_GCM_TAG_SIZE_8  || \
-     (len) == AES_GCM_TAG_SIZE_12 || \
-     (len) == AES_GCM_TAG_SIZE_16)
+    ((len) == AES_GCM_TAG_32_SIZE  || \
+     (len) == AES_GCM_TAG_64_SIZE  || \
+     (len) == AES_GCM_TAG_96_SIZE || \
+     (len) == AES_GCM_TAG_128_SIZE)
 
 // ============================================================================
 // Internal low-level functions exposed here solely for GMAC to use internally.

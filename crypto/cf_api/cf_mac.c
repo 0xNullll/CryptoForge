@@ -474,22 +474,22 @@ CF_STATUS CF_MAC_Final(CF_MAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
     // Validate tag length based on MAC type
     if (CF_MAC_IS_HMAC(ctx->mac->id)) {
         if (ctx->md->default_out_len == 0)
-            return CF_ERR_MAC_BAD_TAG_LEN;
+            return CF_ERR_MAC_INVALID_TAG_LEN;
 
     } else if (CF_MAC_IS_CMAC(ctx->mac->id)) {
         // CMAC requires tag length between 4 and AES block size
         if (tag_len < 4 || tag_len > AES_BLOCK_SIZE)
-            return CF_ERR_MAC_BAD_TAG_LEN;
+            return CF_ERR_MAC_INVALID_TAG_LEN;
 
     } else if (CF_MAC_IS_GMAC(ctx->mac->id)) {
         // GMAC tag length must be valid for GCM
         if (!IS_VALID_GCM_TAG_SIZE(tag_len))
-            return CF_ERR_MAC_BAD_TAG_LEN;
+            return CF_ERR_MAC_INVALID_TAG_LEN;
 
     } else if (CF_MAC_IS_POLY1305(ctx->mac->id)) {
         // Poly1305 always uses a fixed 16-byte tag
         if (tag_len != LL_POLY1305_TAG_LEN)
-            return CF_ERR_MAC_BAD_TAG_LEN;
+            return CF_ERR_MAC_INVALID_TAG_LEN;
     }
 
     // Determine output length: prefer ctx->tag_len if set, otherwise user-specified

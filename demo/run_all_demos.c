@@ -303,10 +303,6 @@ int main(void) {
     printf("**************************************\n");
     test_chacha20_rfc7539();
     printf("**************************************\n");
-    test_chacha20_poly1305_wychaproof();
-    printf("**************************************\n");
-    test_xchacha20_poly1305_wychaproof();
-    printf("**************************************\n");
     test_aes128_fips197();
     printf("**************************************\n");
     test_aes192_fips197();
@@ -325,13 +321,20 @@ int main(void) {
     printf("**************************************\n");
     test_aes_ctr_fips800_38a();
     printf("**************************************\n");
+    printf("------------High Level API------------\n");
+    test_all_cipher_high();
+    printf("---------End Of High Level API---------\n");
+    printf("**************************************\n");
+    test_chacha20_poly1305_wychaproof();
+    printf("**************************************\n");
+    test_xchacha20_poly1305_wychaproof();
+    printf("**************************************\n");
     test_aes_gcm_fips_style();
     printf("**************************************\n");
     test_aes_gcm_empty_plaintext();
     printf("**************************************\n");
-
     printf("------------High Level API------------\n");
-    test_all_cipher_high();
+    test_all_aead_high();
     printf("---------End Of High Level API---------\n");
 
 #endif // ENABLE_TESTS

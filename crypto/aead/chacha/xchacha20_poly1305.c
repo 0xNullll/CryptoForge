@@ -78,7 +78,7 @@ bool ll_XCHACHA20_POLY1305_Update(
     if (!ctx || !in || !out)
         return false;
 
-    if (ctx->data_len + in_len > CHACHA20_POLY1305_MAX_DATA_LEN)
+    if (ctx->total_data_len + in_len > CHACHA20_POLY1305_MAX_DATA_LEN)
         return false;
 
     bool ok = false;
@@ -102,7 +102,7 @@ bool ll_XCHACHA20_POLY1305_Update(
             goto cleanup;
     }
 
-    ctx->data_len += (uint64_t)in_len;
+    ctx->total_data_len += (uint64_t)in_len;
     ok = true;
 
 cleanup:
@@ -122,7 +122,7 @@ bool ll_XCHACHA20_POLY1305_Final(
 
     uint8_t temp[16] = {0};
 
-    size_t rem = ctx->data_len & 15;
+    size_t rem = ctx->total_data_len & 15;
     if (rem) {
         uint8_t pad[16] = {0};
         ll_POLY1305_Update(&ctx->poly1305_ctx, pad, 16 - rem);
@@ -132,7 +132,7 @@ bool ll_XCHACHA20_POLY1305_Final(
     STORE64LE(temp, ctx->aad_len);
 
     // //Encode the length of the plaintext/ciphertext
-    STORE64LE(temp + 8, ctx->data_len);
+    STORE64LE(temp + 8, ctx->total_data_len);
 
     //Compute MAC over the AAD and plaintext/ciphertext length field
     if (ll_POLY1305_Update(&ctx->poly1305_ctx, temp, 16) != CF_SUCCESS)

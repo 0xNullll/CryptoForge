@@ -34,20 +34,20 @@ extern "C" {
 #define CHACHA20_POLY1305_TAG_SIZE 16
 #define CHACHA20_POLY1305_IV_SIZE 12
 #define CHACHA20_POLY1305_MAX_AAD_LEN 0xFFFFFFFFFFFFULL  // ~16 PB, safely fits in 64-bit counters
-#define CHACHA20_POLY1305_MAX_DATA_LEN ((uint64_t)256 * 1024 * 1024 * 1024) // 274_877_906_944 bytes
+#define CHACHA20_POLY1305_MAX_DATA_LEN 274877906944ULL   // 256 GiB
 
 typedef struct {
     ll_CHACHA_CTX chacha_ctx;       // ChaCha internal context
     ll_POLY1305_CTX poly1305_ctx;   // poly1305 internal context
     uint64_t aad_len;               // total AAD length
-    uint64_t data_len;              // total ciphertext/plaintext length
+    uint64_t total_data_len;        // total ciphertext/plaintext length
     int isEncrypt;                  // 1 = encrypting, 0 = decrypting
 } ll_CHACHA20_POLY1305_CTX;
 
 // Initialize streaming AEAD context
 bool ll_CHACHA20_POLY1305_Init(
     ll_CHACHA20_POLY1305_CTX *ctx,
-    const uint8_t *key, size_t key_len,
+    const uint8_t key[CHACHA_KEY_SIZE_256],
     const uint8_t iv[CHACHA20_POLY1305_IV_SIZE],
     const uint8_t *aad, size_t aad_len, bool encrypt);
 

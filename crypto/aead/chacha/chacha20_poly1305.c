@@ -2,7 +2,7 @@
 
 bool ll_CHACHA20_POLY1305_Init(
     ll_CHACHA20_POLY1305_CTX *ctx,
-    const uint8_t *key, size_t key_len,
+    const uint8_t key[CHACHA_KEY_SIZE_256],
     const uint8_t iv[CHACHA20_POLY1305_IV_SIZE],
     const uint8_t *aad, size_t aad_len, bool encrypt) {
     if (!ctx || !key || !iv || (aad_len > 0 && !aad))
@@ -22,7 +22,7 @@ bool ll_CHACHA20_POLY1305_Init(
 
 
     // Initialize ChaCha20 context with key, iv, and default number of rounds
-    if (!ll_CHACHA_Init(&ctx->chacha_ctx, key, key_len, iv, 0, CHACHA20_ROUNDS))
+    if (!ll_CHACHA_Init(&ctx->chacha_ctx, key, CHACHA_KEY_SIZE_256, iv, 0, CHACHA20_ROUNDS))
         goto cleanup;
 
     // Generate the Poly1305 one-time key (first 32 bytes of ChaCha20 keystream)
@@ -32,7 +32,7 @@ bool ll_CHACHA20_POLY1305_Init(
     SECURE_ZERO(&ctx->chacha_ctx, sizeof(ctx->chacha_ctx));
 
     // After deriving Poly1305 key
-    if (!ll_CHACHA_Init(&ctx->chacha_ctx, key, key_len, iv, 1, CHACHA20_ROUNDS))
+    if (!ll_CHACHA_Init(&ctx->chacha_ctx, key, CHACHA_KEY_SIZE_256, iv, 1, CHACHA20_ROUNDS))
         goto cleanup;
 
     // Initialize Poly1305 with the derived one-time key
@@ -76,7 +76,7 @@ bool ll_CHACHA20_POLY1305_Update(
     if (!ctx || !in || !out)
         return false;
 
-    if (ctx->data_len + in_len > CHACHA20_POLY1305_MAX_DATA_LEN)
+    if (ctx->total_data_len + in_len > CHACHA20_POLY1305_MAX_DATA_LEN)
         return false;
 
     bool ok = false;
@@ -100,7 +100,7 @@ bool ll_CHACHA20_POLY1305_Update(
             goto cleanup;
     }
 
-    ctx->data_len += (uint64_t)in_len;
+    ctx->total_data_len += (uint64_t)in_len;
     ok = true;
 
 cleanup:
@@ -120,7 +120,7 @@ bool ll_CHACHA20_POLY1305_Final(
 
     uint8_t temp[16] = {0};
 
-    size_t rem = ctx->data_len & 15;
+    size_t rem = ctx->total_data_len & 15;
     if (rem) {
         uint8_t pad[16] = {0};
         ll_POLY1305_Update(&ctx->poly1305_ctx, pad, 16 - rem);
@@ -130,7 +130,7 @@ bool ll_CHACHA20_POLY1305_Final(
     STORE64LE(temp, ctx->aad_len);
 
     // //Encode the length of the plaintext/ciphertext
-    STORE64LE(temp + 8, ctx->data_len);
+    STORE64LE(temp + 8, ctx->total_data_len);
 
     //Compute MAC over the AAD and plaintext/ciphertext length field
     if (ll_POLY1305_Update(&ctx->poly1305_ctx, temp, 16) != CF_SUCCESS)
