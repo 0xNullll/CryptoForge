@@ -33,7 +33,6 @@ void ll_gcm_mult(uint8_t Z[AES_BLOCK_SIZE],
     STORE64BE(Z + 8, zl);
 }
 
-
 void ll_GHASH_Process(
     const uint8_t H[AES_BLOCK_SIZE],
     const uint8_t *in, size_t in_len,

@@ -174,7 +174,7 @@ CF_STATUS CF_AEAD_Init(
         if (!CF_IS_AES_KEY_VALID(ctx->key_len))
             return CF_ERR_CIPHER_INVALID_KEY_LEN;
 
-        // Check AES nonce Length limits
+        // Check AES nonce Length minimum
         if (ctx->iv_len < AES_GCM_IV_MIN)
             return CF_ERR_AEAD_INVALID_IV;
 
@@ -200,6 +200,14 @@ CF_STATUS CF_AEAD_Init(
         // Check ChaCha20/XChaCha20 key length
         if (!CF_IS_CHACHA_AEAD_KEY_VALID(ctx->key_len))
             return CF_ERR_CIPHER_INVALID_KEY_LEN;
+
+        if (ctx->aead->id == CF_CHACHA20_POLY1305) {
+            if (ctx->iv_len != CHACHA20_POLY1305_IV_SIZE)
+                return CF_ERR_AEAD_INVALID_IV;
+        } else {
+            if (ctx->iv_len != XCHACHA_EXTENDED_IV_SIZE)
+                return CF_ERR_AEAD_INVALID_IV;
+        }
 
         // Check ChaCha AAD Length limits
         if (ctx->aad_len > CHACHA20_POLY1305_MAX_AAD_LEN)
