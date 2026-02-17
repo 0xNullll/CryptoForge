@@ -150,4 +150,4 @@ CryptoForge is best suited for:
 
 ## License
 
-This project is released under the **MIT License**. See '[LICENSE](LICENSE)' for full text.
+This project is released under the **Apache-2.0 license**. See '[LICENSE](LICENSE)' for full text.
