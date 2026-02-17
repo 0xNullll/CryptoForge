@@ -23,6 +23,10 @@
 extern "C" {
 #endif
 
+#define CHACHA_ROUNDS_8      8
+#define CHACHA_ROUNDS_12     12
+#define CHACHA_ROUNDS_20     20
+
 #define CHACHA_BLOCK_SIZE 64       // 512-bit block
 #define CHACHA_KEY_SIZE_128   16   // 128-bit key (optional, smaller variant)
 #define CHACHA_KEY_SIZE_256   32   // 256-bit key (default)

@@ -29,7 +29,7 @@ static bool ll_XCHACHA_Init(
     if (!ll_HChaCha_DeriveSubkey(key, hchacha_iv, subkey, rounds))
         goto cleanup;
 
-    // Construct 12-byte nonce for ChaCha20: 4 zero bytes + last 8 bytes of IV
+    // Construct 12-byte nonce for ChaCha: 4 zero bytes + last 8 bytes of IV
     uint8_t chacha_iv[12] = {0};
     SECURE_MEMCPY(chacha_iv + 4, iv + 16, 8);
 
