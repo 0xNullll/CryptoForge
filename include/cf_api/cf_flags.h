@@ -284,14 +284,12 @@ typedef enum {
 // AEAD Mode Flags (split AES vs ChaCha families)
 // ======================
 typedef enum {
-    /* AES-GCM Modes */
-    CF_AEAD_AES_GCM_128 = CF_CAT_AEAD | 0x0001,  // AES-GCM 128-bit key
-    CF_AEAD_AES_GCM_192 = CF_CAT_AEAD | 0x0002,  // AES-GCM 192-bit key
-    CF_AEAD_AES_GCM_256 = CF_CAT_AEAD | 0x0004,  // AES-GCM 256-bit key
+    /* AES modes */
+    CF_AES_GCM = CF_CAT_AEAD | 0x0001,  // AES-GCM
 
     /* ChaCha20-Poly1305 Modes */
-    CF_AEAD_CHACHA20_POLY1305  = CF_CAT_AEAD | 0x0010, // ChaCha20-Poly1305
-    CF_AEAD_XCHACHA20_POLY1305 = CF_CAT_AEAD | 0x0020  // XChaCha20-Poly1305
+    CF_CHACHA20_POLY1305  = CF_CAT_AEAD | 0x0010, // ChaCha20-Poly1305
+    CF_XCHACHA20_POLY1305 = CF_CAT_AEAD | 0x0020  // XChaCha20-Poly1305
 } CF_AEAD_MODE_FLAGS;
 
 // ======================
@@ -311,6 +309,10 @@ typedef enum {
 #define CF_IS_CHACHA_AEAD(mode) (CF_IS_AEAD(mode) && ((mode) & 0x00F0) != 0x0000)
 
 #define CF_GET_MODE(mode)       ((mode) & CF_CIPHER_MODE_MASK)
+#define CF_IS_XCHACHA_MODE(mode) \
+    (((mode) & CF_CIPHER_MODE_MASK) == CF_XCHACHA8 || \
+     ((mode) & CF_CIPHER_MODE_MASK) == CF_XCHACHA12 || \
+     ((mode) & CF_CIPHER_MODE_MASK) == CF_XCHACHA20)
 
 // ======================
 // AES / ChaCha Key Sizes
@@ -326,6 +328,31 @@ typedef enum {
 
 #define CF_IS_CHACHA_KEY_VALID(len) \
     ((len) == CF_KEY_128_SIZE || (len) == CF_KEY_256_SIZE)
+
+#define CF_IS_XCHACHA_KEY_VALID(len) \
+    ((len) == CF_KEY_256_SIZE)
+
+#define CF_IS_CHACHA_AEAD_KEY_VALID(len) \
+    ((len) == CF_KEY_256_SIZE)
+
+// ======================
+// AES / ChaCha Tag Sizes
+// ======================
+typedef enum {
+    CF_AEAD_TAG_32_SIZE  = 4,
+    CF_AEAD_TAG_64_SIZE  = 8,
+    CF_AEAD_TAG_96_SIZE  = 12,
+    CF_AEAD_TAG_128_SIZE = 16
+} CF_AEAD_TAG_SIZE;
+
+#define CF_IS_VALID_GCM_TAG_SIZE(len) \
+    ((len) == CF_AEAD_TAG_32_SIZE  || \
+     (len) == CF_AEAD_TAG_64_SIZE  || \
+     (len) == CF_AEAD_TAG_96_SIZE || \
+     (len) == CF_AEAD_TAG_128_SIZE)
+
+#define CF_IS_VALID_CHACHA_TAG_SIZE(len) \
+     ((len) == CF_AEAD_TAG_128_SIZE)
 
 // ======================
 // Padding

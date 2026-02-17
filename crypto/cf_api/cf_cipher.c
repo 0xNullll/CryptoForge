@@ -382,7 +382,7 @@ CF_STATUS CF_Cipher_Init(
     if (CF_IS_AES(ctx->cipher->id)) {
 
         // Check AES key length
-        if (!CF_IS_AES_KEY_VALID(key_len))
+        if (!CF_IS_AES_KEY_VALID(ctx->key_len))
             return CF_ERR_CIPHER_INVALID_KEY_LEN;
 
         // Allocate memory for AES key schedule
@@ -391,7 +391,7 @@ CF_STATUS CF_Cipher_Init(
             return CF_ERR_ALLOC_FAILED;
 
         // Initialize AES key schedule
-        if (!ll_AES_SetEncryptKey((ll_AES_KEY *)ctx->key_ctx, key, key_len)) {
+        if (!ll_AES_SetEncryptKey((ll_AES_KEY *)ctx->key_ctx, ctx->key, ctx->key_len)) {
             CF_Cipher_Reset(ctx);
             return CF_ERR_CIPHER_KEY_SETUP;
         }
@@ -400,9 +400,14 @@ CF_STATUS CF_Cipher_Init(
     // ChaCha-specific initialization
     else if (CF_IS_CHACHA(ctx->cipher->id)) {
 
-        // Check ChaCha key length
-        if (!CF_IS_CHACHA_KEY_VALID(key_len))
+        // Check ChaCha/XChaCha key length
+        if (CF_IS_XCHACHA_MODE(ctx->cipher->id)) {
+            if (!CF_IS_XCHACHA_KEY_VALID(ctx->key_len))
             return CF_ERR_CIPHER_INVALID_KEY_LEN;
+        } else {
+            if (!CF_IS_CHACHA_KEY_VALID(ctx->key_len))
+            return CF_ERR_CIPHER_INVALID_KEY_LEN;
+        }
 
         // Reject invalid cipher context size
         if (ctx->cipher->ctx_size == 0) 
@@ -414,8 +419,7 @@ CF_STATUS CF_Cipher_Init(
             return CF_ERR_ALLOC_FAILED;
 
         // Initialize ChaCha low-level context
-        bool ok = ctx->cipher->cipher_init_fn(ctx, ctx->opts);
-        if (ok != true) {
+        if (!ctx->cipher->cipher_init_fn(ctx, ctx->opts)) {
             CF_Cipher_Reset(ctx);
             return CF_ERR_CTX_CORRUPT;
         }
@@ -681,12 +685,13 @@ CF_STATUS CF_Cipher_CloneCtx(CF_CIPHER_CTX *dst, const CF_CIPHER_CTX *src) {
     CF_Cipher_Reset(dst);
 
     // Copy metadata (shallow)
-    dst->magic     = src->magic;
-    dst->cipher    = src->cipher;
-    dst->opts      = src->opts;
-    dst->key       = src->key;
-    dst->key_len   = src->key_len;
-    dst->operation = src->operation;
+    dst->magic       = src->magic;
+    dst->cipher      = src->cipher;
+    dst->opts        = src->opts;
+    dst->key         = src->key;
+    dst->key_len     = src->key_len;
+    dst->operation   = src->operation;
+    dst->isHeapAlloc = 0;
 
     CF_STATUS st = CF_SUCCESS;
 
@@ -793,66 +798,98 @@ const char* CF_Cipher_GetFullName(const CF_CIPHER_CTX *ctx) {
     if (!ctx || !ctx->cipher)
         return "NULL";
 
-    switch (ctx->key_len) {
-        case CF_KEY_128_SIZE:
-            switch (ctx->cipher->id) {
-                case CF_AES_ECB:    return "AES-128-ECB";
-                case CF_AES_CBC:    return "AES-128-CBC";
-                case CF_AES_OFB:    return "AES-128-OFB";
-                case CF_AES_CFB8:   return "AES-128-CFB8";
-                case CF_AES_CFB128: return "AES-128-CFB128";
-                case CF_AES_CTR:    return "AES-192-CTR";
+    switch (ctx->cipher->id) {
 
-                case CF_CHACHA8:    return "ChaCha8-128";
-                case CF_CHACHA12:   return "ChaCha12-128";
-                case CF_CHACHA20:   return "ChaCha20-128";
-
-                default:            return "UNKNOWN-CIPHER-128";
+        // ===== AES =====
+        case CF_AES_ECB:
+            switch (ctx->key_len) {
+                case CF_KEY_128_SIZE: return "AES-128-ECB";
+                case CF_KEY_192_SIZE: return "AES-192-ECB";
+                case CF_KEY_256_SIZE: return "AES-256-ECB";
+                default: return "AES-UNKNOWN-ECB";
             }
 
-        case CF_KEY_192_SIZE:
-            switch (ctx->cipher->id) {
-                case CF_AES_ECB:    return "AES-192-ECB";
-                case CF_AES_CBC:    return "AES-192-CBC";
-                case CF_AES_OFB:    return "AES-192-OFB";
-                case CF_AES_CFB8:   return "AES-192-CFB8";
-                case CF_AES_CFB128: return "AES-192-CFB128";
-                case CF_AES_CTR:    return "AES-192-CTR";
-
-                default:            return "UNKNOWN-CIPHER-192";
+        case CF_AES_CBC:
+            switch (ctx->key_len) {
+                case CF_KEY_128_SIZE: return "AES-128-CBC";
+                case CF_KEY_192_SIZE: return "AES-192-CBC";
+                case CF_KEY_256_SIZE: return "AES-256-CBC";
+                default: return "AES-UNKNOWN-CBC";
             }
 
-        case CF_KEY_256_SIZE:
-            switch (ctx->cipher->id) {
-                case CF_AES_ECB:    return "AES-256-ECB";
-                case CF_AES_CBC:    return "AES-256-CBC";
-                case CF_AES_CFB8:   return "AES-256-CFB8";
-                case CF_AES_CFB128: return "AES-256-CFB128";
-                case CF_AES_OFB:    return "AES-256-OFB";
-                case CF_AES_CTR:    return "AES-192-CTR";
-
-                case CF_CHACHA8:    return "ChaCha8-256";
-                case CF_CHACHA12:   return "ChaCha12-256";
-                case CF_CHACHA20:   return "ChaCha20-256";
-                case CF_XCHACHA8:   return "XChaCha8-256";
-                case CF_XCHACHA12:  return "XChaCha12-256";
-                case CF_XCHACHA20:  return "XChaCha20-256";
-
-                default: 
-                    return "UNKNOWN-CIPHER-256";
+        case CF_AES_OFB:
+            switch (ctx->key_len) {
+                case CF_KEY_128_SIZE: return "AES-128-OFB";
+                case CF_KEY_192_SIZE: return "AES-192-OFB";
+                case CF_KEY_256_SIZE: return "AES-256-OFB";
+                default: return "AES-UNKNOWN-OFB";
             }
 
-            default: 
-                return "UNKNOWN-CIPHER";
+        case CF_AES_CFB8:
+            switch (ctx->key_len) {
+                case CF_KEY_128_SIZE: return "AES-128-CFB8";
+                case CF_KEY_192_SIZE: return "AES-192-CFB8";
+                case CF_KEY_256_SIZE: return "AES-256-CFB8";
+                default: return "AES-UNKNOWN-CFB8";
+            }
+
+        case CF_AES_CFB128:
+            switch (ctx->key_len) {
+                case CF_KEY_128_SIZE: return "AES-128-CFB128";
+                case CF_KEY_192_SIZE: return "AES-192-CFB128";
+                case CF_KEY_256_SIZE: return "AES-256-CFB128";
+                default: return "AES-UNKNOWN-CFB128";
+            }
+
+        case CF_AES_CTR:
+            switch (ctx->key_len) {
+                case CF_KEY_128_SIZE: return "AES-128-CTR";
+                case CF_KEY_192_SIZE: return "AES-192-CTR";
+                case CF_KEY_256_SIZE: return "AES-256-CTR";
+                default: return "AES-UNKNOWN-CTR";
+            }
+
+        // ===== ChaCha =====
+        case CF_CHACHA8:
+            switch (ctx->key_len) {
+                case CF_KEY_128_SIZE: return "ChaCha8-128";
+                case CF_KEY_256_SIZE: return "ChaCha8-256";
+                default: return "ChaCha8-UNKNOWN";
+            }
+
+        case CF_CHACHA12:
+            switch (ctx->key_len) {
+                case CF_KEY_128_SIZE: return "ChaCha12-128";
+                case CF_KEY_256_SIZE: return "ChaCha12-256";
+                default: return "ChaCha12-UNKNOWN";
+            }
+
+        case CF_CHACHA20:
+            switch (ctx->key_len) {
+                case CF_KEY_128_SIZE: return "ChaCha20-128";
+                case CF_KEY_256_SIZE: return "ChaCha20-256";
+                default: return "ChaCha20-UNKNOWN";
+            }
+
+        // ===== XChaCha (fixed 256) =====
+        case CF_XCHACHA8:   return "XChaCha8-256";
+        case CF_XCHACHA12:  return "XChaCha12-256";
+        case CF_XCHACHA20:  return "XChaCha20-256";
+
+        default: return "UNKNOWN-CIPHER";
     }
 }
 
- bool CF_Cipher_IsValidKeyLength(const CF_CIPHER *cipher, size_t key_len) {
+bool CF_Cipher_IsValidKeyLength(const CF_CIPHER *cipher, size_t key_len) {
     if (!cipher)
         return false;
 
     if (CF_IS_AES(cipher->id)) {
        if (CF_IS_AES_KEY_VALID(key_len))
+        return true;
+    }
+    else if (CF_IS_XCHACHA_MODE(cipher->id)) {
+       if (CF_IS_XCHACHA_KEY_VALID(key_len))
         return true;
     }
     else if (CF_IS_CHACHA(cipher->id)) {
@@ -869,10 +906,14 @@ const size_t* CF_Cipher_GetValidKeySizes(const CF_CIPHER *cipher, size_t *count)
 
     static const size_t aes_sizes[3] = {CF_KEY_128_SIZE, CF_KEY_192_SIZE, CF_KEY_256_SIZE};
     static const size_t chacha_sizes[2] = {CF_KEY_128_SIZE, CF_KEY_256_SIZE};
+    static const size_t xchacha_sizes[1] = {CF_KEY_256_SIZE};
 
     if (CF_IS_AES(cipher->id)) {
         *count = 3;
         return aes_sizes;
+    } else if (CF_IS_XCHACHA_MODE(cipher->id)) {
+        *count = 1;
+        return xchacha_sizes;
     } else if (CF_IS_CHACHA(cipher->id)) {
         *count = 2;
         return chacha_sizes;

@@ -56,6 +56,7 @@
 #include "../cf_api/cf_mac.h"
 #include "../cf_api/cf_kdf.h"
 #include "../cf_api/cf_cipher.h"
+#include "../cf_api/cf_aead.h"
 #include "../cf_api/cf_enc.h"
 
 #ifdef __cplusplus
@@ -125,8 +126,6 @@ CF_API void test_hex_base85(const char *label, const uint8_t *input, size_t len,
 CF_API void test_all_encoders_high(const uint8_t *input, size_t input_len);
 
 CF_API void test_chacha20_rfc7539(void);
-CF_API void test_chacha20_poly1305_wychaproof(void);
-CF_API void test_xchacha20_poly1305_wychaproof(void);
 
 CF_API void test_aes128_fips197(void);
 CF_API void test_aes192_fips197(void);
@@ -138,10 +137,14 @@ CF_API void test_aes_cfb8_fips800_38a(void);
 CF_API void test_aes_cfb128_fips800_38a(void);
 CF_API void test_aes_ofb_fips800_38a(void);
 CF_API void test_aes_ctr_fips800_38a(void);
-CF_API void test_aes_gcm_fips_style(void);
-CF_API void test_aes_gcm_empty_plaintext(void);
 
 CF_API void test_all_cipher_high(void);
+
+CF_API void test_chacha20_poly1305_wychaproof(void);
+CF_API void test_xchacha20_poly1305_wychaproof(void);
+CF_API void test_aes_gcm_fips_style(void);
+CF_API void test_aes_gcm_empty_plaintext(void);
+CF_API void test_all_aead_high(void);
 
 #ifdef __cplusplus
 }

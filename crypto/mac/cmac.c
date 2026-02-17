@@ -206,7 +206,7 @@ CF_STATUS ll_CMAC_Final(ll_CMAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
         return CF_ERR_NULL_PTR;
 
     if (tag_len < 4 || tag_len > AES_BLOCK_SIZE)
-        return CF_ERR_MAC_BAD_TAG_LEN;
+        return CF_ERR_MAC_INVALID_TAG_LEN;
 
     if (ctx->isFinalized)
         return CF_ERR_CIPHER_FINALIZED;
@@ -303,7 +303,7 @@ CF_STATUS ll_CMAC_Verify(
         return CF_ERR_NULL_PTR;
 
     if (tag_len < 4 || tag_len > AES_BLOCK_SIZE)
-        return CF_ERR_MAC_BAD_TAG_LEN;
+        return CF_ERR_MAC_INVALID_TAG_LEN;
 
     CF_STATUS st = CF_SUCCESS;
 

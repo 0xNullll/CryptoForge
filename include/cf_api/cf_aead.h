@@ -41,11 +41,11 @@ typedef struct _CF_AEAD {
     size_t key_ctx_size;          // low-level expanded key size
 
     // Low-level function pointers
-    bool (*aead_init_fn)(CF_AEAD_CTX *ctx);
+    bool (*aead_init_fn)(const CF_AEAD_CTX *ctx);
     bool (*aead_update_fn)(const CF_AEAD_CTX *ctx,
                         const uint8_t *in, size_t in_len,
                         uint8_t *out);
-    bool (*aead_final_fn)(CF_AEAD_CTX *ctx,
+    bool (*aead_final_fn)(const CF_AEAD_CTX *ctx,
                           uint8_t *tag, size_t tag_len);
 } CF_AEAD;
 
@@ -68,6 +68,8 @@ typedef struct _CF_AEAD_CTX {
 
     const uint8_t *aad;             // additional authenticated data
     size_t aad_len;
+
+    uint64_t total_data_len;        // keep count of the inputed data length
 
     CF_OPERATION operation;    // encrypt or decrypt
     int isHeapAlloc;
@@ -118,7 +120,7 @@ CF_API CF_STATUS CF_AEAD_Decrypt(const CF_AEAD *aead,
                                  const uint8_t *iv, size_t iv_len,
                                  const uint8_t *aad, size_t aad_len,
                                  const uint8_t *in, size_t in_len,
-                                 uint8_t *out, const uint8_t *tag, size_t tag_len);
+                                 uint8_t *out, uint8_t *tag, size_t tag_len);
 
 // ============================
 // Cloning
