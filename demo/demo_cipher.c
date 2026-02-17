@@ -1481,7 +1481,7 @@ void test_all_cipher_high(void) {
                 continue;
             }
 
-            // this init just to get the proper credentiols for CF_Cipher_GetFullName() for algorithm name display for testing
+            // this init just to get the proper credentials for CF_Cipher_GetFullName() for algorithm name display for testing
             status = CF_Cipher_Init(&ctx, cipher, ctxOpts, chacha_key_test_vectors[j], chacha_key_test_vectors_sizes[j], CF_OP_ENCRYPT);
             if (status != CF_SUCCESS) {
                 CF_CipherOpts_Free(&ctxOpts);
@@ -1642,7 +1642,7 @@ void test_all_cipher_high(void) {
             uint8_t output_ct[4 * AES_BLOCK_SIZE] = {0};
             uint8_t output_dec[4 * AES_BLOCK_SIZE] = {0};
 
-            // this init just to get the proper credentiols for CF_Cipher_GetFullName() for algorithm name display for testing
+            // this init just to get the proper credentials for CF_Cipher_GetFullName() for algorithm name display for testing
             status = CF_Cipher_Init(&ctx, cipher, ctxOpts, aes_key_test_vectors[j], aes_key_test_vectors_sizes[j], CF_OP_ENCRYPT);
             if (status != CF_SUCCESS) {
                 printf("CF_Cipher_Init failed for %s, error status: %u\n", CF_Cipher_GetName(cipher), status);
