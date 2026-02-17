@@ -1,13 +1,18 @@
 /*
- * CryptoForge - cf_aead.c / High-level AEAD aead context implementation
+ * CryptoForge - cf_aead.c / High-level AEAD Cipher context implementation
  * Copyright (C) 2026 0xNullll
  *
- * Licensed under the MIT License. See LICENSE in the project root.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at:
  *
- * Note: This library is educational, software-only, and verified only
- * against WyChaProof test vectors. No hardware optimizations. Use with caution.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Project repository: https://github.com/0xNullll/CryptoForge
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 #include "../../include/cf_api/cf_aead.h"
@@ -15,23 +20,6 @@
 //
 // Wrappers for all hashes
 //
-
-// typedef struct _CF_AEAD {
-//     uint32_t id;                  // CF_AEAD ID / flag
-//     size_t ctx_size;              // low-level context size
-//     size_t key_ctx_size;          // low-level expanded key size
-
-//     // Low-level function pointers
-//     bool (*aead_init_fn)(CF_AEAD_CTX *ctx);
-//     bool (*aead_enc_fn)(CF_AEAD_CTX *ctx,
-//                         const uint8_t *in, size_t in_len,
-//                         uint8_t *out);
-//     bool (*aead_dec_fn)(CF_AEAD_CTX *ctx,
-//                         const uint8_t *in, size_t in_len,
-//                         uint8_t *out);
-//     bool (*aead_final_fn)(CF_AEAD_CTX *ctx,
-//                           uint8_t *tag, size_t tag_len);
-// } CF_AEAD;
 
 // AES-GCM
 static bool aes_gcm_init_wrapper(const CF_AEAD_CTX *ctx) {
