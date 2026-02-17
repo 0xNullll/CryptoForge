@@ -36,7 +36,7 @@ bool ll_CHACHA_Init(ll_CHACHA_CTX *ctx, const uint8_t *key, size_t key_len,
         return false;
 
     // Validate number of rounds (ChaCha supports 8, 12, or 20 rounds)
-    if (rounds != 8 && rounds != 12 && rounds != 20)
+    if (rounds != CHACHA_ROUNDS_8 && rounds != CHACHA_ROUNDS_12 && rounds != CHACHA_ROUNDS_20)
         return false;
 
     // Save the number of rounds to be applied in this context

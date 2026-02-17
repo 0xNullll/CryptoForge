@@ -118,9 +118,7 @@ static FORCE_INLINE void PUT64BE(uint8_t *p, uint64_t x) {
 #define STORE64BE(p,x) PUT64BE((uint8_t*)(p), x)
 
 // =======================
-// Twisted load/store helpers
-// For Keccak / SHA-3 style algorithms
-// Only difference: twisted byte order
+// Small-endian conversions
 // =======================
 #if CPU_BIG_ENDIAN
 // big-endian CPU: memory matches algorithm -> no-op
