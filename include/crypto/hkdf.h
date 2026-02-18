@@ -41,7 +41,7 @@ extern "C" {
 // HKDF context structure
 // ============================
 typedef struct _ll_HKDF_CTX {
-    const CF_MD *md;         // Low-level hash descriptor
+    const CF_HASH *hash;         // Low-level hash descriptor
 
     uint8_t *prk;             // Pseudorandom key from Extract (constant HMAC key)
     size_t prk_len;           // Length of PRK (HashLen)
@@ -61,10 +61,10 @@ typedef struct _ll_HKDF_CTX {
 // ============================
 
 // Initializes a new HKDF_CTX with optional info; PRK is not set yet.
-CF_STATUS ll_HKDF_Init(ll_HKDF_CTX *ctx, const CF_MD *md, const uint8_t *info, size_t info_len);
+CF_STATUS ll_HKDF_Init(ll_HKDF_CTX *ctx, const CF_HASH *hash, const uint8_t *info, size_t info_len);
 
 // Allocates and initializes a new HKDF_CTX on the heap
-ll_HKDF_CTX* ll_HKDF_InitAlloc(const CF_MD *md, const uint8_t *info, size_t info_len, CF_STATUS *status);
+ll_HKDF_CTX* ll_HKDF_InitAlloc(const CF_HASH *hash, const uint8_t *info, size_t info_len, CF_STATUS *status);
 
 // Performs HKDF-Extract with given salt and input key material, stores PRK in context
 CF_STATUS ll_HKDF_Extract(

@@ -34,7 +34,7 @@ extern "C" {
 // HMAC context structure
 // ============================
 typedef struct _ll_HMAC_CTX {
-    const CF_MD *md;                        // Low-level hash descriptor
+    const CF_HASH *hash;                        // Low-level hash descriptor
 
     uint8_t ipad_ctx[CF_MAX_HASH_CTX_SIZE];
     uint8_t opad_ctx[CF_MAX_HASH_CTX_SIZE];
@@ -51,12 +51,12 @@ typedef struct _ll_HMAC_CTX {
 // HMAC low-level function prototypes
 // ============================
 
-// initializes a new HMAC_CTX for a given CF_MD hash and key.
-CF_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const CF_MD *md, const uint8_t *key, size_t key_len);
+// initializes a new HMAC_CTX for a given CF_HASH hash and key.
+CF_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const CF_HASH *hash, const uint8_t *key, size_t key_len);
 
-// Allocates and initializes a new HMAC_CTX for a given CF_MD hash and key.
+// Allocates and initializes a new HMAC_CTX for a given CF_HASH hash and key.
 // Returns NULL on allocation failure.
-ll_HMAC_CTX* ll_HMAC_InitAlloc(const CF_MD *md, const uint8_t *key, size_t key_len, CF_STATUS *status);
+ll_HMAC_CTX* ll_HMAC_InitAlloc(const CF_HASH *hash, const uint8_t *key, size_t key_len, CF_STATUS *status);
 
 // Updates the HMAC with data. Can be called multiple times for streaming.
 CF_STATUS ll_HMAC_Update(ll_HMAC_CTX *ctx, const uint8_t *data, size_t data_len);
@@ -68,7 +68,7 @@ CF_STATUS ll_HMAC_Final(ll_HMAC_CTX *ctx, uint8_t *digest, size_t digest_len);
 // Verifies if the provided HMAC matches the computed HMAC for the given data.
 // Returns CF_SUCCESS if valid, CF_ERR_MAC_VERIFY if invalid.
 CF_STATUS ll_HMAC_Verify(
-    const CF_MD *md, 
+    const CF_HASH *hash, 
     const uint8_t *key, size_t key_len,
     const uint8_t *data, size_t data_len,
     const uint8_t *expected_tag, size_t expected_tag_len

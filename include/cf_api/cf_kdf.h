@@ -77,7 +77,7 @@ typedef struct _CF_KDF_CTX {
     uint64_t magic;         // CF_CTX_MAGIC ^ (uintptr_t)kdf
 
     const CF_KDF *kdf;
-    const CF_MD *md;
+    const CF_HASH *hash;
     const CF_KDF_OPTS *opts;
 
     void *kdf_ctx;

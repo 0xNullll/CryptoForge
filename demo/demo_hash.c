@@ -28,15 +28,15 @@ void test_all_hashes(const uint8_t *input, size_t input_len, const CF_HASH_OPTS 
     size_t num_hashes = sizeof(hash_flags) / sizeof(hash_flags[0]);
 
     for (size_t i = 0; i < num_hashes; i++) {
-        const CF_MD *md = CF_MD_GetByFlag(hash_flags[i]);
-        if (!md) {
+        const CF_HASH *hash = CF_Hash_GetByFlag(hash_flags[i]);
+        if (!hash) {
             printf("Unknown hash flag %u\n", hash_flags[i]);
             continue;
         }
 
-        void *ctx = malloc(md->ctx_size);
+        void *ctx = malloc(hash->ctx_size);
         if (!ctx) {
-            printf("%s: failed to allocate context\n", CF_Hash_GetName(md));
+            printf("%s: failed to allocate context\n", CF_Hash_GetName(hash));
             continue;
         }
 
@@ -46,38 +46,38 @@ void test_all_hashes(const uint8_t *input, size_t input_len, const CF_HASH_OPTS 
             init_opts = opts;
         }
 
-        if (!md->hash_init_fn(ctx, init_opts)) {
-            printf("%s init failed\n", CF_Hash_GetName(md));
+        if (!hash->hash_init_fn(ctx, init_opts)) {
+            printf("%s init failed\n", CF_Hash_GetName(hash));
             free(ctx);
             continue;
         }
 
-        if (!md->hash_update_fn(ctx, input, input_len)) {
-            printf("%s update failed\n", CF_Hash_GetName(md));
+        if (!hash->hash_update_fn(ctx, input, input_len)) {
+            printf("%s update failed\n", CF_Hash_GetName(hash));
             free(ctx);
             continue;
         }
 
-        size_t out_len = md->digest_size != 0 ? md->digest_size : md->default_out_len;
+        size_t out_len = hash->digest_size != 0 ? hash->digest_size : hash->default_out_len;
 
         // Finalize hash
-        if (!md->hash_final_fn(ctx, digest)) {
-            printf("%s final failed\n", CF_Hash_GetName(md));
+        if (!hash->hash_final_fn(ctx, digest)) {
+            printf("%s final failed\n", CF_Hash_GetName(hash));
             free(ctx);
             continue;
         }
 
         // Optional squeeze for XOF hashes
-        if (md->hash_squeeze_fn) {
-            if (!md->hash_squeeze_fn(ctx, digest, out_len)) {
-                printf("%s squeeze failed\n", CF_Hash_GetName(md));
+        if (hash->hash_squeeze_fn) {
+            if (!hash->hash_squeeze_fn(ctx, digest, out_len)) {
+                printf("%s squeeze failed\n", CF_Hash_GetName(hash));
                 free(ctx);
                 continue;
             }
         }
 
         // Print digest
-        printf("%s digest: ", CF_Hash_GetName(md));
+        printf("%s digest: ", CF_Hash_GetName(hash));
         DEMO_print_hex(digest, out_len);
         printf("\n");
 
@@ -111,21 +111,21 @@ void test_all_hashes_high(const uint8_t *input, size_t input_len, const CF_HASH_
 
     for (size_t i = 0; i < num_hashes; i++) {
 
-        const CF_MD *md = CF_MD_GetByFlag(hash_flags[i]);
-        if (!md) {
+        const CF_HASH *hash = CF_Hash_GetByFlag(hash_flags[i]);
+        if (!hash) {
             printf("Unknown hash flag %u\n", hash_flags[i]);
             continue;
         }
 
-        size_t digest_len = md->digest_size ? md->digest_size
-                                         : md->default_out_len;
+        size_t digest_len = hash->digest_size ? hash->digest_size
+                                         : hash->default_out_len;
 
         CF_STATUS status;
 
-        if (CF_IS_XOF(md->id)) {
+        if (CF_IS_XOF(hash->id)) {
             // XOF and cSHAKE
             status = CF_Hash_Compute(
-                md,
+                hash,
                 input,
                 input_len,
                 digest,
@@ -135,7 +135,7 @@ void test_all_hashes_high(const uint8_t *input, size_t input_len, const CF_HASH_
         } else {
             // normal fixed digest hash
             status = CF_Hash_ComputeFixed(
-                md,
+                hash,
                 input,
                 input_len,
                 digest
@@ -144,19 +144,19 @@ void test_all_hashes_high(const uint8_t *input, size_t input_len, const CF_HASH_
 
         if (status != CF_SUCCESS) {
             printf("%s failed (status=%d)\n",
-                   CF_Hash_GetName(md),
+                   CF_Hash_GetName(hash),
                    status);
             continue;
         }
 
-        printf("%s digest: ", CF_Hash_GetName(md));
+        printf("%s digest: ", CF_Hash_GetName(hash));
         DEMO_print_hex(digest, digest_len);
         printf("\n");
 
         CF_HASH_CTX test_copy_ctx = {0};
         CF_HASH_CTX test_copy_ctx2 = {0};
 
-        status = CF_Hash_Init(&test_copy_ctx2, md, opts);
+        status = CF_Hash_Init(&test_copy_ctx2, hash, opts);
         if (status != CF_SUCCESS) {
             printf("[FAIL] Init copying test failed\n");
         } else {

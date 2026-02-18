@@ -40,7 +40,7 @@ extern "C" {
 // PBKDF2 context structure
 // ============================
 typedef struct _ll_PBKDF2_CTX {
-    const CF_MD *md;          // Low-level hash descriptor
+    const CF_HASH *hash;          // Low-level hash descriptor
 
     const uint8_t *password;  // Password bytes
     size_t password_len;       
@@ -66,12 +66,12 @@ typedef struct _ll_PBKDF2_CTX {
 // Initialize PBKDF2 context with password; salt not set yet
 CF_STATUS ll_PBKDF2_Init(
     ll_PBKDF2_CTX *ctx,
-    const CF_MD *md,
+    const CF_HASH *hash,
     const uint8_t *password, size_t password_len);
 
 // Allocate and initialize a PBKDF2 context on the heap
 ll_PBKDF2_CTX* ll_PBKDF2_InitAlloc(
-    const CF_MD *md,
+    const CF_HASH *hash,
     const uint8_t *password, size_t password_len,
     CF_STATUS *status);
 

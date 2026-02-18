@@ -23,8 +23,8 @@ void test_all_hmacs(const uint8_t *key, size_t key_len, const uint8_t *input, si
     size_t num_hashes = sizeof(hash_flags)/sizeof(hash_flags[0]);
 
     for (size_t i = 0; i < num_hashes; i++) {
-        const CF_MD *md = CF_MD_GetByFlag(hash_flags[i]);
-        if (!md) { 
+        const CF_HASH *hash = CF_Hash_GetByFlag(hash_flags[i]);
+        if (!hash) { 
             printf("Unknown hash flag %u\n", hash_flags[i]); 
             continue; 
         }
@@ -32,15 +32,15 @@ void test_all_hmacs(const uint8_t *key, size_t key_len, const uint8_t *input, si
         ll_HMAC_CTX hmac_ctx;
         SECURE_ZERO(&hmac_ctx, sizeof(hmac_ctx));
 
-        CF_STATUS status = ll_HMAC_Init(&hmac_ctx, md, key, key_len);
+        CF_STATUS status = ll_HMAC_Init(&hmac_ctx, hash, key, key_len);
         if (status != CF_SUCCESS) { 
-            printf("ll_HMAC_Init failed for %s\n", CF_Hash_GetName(md)); 
+            printf("ll_HMAC_Init failed for %s\n", CF_Hash_GetName(hash)); 
             continue; 
         }
 
         status = ll_HMAC_Update(&hmac_ctx, input, input_len);
         if (status != CF_SUCCESS) { 
-            printf("ll_HMAC_Update failed for %s\n", CF_Hash_GetName(md)); 
+            printf("ll_HMAC_Update failed for %s\n", CF_Hash_GetName(hash)); 
             ll_HMAC_Reset(&hmac_ctx); 
             continue; 
         }
@@ -48,12 +48,12 @@ void test_all_hmacs(const uint8_t *key, size_t key_len, const uint8_t *input, si
         size_t out_len = hmac_ctx.out_len;
         status = ll_HMAC_Final(&hmac_ctx, digest, out_len);
         if (status != CF_SUCCESS) { 
-            printf("ll_HMAC_Final failed for %s\n", CF_Hash_GetName(md)); 
+            printf("ll_HMAC_Final failed for %s\n", CF_Hash_GetName(hash)); 
             ll_HMAC_Reset(&hmac_ctx); 
             continue; 
         }
 
-        printf("%s HMAC: ", CF_Hash_GetName(md));
+        printf("%s HMAC: ", CF_Hash_GetName(hash));
         DEMO_print_hex(digest, out_len);
         printf("\n");
 

@@ -24,7 +24,7 @@
 // HMAC
 static CF_STATUS hmac_init_wrapper(CF_MAC_CTX *ctx, const CF_MAC_OPTS *opts) {
     UNUSED(opts);
-    return ll_HMAC_Init((ll_HMAC_CTX *)ctx->mac_ctx, ctx->md, ctx->key, ctx->key_len);
+    return ll_HMAC_Init((ll_HMAC_CTX *)ctx->mac_ctx, ctx->hash, ctx->key, ctx->key_len);
 }
 static CF_STATUS hmac_update_wrapper(CF_MAC_CTX *ctx, const uint8_t *data, size_t data_len) {
     return ll_HMAC_Update((ll_HMAC_CTX *)ctx->mac_ctx, data, data_len);
@@ -40,7 +40,7 @@ static CF_STATUS hmac_verify_wrapper(CF_MAC_CTX *ctx,
                                      const uint8_t *expected_tag, size_t expected_tag_len,
                                      const struct _CF_MAC_OPTS *opts) {
     UNUSED(opts);
-    return ll_HMAC_Verify((const CF_MD *)ctx->md, ctx->key, ctx->key_len, 
+    return ll_HMAC_Verify((const CF_HASH *)ctx->hash, ctx->key, ctx->key_len, 
                           data, data_len, expected_tag, expected_tag_len);
 }
 static CF_STATUS hmac_clone_ctx_wrapper(CF_MAC_CTX *dest_ctx, const CF_MAC_CTX *src_ctx) {
@@ -311,12 +311,12 @@ CF_STATUS CF_MAC_Init(CF_MAC_CTX *ctx, const CF_MAC *mac, const CF_MAC_OPTS *opt
             return CF_ERR_UNSUPPORTED;
 
         // Retrieve hash function by subflag
-        ctx->md = CF_MD_GetByFlag(subflags);
-        if (!ctx->md)
+        ctx->hash = CF_Hash_GetByFlag(subflags);
+        if (!ctx->hash)
             return CF_ERR_UNSUPPORTED;
 
         // Set the default tag length from the hash output length
-        ctx->tag_len = ctx->md->default_out_len;
+        ctx->tag_len = ctx->hash->default_out_len;
 
     }
     // KMAC initialization 
@@ -460,7 +460,7 @@ CF_STATUS CF_MAC_Final(CF_MAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
 
     // Ensure the MAC context is properly initialized
     // For HMAC, md must be set; mac_ctx must exist for all MACs
-    if ((!ctx->md && CF_MAC_IS_HMAC(ctx->mac->id)) || !ctx->mac_ctx)
+    if ((!ctx->hash && CF_MAC_IS_HMAC(ctx->mac->id)) || !ctx->mac_ctx)
         return CF_ERR_CTX_UNINITIALIZED;
 
     // Validate requested tag length
@@ -478,7 +478,7 @@ CF_STATUS CF_MAC_Final(CF_MAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
 
     // Validate tag length based on MAC type
     if (CF_MAC_IS_HMAC(ctx->mac->id)) {
-        if (ctx->md->default_out_len == 0)
+        if (ctx->hash->default_out_len == 0)
             return CF_ERR_MAC_INVALID_TAG_LEN;
 
     } else if (CF_MAC_IS_CMAC(ctx->mac->id)) {
@@ -543,7 +543,7 @@ CF_STATUS CF_MAC_Reset(CF_MAC_CTX *ctx) {
     }
 
     // Clear all context fields to prevent accidental reuse or leakage
-    ctx->md          = NULL;
+    ctx->hash          = NULL;
     ctx->mac         = NULL;
     ctx->key         = NULL;
     ctx->key_len     = 0;
@@ -729,7 +729,7 @@ CF_STATUS CF_MAC_CloneCtx(CF_MAC_CTX *dst, const CF_MAC_CTX *src) {
     // Copy metadata
     dst->magic       = src->magic;
     dst->mac         = src->mac;
-    dst->md          = src->md;
+    dst->hash        = src->hash;
     dst->opts        = src->opts;
     dst->tag_len     = src->tag_len;
     dst->subflags    = src->subflags;

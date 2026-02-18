@@ -17,14 +17,14 @@
 
 #include "../../include/crypto/hmac.h"
 
-CF_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const CF_MD *md, const uint8_t *key, size_t key_len) {
-    if (!ctx || !md || !key)
+CF_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const CF_HASH *hash, const uint8_t *key, size_t key_len) {
+    if (!ctx || !hash || !key)
         return CF_ERR_NULL_PTR;
 
-    if (CF_IS_XOF(md->id))
+    if (CF_IS_XOF(hash->id))
         return CF_ERR_UNSUPPORTED;
 
-    if (md->block_size == 0 || md->block_size > CF_MAX_DEFAULT_HASH_BLOCK_SIZE)
+    if (hash->block_size == 0 || hash->block_size > CF_MAX_DEFAULT_HASH_BLOCK_SIZE)
         return CF_ERR_UNSUPPORTED;
 
     if (ctx->isHeapAlloc != 0 && ctx->isHeapAlloc != 1)
@@ -32,57 +32,57 @@ CF_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const CF_MD *md, const uint8_t *key, si
 
     ll_HMAC_Reset(ctx);
 
-    ctx->md = md;
-    ctx->out_len = md->digest_size != 0 ? md->digest_size : md->default_out_len;
+    ctx->hash = hash;
+    ctx->out_len = hash->digest_size != 0 ? hash->digest_size : hash->default_out_len;
 
     // normalize key
-    if (key_len > md->block_size) {
-        if (!md->hash_init_fn(ctx->ipad_ctx, NULL) ||
-            !md->hash_update_fn(ctx->ipad_ctx, key, key_len) ||
-            !md->hash_final_fn(ctx->ipad_ctx, ctx->key)) {
+    if (key_len > hash->block_size) {
+        if (!hash->hash_init_fn(ctx->ipad_ctx, NULL) ||
+            !hash->hash_update_fn(ctx->ipad_ctx, key, key_len) ||
+            !hash->hash_final_fn(ctx->ipad_ctx, ctx->key)) {
             goto cleanup;
         }
-        if (md->hash_squeeze_fn && !md->hash_squeeze_fn(ctx->ipad_ctx, ctx->key, md->digest_size))
+        if (hash->hash_squeeze_fn && !hash->hash_squeeze_fn(ctx->ipad_ctx, ctx->key, hash->digest_size))
             goto cleanup;
 
-        key_len = (md->digest_size != 0) ? md->digest_size : md->default_out_len;
+        key_len = (hash->digest_size != 0) ? hash->digest_size : hash->default_out_len;
     } else {
         // copy short key
         SECURE_MEMCPY(ctx->key, key, key_len);
     }
 
-    if (key_len < md->block_size)
-        SECURE_MEMSET(ctx->key + key_len, 0, md->block_size - key_len);
-    ctx->key_len = md->block_size;
+    if (key_len < hash->block_size)
+        SECURE_MEMSET(ctx->key + key_len, 0, hash->block_size - key_len);
+    ctx->key_len = hash->block_size;
 
     // apply XOR pads
     uint8_t ipad[CF_MAX_DEFAULT_HASH_BLOCK_SIZE], opad[CF_MAX_DEFAULT_HASH_BLOCK_SIZE];
-    for (size_t i = 0; i < md->block_size; i++) {
+    for (size_t i = 0; i < hash->block_size; i++) {
         ipad[i] = ctx->key[i] ^ 0x36;
         opad[i] = ctx->key[i] ^ 0x5c;
     }
 
     // init hash contexts and feed pads
-    if (!md->hash_init_fn(ctx->ipad_ctx, NULL) ||
-        !md->hash_init_fn(ctx->opad_ctx, NULL))
+    if (!hash->hash_init_fn(ctx->ipad_ctx, NULL) ||
+        !hash->hash_init_fn(ctx->opad_ctx, NULL))
         goto cleanup;
 
-    if (!md->hash_update_fn(ctx->ipad_ctx, ipad, md->block_size) ||
-        !md->hash_update_fn(ctx->opad_ctx, opad, md->block_size))
+    if (!hash->hash_update_fn(ctx->ipad_ctx, ipad, hash->block_size) ||
+        !hash->hash_update_fn(ctx->opad_ctx, opad, hash->block_size))
         goto cleanup;
 
-    SECURE_ZERO(ipad, md->block_size);
-    SECURE_ZERO(opad, md->block_size);
+    SECURE_ZERO(ipad, hash->block_size);
+    SECURE_ZERO(opad, hash->block_size);
     return CF_SUCCESS;
 
 cleanup:
-    SECURE_ZERO(ctx->ipad_ctx, md->ctx_size);
-    SECURE_ZERO(ctx->opad_ctx, md->ctx_size);
+    SECURE_ZERO(ctx->ipad_ctx, hash->ctx_size);
+    SECURE_ZERO(ctx->opad_ctx, hash->ctx_size);
     return CF_ERR_CTX_CORRUPT;
 }
 
-ll_HMAC_CTX* ll_HMAC_InitAlloc(const CF_MD *md, const uint8_t *key, size_t key_len, CF_STATUS *status) {
-    if (!md) {
+ll_HMAC_CTX* ll_HMAC_InitAlloc(const CF_HASH *hash, const uint8_t *key, size_t key_len, CF_STATUS *status) {
+    if (!hash) {
         if (status) *status = CF_ERR_NULL_PTR;
         return NULL;
     }
@@ -93,7 +93,7 @@ ll_HMAC_CTX* ll_HMAC_InitAlloc(const CF_MD *md, const uint8_t *key, size_t key_l
         return NULL;
     }
 
-    CF_STATUS st = ll_HMAC_Init(ctx, md, key, key_len);
+    CF_STATUS st = ll_HMAC_Init(ctx, hash, key, key_len);
     if (st != CF_SUCCESS) {
         SECURE_FREE(ctx, sizeof(ll_HMAC_CTX));
         if (status) *status = st;
@@ -106,20 +106,20 @@ ll_HMAC_CTX* ll_HMAC_InitAlloc(const CF_MD *md, const uint8_t *key, size_t key_l
 }
 
 CF_STATUS ll_HMAC_Update(ll_HMAC_CTX *ctx, const uint8_t *data, size_t data_len) {
-    if (!ctx || !ctx->md || !data)
+    if (!ctx || !ctx->hash || !data)
         return CF_ERR_NULL_PTR;
 
     if (ctx->isFinalized) 
         return CF_ERR_HASH_FINALIZED;
 
-    if (!ctx->md->hash_update_fn(ctx->ipad_ctx, data, data_len))
+    if (!ctx->hash->hash_update_fn(ctx->ipad_ctx, data, data_len))
         return CF_ERR_CTX_CORRUPT;
 
     return CF_SUCCESS;
 }
 
 CF_STATUS ll_HMAC_Final(ll_HMAC_CTX *ctx, uint8_t *digest, size_t digest_len) {
-    if (!ctx || !ctx->md || !digest)
+    if (!ctx || !ctx->hash || !digest)
         return CF_ERR_NULL_PTR;
 
     if (digest_len == 0 && ctx->out_len == 0)
@@ -130,38 +130,38 @@ CF_STATUS ll_HMAC_Final(ll_HMAC_CTX *ctx, uint8_t *digest, size_t digest_len) {
 
     CF_STATUS ret = CF_SUCCESS;
 
-    const size_t hash_len = ctx->md->digest_size;
+    const size_t hash_len = MIN(digest_len, ctx->hash->digest_size);
     uint8_t inner_hash[CF_MAX_DEFAULT_DIGEST_SIZE] = {0};
 
     // compute inner hash
-    if (!ctx->md->hash_final_fn(ctx->ipad_ctx, inner_hash)) {
+    if (!ctx->hash->hash_final_fn(ctx->ipad_ctx, inner_hash)) {
         ret = CF_ERR_CTX_CORRUPT;
         goto cleanup;
     }
 
     // For SHA3 variants that require squeezing
-    if (ctx->md->hash_squeeze_fn && CF_IS_KECCAK(ctx->md->id)) {
-        if (!ctx->md->hash_squeeze_fn(ctx->ipad_ctx, inner_hash, ctx->md->digest_size)) {
+    if (ctx->hash->hash_squeeze_fn && CF_IS_KECCAK(ctx->hash->id)) {
+        if (!ctx->hash->hash_squeeze_fn(ctx->ipad_ctx, inner_hash, ctx->hash->digest_size)) {
             ret = CF_ERR_CTX_CORRUPT;
             goto cleanup;
         }
     }
 
     // feed inner hash into opad context
-    if (!ctx->md->hash_update_fn(ctx->opad_ctx, inner_hash, ctx->md->digest_size)) {
+    if (!ctx->hash->hash_update_fn(ctx->opad_ctx, inner_hash, ctx->hash->digest_size)) {
         ret = CF_ERR_CTX_CORRUPT;
         goto cleanup;
     }
 
     // compute final HMAC
-    if (!ctx->md->hash_final_fn(ctx->opad_ctx, digest)) {
+    if (!ctx->hash->hash_final_fn(ctx->opad_ctx, digest)) {
         ret = CF_ERR_CTX_CORRUPT;
         goto cleanup;
     }
 
     // For SHA3 variants that require squeezing
-    if (ctx->md->hash_squeeze_fn && CF_IS_KECCAK(ctx->md->id)) {
-        if (!ctx->md->hash_squeeze_fn(ctx->opad_ctx, digest, hash_len)) {
+    if (ctx->hash->hash_squeeze_fn && CF_IS_KECCAK(ctx->hash->id)) {
+        if (!ctx->hash->hash_squeeze_fn(ctx->opad_ctx, digest, hash_len)) {
             ret = CF_ERR_CTX_CORRUPT;
             goto cleanup;
         }
@@ -175,11 +175,11 @@ cleanup:
 }
 
 CF_STATUS ll_HMAC_Verify(
-    const CF_MD *md,
+    const CF_HASH *hash,
     const uint8_t *key, size_t key_len,
     const uint8_t *data, size_t data_len,
     const uint8_t *expected_tag, size_t expected_tag_len) {
-    if (!md || !key || !data || !expected_tag)
+    if (hash || !key || !data || !expected_tag)
         return CF_ERR_NULL_PTR;
 
     CF_STATUS status = CF_SUCCESS;
@@ -188,7 +188,7 @@ CF_STATUS ll_HMAC_Verify(
     ll_HMAC_CTX ctx = {0};
 
     // Initialize context
-    status = ll_HMAC_Init(&ctx, md, key, key_len);
+    status = ll_HMAC_Init(&ctx, hash, key, key_len);
     if (status != CF_SUCCESS) goto cleanup;
 
     // Update with data
@@ -209,13 +209,13 @@ cleanup:
 }
 
 CF_STATUS ll_HMAC_Reset(ll_HMAC_CTX *ctx) {
-    if (!ctx || !ctx->md)
+    if (!ctx || !ctx->hash)
         return CF_ERR_NULL_PTR;
 
     int wasHeapAlloc = ctx->isHeapAlloc;
 
-    SECURE_ZERO(ctx->ipad_ctx, ctx->md->ctx_size);
-    SECURE_ZERO(ctx->opad_ctx, ctx->md->ctx_size);
+    SECURE_ZERO(ctx->ipad_ctx, ctx->hash->ctx_size);
+    SECURE_ZERO(ctx->opad_ctx, ctx->hash->ctx_size);
 
     // Zero key material and reset fields
     SECURE_ZERO(ctx->key, sizeof(ctx->key));
@@ -251,13 +251,13 @@ CF_STATUS ll_HMAC_CloneCtx(ll_HMAC_CTX *ctx_dest, const ll_HMAC_CTX *ctx_src) {
     // Zero the destination first
     ll_HMAC_Reset(ctx_dest);
 
-    // Copy MD pointer
-    ctx_dest->md = ctx_src->md;
+    // Copy hash pointer
+    ctx_dest->hash = ctx_src->hash;
 
     // Allocate and copy inner/outer contexts
-    if (ctx_src->md && ctx_src->md->ctx_size > 0) {
-        SECURE_MEMCPY(ctx_dest->ipad_ctx, ctx_src->ipad_ctx, ctx_src->md->ctx_size);
-        SECURE_MEMCPY(ctx_dest->opad_ctx, ctx_src->opad_ctx, ctx_src->md->ctx_size);
+    if (ctx_src->hash && ctx_src->hash->ctx_size > 0) {
+        SECURE_MEMCPY(ctx_dest->ipad_ctx, ctx_src->ipad_ctx, ctx_src->hash->ctx_size);
+        SECURE_MEMCPY(ctx_dest->opad_ctx, ctx_src->opad_ctx, ctx_src->hash->ctx_size);
     }
 
     // Copy key and metadata
