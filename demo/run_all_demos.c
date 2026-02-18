@@ -7,7 +7,7 @@ int main(void) {
     size_t input_len = strlen(input);
 
 #if ENABLE_TESTS
-    printf("\nCF_MD structure test:\n");
+    printf("\nCF_HASH structure test:\n");
 
     // Example: XOF (cSHAKE / SHAKE) setup
     CF_HASH_OPTS hash_opts;
@@ -37,11 +37,11 @@ int main(void) {
     // Example: Incremental hash using CF_Hash* API
     uint8_t digest[CF_MAX_DEFAULT_DIGEST_SIZE];  // large enough for SHA3-512
     size_t out_len = CF_MAX_DEFAULT_DIGEST_SIZE;
-    const CF_MD *md = CF_MD_GetByFlag(CF_SHA256);
+    const CF_HASH *hash = CF_Hash_GetByFlag(CF_SHA256);
     CF_HASH_CTX ctx;
     SECURE_ZERO(&ctx, sizeof(ctx));
 
-    status = CF_Hash_Init(&ctx, md, NULL);
+    status = CF_Hash_Init(&ctx, hash, NULL);
     if (status != CF_SUCCESS) { printf("CF_HashInit failed\n"); return 1; }
 
     status = CF_Hash_Update(&ctx, (const uint8_t *)input, input_len);
@@ -50,7 +50,7 @@ int main(void) {
     status = CF_Hash_Final(&ctx, digest, out_len);
     if (status != CF_SUCCESS) { printf("CF_HashFinal failed\n"); return 1; }
 
-    printf("Digest %s: ", CF_Hash_GetName(md));
+    printf("Digest %s: ", CF_Hash_GetName(hash));
     for (size_t i = 0; i < CF_Hash_GetDigestSize(&ctx); i++)
         printf("%02x", digest[i]);
     printf("\n");
@@ -72,7 +72,7 @@ int main(void) {
 
     size_t sha256_expected_hash_len = sizeof(sha256_expected_hash) / sizeof(sha256_expected_hash[0]);
 
-    if (ll_HMAC_Verify(md, key, strlen((char*)key), (uint8_t*)input, input_len, sha256_expected_hash, sha256_expected_hash_len) != CF_SUCCESS) {
+    if (ll_HMAC_Verify(hash, key, strlen((char*)key), (uint8_t*)input, input_len, sha256_expected_hash, sha256_expected_hash_len) != CF_SUCCESS) {
         printf("HMAC-256 verification failed\n");
     } else {
         printf("HMAC-256 verification succeeded\n");

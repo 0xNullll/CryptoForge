@@ -33,7 +33,7 @@
  * @param len Length of buffers
  * @return int 1 = equal, 0 = not equal, <0 = error
  */
-CF_API int CF_IsEqual(const uint8_t *a, const uint8_t *b, size_t len);
+CF_API int CF_Compare(const uint8_t *a, const uint8_t *b, size_t len);
 
 /**
  * @brief Constant-time lexicographical comparison

@@ -18,18 +18,18 @@
 
 CF_STATUS ll_PBKDF2_Init(
     ll_PBKDF2_CTX *ctx,
-    const CF_MD *md,
+    const CF_HASH *hash,
     const uint8_t *password, size_t password_len) {
-    if (!ctx || !md)
+    if (!ctx || !hash)
         return CF_ERR_NULL_PTR; 
 
     // PBKDF2 is not compatible with XOF hash functions, as per HMAC-based design rules
-    if (CF_IS_XOF(md->id))
+    if (CF_IS_XOF(hash->id))
         return CF_ERR_UNSUPPORTED;
 
     ll_PBKDF2_Reset(ctx);
         
-    ctx->md = md;
+    ctx->hash = hash;
 
     ctx->password = password;
     ctx->password_len = password_len;
@@ -38,10 +38,10 @@ CF_STATUS ll_PBKDF2_Init(
 }
 
 ll_PBKDF2_CTX* ll_PBKDF2_InitAlloc(
-    const CF_MD *md,
+    const CF_HASH *hash,
     const uint8_t *password, size_t password_len,
     CF_STATUS *status) {
-    if (!md) {
+    if (!hash) {
         if (status) *status = CF_ERR_NULL_PTR;
         return NULL;
     }
@@ -52,7 +52,7 @@ ll_PBKDF2_CTX* ll_PBKDF2_InitAlloc(
         return NULL;
     }
 
-    CF_STATUS st = ll_PBKDF2_Init(ctx, md, password, password_len);
+    CF_STATUS st = ll_PBKDF2_Init(ctx, hash, password, password_len);
     if (st != CF_SUCCESS) {
         SECURE_FREE(ctx, sizeof(ll_PBKDF2_CTX));
         if (status) *status = st;
@@ -70,13 +70,13 @@ CF_STATUS ll_PBKDF2_Extract(
     if (!ctx)
         return CF_ERR_NULL_PTR;
 
-    if (!ctx->md)
+    if (!ctx->hash)
         return CF_ERR_CTX_UNINITIALIZED;
 
     if (ctx->isExtracted)
         return CF_ERR_KDF_ALREADY_EXTRACTED;
 
-    size_t hash_len = ctx->md->digest_size;  // PRK length = hash output size
+    size_t hash_len = ctx->hash->digest_size;  // PRK length = hash output size
     CF_STATUS st;
 
     ll_HMAC_CTX hmac_ctx = {0};
@@ -92,7 +92,7 @@ CF_STATUS ll_PBKDF2_Extract(
     }
 
     // HMAC key = password
-    st = ll_HMAC_Init(&hmac_ctx, ctx->md, ctx->password, ctx->password_len);
+    st = ll_HMAC_Init(&hmac_ctx, ctx->hash, ctx->password, ctx->password_len);
     if (st != CF_SUCCESS)
         return st;
 
@@ -127,13 +127,13 @@ CF_STATUS ll_PBKDF2_Expand(
     if (!ctx || !dk)
         return CF_ERR_NULL_PTR;
 
-    if (!ctx->md)
+    if (!ctx->hash)
         return CF_ERR_CTX_UNINITIALIZED;
 
     if (iterations < KDF_PBKDF2_MIN_ITERATIONS || iterations > LL_PBKDF2_MAX_ITERATION)
         return CF_ERR_INVALID_LEN;
 
-    size_t hash_len = ctx->md->digest_size;
+    size_t hash_len = ctx->hash->digest_size;
     size_t l = (dk_len + hash_len - 1) / hash_len;  // ceil division
     size_t r = dk_len - (l - 1) * hash_len;
 
@@ -144,7 +144,7 @@ CF_STATUS ll_PBKDF2_Expand(
 
     // --- Precompute HMAC base with password ---
     ll_HMAC_CTX base_hmac = {0};
-    st = ll_HMAC_Init(&base_hmac, ctx->md, ctx->password, ctx->password_len);
+    st = ll_HMAC_Init(&base_hmac, ctx->hash, ctx->password, ctx->password_len);
     if (st != CF_SUCCESS)
         return st;
 
@@ -152,12 +152,12 @@ CF_STATUS ll_PBKDF2_Expand(
     ll_HMAC_CTX work_hmac = {0};
     SECURE_MEMCPY(work_hmac.key, base_hmac.key, sizeof(base_hmac.key));
     work_hmac.key_len = base_hmac.key_len;
-    work_hmac.md = base_hmac.md;
+    work_hmac.hash = base_hmac.hash;
 
     for (uint32_t block = 1; block <= l; block++) {
         // --- U1 = HMAC(password, salt || INT(block)) ---
-        SECURE_MEMCPY(work_hmac.ipad_ctx, base_hmac.ipad_ctx, ctx->md->ctx_size);
-        SECURE_MEMCPY(work_hmac.opad_ctx, base_hmac.opad_ctx, ctx->md->ctx_size);
+        SECURE_MEMCPY(work_hmac.ipad_ctx, base_hmac.ipad_ctx, ctx->hash->ctx_size);
+        SECURE_MEMCPY(work_hmac.opad_ctx, base_hmac.opad_ctx, ctx->hash->ctx_size);
         work_hmac.out_len = 0;
         work_hmac.isFinalized = 0;
 
@@ -179,8 +179,8 @@ CF_STATUS ll_PBKDF2_Expand(
         // --- iterations j = 2..c ---
         for (size_t j = 2; j <= iterations; j++) {
             // Only reset internal digest state, keep key/pads
-            SECURE_MEMCPY(work_hmac.ipad_ctx, base_hmac.ipad_ctx, ctx->md->ctx_size);
-            SECURE_MEMCPY(work_hmac.opad_ctx, base_hmac.opad_ctx, ctx->md->ctx_size);
+            SECURE_MEMCPY(work_hmac.ipad_ctx, base_hmac.ipad_ctx, ctx->hash->ctx_size);
+            SECURE_MEMCPY(work_hmac.opad_ctx, base_hmac.opad_ctx, ctx->hash->ctx_size);
             work_hmac.out_len = 0;
             work_hmac.isFinalized = 0;
 
@@ -222,7 +222,7 @@ CF_STATUS ll_PBKDF2_Reset(ll_PBKDF2_CTX *ctx) {
 
     SECURE_ZERO(ctx->prev_block, sizeof(ctx->prev_block));
 
-    ctx->md = NULL;
+    ctx->hash = NULL;
     ctx->password = NULL;
     ctx->password_len = 0;
     ctx->iterations = 0;
@@ -253,10 +253,10 @@ CF_STATUS ll_PBKDF2_Free(ll_PBKDF2_CTX **p_ctx) {
 }
 
 uint32_t ll_PBKDF2_RecommendedIterations(const ll_PBKDF2_CTX *ctx) {
-    if (!ctx->md) return 0;
+    if (!ctx->hash) return 0;
 
     // Convert digest size to bits
-    double hash_bits = (double)(ctx->md->digest_size * 8);
+    double hash_bits = (double)(ctx->hash->digest_size * 8);
 
     // Formula: iterations ≈ 2.4e9 * hash_bits^(-1.64)
     double iter = 2.4e9 * pow(hash_bits, -1.64);

@@ -17,11 +17,12 @@
 
 #include "../../include/cf_api/cf_utils.h"
 
-int CF_IsEqual(const uint8_t *a, const uint8_t *b, size_t len) {
+int CF_Compare(const uint8_t *a, const uint8_t *b, size_t len) {
     if (!a || !b)
         return CF_ERR_NULL_PTR;
+        
     if (len == 0)
-        return CF_ERR_INVALID_LEN;
+        return 1;
 
     // constant-time equality
     return SECURE_MEM_EQUAL(a, b, len) ? 1 : 0;

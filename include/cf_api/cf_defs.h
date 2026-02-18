@@ -26,10 +26,10 @@ extern "C" {
 
 typedef struct _CF_ALGO_ENTRY {
     uint32_t flag;                  // algorithm ID / flag
-    const void* (*getter_fn)(void); // returns pointer to algorithm descriptor (CF_MD, CF_MAC, etc.)
+    const void* (*getter_fn)(void); // returns pointer to algorithm descriptor (CF_HASH, CF_MAC, etc.)
 } CF_ALGO_ENTRY;
 
-typedef struct _CF_MD CF_MD;
+typedef struct _CF_HASH CF_HASH;
 typedef struct _CF_HASH_OPTS CF_HASH_OPTS;
 typedef struct _CF_HASH_CTX CF_HASH_CTX;
 

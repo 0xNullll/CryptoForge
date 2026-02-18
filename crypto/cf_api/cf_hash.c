@@ -306,13 +306,13 @@ static bool cshake256_squeeze_wrapper(void *ctx, uint8_t *output, size_t outlen)
     return ll_cshake256_squeeze((ll_CSHAKE256_CTX *)ctx, output, outlen);
 }
 
-// --- CF_MD Return Functions ---
+// --- CF_HASH Return Functions ---
 
 //
 // MD5
 //
-static const CF_MD *CF_get_md5(void) {
-    static CF_MD md = {
+static const CF_HASH *CF_get_md5(void) {
+    static CF_HASH hash = {
         .id = CF_MD5,
         .domain = 0,
         .digest_size = MD5_DIGEST_SIZE,
@@ -324,14 +324,14 @@ static const CF_MD *CF_get_md5(void) {
         .hash_final_fn = md5_final_wrapper,
         .hash_squeeze_fn = NULL,
     };
-    return &md;
+    return &hash;
 }
 
 //
 // SHA1
 //
-static const CF_MD *CF_get_sha1(void) {
-    static CF_MD md = {
+static const CF_HASH *CF_get_sha1(void) {
+    static CF_HASH hash = {
         .id = CF_SHA1,
         .domain = 0,
         .digest_size = SHA1_DIGEST_SIZE,
@@ -343,14 +343,14 @@ static const CF_MD *CF_get_sha1(void) {
         .hash_final_fn = sha1_final_wrapper,
         .hash_squeeze_fn = NULL,
     };
-    return &md;
+    return &hash;
 }
 
 //
 // SHA256
 //
-static const CF_MD *CF_get_sha224(void) {
-    static CF_MD md = {
+static const CF_HASH *CF_get_sha224(void) {
+    static CF_HASH hash = {
         .id = CF_SHA224,
         .domain = 0,
         .digest_size = SHA224_DIGEST_SIZE,
@@ -362,11 +362,11 @@ static const CF_MD *CF_get_sha224(void) {
         .hash_final_fn = sha224_final_wrapper,
         .hash_squeeze_fn = NULL,
     };
-    return &md;
+    return &hash;
 }
 
-static const CF_MD *CF_get_sha256(void) {
-    static CF_MD md = {
+static const CF_HASH *CF_get_sha256(void) {
+    static CF_HASH hash = {
         .id = CF_SHA256,
         .domain = 0,
         .digest_size = SHA256_DIGEST_SIZE,
@@ -378,14 +378,14 @@ static const CF_MD *CF_get_sha256(void) {
         .hash_final_fn = sha256_final_wrapper,
         .hash_squeeze_fn = NULL,
     };
-    return &md;
+    return &hash;
 }
 
 //
 // SHA512
 //
-static const CF_MD *CF_get_sha384(void) {
-    static CF_MD md = {
+static const CF_HASH *CF_get_sha384(void) {
+    static CF_HASH hash = {
         .id = CF_SHA384,
         .domain = 0,
         .digest_size = SHA384_DIGEST_SIZE,
@@ -397,11 +397,11 @@ static const CF_MD *CF_get_sha384(void) {
         .hash_final_fn = sha384_final_wrapper,
         .hash_squeeze_fn = NULL,
     };
-    return &md;
+    return &hash;
 }
 
-static const CF_MD *CF_get_sha512(void) {
-    static CF_MD md = {
+static const CF_HASH *CF_get_sha512(void) {
+    static CF_HASH hash = {
         .id = CF_SHA512,
         .domain = 0,
         .digest_size = SHA512_DIGEST_SIZE,
@@ -413,11 +413,11 @@ static const CF_MD *CF_get_sha512(void) {
         .hash_final_fn = sha512_final_wrapper,
         .hash_squeeze_fn = NULL,
     };
-    return &md;
+    return &hash;
 }
 
-static const CF_MD *CF_get_sha512_224(void) {
-    static CF_MD md = {
+static const CF_HASH *CF_get_sha512_224(void) {
+    static CF_HASH hash = {
         .id = CF_SHA512_224,
         .domain = 0,
         .digest_size = SHA512_224_DIGEST_SIZE,
@@ -429,11 +429,11 @@ static const CF_MD *CF_get_sha512_224(void) {
         .hash_final_fn = sha512_224_final_wrapper,
         .hash_squeeze_fn = NULL,
     };
-    return &md;
+    return &hash;
 }
 
-static const CF_MD *CF_get_sha512_256(void) {
-    static CF_MD md = {
+static const CF_HASH *CF_get_sha512_256(void) {
+    static CF_HASH hash = {
         .id = CF_SHA512_256,
         .domain = 0,
         .digest_size = SHA512_256_DIGEST_SIZE,
@@ -445,14 +445,14 @@ static const CF_MD *CF_get_sha512_256(void) {
         .hash_final_fn = sha512_256_final_wrapper,
         .hash_squeeze_fn = NULL,
     };
-    return &md;
+    return &hash;
 }
 
 //
 // SHA3
 //
-static const CF_MD *CF_get_sha3_224(void) {
-    static CF_MD md = {
+static const CF_HASH *CF_get_sha3_224(void) {
+    static CF_HASH hash = {
         .id = CF_SHA3_224,
         .domain = 0,
         .digest_size = SHA3_224_DIGEST_SIZE,
@@ -464,11 +464,11 @@ static const CF_MD *CF_get_sha3_224(void) {
         .hash_final_fn = sha3_224_final_wrapper,
         .hash_squeeze_fn = sha3_224_squeeze_wrapper,
     };
-    return &md;
+    return &hash;
 }
 
-static const CF_MD *CF_get_sha3_256(void) {
-    static CF_MD md = {
+static const CF_HASH *CF_get_sha3_256(void) {
+    static CF_HASH hash = {
         .id = CF_SHA3_256,
         .domain = 0,
         .digest_size = SHA3_256_DIGEST_SIZE,
@@ -480,11 +480,11 @@ static const CF_MD *CF_get_sha3_256(void) {
         .hash_final_fn = sha3_256_final_wrapper,
         .hash_squeeze_fn = sha3_256_squeeze_wrapper,
     };
-    return &md;
+    return &hash;
 }
 
-static const CF_MD *CF_get_sha3_384(void) {
-    static CF_MD md = {
+static const CF_HASH *CF_get_sha3_384(void) {
+    static CF_HASH hash = {
         .id = CF_SHA3_384,
         .domain = 0,
         .digest_size = SHA3_384_DIGEST_SIZE,
@@ -496,11 +496,11 @@ static const CF_MD *CF_get_sha3_384(void) {
         .hash_final_fn = sha3_384_final_wrapper,
         .hash_squeeze_fn = sha3_384_squeeze_wrapper,
     };
-    return &md;
+    return &hash;
 }
 
-static const CF_MD *CF_get_sha3_512(void) {
-    static CF_MD md = {
+static const CF_HASH *CF_get_sha3_512(void) {
+    static CF_HASH hash = {
         .id = CF_SHA3_512,
         .domain = 0,
         .digest_size = SHA3_512_DIGEST_SIZE,
@@ -512,14 +512,14 @@ static const CF_MD *CF_get_sha3_512(void) {
         .hash_final_fn = sha3_512_final_wrapper,
         .hash_squeeze_fn = sha3_512_squeeze_wrapper,
     };
-    return &md;
+    return &hash;
 }
 
 //
 // SHAKE / RawSHAKE
 //
-static const CF_MD *CF_get_shake128(void) {
-    static CF_MD md = {
+static const CF_HASH *CF_get_shake128(void) {
+    static CF_HASH hash = {
         .id = CF_SHAKE128,
         .domain = 0,
         .digest_size = 0,
@@ -531,11 +531,11 @@ static const CF_MD *CF_get_shake128(void) {
         .hash_final_fn = shake128_final_wrapper,
         .hash_squeeze_fn = shake128_squeeze_wrapper,
     };
-    return &md;
+    return &hash;
 }
 
-static const CF_MD *CF_get_shake256(void) {
-    static CF_MD md = {
+static const CF_HASH *CF_get_shake256(void) {
+    static CF_HASH hash = {
         .id = CF_SHAKE256,
         .domain = 0,
         .digest_size = 0,
@@ -547,14 +547,14 @@ static const CF_MD *CF_get_shake256(void) {
         .hash_final_fn = shake256_final_wrapper,
         .hash_squeeze_fn = shake256_squeeze_wrapper,
     };
-    return &md;
+    return &hash;
 }
 
 //
 // RawSHAKE
 //
-static const CF_MD *CF_get_raw_shake128(void) {
-    static CF_MD md = {
+static const CF_HASH *CF_get_raw_shake128(void) {
+    static CF_HASH hash = {
         .id = CF_RAWSHAKE128,
         .domain = RAWSHAKE128_DOMAIN,
         .digest_size = 0,
@@ -566,11 +566,11 @@ static const CF_MD *CF_get_raw_shake128(void) {
         .hash_final_fn = rawshake128_final_wrapper,
         .hash_squeeze_fn = rawshake128_squeeze_wrapper,
     };
-    return &md;
+    return &hash;
 }
 
-static const CF_MD *CF_get_raw_shake256(void) {
-    static CF_MD md = {
+static const CF_HASH *CF_get_raw_shake256(void) {
+    static CF_HASH hash = {
         .id = CF_RAWSHAKE256,
         .domain = RAWSHAKE256_DOMAIN,
         .digest_size = 0,
@@ -582,14 +582,14 @@ static const CF_MD *CF_get_raw_shake256(void) {
         .hash_final_fn = rawshake256_final_wrapper,
         .hash_squeeze_fn = rawshake256_squeeze_wrapper,
     };
-    return &md;
+    return &hash;
 }
 
 //
 // cSHAKE
 //
-static const CF_MD *CF_get_cshake128(void) {
-    static CF_MD md = {
+static const CF_HASH *CF_get_cshake128(void) {
+    static CF_HASH hash = {
         .id = CF_CSHAKE128,
         .domain = CSHAKE128_DOMAIN,
         .digest_size = 0,
@@ -601,11 +601,11 @@ static const CF_MD *CF_get_cshake128(void) {
         .hash_final_fn = cshake128_final_wrapper,
         .hash_squeeze_fn = cshake128_squeeze_wrapper,
     };
-    return &md;
+    return &hash;
 }
 
-static const CF_MD *CF_get_cshake256(void) {
-    static CF_MD md = {
+static const CF_HASH *CF_get_cshake256(void) {
+    static CF_HASH hash = {
         .id = CF_CSHAKE256,
         .domain = CSHAKE256_DOMAIN,
         .digest_size = 0,
@@ -617,11 +617,11 @@ static const CF_MD *CF_get_cshake256(void) {
         .hash_final_fn = cshake256_final_wrapper,
         .hash_squeeze_fn = cshake256_squeeze_wrapper,
     };
-    return &md;
+    return &hash;
 }
 
 // Table of all supported hashes
-static const CF_ALGO_ENTRY cf_md_table[] = {
+static const CF_ALGO_ENTRY CF_HASH_table[] = {
     { CF_MD5,           (const void* (*)(void))CF_get_md5 },
     { CF_SHA1,          (const void* (*)(void))CF_get_sha1 },
     { CF_SHA224,        (const void* (*)(void))CF_get_sha224 },
@@ -642,18 +642,18 @@ static const CF_ALGO_ENTRY cf_md_table[] = {
     { CF_CSHAKE256,     (const void* (*)(void))CF_get_cshake256 }
 };
 
-const CF_MD *CF_MD_GetByFlag(uint32_t algo_flag) {
-    size_t table_len = sizeof(cf_md_table) / sizeof(cf_md_table[0]);
+const CF_HASH *CF_Hash_GetByFlag(uint32_t algo_flag) {
+    size_t table_len = sizeof(CF_HASH_table) / sizeof(CF_HASH_table[0]);
     for (size_t i = 0; i < table_len; i++) {
-        if (cf_md_table[i].flag == algo_flag) {
-            return (const CF_MD*)cf_md_table[i].getter_fn();
+        if (CF_HASH_table[i].flag == algo_flag) {
+            return (const CF_HASH*)CF_HASH_table[i].getter_fn();
         }
     }
     return NULL;
 }
 
-CF_STATUS CF_Hash_Init(CF_HASH_CTX *ctx, const CF_MD *md, const CF_HASH_OPTS *opts) {
-    if (!ctx || !md) return CF_ERR_NULL_PTR;
+CF_STATUS CF_Hash_Init(CF_HASH_CTX *ctx, const CF_HASH *hash, const CF_HASH_OPTS *opts) {
+    if (!ctx || !hash) return CF_ERR_NULL_PTR;
 
     // Validate optional context options if provided
     if (opts && opts->magic != CF_CTX_MAGIC)
@@ -667,18 +667,18 @@ CF_STATUS CF_Hash_Init(CF_HASH_CTX *ctx, const CF_MD *md, const CF_HASH_OPTS *op
     CF_Hash_Reset(ctx);
 
     // Store core parameters in the context
-    ctx->md      = md;
+    ctx->hash    = hash;
     ctx->opts    = opts;
     // Determine output length: prefer digest_size if set, otherwise use default_out_len
-    ctx->out_len = md->digest_size != 0 ? md->digest_size : md->default_out_len;
+    ctx->out_len = hash->digest_size != 0 ? hash->digest_size : hash->default_out_len;
 
     // Allocate memory for low-level hash context
-    ctx->digest_ctx = (void *)SECURE_ALLOC(md->ctx_size);
+    ctx->digest_ctx = (void *)SECURE_ALLOC(hash->ctx_size);
     if (!ctx->digest_ctx)
         return CF_ERR_ALLOC_FAILED;
 
     // Initialize the low-level hash context
-    if (!ctx->md->hash_init_fn(ctx->digest_ctx, ctx->opts)) {
+    if (!ctx->hash->hash_init_fn(ctx->digest_ctx, ctx->opts)) {
         // Reset context on failure to avoid dangling pointers
         CF_Hash_Reset(ctx);
         return CF_ERR_BAD_STATE;
@@ -686,13 +686,13 @@ CF_STATUS CF_Hash_Init(CF_HASH_CTX *ctx, const CF_MD *md, const CF_HASH_OPTS *op
 
     // Bind a per-context "magic" value for integrity checking
     // Helps detect accidental misuse or memory corruption
-    ctx->magic = CF_CTX_MAGIC ^ (uintptr_t)ctx->md;
+    ctx->magic = CF_CTX_MAGIC ^ (uintptr_t)ctx->hash;
 
     return CF_SUCCESS;
 }
 
-CF_HASH_CTX* CF_Hash_InitAlloc(const CF_MD *md, const CF_HASH_OPTS *opts, CF_STATUS *status) {
-    if (!md) {
+CF_HASH_CTX* CF_Hash_InitAlloc(const CF_HASH *hash, const CF_HASH_OPTS *opts, CF_STATUS *status) {
+    if (!hash) {
         if (status) *status = CF_ERR_NULL_PTR;
         return NULL;
     }
@@ -705,7 +705,7 @@ CF_HASH_CTX* CF_Hash_InitAlloc(const CF_MD *md, const CF_HASH_OPTS *opts, CF_STA
     }
 
     // Initialize the newly allocated hash context
-    CF_STATUS st = CF_Hash_Init(ctx, md, opts);
+    CF_STATUS st = CF_Hash_Init(ctx, hash, opts);
     if (st != CF_SUCCESS) {
         if (status) *status = st;
         // Clean up on failure
@@ -725,12 +725,12 @@ CF_STATUS CF_Hash_Update(CF_HASH_CTX *ctx, const uint8_t *data, size_t data_len)
         return CF_ERR_NULL_PTR;
 
     // Ensure the hash context and descriptor are initialized
-    if (!ctx->md || !ctx->digest_ctx)
+    if (!ctx->hash || !ctx->digest_ctx)
         return CF_ERR_CTX_UNINITIALIZED;
 
     // Verify context integrity using the bound "magic" value
     // Detects accidental corruption or misuse of the context
-    if ((ctx->magic ^ (uintptr_t)ctx->md) != CF_CTX_MAGIC)
+    if ((ctx->magic ^ (uintptr_t)ctx->hash) != CF_CTX_MAGIC)
         return CF_ERR_CTX_CORRUPT;
 
     // Prevent updates after the context has been finalized
@@ -738,7 +738,7 @@ CF_STATUS CF_Hash_Update(CF_HASH_CTX *ctx, const uint8_t *data, size_t data_len)
         return CF_ERR_MAC_FINALIZED;
 
     // Call the low-level hash update function to process data
-    if (!ctx->md->hash_update_fn(ctx->digest_ctx, data, data_len))
+    if (!ctx->hash->hash_update_fn(ctx->digest_ctx, data, data_len))
         return CF_ERR_CTX_CORRUPT;
 
     return CF_SUCCESS;
@@ -749,29 +749,29 @@ CF_STATUS CF_Hash_Final(CF_HASH_CTX *ctx, uint8_t *digest, size_t digest_len) {
         return CF_ERR_NULL_PTR;
 
     // Ensure the hash context and descriptor are properly initialized
-    if (!ctx->md || !ctx->digest_ctx)
+    if (!ctx->hash || !ctx->digest_ctx)
         return CF_ERR_CTX_UNINITIALIZED;
 
     // Verify context integrity using the bound "magic" value
     // Detects accidental corruption or misuse of the context
-    if ((ctx->magic ^ (uintptr_t)ctx->md) != CF_CTX_MAGIC)
+    if ((ctx->magic ^ (uintptr_t)ctx->hash) != CF_CTX_MAGIC)
         return CF_ERR_CTX_CORRUPT;
 
     // Handle XOF (Extendable-Output Function) hashes
-    if (CF_IS_XOF(ctx->md->id)) {
+    if (CF_IS_XOF(ctx->hash->id)) {
         // Variable-length output requires non-zero length
         if (digest_len == 0)
             return CF_ERR_INVALID_LEN;
 
         // First call to final produces the initial output
         if (!ctx->isFinalized) {
-            if (!ctx->md->hash_final_fn(ctx->digest_ctx, digest))
+            if (!ctx->hash->hash_final_fn(ctx->digest_ctx, digest))
                 return CF_ERR_CTX_CORRUPT;
             ctx->isFinalized = 1;
         } else {
             // Subsequent calls use the squeeze function to extend output
-            if (!ctx->md->hash_squeeze_fn || 
-                !ctx->md->hash_squeeze_fn(ctx->digest_ctx, digest, digest_len))
+            if (!ctx->hash->hash_squeeze_fn || 
+                !ctx->hash->hash_squeeze_fn(ctx->digest_ctx, digest, digest_len))
                 return CF_ERR_CTX_CORRUPT;
         }
 
@@ -782,11 +782,11 @@ CF_STATUS CF_Hash_Final(CF_HASH_CTX *ctx, uint8_t *digest, size_t digest_len) {
             return CF_ERR_HASH_FINALIZED;
 
         // Validate that output buffer is large enough
-        if (digest_len != 0 && digest_len < ctx->md->default_out_len)
+        if (digest_len != 0 && digest_len < ctx->hash->default_out_len)
             return CF_ERR_OUTPUT_BUFFER_TOO_SMALL;
 
         // Finalize the hash and write output
-        if (!ctx->md->hash_final_fn(ctx->digest_ctx, digest))
+        if (!ctx->hash->hash_final_fn(ctx->digest_ctx, digest))
             return CF_ERR_CTX_CORRUPT;
 
         // Mark context as finalized to prevent reuse
@@ -801,21 +801,21 @@ CF_STATUS CF_Hash_Reset(CF_HASH_CTX *ctx) {
         return CF_ERR_NULL_PTR;
 
     // Ensure the hash descriptor exists
-    if (!ctx->md)
+    if (!ctx->hash)
         return CF_ERR_CTX_UNINITIALIZED;
 
     // Free the low-level digest context if it exists
     if (ctx->digest_ctx) {
         // Ensure the context size is valid
-        if (ctx->md->ctx_size == 0)
+        if (ctx->hash->ctx_size == 0)
             return CF_ERR_CTX_CORRUPT;
 
         // Securely free allocated memory for the digest context
-        SECURE_FREE(ctx->digest_ctx, ctx->md->ctx_size);
+        SECURE_FREE(ctx->digest_ctx, ctx->hash->ctx_size);
     }
 
     // Clear all context fields to prevent accidental reuse or leakage
-    ctx->md      = NULL;
+    ctx->hash      = NULL;
     ctx->opts    = NULL;
     ctx->out_len = 0;
     ctx->magic   = 0;
@@ -837,10 +837,10 @@ CF_STATUS CF_Hash_Free(CF_HASH_CTX **p_ctx) {
     return CF_SUCCESS;
 }
 
-CF_STATUS CF_Hash_Compute(const CF_MD *md, const uint8_t *data, size_t data_len,
+CF_STATUS CF_Hash_Compute(const CF_HASH *hash, const uint8_t *data, size_t data_len,
                         uint8_t *digest, size_t digest_len, const CF_HASH_OPTS *opts) {
 
-    if (!md || !digest || !data)
+    if (!hash || !digest || !data)
         return CF_ERR_NULL_PTR;
 
     // Stack-allocated hash context for one-shot operation
@@ -848,11 +848,11 @@ CF_STATUS CF_Hash_Compute(const CF_MD *md, const uint8_t *data, size_t data_len,
     CF_STATUS st = CF_SUCCESS;
 
     // Initialize hash context with provided descriptor and options
-    st = CF_Hash_Init(&ctx, md, opts);
+    st = CF_Hash_Init(&ctx, hash, opts);
 
     // Verify initialization success and context integrity
     // Magic check detects accidental corruption or misuse
-    if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.md) != CF_CTX_MAGIC)
+    if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.hash) != CF_CTX_MAGIC)
         goto cleanup;
 
     // Process input data
@@ -860,7 +860,7 @@ CF_STATUS CF_Hash_Compute(const CF_MD *md, const uint8_t *data, size_t data_len,
 
     // Re-verify integrity after update
     // Ensures context was not corrupted during processing
-    if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.md) != CF_CTX_MAGIC)
+    if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.hash) != CF_CTX_MAGIC)
         goto cleanup;
 
     // Finalize hash computation and write digest
@@ -875,13 +875,13 @@ cleanup:
     return st;
 }
 
-CF_STATUS CF_Hash_ComputeFixed(const CF_MD *md, const uint8_t *data, size_t data_len, uint8_t *digest) {
-    if (!md || !digest || !data)
+CF_STATUS CF_Hash_ComputeFixed(const CF_HASH *hash, const uint8_t *data, size_t data_len, uint8_t *digest) {
+    if (!hash || !digest || !data)
         return CF_ERR_NULL_PTR;
 
     // Fixed-length helper does NOT support XOF algorithms
     // XOFs require explicit output length selection
-    if (CF_IS_XOF(md->id))
+    if (CF_IS_XOF(hash->id))
         return CF_ERR_UNSUPPORTED;
 
     // Stack-allocated hash context for one-shot operation
@@ -889,11 +889,11 @@ CF_STATUS CF_Hash_ComputeFixed(const CF_MD *md, const uint8_t *data, size_t data
     CF_STATUS st = CF_SUCCESS;
 
     // Initialize hash context without special options
-    st = CF_Hash_Init(&ctx, md, NULL);
+    st = CF_Hash_Init(&ctx, hash, NULL);
 
     // Verify initialization success and context integrity
     // Magic check detects accidental corruption or misuse
-    if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.md) != CF_CTX_MAGIC)
+    if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.hash) != CF_CTX_MAGIC)
         goto cleanup;
 
     // Process entire input buffer
@@ -901,11 +901,11 @@ CF_STATUS CF_Hash_ComputeFixed(const CF_MD *md, const uint8_t *data, size_t data
 
     // Re-verify integrity after update
     // Ensures context was not corrupted during processing
-    if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.md) != CF_CTX_MAGIC)
+    if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.hash) != CF_CTX_MAGIC)
         goto cleanup;
     
     // Finalize using fixed digest size defined by the descriptor
-    st = CF_Hash_Final(&ctx, digest, md->digest_size);
+    st = CF_Hash_Final(&ctx, digest, hash->digest_size);
 
 cleanup:
     // Securely clear context regardless of success or failure
@@ -919,12 +919,12 @@ CF_STATUS CF_Hash_CloneCtx(CF_HASH_CTX *dst, const CF_HASH_CTX *src) {
         return CF_ERR_NULL_PTR;
 
     // Ensure the hash descriptor exists
-    if (!src->md)
+    if (!src->hash)
         return CF_ERR_CTX_UNINITIALIZED;
 
     // Verify context integrity using the bound "magic" value
     // Detects accidental corruption or misuse of the context
-    if ((src->magic ^ (uintptr_t)src->md) != CF_CTX_MAGIC)
+    if ((src->magic ^ (uintptr_t)src->hash) != CF_CTX_MAGIC)
         return CF_ERR_CTX_CORRUPT;
 
     // Reset the hash context to a clean state
@@ -932,7 +932,7 @@ CF_STATUS CF_Hash_CloneCtx(CF_HASH_CTX *dst, const CF_HASH_CTX *src) {
 
     // Copy metadata (shallow)
     dst->magic       = src->magic;
-    dst->md          = src->md;
+    dst->hash          = src->hash;
     dst->out_len     = src->out_len;
     dst->opts        = src->opts;
     dst->isFinalized = src->isFinalized;
@@ -940,22 +940,22 @@ CF_STATUS CF_Hash_CloneCtx(CF_HASH_CTX *dst, const CF_HASH_CTX *src) {
 
     // Deep copy low-level digest context
     if (src->digest_ctx) {
-        if (src->md->ctx_size == 0)
+        if (src->hash->ctx_size == 0)
             return CF_ERR_CTX_CORRUPT;
 
-        dst->digest_ctx = SECURE_ALLOC(src->md->ctx_size);
+        dst->digest_ctx = SECURE_ALLOC(src->hash->ctx_size);
         if (!dst->digest_ctx)
             goto cleanup;
 
-        SECURE_MEMCPY(dst->digest_ctx, src->digest_ctx, src->md->ctx_size);
+        SECURE_MEMCPY(dst->digest_ctx, src->digest_ctx, src->hash->ctx_size);
     }
 
     return CF_SUCCESS;
 
 cleanup:
     // Cleanup partially allocated memory
-    if (dst->digest_ctx && src->md->ctx_size)
-        SECURE_FREE(dst->digest_ctx, src->md->ctx_size);
+    if (dst->digest_ctx && src->hash->ctx_size)
+        SECURE_FREE(dst->digest_ctx, src->hash->ctx_size);
 
     return CF_ERR_ALLOC_FAILED;
 }
@@ -988,17 +988,17 @@ CF_HASH_CTX *CF_Hash_CloneCtxAlloc(const CF_HASH_CTX *src, CF_STATUS *status) {
 }
 
 size_t CF_Hash_GetDigestSize(const CF_HASH_CTX *ctx) {
-    return ctx ? (ctx->md ? ctx->md->digest_size : 0) : 0;
+    return ctx ? (ctx->hash ? ctx->hash->digest_size : 0) : 0;
 }
 
 size_t CF_Hash_GetBlockSize(const CF_HASH_CTX *ctx) {
-    return ctx ? (ctx->md ? ctx->md->block_size : 0) : 0;
+    return ctx ? (ctx->hash ? ctx->hash->block_size : 0) : 0;
 }
 
-const char* CF_Hash_GetName(const CF_MD *md) {
-    if (!md) return NULL;
+const char* CF_Hash_GetName(const CF_HASH *hash) {
+    if (!hash) return NULL;
 
-    switch (md->id) {
+    switch (hash->id) {
         case CF_MD5:          return "MD-5";
         case CF_SHA1:         return "SHA-1";
         case CF_SHA224:       return "SHA-224";
@@ -1025,7 +1025,7 @@ CF_STATUS CF_Hash_ValidateCtx(const CF_HASH_CTX *ctx) {
     if (!ctx)
         return CF_ERR_NULL_PTR;
 
-    if ((ctx->magic ^ (uintptr_t)ctx->md) != CF_CTX_MAGIC)
+    if ((ctx->magic ^ (uintptr_t)ctx->hash) != CF_CTX_MAGIC)
         return CF_ERR_CTX_CORRUPT;
 
     return CF_SUCCESS;

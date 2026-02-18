@@ -25,7 +25,7 @@
 
 // HKDF
 static CF_STATUS hkdf_init_wrapper(CF_KDF_CTX *ctx, const CF_KDF_OPTS *opts) {
-    return ll_HKDF_Init((ll_HKDF_CTX *)ctx->kdf_ctx, ctx->md, opts->info, opts->info_len);
+    return ll_HKDF_Init((ll_HKDF_CTX *)ctx->kdf_ctx, ctx->hash, opts->info, opts->info_len);
 }
 
 static CF_STATUS hkdf_extract_wrapper(CF_KDF_CTX *ctx, const CF_KDF_OPTS *opts) {
@@ -47,7 +47,7 @@ static CF_STATUS hkdf_clone_ctx_wrapper(CF_KDF_CTX *ctx_dest, const CF_KDF_CTX *
 // PBKDF2
 static CF_STATUS pbkdf2_init_wrapper(CF_KDF_CTX *ctx, const CF_KDF_OPTS *opts) {
     UNUSED(opts);
-    return ll_PBKDF2_Init((ll_PBKDF2_CTX *)ctx->kdf_ctx, ctx->md, ctx->ikm, ctx->ikm_len);
+    return ll_PBKDF2_Init((ll_PBKDF2_CTX *)ctx->kdf_ctx, ctx->hash, ctx->ikm, ctx->ikm_len);
 }
 
 static CF_STATUS pbkdf2_extract_wrapper(CF_KDF_CTX *ctx, const CF_KDF_OPTS *opts) {
@@ -195,8 +195,8 @@ CF_STATUS CF_KDF_Init(
             return CF_ERR_UNSUPPORTED;
 
         // Retrieve hash function by subflag
-        ctx->md = CF_MD_GetByFlag(ctx->subflags);
-        if (!ctx->md)
+        ctx->hash = CF_Hash_GetByFlag(ctx->subflags);
+        if (!ctx->hash)
             return CF_ERR_UNSUPPORTED;
 
     } 
@@ -362,7 +362,7 @@ CF_STATUS CF_KDF_Reset(CF_KDF_CTX *ctx) {
 
     // Clear all context fields to prevent accidental reuse or leakage
     ctx->kdf         = NULL;
-    ctx->md          = NULL;
+    ctx->hash          = NULL;
     ctx->opts        = NULL;
     ctx->ikm         = NULL;
     ctx->salt        = NULL;
@@ -522,7 +522,7 @@ CF_STATUS CF_KDF_CloneCtx(CF_KDF_CTX *dst, const CF_KDF_CTX *src) {
     // Copy metadata
     dst->magic       = src->magic;
     dst->kdf         = src->kdf;
-    dst->md          = src->md;
+    dst->hash        = src->hash;
     dst->opts        = src->opts;
     dst->subflags    = src->subflags;
     dst->isExtracted = src->isExtracted;

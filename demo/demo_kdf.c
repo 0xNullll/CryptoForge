@@ -31,8 +31,8 @@ void test_all_hkdfs(const uint8_t *info, size_t info_len,
     size_t num_hashes = sizeof(hash_flags)/sizeof(hash_flags[0]);
 
     for (size_t i = 0; i < num_hashes; i++) {
-        const CF_MD *md = CF_MD_GetByFlag(hash_flags[i]);
-        if (!md) {
+        const CF_HASH *hash = CF_Hash_GetByFlag(hash_flags[i]);
+        if (!hash) {
             printf("Unknown hash flag %u\n", hash_flags[i]);
             continue;
         }
@@ -40,27 +40,27 @@ void test_all_hkdfs(const uint8_t *info, size_t info_len,
         ll_HKDF_CTX hkdf_ctx;
         SECURE_ZERO(&hkdf_ctx, sizeof(hkdf_ctx));
 
-        CF_STATUS status = ll_HKDF_Init(&hkdf_ctx, md, info, info_len);
+        CF_STATUS status = ll_HKDF_Init(&hkdf_ctx, hash, info, info_len);
         if (status != CF_SUCCESS) {
-            printf("ll_HKDF_Init failed for %s\n", CF_Hash_GetName(md));
+            printf("ll_HKDF_Init failed for %s\n", CF_Hash_GetName(hash));
             continue;
         }
 
         status = ll_HKDF_Extract(&hkdf_ctx, salt, salt_len, ikm, ikm_len);
         if (status != CF_SUCCESS) {
-            printf("ll_HKDF_Extract failed for %s\n", CF_Hash_GetName(md));
+            printf("ll_HKDF_Extract failed for %s\n", CF_Hash_GetName(hash));
             ll_HKDF_Reset(&hkdf_ctx);
             continue;
         }
 
         status = ll_HKDF_Expand(&hkdf_ctx, okm, okm_len, NULL, 0);
         if (status != CF_SUCCESS) {
-            printf("ll_HKDF_Expand failed for %s\n", CF_Hash_GetName(md));
+            printf("ll_HKDF_Expand failed for %s\n", CF_Hash_GetName(hash));
             ll_HKDF_Reset(&hkdf_ctx);
             continue;
         }
 
-        printf("%s HKDF OKM: ", CF_Hash_GetName(md));
+        printf("%s HKDF OKM: ", CF_Hash_GetName(hash));
         DEMO_print_hex(okm, okm_len);
         printf("\n");
 
@@ -92,23 +92,23 @@ void test_all_pbkdf2s(const uint8_t *password, size_t password_len,
     uint8_t dk_buffer[CF_MAX_DEFAULT_DIGEST_SIZE * 8]; // big enough for test
 
     for (size_t i = 0; i < num_hashes; i++) {
-        const CF_MD *md = CF_MD_GetByFlag(hash_flags[i]);
-        if (!md) {
+        const CF_HASH *hash = CF_Hash_GetByFlag(hash_flags[i]);
+        if (!hash) {
             printf("Unknown hash flag %u\n", hash_flags[i]);
             continue;
         }
 
         ll_PBKDF2_CTX ctx = {0};
 
-        CF_STATUS status = ll_PBKDF2_Init(&ctx, md, password, password_len);
+        CF_STATUS status = ll_PBKDF2_Init(&ctx, hash, password, password_len);
         if (status != CF_SUCCESS) {
-            printf("ll_PBKDF2_Init failed for %s\n", CF_Hash_GetName(md));
+            printf("ll_PBKDF2_Init failed for %s\n", CF_Hash_GetName(hash));
             continue;
         }
 
         status = ll_PBKDF2_Extract(&ctx, salt, salt_len);
         if (status != CF_SUCCESS) {
-            printf("ll_PBKDF2_Extract failed for %s\n", CF_Hash_GetName(md));
+            printf("ll_PBKDF2_Extract failed for %s\n", CF_Hash_GetName(hash));
             ll_PBKDF2_Reset(&ctx);
             continue;
         }
@@ -116,12 +116,12 @@ void test_all_pbkdf2s(const uint8_t *password, size_t password_len,
         SECURE_ZERO(dk_buffer, sizeof(dk_buffer));
         status = ll_PBKDF2_Expand(&ctx, dk_buffer, dk_len, iteration_count);
         if (status != CF_SUCCESS) {
-            printf("ll_PBKDF2_Expand failed for %s, error status: %u\n", CF_Hash_GetName(md), status);
+            printf("ll_PBKDF2_Expand failed for %s, error status: %u\n", CF_Hash_GetName(hash), status);
             ll_PBKDF2_Reset(&ctx);
             continue;
         }
 
-        printf("%s PBKDF2 DK: ", CF_Hash_GetName(md));
+        printf("%s PBKDF2 DK: ", CF_Hash_GetName(hash));
         DEMO_print_hex(dk_buffer, dk_len);
         printf("\n");
 

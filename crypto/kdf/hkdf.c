@@ -17,26 +17,26 @@
 
 #include "../../include/crypto/hkdf.h"
 
-CF_STATUS ll_HKDF_Init(ll_HKDF_CTX *ctx, const CF_MD *md, const uint8_t *info, size_t info_len) {
-    if (!ctx || !md)
+CF_STATUS ll_HKDF_Init(ll_HKDF_CTX *ctx, const CF_HASH *hash, const uint8_t *info, size_t info_len) {
+    if (!ctx || !hash)
         return CF_ERR_NULL_PTR; 
 
     // HKDF is not compatible with XOF hash functions, as per HMAC-based design rules
-    if (CF_IS_XOF(md->id))
+    if (CF_IS_XOF(hash->id))
         return CF_ERR_UNSUPPORTED;
 
     ll_HKDF_Reset(ctx);
         
-    ctx->md = md;
-
+    ctx->hash = hash;
+    
     ctx->info = info;
     ctx->info_len = info_len;
 
     return CF_SUCCESS;
 }
 
-ll_HKDF_CTX* ll_HKDF_InitAlloc(const CF_MD *md, const uint8_t *info, size_t info_len, CF_STATUS *status) {
-    if (!md) {
+ll_HKDF_CTX* ll_HKDF_InitAlloc(const CF_HASH *hash, const uint8_t *info, size_t info_len, CF_STATUS *status) {
+    if (!hash) {
         if (status) *status = CF_ERR_NULL_PTR;
         return NULL;
     }
@@ -47,7 +47,7 @@ ll_HKDF_CTX* ll_HKDF_InitAlloc(const CF_MD *md, const uint8_t *info, size_t info
         return NULL;
     }
 
-    CF_STATUS st = ll_HKDF_Init(ctx, md, info, info_len);
+    CF_STATUS st = ll_HKDF_Init(ctx, hash, info, info_len);
     if (st != CF_SUCCESS) {
         SECURE_FREE(ctx, sizeof(ll_HKDF_CTX));
         if (status) *status = st;
@@ -63,19 +63,19 @@ CF_STATUS ll_HKDF_Extract(
     ll_HKDF_CTX *ctx,
     const uint8_t *salt, size_t salt_len,
     const uint8_t *ikm, size_t ikm_len) {
-    if (!ctx || !ctx->md)
+    if (!ctx || !ctx->hash)
         return CF_ERR_NULL_PTR;
 
     if (ctx->isExtracted)
         return CF_ERR_KDF_ALREADY_EXTRACTED;
 
-    size_t hash_len = ctx->md->digest_size;  // always PRK = hash output size
+    size_t hash_len = ctx->hash->digest_size;  // always PRK = hash output size
 
     CF_STATUS st;
     ll_HMAC_CTX hmac_ctx = {0};
 
     // HMAC key = salt
-    st = ll_HMAC_Init(&hmac_ctx, ctx->md, salt, salt_len);
+    st = ll_HMAC_Init(&hmac_ctx, ctx->hash, salt, salt_len);
     if (st != CF_SUCCESS) {
         return st;
     }
@@ -112,7 +112,7 @@ CF_STATUS ll_HKDF_Expand(
     ll_HKDF_CTX *ctx,
     uint8_t *okm, size_t okm_len,
     const uint8_t *new_info, size_t new_info_len) {
-    if (!ctx || !ctx->md || !ctx->prk || !okm)
+    if (!ctx || !ctx->hash || !ctx->prk || !okm)
         return CF_ERR_NULL_PTR;
 
     if (okm_len == 0)
@@ -121,7 +121,7 @@ CF_STATUS ll_HKDF_Expand(
     if (new_info && new_info_len == 0)
         return CF_ERR_INVALID_PARAM;
 
-    const size_t hash_len = ctx->md->digest_size;
+    const size_t hash_len = ctx->hash->digest_size;
     const size_t max_okm = LL_HKDF_MAX_OKM(hash_len); // RFC 5869 max 255 blocks
 
     if (okm_len > max_okm)
@@ -154,7 +154,7 @@ CF_STATUS ll_HKDF_Expand(
 
         ctx->counter++; // Block index (1..255)
 
-        st = ll_HMAC_Init(hmac_ctx, ctx->md, ctx->prk, ctx->prk_len);
+        st = ll_HMAC_Init(hmac_ctx, ctx->hash, ctx->prk, ctx->prk_len);
         if (st != CF_SUCCESS)
             goto cleanup;
 
@@ -215,7 +215,7 @@ CF_STATUS ll_HKDF_Reset(ll_HKDF_CTX *ctx) {
 
     SECURE_ZERO(ctx->prev_block, sizeof(ctx->prev_block));
 
-    ctx->md = NULL;
+    ctx->hash = NULL;
     ctx->info = NULL;
     ctx->info_len = 0;
     ctx->prk_len = 0;

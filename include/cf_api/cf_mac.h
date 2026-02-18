@@ -81,7 +81,7 @@ typedef struct _CF_MAC_CTX {
     uint64_t magic;               // CF_CTX_MAGIC ^ (uintptr_t)mac
 
     const CF_MAC *mac;            // selected MAC algorithm
-    const CF_MD *md;              // mandetory for HMAC
+    const CF_HASH *hash;          // mandetory for HMAC
     const CF_MAC_OPTS *opts;      // optional parameters
 
     void *key_ctx;                // optional low-level key for CMAC/GMAC

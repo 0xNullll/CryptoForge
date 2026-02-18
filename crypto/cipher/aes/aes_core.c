@@ -107,7 +107,6 @@ static uint32_t SubWord(uint32_t w) {
     return LOAD32BE(b);
 }
 
-
 static void SubBytes(uint8_t state[4][4]) {
     for (int r = 0; r < 4; r++) {
         for (int c = 0; c < 4; c++) {
