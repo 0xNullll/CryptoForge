@@ -12,28 +12,30 @@ CryptoForge is intended for **educational, experimental**. It has **not undergon
 
 ```text
 /CryptoForge
-├─ /crypto
-│   ├─ /aead
-│   │   ├─ /aes           <-- AES-GCM
-│   │   └─ /chacha        <-- ChaCha20-Poly1305 and XChaCha20-Poly1305
-│   ├─ /cf_api            <-- Public API implementations
-│   ├─ /enc               <-- Base16/32/58/64/85 encoders
-│   ├─ /hash
-│   │   ├─ /md            <-- Legacy hashes (MD5)
-│   │   └─ /sha
-│   │       └─ /keccak    <-- SHA3 / Keccak / SHAKE
-│   ├─ /kdf               <-- PBKDF2, HKDF
-│   ├─ /mac               <-- HMAC, CMAC, GMAC, KMAC, Poly1305
-│   └─ /cipher
-│       ├─ /aes           <-- AES core + standard modes (ECB, CBC, CFB, OFB, CTR)
-│       └─ /chacha        <-- ChaCha/XChaCha core + stream implementations
-├─ /include
-│   ├─ /cf_api            <-- Public API headers (cf_*)
-│   ├─ /crypto            <-- Internal crypto headers
-│   ├─ /config            <-- Build/runtime configuration headers
-│   └─ /utils             <-- Utility headers
-├─ /utils                 <-- Utility implementations (memory, misc helpers)
-├─ /demo                  <-- Test programs and demos
+├─ /src
+│   ├─ /crypto
+│   │   ├─ /aead
+│   │   │   ├─ /aes           <-- AES-GCM
+│   │   │   └─ /chacha        <-- ChaCha20-Poly1305 and XChaCha20-Poly1305
+│   │   ├─ /cf_api            <-- Public API implementations
+│   │   ├─ /enc               <-- Base16/32/58/64/85 encoders
+│   │   ├─ /hash
+│   │   │   ├─ /md            <-- Legacy hashes (MD5)
+│   │   │   └─ /sha
+│   │   │       └─ /keccak    <-- SHA3 / Keccak / SHAKE
+│   │   ├─ /kdf               <-- PBKDF2, HKDF
+│   │   ├─ /mac               <-- HMAC, CMAC, GMAC, KMAC, Poly1305
+│   │   └─ /cipher
+│   │       ├─ /aes           <-- AES core + standard modes (ECB, CBC, CFB, OFB, CTR)
+│   │       └─ /chacha        <-- ChaCha/XChaCha core + stream implementations
+│   ├─ /include
+│   │   ├─ /cf_api            <-- Public API headers (cf_*)
+│   │   ├─ /crypto            <-- Internal crypto headers
+│   │   ├─ /config            <-- Build/runtime configuration headers
+│   │   └─ /utils             <-- Utility headers
+│   ├─ /utils                 <-- Utility implementations (memory, misc helpers)
+├─ /demo                      <-- Test programs and demos
+├─ /vectors                   <-- Generated C headers from trusted crypto test vectors
 └─ LICENSE, README.md
 ```
 

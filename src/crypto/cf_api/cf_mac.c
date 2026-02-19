@@ -636,6 +636,17 @@ cleanup:
     return st;
 }
 
+CF_STATUS CF_MAC_ValidateCtx(const CF_MAC_CTX *ctx) {
+    if (!ctx)
+        return CF_ERR_NULL_PTR;
+
+    // Verify that the MAC pointer hasn’t been tampered with by checking it against the bound magic value.
+    if ((ctx->magic ^ (uintptr_t)ctx->mac) != CF_CTX_MAGIC)
+        return CF_ERR_CTX_CORRUPT;
+
+    return CF_SUCCESS;
+}
+
 const char* CF_MAC_GetName(const CF_MAC *ctx) {
     if (!ctx)
         return NULL;
@@ -703,17 +714,6 @@ const char* CF_MAC_GetFullName(const CF_MAC_CTX *ctx) {
         default:
             return "UNKNOWN-MAC";
     }
-}
-
-CF_STATUS CF_MAC_ValidateCtx(const CF_MAC_CTX *ctx) {
-    if (!ctx)
-        return CF_ERR_NULL_PTR;
-
-    // Verify that the MAC pointer hasn’t been tampered with by checking it against the bound magic value.
-    if ((ctx->magic ^ (uintptr_t)ctx->mac) != CF_CTX_MAGIC)
-        return CF_ERR_CTX_CORRUPT;
-
-    return CF_SUCCESS;
 }
 
 CF_STATUS CF_MAC_CloneCtx(CF_MAC_CTX *dst, const CF_MAC_CTX *src) {
