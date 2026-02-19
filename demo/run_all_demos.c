@@ -1,4 +1,4 @@
-#include "../include/config/demo_config.h"
+#include "../src/include/config/demo_config.h"
 
 int main(void) {
     CF_STATUS status;

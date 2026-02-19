@@ -133,9 +133,13 @@ CF_API CF_STATUS CF_MAC_Compute(const CF_MAC *mac,
                                 const CF_MAC_OPTS *opts, uint32_t subflags);
 
 
+CF_API CF_STATUS CF_MAC_ValidateCtx(const CF_MAC_CTX *ctx);
 CF_API const char* CF_MAC_GetName(const CF_MAC *ctx);
 CF_API const char* CF_MAC_GetFullName(const CF_MAC_CTX *ctx);
-CF_API CF_STATUS CF_MAC_ValidateCtx(const CF_MAC_CTX *ctx);
+CF_API bool CF_MAC_IsValidKeyLength(const CF_MAC *mac, size_t key_len);
+CF_API bool CF_MAC_IsValidTagLength(const CF_MAC *mac, size_t tag_len);
+CF_API const size_t* CF_MAC_GetValidKeySizes(const CF_MAC *mac, size_t *count);
+CF_API const size_t* CF_MAC_GetValidTagSizes(const CF_MAC *mac, size_t *count);
 
 // ============================
 // Cloning
