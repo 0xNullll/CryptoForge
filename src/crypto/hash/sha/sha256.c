@@ -107,9 +107,11 @@ bool ll_sha256_update(ll_SHA256_CTX *ctx, const uint8_t *data, size_t len) {
         }
     }
 
+    // Process full blocks directly
     for(; i+SHA256_BLOCK_SIZE <= len; i+=SHA256_BLOCK_SIZE)
         if(!ll_sha256_process_block(ctx, data+i)) return false;
 
+    // Copy remaining
     if(i<len){
         ctx->buf_len=len-i;
         SECURE_MEMCPY(ctx->buf, data+i, ctx->buf_len);
