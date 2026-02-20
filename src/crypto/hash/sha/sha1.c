@@ -129,7 +129,10 @@ bool ll_sha1_final(ll_SHA1_CTX *ctx, uint8_t digest[SHA1_DIGEST_SIZE]) {
     // Compute padding length: enough to leave 8 bytes at the end for length
     size_t pad_len = (ctx->num < 56) ? (56 - ctx->num) : (64 + 56 - ctx->num);
 
+    // Feed padding
     if (!ll_sha1_update(ctx, pad, pad_len)) return false;
+
+    // Feed length
     if (!ll_sha1_update(ctx, len_bytes, 8)) return false;
 
     // Output digest in big-endian
