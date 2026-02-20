@@ -85,64 +85,63 @@ static void Inc32(uint8_t CB[16]) {
 
 bool ll_AES_GCTR_Process(
     const ll_AES_KEY *key,
-    uint8_t ICB[AES_BLOCK_SIZE],
+    uint8_t ICB[AES_BLOCK_SIZE],   // current counter (will be updated)
     const uint8_t *X,
     size_t X_len,
     uint8_t *Y) {
-    //Temporary buffers: CB holds the current counter block,
-    //encrypted holds the AES-encrypted counter block
-    uint8_t CB[AES_BLOCK_SIZE], encrypted[AES_BLOCK_SIZE];
+    if (!key || !ICB || (!X && X_len) || (!Y && X_len))
+        return false;
 
-    //Initialize counter block from input ICB
+    uint8_t CB[AES_BLOCK_SIZE];
+    uint8_t encrypted[AES_BLOCK_SIZE];
+
+    // Start from provided counter value
     SECURE_MEMCPY(CB, ICB, AES_BLOCK_SIZE);
 
     size_t offset = 0;
 
-    //Process full 16-byte blocks
-    while (X_len >= AES_BLOCK_SIZE) {
-        //Increment counter if this is not the first block
-        if (offset > 0)
-            Inc32(CB);
+    while (X_len > 0) {
 
-        //Encrypt the current counter block with AES
+        // Encrypt current counter block
         if (!ll_AES_EncryptBlock(key, CB, encrypted))
-            return false;
+            goto cleanup;
 
-        //XOR plaintext/ciphertext block with encrypted counter to produce output
-        for (size_t j = 0; j < AES_BLOCK_SIZE; j++)
-            Y[offset + j] = X[offset + j] ^ encrypted[j];
+        // Determine block size (full or partial)
+        size_t blk = (X_len > AES_BLOCK_SIZE) ? AES_BLOCK_SIZE : X_len;
 
-        offset += AES_BLOCK_SIZE;
-        X_len -= AES_BLOCK_SIZE;
+        // XOR keystream with input
+        for (size_t i = 0; i < blk; i++)
+            Y[offset + i] = X[offset + i] ^ encrypted[i];
+
+        offset += blk;
+        X_len -= blk;
+
+        // Increment counter for next block
+        Inc32(CB);
     }
 
-    //Process final partial block, if any
-    if (X_len > 0) {
-        //Encrypt counter block (do not increment, last block)
-        if (!ll_AES_EncryptBlock(key, CB, encrypted))
-            return false;
+    // Write updated counter back so state persists across Update()
+    SECURE_MEMCPY(ICB, CB, AES_BLOCK_SIZE);
 
-        //XOR remaining bytes
-        for (size_t j = 0; j < X_len; j++)
-            Y[offset + j] = X[offset + j] ^ encrypted[j];
-    }
-
-    //Wipe temporary buffers to avoid leaking sensitive data
     SECURE_ZERO(CB, sizeof(CB));
     SECURE_ZERO(encrypted, sizeof(encrypted));
-
     return true;
+
+cleanup:
+    SECURE_ZERO(CB, sizeof(CB));
+    SECURE_ZERO(encrypted, sizeof(encrypted));
+    return false;
 }
 
 bool ll_AES_GCM_Init(ll_AES_GCM_CTX *ctx,
                      const ll_AES_KEY *key,
                      const uint8_t *iv, size_t iv_len,
                      const uint8_t *aad, size_t aad_len, bool encrypt) {
-    if (!ctx || !key || !iv || !aad)
+    if (!ctx || !key || !iv)
         return false;
 
     // Length minimum/limit (from NIST SP 800‑38D)
-    if (iv_len < AES_GCM_IV_MIN || aad_len > AES_GCM_AAD_MAX_DATA_LEN)
+    if (iv_len == 0 || aad_len > AES_GCM_AAD_MAX_DATA_LEN)
         return false;
 
     ctx->isEncrypt = encrypt;
@@ -279,9 +278,6 @@ bool ll_AES_GCM_Final(ll_AES_GCM_CTX *ctx, uint8_t *tag, size_t tag_len) {
 
         //Constant-time comparison
         ok = SECURE_MEM_EQUAL(computed_tag, tag, tag_len);
-
-        //tag with computed value for consistency
-        SECURE_MEMCPY(tag, computed_tag, tag_len);
 
         goto cleanup; // skip setting ok = true below
     }

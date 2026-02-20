@@ -23,7 +23,7 @@ CF_STATUS ll_GMAC_Init(ll_GMAC_CTX *ctx, const ll_AES_KEY *key, const uint8_t *i
     if (ctx->isHeapAlloc != 0 && ctx->isHeapAlloc != 1)
         return CF_ERR_CTX_UNINITIALIZED;
 
-    if (iv_len < AES_GCM_IV_MIN)
+    if (iv_len == 0)
         return CF_ERR_MAC_BAD_IV_LEN;
 
     ll_GMAC_Reset(ctx);
@@ -154,7 +154,7 @@ CF_STATUS ll_GMAC_Verify(
     if (!key || !iv || !aad || !expected_tag)
         return CF_ERR_NULL_PTR;
 
-    if (iv_len < AES_GCM_IV_MIN || !IS_VALID_GCM_TAG_SIZE(tag_len))
+    if (iv_len == 0 || !IS_VALID_GCM_TAG_SIZE(tag_len))
         return CF_ERR_INVALID_PARAM;
 
     CF_STATUS st = CF_SUCCESS;

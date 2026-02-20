@@ -49,7 +49,7 @@ static CF_STATUS hmac_clone_ctx_wrapper(CF_MAC_CTX *dest_ctx, const CF_MAC_CTX *
 
 // KMAC
 static CF_STATUS kmac_init_wrapper(CF_MAC_CTX *ctx, const CF_MAC_OPTS *opts) {
-    return ll_KMAC_Init((ll_KMAC_CTX *)ctx->mac_ctx, ctx->key, ctx->key_len, opts->S, opts->S_len, ctx->subflags);
+    return ll_KMAC_Init((ll_KMAC_CTX *)ctx->mac_ctx, ctx->key, ctx->key_len, opts ? opts->S : NULL, opts ? opts->S_len : 0, ctx->subflags);
 }
 
 static CF_STATUS kmac_update_wrapper(CF_MAC_CTX *ctx, const uint8_t *data, size_t data_len) {
@@ -191,11 +191,11 @@ static const CF_MAC *CF_get_kmac(void) {
 }
 
 //
-// CMAC
+// AES-CMAC
 //
-static const CF_MAC *CF_get_cmac(void) {
+static const CF_MAC *CF_get_aes_cmac(void) {
     static CF_MAC mac = {
-        .id = CF_CMAC,
+        .id = CF_AES_CMAC,
         .ctx_size = sizeof(ll_CMAC_CTX),
         .key_ctx_size = sizeof(ll_AES_KEY),
         .default_tag_len = AES_BLOCK_SIZE,
@@ -210,11 +210,11 @@ static const CF_MAC *CF_get_cmac(void) {
 }
 
 //
-// GMAC
+// AES-GMAC
 //
-static const CF_MAC *CF_get_gmac(void) {
+static const CF_MAC *CF_get_aes_gmac(void) {
     static CF_MAC mac = {
-        .id = CF_GMAC,
+        .id = CF_AES_GMAC,
         .ctx_size = sizeof(ll_GMAC_CTX),
         .key_ctx_size = sizeof(ll_AES_KEY),
         .default_tag_len = AES_BLOCK_SIZE,
@@ -251,8 +251,8 @@ static const CF_MAC *CF_get_poly1305(void) {
 static const CF_ALGO_ENTRY cf_mac_table[] = {
     { CF_HMAC,      (const void* (*)(void))CF_get_hmac     },
     { CF_KMAC_STD,  (const void* (*)(void))CF_get_kmac     },
-    { CF_CMAC,      (const void* (*)(void))CF_get_cmac     },
-    { CF_GMAC,      (const void* (*)(void))CF_get_gmac     },
+    { CF_AES_CMAC,  (const void* (*)(void))CF_get_aes_cmac },
+    { CF_AES_GMAC,  (const void* (*)(void))CF_get_aes_gmac },
     { CF_POLY1305,  (const void* (*)(void))CF_get_poly1305 }
 };
 
@@ -329,7 +329,7 @@ CF_STATUS CF_MAC_Init(CF_MAC_CTX *ctx, const CF_MAC *mac, const CF_MAC_OPTS *opt
 
     }
     // AES-based MACs (CMAC / GMAC)
-    else if (CF_MAC_IS_CMAC(ctx->mac->id) || CF_MAC_IS_GMAC(ctx->mac->id)) {
+    else if (CF_MAC_IS_AES_CMAC(ctx->mac->id) || CF_MAC_IS_AES_GMAC(ctx->mac->id)) {
         // Validate AES key length
         if (!CF_IS_AES_KEY_VALID(key_len))
             return CF_ERR_CIPHER_INVALID_KEY_LEN;
@@ -481,12 +481,12 @@ CF_STATUS CF_MAC_Final(CF_MAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
         if (ctx->hash->default_out_len == 0)
             return CF_ERR_MAC_INVALID_TAG_LEN;
 
-    } else if (CF_MAC_IS_CMAC(ctx->mac->id)) {
+    } else if (CF_MAC_IS_AES_CMAC(ctx->mac->id)) {
         // CMAC requires tag length between 4 and AES block size
         if (tag_len < 4 || tag_len > AES_BLOCK_SIZE)
             return CF_ERR_MAC_INVALID_TAG_LEN;
 
-    } else if (CF_MAC_IS_GMAC(ctx->mac->id)) {
+    } else if (CF_MAC_IS_AES_GMAC(ctx->mac->id)) {
         // GMAC tag length must be valid for GCM
         if (!IS_VALID_GCM_TAG_SIZE(tag_len))
             return CF_ERR_MAC_INVALID_TAG_LEN;
@@ -654,8 +654,8 @@ const char* CF_MAC_GetName(const CF_MAC *ctx) {
     switch (ctx->id) {
         case CF_HMAC:     return "HMAC";
         case CF_KMAC_STD: return "KMAC";
-        case CF_CMAC:     return "CMAC";
-        case CF_GMAC:     return "GMAC";
+        case CF_AES_CMAC: return "AES-CMAC";
+        case CF_AES_GMAC: return "AES-GMAC";
         case CF_POLY1305: return "POLY-1305";
 
         default:
@@ -693,20 +693,20 @@ const char* CF_MAC_GetFullName(const CF_MAC_CTX *ctx) {
                 default:              return "KMAC-UNKNOWN";
             }
 
-        case CF_CMAC:
+        case CF_AES_CMAC:
             switch (ctx->key_len) {
-                case AES_128_KEY_SIZE: return "CMAC-AES-128";
-                case AES_192_KEY_SIZE: return "CMAC-AES-192";
-                case AES_256_KEY_SIZE: return "CMAC-AES-256";
-                default:               return "CMAC-UNKNOWN";
+                case AES_128_KEY_SIZE: return "AES-CMAC-128";
+                case AES_192_KEY_SIZE: return "AES-CMAC-192";
+                case AES_256_KEY_SIZE: return "AES-CMAC-256";
+                default:               return "AES-CMAC-UNKNOWN";
             }
 
-        case CF_GMAC:
+        case CF_AES_GMAC:
             switch (ctx->key_len) {
-                case AES_128_KEY_SIZE: return "GMAC-AES-128";
-                case AES_192_KEY_SIZE: return "GMAC-AES-192";
-                case AES_256_KEY_SIZE: return "GMAC-AES-256";
-                default:               return "GMAC-UNKNOWN";
+                case AES_128_KEY_SIZE: return "AES-GMAC-128";
+                case AES_192_KEY_SIZE: return "AES-GMAC-192";
+                case AES_256_KEY_SIZE: return "AES-GMAC-256";
+                default:               return "AES-GMAC-UNKNOWN";
             }
 
         case CF_POLY1305:          return "POLY-1305";

@@ -119,31 +119,30 @@ bool ll_sha256_update(ll_SHA256_CTX *ctx, const uint8_t *data, size_t len) {
 }
 
 bool ll_sha256_final(ll_SHA256_CTX *ctx, uint8_t digest[SHA256_DIGEST_SIZE]) {
-    if(!ctx || !digest) return false;
+    if (!ctx || !digest) return false;
 
-    uint8_t block[SHA256_BLOCK_SIZE];
-    SECURE_ZERO(block, sizeof(block));
+    uint8_t pad[SHA256_BLOCK_SIZE] = {0};
+    pad[0] = 0x80; // append the 1-bit
 
-    SECURE_MEMCPY(block, ctx->buf, ctx->buf_len);
-    block[ctx->buf_len++] = 0x80;
-
-    size_t pad_len = (ctx->buf_len <= 56) ? (56 - ctx->buf_len) : (64 + 56 - ctx->buf_len);
-    SECURE_MEMSET(block + ctx->buf_len, 0, pad_len);
-
+    uint8_t len_bytes[8];
     uint64_t bit_len = ctx->len * 8;
-    STORE64BE(block + 56, bit_len);
+    STORE64BE(len_bytes, bit_len); // 64-bit length in big-endian
 
-    if(!ll_sha256_process_block(ctx, block)) return false;
+    // Compute padding length: enough to leave 8 bytes at the end for length
+    size_t pad_len = (ctx->buf_len < 56) ? (56 - ctx->buf_len) : (64 + 56 - ctx->buf_len);
 
-    if(ctx->buf_len + pad_len + 8 > 64){
-        SECURE_MEMSET(block, 0, SHA256_BLOCK_SIZE);
-        if(!ll_sha256_process_block(ctx, block)) return false;
-    }
+    // Feed padding
+    if (!ll_sha256_update(ctx, pad, pad_len)) return false;
 
-    for(size_t i=0;i<8;i++)
+    // Feed length
+    if (!ll_sha256_update(ctx, len_bytes, 8)) return false;
+
+    // Produce digest
+    for (size_t i = 0; i < 8; i++)
         STORE32BE(digest + i*4, ctx->state[i]);
 
-    SECURE_ZERO(block, sizeof(block));
+    SECURE_ZERO(pad, sizeof(pad));
+    SECURE_ZERO(len_bytes, sizeof(len_bytes));
 
     return true;
 }

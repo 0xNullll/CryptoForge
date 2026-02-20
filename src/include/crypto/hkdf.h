@@ -28,6 +28,7 @@
 #include "../utils/cf_status.h"
 
 #include "../config/libs.h"
+#include "../config/demo_config.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,7 +51,7 @@ typedef struct _ll_HKDF_CTX {
     uint8_t counter;                                 // Block counter (1..255)
 
     const uint8_t *info;             // Optional context info
-    size_t info_len;           // Length of info
+    size_t info_len;                 // Length of info
 
     int isExtracted;
     int isHeapAlloc;           // 1 if allocated by library (heap), 0 if user stack

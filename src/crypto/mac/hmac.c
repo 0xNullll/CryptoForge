@@ -36,24 +36,44 @@ CF_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const CF_HASH *hash, const uint8_t *key
     ctx->out_len = hash->digest_size != 0 ? hash->digest_size : hash->default_out_len;
 
     // normalize key
+    // ----------- Normalize key properly -----------
+    uint8_t key_block[CF_MAX_DEFAULT_HASH_BLOCK_SIZE] = {0};
     if (key_len > hash->block_size) {
+        // Hash the key first
         if (!hash->hash_init_fn(ctx->ipad_ctx, NULL) ||
             !hash->hash_update_fn(ctx->ipad_ctx, key, key_len) ||
-            !hash->hash_final_fn(ctx->ipad_ctx, ctx->key)) {
-            goto cleanup;
+            !hash->hash_final_fn(ctx->ipad_ctx, key_block)) {
+            return CF_ERR_CTX_CORRUPT;
         }
-        if (hash->hash_squeeze_fn && !hash->hash_squeeze_fn(ctx->ipad_ctx, ctx->key, hash->digest_size))
-            goto cleanup;
-
-        key_len = (hash->digest_size != 0) ? hash->digest_size : hash->default_out_len;
+        key_len = ctx->out_len; // digest size
     } else {
-        // copy short key
-        SECURE_MEMCPY(ctx->key, key, key_len);
+        SECURE_MEMCPY(key_block, key, key_len);
     }
 
+    // Zero-pad to block size
     if (key_len < hash->block_size)
-        SECURE_MEMSET(ctx->key + key_len, 0, hash->block_size - key_len);
+        SECURE_ZERO(key_block + key_len, hash->block_size - key_len);
+
     ctx->key_len = hash->block_size;
+    SECURE_MEMCPY(ctx->key, key_block, hash->block_size);
+    // if (key_len > hash->block_size) {
+    //     if (!hash->hash_init_fn(ctx->ipad_ctx, NULL) ||
+    //         !hash->hash_update_fn(ctx->ipad_ctx, key, key_len) ||
+    //         !hash->hash_final_fn(ctx->ipad_ctx, ctx->key)) {
+    //         goto cleanup;
+    //     }
+    //     if (hash->hash_squeeze_fn && !hash->hash_squeeze_fn(ctx->ipad_ctx, ctx->key, hash->digest_size))
+    //         goto cleanup;
+
+    //     key_len = (hash->digest_size != 0) ? hash->digest_size : hash->default_out_len;
+    // } else {
+    //     // copy short key
+    //     SECURE_MEMCPY(ctx->key, key, key_len);
+    // }
+
+    // if (key_len < hash->block_size)
+    //     SECURE_ZERO(ctx->key + key_len, hash->block_size - key_len);
+    // ctx->key_len = hash->block_size;
 
     // apply XOR pads
     uint8_t ipad[CF_MAX_DEFAULT_HASH_BLOCK_SIZE], opad[CF_MAX_DEFAULT_HASH_BLOCK_SIZE];
