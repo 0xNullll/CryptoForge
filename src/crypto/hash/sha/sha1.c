@@ -95,7 +95,7 @@ static bool ll_sha1_process_block(ll_SHA1_CTX *ctx, const uint8_t *block) {
 bool ll_sha1_update(ll_SHA1_CTX *ctx, const uint8_t *data, size_t len) {
     if (!ctx || !data) return false;
 
-    ctx->len += (uint64_t)len * 8;  // total length in bits
+    ctx->len += (uint64_t)len;  // total length in bytes
 
     while (len > 0) {
         size_t to_copy = SHA1_BLOCK_SIZE - ctx->num;
@@ -118,36 +118,26 @@ bool ll_sha1_update(ll_SHA1_CTX *ctx, const uint8_t *data, size_t len) {
 bool ll_sha1_final(ll_SHA1_CTX *ctx, uint8_t digest[SHA1_DIGEST_SIZE]) {
     if (!ctx || !digest) return false;
 
-    uint8_t block[SHA1_BLOCK_SIZE];
-    SECURE_ZERO(block, sizeof(block));
+    uint8_t pad[SHA1_BLOCK_SIZE] = {0};
+    pad[0] = 0x80;  // append the 1-bit
 
-    // Copy leftover bytes and append 0x80
-    SECURE_MEMCPY(block, ctx->buf, ctx->num);
-    block[ctx->num++] = 0x80;
+    // Message length in bits
+    uint64_t bit_len = ctx->len * 8;
+    uint8_t len_bytes[8];
+    STORE64BE(len_bytes, bit_len); // 64-bit length in big-endian
 
-    // Pad zeros
-    if (ctx->num > 56) {
-        SECURE_MEMSET(block + ctx->num, 0, SHA1_BLOCK_SIZE - ctx->num);
-        if (!ll_sha1_process_block(ctx, block)) return false;
-        SECURE_MEMSET(block, 0, 56); // new zeroed block
-    } else {
-        SECURE_MEMSET(block + ctx->num, 0, 56 - ctx->num);
-    }
+    // Compute padding length: enough to leave 8 bytes at the end for length
+    size_t pad_len = (ctx->num < 56) ? (56 - ctx->num) : (64 + 56 - ctx->num);
 
-    // Append length in bits using CPU-endian aware macro
-    STORE64BE(block + 56, ctx->len);
+    if (!ll_sha1_update(ctx, pad, pad_len)) return false;
+    if (!ll_sha1_update(ctx, len_bytes, 8)) return false;
 
-    // Process final block
-    if (!ll_sha1_process_block(ctx, block)) return false;
-
-    // Output digest using STORE32BE
+    // Output digest in big-endian
     STORE32BE(digest + 0,  ctx->h0);
     STORE32BE(digest + 4,  ctx->h1);
     STORE32BE(digest + 8,  ctx->h2);
     STORE32BE(digest + 12, ctx->h3);
     STORE32BE(digest + 16, ctx->h4);
-
-    SECURE_ZERO(block, sizeof(block));
 
     return true;
 }

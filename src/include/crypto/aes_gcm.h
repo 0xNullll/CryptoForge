@@ -43,7 +43,7 @@ extern "C" {
 #define AES_GCM_AAD_MAX_DATA_LEN  ((U64(1) << 61) - U64(1))  // ~2 EiB (2^61 - 1 bytes)
 
 /* Recommended IV size (per NIST SP 800-38D) */
-#define AES_GCM_IV_MIN 12
+// #define AES_GCM_IV_MIN 12
 
 #define AES_GCM_TAG_32_SIZE   4    // 32-bit tag
 #define AES_GCM_TAG_64_SIZE   8    // 64-bit tag

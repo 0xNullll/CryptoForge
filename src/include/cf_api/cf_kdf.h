@@ -62,7 +62,7 @@ typedef struct _CF_KDF_OPTS {
     const uint8_t *info;    // optional salt (HKDF)
     size_t info_len;
 
-    uint32_t iterations;    // iteration count (PBKDF2)
+    size_t iterations;    // iteration count (PBKDF2)
 
     const uint8_t *S;       // optional customization (KMAC-XOF)
     size_t S_len;
@@ -155,11 +155,11 @@ CF_API CF_KDF_CTX* CF_KDF_CloneCtxAlloc(const CF_KDF_CTX *src, CF_STATUS *status
 CF_API CF_STATUS CF_KDFOpts_Init(CF_KDF_OPTS *opts,
                                  const uint8_t *info, size_t info_len,
                                  const uint8_t *custom, size_t custom_len,
-                                 uint32_t iterations);
+                                 size_t iterations);
 
 CF_API CF_KDF_OPTS* CF_KDFOpts_InitAlloc(const uint8_t *info, size_t info_len,
                                          const uint8_t *custom, size_t custom_len,
-                                         uint32_t iterations, CF_STATUS *status);
+                                         size_t iterations, CF_STATUS *status);
 
 CF_API CF_STATUS CF_KDFOpts_SetNewInfo(CF_KDF_OPTS *opts, const uint8_t *new_info, size_t new_info_len);
 

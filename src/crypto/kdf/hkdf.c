@@ -75,7 +75,15 @@ CF_STATUS ll_HKDF_Extract(
     ll_HMAC_CTX hmac_ctx = {0};
 
     // HMAC key = salt
-    st = ll_HMAC_Init(&hmac_ctx, ctx->hash, salt, salt_len);
+    const uint8_t *used_salt = salt;
+    uint8_t zero_salt[CF_MAX_DEFAULT_DIGEST_SIZE] = {0};
+
+    if (!salt || salt_len == 0) {
+        used_salt = zero_salt;
+        salt_len = ctx->hash->digest_size;
+    }
+
+    st = ll_HMAC_Init(&hmac_ctx, ctx->hash, used_salt, salt_len);
     if (st != CF_SUCCESS) {
         return st;
     }
@@ -118,87 +126,72 @@ CF_STATUS ll_HKDF_Expand(
     if (okm_len == 0)
         return CF_ERR_INVALID_LEN;
 
-    if (new_info && new_info_len == 0)
-        return CF_ERR_INVALID_PARAM;
-
     const size_t hash_len = ctx->hash->digest_size;
     const size_t max_okm = LL_HKDF_MAX_OKM(hash_len); // RFC 5869 max 255 blocks
-
     if (okm_len > max_okm)
         return CF_ERR_LIMIT_EXCEEDED;
 
-    // Only replace info once, before generating blocks
+    // Replace info if provided
     if (new_info) {
         ctx->info = new_info;
         ctx->info_len = new_info_len;
     }
 
-    // Prepare for multi-block generation
+    // Prepare for expansion
     SECURE_ZERO(ctx->prev_block, sizeof(ctx->prev_block));
-    size_t prev_block_len = 0;
     ctx->counter = 0;
 
-    ll_HMAC_CTX *hmac_ctx = (ll_HMAC_CTX *)SECURE_ALLOC(sizeof(ll_HMAC_CTX));
-    if (!hmac_ctx)
-        return CF_ERR_ALLOC_FAILED;
-
+    ll_HMAC_CTX hmac_ctx = {0};
     CF_STATUS st;
     size_t generated = 0;
-    uint8_t block[CF_MAX_DEFAULT_HASH_BLOCK_SIZE];
+    uint8_t block[CF_MAX_DEFAULT_HASH_BLOCK_SIZE] = {0};
 
     while (generated < okm_len) {
-        if (ctx->counter >= LL_HKDF_MAX_BLOCKS) { // RFC 5869 max 255 blocks
+        if (ctx->counter >= LL_HKDF_MAX_BLOCKS) {
             st = CF_ERR_LIMIT_EXCEEDED;
             goto cleanup;
         }
 
-        ctx->counter++; // Block index (1..255)
+        ctx->counter++;
+        uint8_t ctr = (uint8_t)ctx->counter;
 
-        st = ll_HMAC_Init(hmac_ctx, ctx->hash, ctx->prk, ctx->prk_len);
-        if (st != CF_SUCCESS)
-            goto cleanup;
+        st = ll_HMAC_Init(&hmac_ctx, ctx->hash, ctx->prk, ctx->prk_len);
+        if (st != CF_SUCCESS) goto cleanup;
 
-        // Feed previous block if exists
-        if (prev_block_len)
-            st = ll_HMAC_Update(hmac_ctx, ctx->prev_block, prev_block_len);
-        if (st != CF_SUCCESS)
-            goto cleanup;
+        // Feed previous block (full hash_len, not just truncated)
+        if (ctx->counter > 1) {
+            st = ll_HMAC_Update(&hmac_ctx, ctx->prev_block, hash_len);
+            if (st != CF_SUCCESS) goto cleanup;
+        }
 
-        // Feed info
-        if (ctx->info && ctx->info_len)
-            st = ll_HMAC_Update(hmac_ctx, ctx->info, ctx->info_len);
-        if (st != CF_SUCCESS)
-            goto cleanup;
+        // Feed info if present
+        if (ctx->info && ctx->info_len) {
+            st = ll_HMAC_Update(&hmac_ctx, ctx->info, ctx->info_len);
+            if (st != CF_SUCCESS) goto cleanup;
+        }
 
         // Feed counter
-        st = ll_HMAC_Update(hmac_ctx, &ctx->counter, 1);
-        if (st != CF_SUCCESS)
-            goto cleanup;
+        st = ll_HMAC_Update(&hmac_ctx, &ctr, 1);
+        if (st != CF_SUCCESS) goto cleanup;
 
-        // Finalize block
-        st = ll_HMAC_Final(hmac_ctx, block, hash_len);
-        if (st != CF_SUCCESS)
-            goto cleanup;
+        st = ll_HMAC_Final(&hmac_ctx, block, hash_len);
+        if (st != CF_SUCCESS) goto cleanup;
 
-        // clean internal buffers
-        ll_HMAC_Reset(hmac_ctx);
+        ll_HMAC_Reset(&hmac_ctx);
 
-        // Copy required bytes to output
         size_t to_copy = (okm_len - generated > hash_len) ? hash_len : (okm_len - generated);
         SECURE_MEMCPY(okm + generated, block, to_copy);
         generated += to_copy;
 
-        // Save current block for next iteration
+        // Save full block for next iteration
         SECURE_MEMCPY(ctx->prev_block, block, hash_len);
-        prev_block_len = hash_len;
+        SECURE_ZERO(block, sizeof(block));
     }
 
-    SECURE_ZERO(block, sizeof(block));
     st = CF_SUCCESS;
 
 cleanup:
-    ll_HMAC_Reset(hmac_ctx);
-    SECURE_FREE(hmac_ctx, sizeof(hmac_ctx));
+    ll_HMAC_Reset(&hmac_ctx);
     SECURE_ZERO(block, sizeof(block));
     return st;
 }

@@ -170,9 +170,6 @@ bool ll_XCHACHA20_POLY1305_Final(
         // Constant-time comparison against provided tag
         ok = SECURE_MEM_EQUAL(computed_tag, tag, LL_POLY1305_TAG_LEN);
 
-        // Optionally overwrite tag with computed value
-        SECURE_MEMCPY(tag, computed_tag, LL_POLY1305_TAG_LEN);
-
         goto cleanup; // skip ok = true below
     }
   

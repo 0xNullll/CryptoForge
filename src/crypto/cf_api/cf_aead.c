@@ -163,7 +163,7 @@ CF_STATUS CF_AEAD_Init(
             return CF_ERR_CIPHER_INVALID_KEY_LEN;
 
         // Check AES nonce Length minimum
-        if (ctx->iv_len < AES_GCM_IV_MIN)
+        if (ctx->iv_len == 0)
             return CF_ERR_AEAD_INVALID_IV;
 
         // Check AES AAD Length limits
@@ -403,7 +403,7 @@ static FORCE_INLINE CF_STATUS CF_AEAD_EncDec(
     const uint8_t *in, size_t in_len,
     uint8_t *out, uint8_t *tag, size_t tag_len,
     CF_OPERATION op) {
-    if (!aead || !key || !iv || !tag)
+    if (!key || !tag)
         return CF_ERR_NULL_PTR;
 
     // Stack-allocated AEAD Cipher context for one-shot operation
@@ -419,9 +419,11 @@ static FORCE_INLINE CF_STATUS CF_AEAD_EncDec(
 
     // Process input buffer (encrypt or decrypt depending on 'op')
     // Output is written to 'out'
-    st = CF_AEAD_Update(&ctx, in, in_len, out);
-    if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.aead) != CF_CTX_MAGIC)
-        goto cleanup;
+    if (in && out && in_len != 0) {
+        st = CF_AEAD_Update(&ctx, in, in_len, out);
+        if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.aead) != CF_CTX_MAGIC)
+            goto cleanup;
+    }
 
     st = CF_AEAD_Final(&ctx, tag, tag_len);
 

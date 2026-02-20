@@ -123,15 +123,18 @@ CF_STATUS ll_PBKDF2_Extract(
 CF_STATUS ll_PBKDF2_Expand(
     ll_PBKDF2_CTX *ctx,
     uint8_t *dk, size_t dk_len,
-    size_t iterations) {
+    const size_t iterations) {
     if (!ctx || !dk)
         return CF_ERR_NULL_PTR;
 
     if (!ctx->hash)
         return CF_ERR_CTX_UNINITIALIZED;
 
-    if (iterations < KDF_PBKDF2_MIN_ITERATIONS || iterations > LL_PBKDF2_MAX_ITERATION)
+    if (iterations > LL_PBKDF2_MAX_ITERATION)
         return CF_ERR_INVALID_LEN;
+
+    // if (iterations < LL_PBKDF2_MIN_ITERATIONS || iterations > LL_PBKDF2_MAX_ITERATION)
+    //     return CF_ERR_INVALID_LEN;
 
     size_t hash_len = ctx->hash->digest_size;
     size_t l = (dk_len + hash_len - 1) / hash_len;  // ceil division

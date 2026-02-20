@@ -32,7 +32,7 @@
 extern "C" {
 #endif
 
-#define KDF_PBKDF2_MIN_ITERATIONS 1000
+#define LL_PBKDF2_MIN_ITERATIONS 1000
 #define LL_PBKDF2_MAX_ITERATION 0xFFFFFFFF
 #define LL_PBKDF2_MAX_DKLEN  (1024*1024) // Arbitrary max derived key length
 
@@ -84,7 +84,7 @@ CF_STATUS ll_PBKDF2_Extract(
 CF_STATUS ll_PBKDF2_Expand(
     ll_PBKDF2_CTX *ctx,
     uint8_t *dk, size_t dk_len,
-    size_t iterations);
+    const size_t iterations);
 
 // Frees internal buffers of a pre-allocated context
 CF_STATUS ll_PBKDF2_Reset(ll_PBKDF2_CTX *ctx);

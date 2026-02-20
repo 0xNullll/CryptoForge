@@ -25,17 +25,17 @@
 
 // HKDF
 static CF_STATUS hkdf_init_wrapper(CF_KDF_CTX *ctx, const CF_KDF_OPTS *opts) {
-    return ll_HKDF_Init((ll_HKDF_CTX *)ctx->kdf_ctx, ctx->hash, opts->info, opts->info_len);
+    return ll_HKDF_Init((ll_HKDF_CTX *)ctx->kdf_ctx, ctx->hash, opts ? opts->info : NULL , opts ? opts->info_len : 0);
 }
 
 static CF_STATUS hkdf_extract_wrapper(CF_KDF_CTX *ctx, const CF_KDF_OPTS *opts) {
     UNUSED(opts);
-    return ll_HKDF_Extract((ll_HKDF_CTX *)ctx->kdf_ctx, ctx->salt, ctx->salt_len, ctx->ikm, ctx->ikm_len);
+    return ll_HKDF_Extract((ll_HKDF_CTX *)ctx->kdf_ctx, ctx->salt_len != 0 ? ctx->salt : NULL, ctx->salt_len, ctx->ikm, ctx->ikm_len);
 }
 
 static CF_STATUS hkdf_expand_wrapper(CF_KDF_CTX *ctx, uint8_t *out, size_t out_len, const CF_KDF_OPTS *opts) {
     UNUSED(opts);
-    return ll_HKDF_Expand((ll_HKDF_CTX *)ctx->kdf_ctx, out, out_len , opts->info, opts->info_len);
+    return ll_HKDF_Expand((ll_HKDF_CTX *)ctx->kdf_ctx, out, out_len , opts ? opts->info : NULL, opts ? opts->info_len : 0);
 }
 static CF_STATUS hkdf_reset_wrapper(CF_KDF_CTX *ctx) {
     return ll_HKDF_Reset((ll_HKDF_CTX *)ctx->kdf_ctx);
@@ -591,7 +591,7 @@ CF_STATUS CF_KDFOpts_Init(
     CF_KDF_OPTS *opts,
     const uint8_t *info, size_t info_len,
     const uint8_t *custom, size_t custom_len,
-    uint32_t iterations) {
+    size_t iterations) {
     if (!opts)
         return CF_ERR_NULL_PTR;
 
@@ -617,7 +617,7 @@ CF_STATUS CF_KDFOpts_Init(
 CF_KDF_OPTS* CF_KDFOpts_InitAlloc(
     const uint8_t *info, size_t info_len,
     const uint8_t *custom, size_t custom_len,
-    uint32_t iterations, CF_STATUS *status) {
+    size_t iterations, CF_STATUS *status) {
     if ((info && info_len == 0) || (custom && custom_len == 0)) {
         if (status) *status = CF_ERR_INVALID_PARAM;
         return NULL;

@@ -149,18 +149,25 @@ bool ll_sha512_update(ll_SHA512_CTX *ctx, const uint8_t *data, size_t len) {
 bool ll_sha512_final(ll_SHA512_CTX *ctx, uint8_t digest[SHA512_DIGEST_SIZE]) {
     if (!ctx || !digest) return false;
 
-    uint8_t pad[128] = {0};
-    pad[0] = 0x80;
+    uint8_t pad[SHA512_BLOCK_SIZE] = {0};
+    pad[0] = 0x80; // append the 1-bit
 
     uint8_t len_bytes[16];
+
+    // 64-bit length in big-endian
     STORE64BE(len_bytes, ctx->Nh);
     STORE64BE(len_bytes + 8, ctx->Nl);
 
+    // Compute padding length: enough to leave 16 bytes at the end for length
     size_t pad_len = (ctx->buf_len < 112) ? (112 - ctx->buf_len) : (128 + 112 - ctx->buf_len);
 
+    // Feed padding
     if (!ll_sha512_update(ctx, pad, pad_len)) return false;
+
+    // Feed length
     if (!ll_sha512_update(ctx, len_bytes, 16)) return false;
 
+    // Produce digest
     for (int i = 0; i < 8; i++)
         STORE64BE(digest + i*8, ctx->state[i]);
 

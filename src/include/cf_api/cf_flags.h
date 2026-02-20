@@ -165,16 +165,16 @@ typedef enum {
 typedef enum {
     CF_HMAC     = CF_CAT_MAC | 0x1000, // HMAC with hash subflags
     CF_KMAC_STD = CF_CAT_MAC | 0x2000, // KMAC standard with type subflags
-    CF_CMAC     = CF_CAT_MAC | 0x3000, // CMAC standard
-    CF_GMAC     = CF_CAT_MAC | 0x4000, // GMAC standard
+    CF_AES_CMAC = CF_CAT_MAC | 0x3000, // CMAC standard
+    CF_AES_GMAC = CF_CAT_MAC | 0x4000, // GMAC standard
     CF_POLY1305 = CF_CAT_MAC | 0x5000  // Poly1305 standard
 } CF_MAC_FLAGS;
 
 #define CF_MAC_IS_HMAC(id)      (((id) & CF_MAC_FLAG_MASK) == CF_HMAC)
 #define CF_MAC_IS_KMAC_STD(id)  (((id) & CF_MAC_FLAG_MASK) == CF_KMAC_STD)
 #define CF_MAC_IS_KMAC_XOF(id)  (((id) & CF_MAC_FLAG_MASK ) == CF_KMAC_XOF)
-#define CF_MAC_IS_CMAC(id)      (((id) & CF_MAC_FLAG_MASK) == CF_CMAC)
-#define CF_MAC_IS_GMAC(id)      (((id) & CF_MAC_FLAG_MASK) == CF_GMAC)
+#define CF_MAC_IS_AES_CMAC(id)  (((id) & CF_MAC_FLAG_MASK) == CF_AES_CMAC)
+#define CF_MAC_IS_AES_GMAC(id)  (((id) & CF_MAC_FLAG_MASK) == CF_AES_GMAC)
 #define CF_MAC_IS_POLY1305(id)  (((id) & CF_MAC_FLAG_MASK) == CF_POLY1305)
 #define CF_MAC_IS_XOF(id)       (((id) & CF_XOF_MASK) != 0)
 #define CF_MAC_GET_HASH(id)     ((id) & CF_HASH_MASK)
