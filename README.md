@@ -38,7 +38,7 @@ CryptoForge is intended for **educational, experimental**. It has **not undergon
 ├─ /vectors                   <-- Auto-generated test vector headers for cryptography validation
 │   ├─ /NIST
 │   │   └─ /KAT               <-- NIST Known Answer Tests (AES, SHA, etc.)
-│   └─ /wycheproof             <-- Wycheproof tests for edge cases and subtle bugsand cross-verification
+│   └─ /wycheproof            <-- Wycheproof tests for edge cases and subtle bugsand cross-verification
 └─ LICENSE, README.md
 ```
 
