@@ -35,7 +35,10 @@ CryptoForge is intended for **educational, experimental**. It has **not undergon
 │   │   └─ /utils             <-- Utility headers
 │   ├─ /utils                 <-- Utility implementations (memory, misc helpers)
 ├─ /demo                      <-- Test programs and demos
-├─ /vectors                   <-- Generated C headers from trusted crypto test vectors
+├─ /vectors                   <-- Auto-generated test vector headers for cryptography validation
+│   ├─ /NIST
+│   │   └─ /KAT               <-- NIST Known Answer Tests (AES, SHA, etc.)
+│   └─ /wycheproof             <-- Wycheproof tests for edge cases and subtle bugsand cross-verification
 └─ LICENSE, README.md
 ```
 
@@ -60,7 +63,7 @@ CryptoForge is intended for **educational, experimental**. It has **not undergon
 ## Main Features
 
 ### Symmetric Ciphers
-- **AES:** ECB, CBC, CFB, OFB, CTR modes  
+- **AES:** ECB, CBC, CFB8, CFB128, OFB, CTR modes  
 - **ChaCha / XChaCha:**  ChaCha8, ChaCha12, ChaCha20, XChaCha8 XChaCha12, XChaCha20  
 - **AEAD Constructions:** AES-GCM, ChaCha20-Poly1305, XChaCha20-Poly1305  
 
@@ -91,30 +94,30 @@ CryptoForge is intended for **educational, experimental**. It has **not undergon
 CryptoForge prioritizes **clarity, correctness, and simplicity of implementation** over performance tuning or platform‑specific optimizations.
 
 - The library is **purely software-based** and does **not** include hardware acceleration
-  (e.g. AES-NI, NEON, AVX, or other CPU-specific optimizations).
-- Implementations aim to be **as close as possible to their reference specifications**,
-  favoring readability and auditability over aggressive micro-optimizations.
-- Memory handling is designed to be **explicit and defensive**, using OS-provided memory
-  helpers where appropriate, secure zeroization, and **constant-time comparisons** for
-  sensitive operations.
-- The API is intentionally designed to be **easy to use correctly**, with layered abstractions
-  to reduce common misuse patterns.
+ (e.g., AES-NI, NEON, AVX, or other CPU-specific optimizations).
+- Implementations aim to be **as close as possible to their reference specifications**, favoring readability and auditability over aggressive micro-optimizations.
+- Memory handling is designed to be **explicit and defensive**, using OS-provided memory helpers where appropriate, secure zeroization, and **constant-time comparisons** for sensitive operations.
+- The API is intentionally designed to be **easy to use correctly**, with layered abstractions to reduce common misuse patterns.
 
 However, **CryptoForge is not production-ready** at this stage:
 
 - The library is intended for **educational and experimental use**.
-- It has **not undergone formal security audits, third-party reviews, or certification**
-  by recognized cryptographic authorities.
-- Correctness and edge cases are currently verified using **Wycheproof test vectors**
-  and internal tests only.
-- Side-channel resistance beyond basic constant-time logic
-  (e.g. cache, power, or microarchitectural attacks) has **not been formally evaluated**.
+- It has **not undergone formal security audits, third-party reviews, or certification** by recognized cryptographic authorities.
+- Correctness and edge cases are currently verified using a combination of:
+  - **Wycheproof test vectors**
+  - **NIST KATs (Known Answer Tests)**
+  - **NIST MCTs (Monte Carlo tests)**
+  - Other internal or synthetic test suites  
+  These cover different usage patterns, boundary conditions, and input scenarios.
+- Side-channel resistance beyond basic constant-time logic  
+  (e.g., cache, power, or microarchitectural attacks) has **not been formally evaluated**.
 - The API surface and internal behavior may change as the project evolves.
 
-**Do not use CryptoForge to protect sensitive, high-value, or real-world secrets** without
+**Do not use CryptoForge to protect sensitive, high-value, or real-world secrets** without  
 independent review and additional hardening.
 
 CryptoForge is best suited for:
+
 - Learning cryptographic internals
 - Studying algorithm behavior and design tradeoffs
 - Experimentation, prototyping, and embedded research

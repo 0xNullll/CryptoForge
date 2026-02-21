@@ -64,36 +64,6 @@
 #include "../cf_api/cf_aead.h"
 #include "../cf_api/cf_enc.h"
 
-#include "../../../vectors/wycheproof/tv_hmac_sha1.h"
-#include "../../../vectors/wycheproof/tv_hmac_sha224.h"
-#include "../../../vectors/wycheproof/tv_hmac_sha256.h"
-#include "../../../vectors/wycheproof/tv_hmac_sha384.h"
-#include "../../../vectors/wycheproof/tv_hmac_sha512.h"
-#include "../../../vectors/wycheproof/tv_hmac_sha512_224.h"
-#include "../../../vectors/wycheproof/tv_hmac_sha512_256.h"
-#include "../../../vectors/wycheproof/tv_hmac_sha3_224.h"
-#include "../../../vectors/wycheproof/tv_hmac_sha3_256.h"
-#include "../../../vectors/wycheproof/tv_hmac_sha3_384.h"
-#include "../../../vectors/wycheproof/tv_hmac_sha3_512.h"
-#include "../../../vectors/wycheproof/tv_kmac128_no_customization.h"
-#include "../../../vectors/wycheproof/tv_kmac256_no_customization.h"
-#include "../../../vectors/wycheproof/tv_aes_cmac.h"
-#include "../../../vectors/wycheproof/tv_aes_gmac.h"
-
-#include "../../../vectors/wycheproof/tv_hkdf_sha1.h"
-#include "../../../vectors/wycheproof/tv_hkdf_sha256.h"
-#include "../../../vectors/wycheproof/tv_hkdf_sha384.h"
-#include "../../../vectors/wycheproof/tv_hkdf_sha512.h"
-#include "../../../vectors/wycheproof/tv_pbkdf2_hmac_sha1.h"
-#include "../../../vectors/wycheproof/tv_pbkdf2_hmac_sha224.h"
-#include "../../../vectors/wycheproof/tv_pbkdf2_hmac_sha256.h"
-#include "../../../vectors/wycheproof/tv_pbkdf2_hmac_sha384.h"
-#include "../../../vectors/wycheproof/tv_pbkdf2_hmac_sha512.h"
-
-#include "../../../vectors/wycheproof/tv_aes_gcm.h"
-#include "../../../vectors/wycheproof/tv_chacha20_poly1305.h"
-#include "../../../vectors/wycheproof/tv_xchacha20_poly1305.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -180,6 +150,12 @@ CF_API void test_xchacha20_poly1305_wychaproof(void);
 CF_API void test_aes_gcm_fips_style(void);
 CF_API void test_aes_gcm_empty_plaintext(void);
 CF_API void test_all_aead_high(void);
+
+CF_API void test_ecb_kat(void);
+CF_API void test_cbc_kat(void);
+CF_API void test_cfb8_kat(void);
+CF_API void test_cfb128_kat(void);
+CF_API void test_ofb_kat(void);
 
 CF_API void test_hmac_sha1_wycheproof(void);
 CF_API void test_hmac_sha224_wycheproof(void);

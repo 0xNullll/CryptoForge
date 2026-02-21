@@ -2,6 +2,23 @@
 
 #if ENABLE_TESTS
 
+#include "../vectors/wycheproof/tv_hmac_sha1.h"
+#include "../vectors/wycheproof/tv_hmac_sha224.h"
+#include "../vectors/wycheproof/tv_hmac_sha256.h"
+#include "../vectors/wycheproof/tv_hmac_sha384.h"
+#include "../vectors/wycheproof/tv_hmac_sha512.h"
+#include "../vectors/wycheproof/tv_hmac_sha512_224.h"
+#include "../vectors/wycheproof/tv_hmac_sha512_256.h"
+#include "../vectors/wycheproof/tv_hmac_sha3_224.h"
+#include "../vectors/wycheproof/tv_hmac_sha3_256.h"
+#include "../vectors/wycheproof/tv_hmac_sha3_384.h"
+#include "../vectors/wycheproof/tv_hmac_sha3_512.h"
+
+#include "../vectors/wycheproof/tv_kmac128_no_customization.h"
+#include "../vectors/wycheproof/tv_kmac256_no_customization.h"
+#include "../vectors/wycheproof/tv_aes_cmac.h"
+#include "../vectors/wycheproof/tv_aes_gmac.h"
+
 void test_all_hmacs(const uint8_t *key, size_t key_len, const uint8_t *input, size_t input_len) {
     uint8_t digest[CF_MAX_DEFAULT_DIGEST_SIZE];
 

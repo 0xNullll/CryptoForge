@@ -23,7 +23,8 @@ bool ll_AES_CBC_Encrypt(
     const uint8_t *in,
     size_t in_len,
     uint8_t *out) {
-    if (!key || !iv || !in || !out || (in_len % AES_BLOCK_SIZE) != 0) return false;
+    if (!key || !iv || !in || !out || (in_len % AES_BLOCK_SIZE) != 0)
+        return false;
 
     bool ok = false;
 

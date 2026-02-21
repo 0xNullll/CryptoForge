@@ -2,6 +2,16 @@
 
 #if ENABLE_TESTS
 
+#include "../vectors/wycheproof/tv_hkdf_sha1.h"
+#include "../vectors/wycheproof/tv_hkdf_sha256.h"
+#include "../vectors/wycheproof/tv_hkdf_sha384.h"
+#include "../vectors/wycheproof/tv_hkdf_sha512.h"
+#include "../vectors/wycheproof/tv_pbkdf2_hmac_sha1.h"
+#include "../vectors/wycheproof/tv_pbkdf2_hmac_sha224.h"
+#include "../vectors/wycheproof/tv_pbkdf2_hmac_sha256.h"
+#include "../vectors/wycheproof/tv_pbkdf2_hmac_sha384.h"
+#include "../vectors/wycheproof/tv_pbkdf2_hmac_sha512.h"
+
 #define TEST_OKM_MAX 1024  // fixed size for test
 
 void test_all_hkdfs(const uint8_t *info, size_t info_len,
