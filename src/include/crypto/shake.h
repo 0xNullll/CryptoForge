@@ -30,9 +30,7 @@ extern "C" {
 // ======================================
 // SHAKE (Low-level) / XOF helpers (bit-level)
 // ======================================
-#define MAX_KEY_SIZE 512
-#define MAX_CUSTOMIZATION 512
-#define MAX_ENCODED_HEADER_LEN 9
+#define CSHAKE_MAX_ENCODED_HEADER_LEN 9
                 
 size_t ll_right_encode_uint64(uint64_t x, uint8_t *out);
 
@@ -111,18 +109,10 @@ bool ll_rawshake256_squeeze(ll_RawSHAKE256_CTX *ctx, uint8_t *output, size_t out
 #define CSHAKE128_DOMAIN 0x04  // domain separation for cSHAKE128 when N or S non-empty
 #define CSHAKE128_DEFAULT_OUT_LEN 32
 
-
 typedef struct _ll_CSHAKE128_CTX {
     ll_SHAKE128_CTX internal_ctx;
-    size_t out_len;                  // Desired output length in bytes or bits, depending on usage
-    uint8_t N[MAX_CUSTOMIZATION]; // Customization string N (can be empty)
-    size_t N_len;                    // Length of N in bytes
-    uint8_t S[MAX_CUSTOMIZATION]; // Customization string S (can be empty)
-    size_t S_len;                    // Length of S in bytes
     int finalized;                   // Flag indicating if finalization has been performed
-    int customAbsorbed;
     uint8_t emptyNameCustom;
-    int xof_mode;
 } ll_CSHAKE128_CTX;
 
 bool ll_cshake128_init(ll_CSHAKE128_CTX *ctx,
@@ -144,15 +134,8 @@ bool ll_cshake128_squeeze(ll_CSHAKE128_CTX *ctx, uint8_t *output, size_t outlen)
 
 typedef struct _ll_CSHAKE256_CTX {
     ll_SHAKE256_CTX internal_ctx;
-    size_t out_len;                  // Desired output length in bytes or bits, depending on usage
-    uint8_t N[MAX_CUSTOMIZATION]; // Customization string N (can be empty)
-    size_t N_len;                    // Length of N in bytes
-    uint8_t S[MAX_CUSTOMIZATION]; // Customization string S (can be empty)
-    size_t S_len;                    // Length of S in bytes
     int finalized;                   // Flag indicating if finalization has been performed
-    int customAbsorbed;
     uint8_t emptyNameCustom;
-    int xof_mode;
 } ll_CSHAKE256_CTX;
 
 bool ll_cshake256_init(ll_CSHAKE256_CTX *ctx,

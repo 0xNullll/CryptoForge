@@ -716,6 +716,28 @@ const char* CF_MAC_GetFullName(const CF_MAC_CTX *ctx) {
     }
 }
 
+bool CF_MAC_IsValidKeyLength(const CF_MAC *mac, size_t key_len) {
+    if (!mac)
+        return false;
+
+    if (key_len == 0)
+        return false;
+
+    if (CF_MAC_IS_HMAC(mac->id)) {
+        return true;
+    }
+    // else if (CF_MAC_IS_KMAC_STD(mac->id)) {
+    //    if (key_len > 0)
+    //     return true;
+    // }
+    else if (CF_IS_CHACHA(mac->id)) {
+       if (CF_IS_CHACHA_KEY_VALID(key_len))
+        return true;
+    }
+
+    return false;
+}
+
 CF_STATUS CF_MAC_CloneCtx(CF_MAC_CTX *dst, const CF_MAC_CTX *src) {
     if (!dst || !src)
         return CF_ERR_NULL_PTR;
@@ -818,7 +840,7 @@ CF_STATUS CF_MACOpts_Init(CF_MAC_OPTS *opts,
     if (!opts)
         return CF_ERR_NULL_PTR;
 
-    if (iv_len > AES_BLOCK_SIZE || custom_len > CF_MAX_CUSTOMIZATION)
+    if (iv_len > AES_BLOCK_SIZE)
         return CF_ERR_INVALID_LEN;
 
     CF_MACOpts_Reset(opts);
@@ -841,7 +863,7 @@ CF_STATUS CF_MACOpts_Init(CF_MAC_OPTS *opts,
 CF_MAC_OPTS* CF_MACOpts_InitAlloc(const uint8_t *iv, size_t iv_len,
                                   const uint8_t *custom, size_t custom_len,
                                   CF_STATUS *status) {
-    if (iv_len > CF_MAX_CUSTOMIZATION || custom_len > CF_MAX_CUSTOMIZATION) {
+    if (iv_len > AES_BLOCK_SIZE) {
         if (status) *status = CF_ERR_INVALID_LEN;
         return NULL;
     }

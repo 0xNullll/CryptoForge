@@ -153,9 +153,9 @@ CF_STATUS ll_PBKDF2_Expand(
 
     // Allocate working ctx once
     ll_HMAC_CTX work_hmac = {0};
-    SECURE_MEMCPY(work_hmac.key, base_hmac.key, sizeof(base_hmac.key));
+    work_hmac.key     = base_hmac.key;
     work_hmac.key_len = base_hmac.key_len;
-    work_hmac.hash = base_hmac.hash;
+    work_hmac.hash    = base_hmac.hash;
 
     for (uint32_t block = 1; block <= l; block++) {
         // --- U1 = HMAC(password, salt || INT(block)) ---

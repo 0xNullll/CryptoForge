@@ -85,7 +85,7 @@ size_t ll_encode_string(const uint8_t *S, size_t S_len_bytes, uint8_t *out, size
     uint64_t bitlen = (uint64_t)S_len_bytes * 8;
 
     // Encode bit-length
-    uint8_t tmp[16] = {0};  // max bytes needed for ll_left_encode_uint64
+    uint8_t tmp[CSHAKE_MAX_ENCODED_HEADER_LEN] = {0};  // max bytes needed for ll_left_encode_uint64
     size_t n = ll_left_encode_uint64(bitlen, tmp);
 
     // Check if output buffer is large enough
@@ -120,10 +120,10 @@ size_t ll_byte_pad(const uint8_t *S, size_t S_len,
                    size_t w, uint8_t *out, size_t out_cap) {
     if (w == 0 || !out) return 0;
 
-    uint8_t le[9] = {0};
-    size_t le_len = ll_left_encode_uint64(w, le);  // left-encode w (bytes)
+    uint8_t le[CSHAKE_MAX_ENCODED_HEADER_LEN] = {0};  // max bytes needed for ll_left_encode_uint64
+    size_t le_len = ll_left_encode_uint64(w, le);     // left-encode w (bytes)
 
-    size_t n = le_len + S_len;                     // total length before padding
+    size_t n = le_len + S_len;                        // total length before padding
 
     if (out_cap < n) return 0;
 
@@ -232,31 +232,48 @@ bool ll_rawshake256_squeeze(ll_RawSHAKE256_CTX *ctx, uint8_t *output, size_t out
 // ==============================
 // cSHAKE low-level helpers
 // ==============================
-
 static bool ll_cshake_absorb_custom(
     ll_KECCAK_CTX *sponge,
     const uint8_t *N, size_t N_len,
-    const uint8_t *S, size_t S_len) {
+    const uint8_t *S, size_t S_len,
+    size_t rate_bytes) {
     if ((!N || N_len == 0) && (!S || S_len == 0))
-        return true;  // nothing to absorb
+        return true;
 
-    // Temporary buffer for encoded N + S
-    uint8_t tmp[2 * MAX_CUSTOMIZATION + MAX_ENCODED_HEADER_LEN * 8] = {0}; 
-    size_t pos = 0;
+    uint8_t tmp[16];  // left_encode temporary
+    size_t n, total = 0;
 
-    // Encode N in bits
-    pos += ll_encode_string(N, N_len, tmp + pos, sizeof(tmp));
-    pos += ll_encode_string(S, S_len, tmp + pos, sizeof(tmp));
+    // left_encode(rate)
+    n = ll_left_encode_uint64(rate_bytes, tmp);
+    if (!ll_keccak_sponge_absorb(sponge, tmp, n)) return false;
+    total += n;
 
-    // Bytepad to rate multiple
-    uint8_t padded[2 * KECCAK_BLOCK_SIZE] = {0}; // safe over-estimate
-    size_t padded_len = ll_byte_pad(tmp, pos, sponge->rate, padded, sizeof(padded));
+    // encode_string(N)
+    if (N_len > (SIZE_MAX >> 3)) return false;
+    n = ll_left_encode_uint64((uint64_t)N_len * 8, tmp);
+    if (!ll_keccak_sponge_absorb(sponge, tmp, n)) return false;
+    total += n;
+    if (N_len > 0 && !ll_keccak_sponge_absorb(sponge, N, N_len)) return false;
+    total += N_len;
 
-    // Absorb into sponge
-    if (!ll_keccak_sponge_absorb(sponge, padded, padded_len)) return false;
+    // encode_string(S)
+    if (S_len > (SIZE_MAX >> 3)) return false;
+    n = ll_left_encode_uint64((uint64_t)S_len * 8, tmp);
+    if (!ll_keccak_sponge_absorb(sponge, tmp, n)) return false;
+    total += n;
+    if (S_len > 0 && !ll_keccak_sponge_absorb(sponge, S, S_len)) return false;
+    total += S_len;
 
-    SECURE_ZERO(tmp, sizeof(tmp));
-    SECURE_ZERO(padded, sizeof(padded));
+    // zero padding to rate boundary
+    size_t pad = (rate_bytes - (total % rate_bytes)) % rate_bytes;
+    if (pad) {
+        uint8_t zeros[KECCAK_BLOCK_SIZE] = {0};
+        while (pad > 0) {
+            size_t chunk = pad > KECCAK_BLOCK_SIZE ? KECCAK_BLOCK_SIZE : pad;
+            if (!ll_keccak_sponge_absorb(sponge, zeros, chunk)) return false;
+            pad -= chunk;
+        }
+    }
 
     return true;
 }
@@ -267,39 +284,19 @@ static bool ll_cshake_absorb_custom(
 bool ll_cshake128_init(ll_CSHAKE128_CTX *ctx,
                        const uint8_t *N, size_t N_len,
                        const uint8_t *S, size_t S_len) {
-    if (N_len > MAX_CUSTOMIZATION || S_len > MAX_CUSTOMIZATION)
-        return false;
+    if (!ctx) return false;
 
     SECURE_ZERO(ctx, sizeof(*ctx));
 
-    // Copy N and S into the fixed arrays
-    if (N && N_len > 0) {
-        SECURE_MEMCPY(ctx->N, N, N_len);
-        ctx->N_len = N_len;
-    } else {
-        ctx->N_len = 0;
-    }
-
-    if (S && S_len > 0) {
-        SECURE_MEMCPY(ctx->S, S, S_len);
-        ctx->S_len = S_len;
-    } else {
-        ctx->S_len = 0;
-    }
-
     ctx->finalized = 0;
-    ctx->customAbsorbed = 0;
-    ctx->emptyNameCustom = (N_len == 0) && (S_len == 0);
 
-    // initialize Keccak sponge
     if (!ll_keccak_sponge_init(&ctx->internal_ctx, SHAKE128_BLOCK_SIZE, SHAKE128_DOMAIN))
         return false;
 
-    // absorb customization strings if present
-    if (!ctx->emptyNameCustom) {
-        if (!ll_cshake_absorb_custom(&ctx->internal_ctx, ctx->N, ctx->N_len, ctx->S, ctx->S_len))
+    // Stream absorb customization
+    if (N_len > 0 || S_len > 0) {
+        if (!ll_cshake_absorb_custom(&ctx->internal_ctx, N, N_len, S, S_len, SHAKE128_BLOCK_SIZE))
             return false;
-        ctx->customAbsorbed = 1;
     }
 
     return true;
@@ -307,14 +304,15 @@ bool ll_cshake128_init(ll_CSHAKE128_CTX *ctx,
 
 
 bool ll_cshake128_absorb(ll_CSHAKE128_CTX *ctx, const uint8_t *X, size_t X_len) {
-    if (X && X_len > 0)
+    if (!ctx->finalized || (X && X_len > 0))
         return ll_keccak_sponge_absorb(&ctx->internal_ctx, X, X_len);
 
     return true;
 }
 
 bool ll_cshake128_final(ll_CSHAKE128_CTX *ctx) {
-    if (ctx->finalized) return false;
+    if (ctx->finalized)
+        return false;
 
     // Set domain separation byte according to SP800-185
     uint8_t suffix = ctx->emptyNameCustom ? SHAKE128_DOMAIN : CSHAKE128_DOMAIN;
@@ -334,45 +332,33 @@ bool ll_cshake128_squeeze(ll_CSHAKE128_CTX *ctx, uint8_t *output, size_t outlen)
 bool ll_cshake256_init(ll_CSHAKE256_CTX *ctx,
                        const uint8_t *N, size_t N_len,
                        const uint8_t *S, size_t S_len) {
-    if (N_len > MAX_CUSTOMIZATION || S_len > MAX_CUSTOMIZATION)
-        return false;
+    if (!ctx) return false;
 
     SECURE_ZERO(ctx, sizeof(*ctx));
 
-    // Copy N and S into the fixed arrays
-    if (N && N_len > 0)
-        SECURE_MEMCPY(ctx->N, N, N_len);
-    ctx->N_len = N_len;
-
-    if (S && S_len > 0)
-        SECURE_MEMCPY(ctx->S, S, S_len);
-    ctx->S_len = S_len;
-
     ctx->finalized = 0;
-    ctx->customAbsorbed = 0;
-    ctx->emptyNameCustom = (N_len == 0) && (S_len == 0);
 
     if (!ll_keccak_sponge_init(&ctx->internal_ctx, SHAKE256_BLOCK_SIZE, SHAKE256_DOMAIN))
         return false;
 
-    if (!ctx->emptyNameCustom) {
-        if (!ll_cshake_absorb_custom(&ctx->internal_ctx, ctx->N, ctx->N_len, ctx->S, ctx->S_len))
+    if (N_len > 0 || S_len > 0) {
+        if (!ll_cshake_absorb_custom(&ctx->internal_ctx, N, N_len, S, S_len, SHAKE256_BLOCK_SIZE))
             return false;
-        ctx->customAbsorbed = 1;
     }
 
     return true;
 }
 
 bool ll_cshake256_absorb(ll_CSHAKE256_CTX *ctx, const uint8_t *X, size_t X_len) {
-    if (X && X_len > 0)
+    if (!ctx->finalized || (X && X_len > 0))
         return ll_keccak_sponge_absorb(&ctx->internal_ctx, X, X_len);
 
     return true;
 }
 
 bool ll_cshake256_final(ll_CSHAKE256_CTX *ctx) {
-    if (ctx->finalized) return false;
+    if (ctx->finalized)
+        return false;
 
     uint8_t suffix = ctx->emptyNameCustom ? SHAKE256_DOMAIN : CSHAKE256_DOMAIN;
     ctx->internal_ctx.suffix = suffix;

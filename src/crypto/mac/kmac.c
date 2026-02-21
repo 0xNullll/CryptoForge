@@ -18,24 +18,24 @@
 #include "../../include/crypto/kmac.h"
 
 // Helper macros
-#define ll_KMAC_INIT(ctx, name, name_len, S, S_len)                        \
+#define LL_CSHAKE_INIT(ctx, name, name_len, S, S_len)                        \
     ((ctx)->type == LL_KMAC128 || (ctx)->type == LL_KMAC_XOF128               \
         ? ll_cshake128_init((ll_CSHAKE128_CTX*)(ctx)->cshake_ctx, (name), (name_len), (S), (S_len)) \
         : ll_cshake256_init((ll_CSHAKE256_CTX*)(ctx)->cshake_ctx, (name), (name_len), (S), (S_len)))
 
-#define ll_KMAC_ABSORB(ctx, data, data_len)                                 \
+#define LL_CSHAKE_ABSORB(ctx, data, data_len)                                 \
     ((ctx)->type == LL_KMAC128 || (ctx)->type == LL_KMAC_XOF128                \
         ? ll_cshake128_absorb((ll_CSHAKE128_CTX*)(ctx)->cshake_ctx, (data), (data_len)) \
         : ll_cshake256_absorb((ll_CSHAKE256_CTX*)(ctx)->cshake_ctx, (data), (data_len)))
 
-#define ll_KMAC_FINALIZE(ctx, buf, buf_len)                                   \
+#define LL_CSHAKE_FINALIZE(ctx, buf, buf_len)                                   \
     ((ctx)->type == LL_KMAC128 || (ctx)->type == LL_KMAC_XOF128                   \
         ? (ll_cshake128_absorb((ll_CSHAKE128_CTX*)(ctx)->cshake_ctx, (buf), (buf_len)) && \
            ll_cshake128_final((ll_CSHAKE128_CTX*)(ctx)->cshake_ctx))      \
         : (ll_cshake256_absorb((ll_CSHAKE256_CTX*)(ctx)->cshake_ctx, (buf), (buf_len)) && \
            ll_cshake256_final((ll_CSHAKE256_CTX*)(ctx)->cshake_ctx)))
 
-#define ll_KMAC_SQUEEZE(ctx, digest, len)                                    \
+#define LL_CSHAKE_SQUEEZE(ctx, digest, len)                                    \
     ((ctx)->type == LL_KMAC128 || (ctx)->type == LL_KMAC_XOF128                   \
         ? ll_cshake128_squeeze((ll_CSHAKE128_CTX*)(ctx)->cshake_ctx, (digest), (len)) \
         : ll_cshake256_squeeze((ll_CSHAKE256_CTX*)(ctx)->cshake_ctx, (digest), (len)))
@@ -78,47 +78,57 @@
  * }
  */
 
-// computes the key for KMAC -> bytepad(encode_string(K), rate)
-static size_t kmac_bytepad_encode_key(unsigned char *out, size_t out_max_len,
-                                     size_t *out_len,
-                                     const unsigned char *in, size_t in_len,
-                                     size_t w) {
-    unsigned char tmp[MAX_KEY_SIZE + MAX_ENCODED_HEADER_LEN];
-    size_t tmp_len;
+static bool kmac_absorb_key(ll_KMAC_CTX *ctx, const uint8_t *key, size_t key_len, size_t rate_bytes) {
+    if (!ctx || !key) return false;
 
-    // 1. Encode the key
-    tmp_len = ll_encode_string(in, in_len, tmp, sizeof(tmp));
-    if (tmp_len == 0) return 0;
+    // left-encode rate (w) and absorb
+    uint8_t le_w[CSHAKE_MAX_ENCODED_HEADER_LEN];
+    size_t le_w_len = ll_left_encode_uint64(rate_bytes, le_w);
+    if (!LL_CSHAKE_ABSORB(ctx, le_w, le_w_len))
+        return false;
 
-    // 2. Bytepad the encoded string
-    size_t padded_len = ll_byte_pad(tmp, tmp_len, w, out, out_max_len);
-    if (out_len) *out_len = padded_len;
+    // left-encode key bit-length and absorb
+    uint8_t le_key[CSHAKE_MAX_ENCODED_HEADER_LEN];
+    size_t le_key_len = ll_left_encode_uint64((uint64_t)key_len * 8, le_key);
+    if (!LL_CSHAKE_ABSORB(ctx, le_key, le_key_len))
+        return false;
 
-    return padded_len;
+    // absorb the key
+    if (!LL_CSHAKE_ABSORB(ctx, key, key_len))
+        return false;
+
+    // zero padding to reach multiple of rate
+    size_t total_len = le_w_len + le_key_len + key_len;
+    size_t pad_len = (rate_bytes - (total_len % rate_bytes)) % rate_bytes;
+    uint8_t zeros[64] = {0};
+    while (pad_len > 0) {
+        size_t chunk = pad_len > sizeof(zeros) ? sizeof(zeros) : pad_len;
+        if (!LL_CSHAKE_ABSORB(ctx, zeros, chunk))
+            return false;
+        pad_len -= chunk;
+    }
+
+    return true;
 }
 
-CF_STATUS ll_KMAC_Init(ll_KMAC_CTX *ctx,
-                          const uint8_t *key, size_t key_len,
-                          const uint8_t *S, size_t S_len,
-                          LL_KMAC_TYPE type) {
+CF_STATUS ll_KMAC_Init(ll_KMAC_CTX *ctx, const uint8_t *key, size_t key_len, const uint8_t *S, size_t S_len, LL_KMAC_TYPE type) {
     if (!ctx || !key)
         return CF_ERR_NULL_PTR;
 
     if (!LL_KMAC_TYPE_IS_VALID(type))
         return CF_ERR_INVALID_PARAM;
 
-    if (key_len > MAX_KEY_SIZE || S_len > MAX_CUSTOMIZATION) 
+    if (key_len == 0 && (S && S_len == 0))
         return CF_ERR_INVALID_LEN;
 
     if (ctx->isHeapAlloc != 0 && ctx->isHeapAlloc != 1)
         return CF_ERR_CTX_UNINITIALIZED;
 
     ll_KMAC_Reset(ctx);
-    
     ctx->type = type;
     ctx->isXOF = LL_KMAC_IS_XOF(ctx->type);
 
-    // Allocate cSHAKE context
+    // Allocate cSHAKE context on heap if needed
     if (LL_KMAC_IS_128(ctx->type)) {
         if (!ctx->cshake_ctx) ctx->cshake_ctx = SECURE_ALLOC(sizeof(ll_CSHAKE128_CTX));
     } else {
@@ -126,19 +136,14 @@ CF_STATUS ll_KMAC_Init(ll_KMAC_CTX *ctx,
     }
     if (!ctx->cshake_ctx) return CF_ERR_ALLOC_FAILED;
 
-    // Step 1: initialize cSHAKE with "KMAC" and customization
-    if (!ll_KMAC_INIT(ctx, (const uint8_t*)"KMAC", 4, S, S_len))
+    // initialize cSHAKE with "KMAC" and customization
+    if (!LL_CSHAKE_INIT(ctx, (const uint8_t*)"KMAC", 4, S, S_len))
         return CF_ERR_CTX_CORRUPT;
 
-    // Step 2: encode + bytepad the key
+    // streaming absorb key using proper SP800-185 logic
     size_t rate_bytes = LL_KMAC_IS_128(ctx->type) ? CSHAKE128_BLOCK_SIZE : CSHAKE256_BLOCK_SIZE;
-    uint8_t padded_key[2 * KECCAK_BLOCK_SIZE + MAX_KEY_SIZE + 16];
-    size_t padded_len = kmac_bytepad_encode_key(padded_key, sizeof(padded_key),
-                                                NULL, key, key_len, rate_bytes);
-    if (padded_len == 0) return CF_ERR_INVALID_LEN;
-
-    // Step 3: absorb bytepadded key
-    if (!ll_KMAC_ABSORB(ctx, padded_key, padded_len)) return CF_ERR_CTX_CORRUPT;
+    if (!kmac_absorb_key(ctx, key, key_len, rate_bytes))
+        return CF_ERR_CTX_CORRUPT;
 
     return CF_SUCCESS;
 }
@@ -158,7 +163,7 @@ ll_KMAC_CTX *ll_KMAC_InitAlloc(
         return NULL;
     }
 
-        if (key_len > MAX_KEY_SIZE || S_len > MAX_CUSTOMIZATION) {
+        if (key_len == 0 || (S && S_len == 0)) {
         if (status) *status = CF_ERR_INVALID_LEN;
         return NULL;
     }
@@ -190,14 +195,14 @@ CF_STATUS ll_KMAC_Update(ll_KMAC_CTX *ctx, const uint8_t *data, size_t data_len)
     if (ctx->isFinalized)
         return CF_ERR_HASH_FINALIZED;
 
-    if (!ll_KMAC_ABSORB(ctx, data, data_len))
+    if (!LL_CSHAKE_ABSORB(ctx, data, data_len))
         return CF_ERR_CTX_CORRUPT;
 
     return CF_SUCCESS;
 }
 
 CF_STATUS ll_KMAC_Final(ll_KMAC_CTX *ctx, uint8_t *digest, size_t digest_len) {
-    if (!ctx || !ctx->cshake_ctx || !digest) 
+    if (!ctx || !ctx->cshake_ctx || !digest)
         return CF_ERR_NULL_PTR;
 
     if (digest_len == 0)
@@ -218,58 +223,52 @@ CF_STATUS ll_KMAC_Final(ll_KMAC_CTX *ctx, uint8_t *digest, size_t digest_len) {
         if (!ctx->isXOF && digest_len != ctx->out_len)
             return CF_ERR_INVALID_LEN;  // only enforce for fixed-length KMAC
 
-        if (!ll_KMAC_SQUEEZE(ctx, digest, digest_len))
+        if (!LL_CSHAKE_SQUEEZE(ctx, digest, digest_len))
             return CF_ERR_CTX_CORRUPT;
 
         return CF_SUCCESS;
     }
 
-    /* ---------- FIRST FINALIZATION PATH ---------- */
-
-    // Temporary buffer for right_encode
-    uint8_t tmp[MAX_CUSTOMIZATION + MAX_ENCODED_HEADER_LEN] = {0};
+    // First finalization
+    uint8_t tmp[CSHAKE_MAX_ENCODED_HEADER_LEN];  // max for right_encode_uint64
     size_t tmp_len;
 
     if (ctx->isXOF) {
         // For XOF, right_encode(0) per KMAC spec
-        tmp_len = ll_right_encode_uint64(0, tmp);  // true XOF
+        tmp_len = ll_right_encode_uint64(0, tmp);  // XOF mode
     } else {
         // Multiply by 8 to convert bytes -> bits
-        if (digest_len > (UINT64_MAX / 8)) 
-            return CF_ERR_INVALID_LEN;  // prevent overflow
+        if (digest_len > (UINT64_MAX / 8))
+            return CF_ERR_INVALID_LEN; // prevent overflow
 
-        tmp_len = ll_right_encode_uint64((uint64_t)digest_len * 8, tmp);
+        tmp_len = ll_right_encode_uint64((uint64_t)digest_len * 8, tmp); // bytes -> bits
     }
 
-    if (tmp_len == 0) {
-        ret = CF_ERR_INVALID_LEN;
-        goto cleanup;
-    }
+    if (tmp_len == 0)
+        return CF_ERR_INVALID_LEN;
 
     // Finalize underlying cSHAKE with the encoded length
-    if (!ll_KMAC_FINALIZE(ctx, tmp, tmp_len)) {
+    if (!LL_CSHAKE_FINALIZE(ctx, tmp, tmp_len)) {
         ret = CF_ERR_CTX_CORRUPT;
         goto cleanup;
     }
-
-    // Now squeeze the digest
-    if (!ll_KMAC_SQUEEZE(ctx, digest, digest_len)) {
-        ret = CF_ERR_CTX_CORRUPT;
-        goto cleanup;
-    }
-
-    // Mark as finalized
     ctx->isFinalized = 1;
+
+    // squeeze digest
+    if (!LL_CSHAKE_SQUEEZE(ctx, digest, digest_len)) {
+        ret = CF_ERR_CTX_CORRUPT;
+        goto cleanup;
+    }
 
 cleanup:
     SECURE_ZERO(tmp, sizeof(tmp));
     return ret;
 }
 
-#undef ll_KMAC_INIT
-#undef ll_KMAC_ABSORB
-#undef ll_KMAC_SQUEEZE
-#undef ll_KMAC_FINALIZE
+#undef LL_CSHAKE_INIT
+#undef LL_CSHAKE_ABSORB
+#undef LL_CSHAKE_FINALIZE
+#undef LL_CSHAKE_SQUEEZE
 
 // Frees internal buffers of a pre-allocated KMAC context
 CF_STATUS ll_KMAC_Reset(ll_KMAC_CTX *ctx) {
@@ -291,8 +290,8 @@ CF_STATUS ll_KMAC_Reset(ll_KMAC_CTX *ctx) {
     }
 
     // Clear key and customization
-    SECURE_ZERO(ctx->key, sizeof(ctx->key));
-    SECURE_ZERO(ctx->S, sizeof(ctx->S));
+    ctx->key = NULL;
+    ctx->S   = NULL;
 
     // Reset bookkeeping flags
     ctx->key_len = 0;
@@ -395,11 +394,10 @@ CF_STATUS ll_KMAC_CloneCtx(ll_KMAC_CTX *ctx_dest, const ll_KMAC_CTX *ctx_src) {
     }
 
     // Copy key and customization arrays
+    ctx_dest->key     = ctx_src->key;
     ctx_dest->key_len = ctx_src->key_len;
-    SECURE_MEMCPY(ctx_dest->key, ctx_src->key, sizeof(ctx_dest->key));
-
-    ctx_dest->S_len = ctx_src->S_len;
-    SECURE_MEMCPY(ctx_dest->S, ctx_src->S, sizeof(ctx_dest->S));
+    ctx_dest->S       = ctx_src->S;
+    ctx_dest->S_len   = ctx_src->S_len;
 
     // Copy output length
     ctx_dest->out_len = ctx_src->out_len;

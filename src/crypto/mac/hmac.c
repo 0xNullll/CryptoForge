@@ -27,25 +27,25 @@ CF_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const CF_HASH *hash, const uint8_t *key
     if (hash->block_size == 0 || hash->block_size > CF_MAX_DEFAULT_HASH_BLOCK_SIZE)
         return CF_ERR_UNSUPPORTED;
 
-    if (ctx->isHeapAlloc != 0 && ctx->isHeapAlloc != 1)
-        return CF_ERR_CTX_UNINITIALIZED;
-
     ll_HMAC_Reset(ctx);
 
     ctx->hash = hash;
-    ctx->out_len = hash->digest_size != 0 ? hash->digest_size : hash->default_out_len;
+    ctx->out_len = hash->digest_size ? hash->digest_size : hash->default_out_len;
+    ctx->isFinalized = 0;
 
-    // normalize key
-    // ----------- Normalize key properly -----------
+    size_t digest_size = ctx->out_len;
+
+    // Hash the key if too long
     uint8_t key_block[CF_MAX_DEFAULT_HASH_BLOCK_SIZE] = {0};
     if (key_len > hash->block_size) {
-        // Hash the key first
+        uint8_t digest[CF_MAX_DEFAULT_DIGEST_SIZE];
         if (!hash->hash_init_fn(ctx->ipad_ctx, NULL) ||
             !hash->hash_update_fn(ctx->ipad_ctx, key, key_len) ||
-            !hash->hash_final_fn(ctx->ipad_ctx, key_block)) {
+            !hash->hash_final_fn(ctx->ipad_ctx, digest)) {
             return CF_ERR_CTX_CORRUPT;
         }
-        key_len = ctx->out_len; // digest size
+        SECURE_MEMCPY(key_block, digest, digest_size);
+        key_len = digest_size;
     } else {
         SECURE_MEMCPY(key_block, key, key_len);
     }
@@ -55,34 +55,18 @@ CF_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const CF_HASH *hash, const uint8_t *key
         SECURE_ZERO(key_block + key_len, hash->block_size - key_len);
 
     ctx->key_len = hash->block_size;
-    SECURE_MEMCPY(ctx->key, key_block, hash->block_size);
-    // if (key_len > hash->block_size) {
-    //     if (!hash->hash_init_fn(ctx->ipad_ctx, NULL) ||
-    //         !hash->hash_update_fn(ctx->ipad_ctx, key, key_len) ||
-    //         !hash->hash_final_fn(ctx->ipad_ctx, ctx->key)) {
-    //         goto cleanup;
-    //     }
-    //     if (hash->hash_squeeze_fn && !hash->hash_squeeze_fn(ctx->ipad_ctx, ctx->key, hash->digest_size))
-    //         goto cleanup;
+    ctx->key     = key_block;
 
-    //     key_len = (hash->digest_size != 0) ? hash->digest_size : hash->default_out_len;
-    // } else {
-    //     // copy short key
-    //     SECURE_MEMCPY(ctx->key, key, key_len);
-    // }
+    // Build ipad/opad arrays
+    uint8_t ipad[CF_MAX_DEFAULT_HASH_BLOCK_SIZE];
+    uint8_t opad[CF_MAX_DEFAULT_HASH_BLOCK_SIZE];
 
-    // if (key_len < hash->block_size)
-    //     SECURE_ZERO(ctx->key + key_len, hash->block_size - key_len);
-    // ctx->key_len = hash->block_size;
-
-    // apply XOR pads
-    uint8_t ipad[CF_MAX_DEFAULT_HASH_BLOCK_SIZE], opad[CF_MAX_DEFAULT_HASH_BLOCK_SIZE];
     for (size_t i = 0; i < hash->block_size; i++) {
-        ipad[i] = ctx->key[i] ^ 0x36;
-        opad[i] = ctx->key[i] ^ 0x5c;
+        ipad[i] = key_block[i] ^ 0x36;
+        opad[i] = key_block[i] ^ 0x5c;
     }
 
-    // init hash contexts and feed pads
+    // Init hash contexts and feed pads
     if (!hash->hash_init_fn(ctx->ipad_ctx, NULL) ||
         !hash->hash_init_fn(ctx->opad_ctx, NULL))
         goto cleanup;
@@ -91,8 +75,11 @@ CF_STATUS ll_HMAC_Init(ll_HMAC_CTX *ctx, const CF_HASH *hash, const uint8_t *key
         !hash->hash_update_fn(ctx->opad_ctx, opad, hash->block_size))
         goto cleanup;
 
+    // Clean sensitive temporary buffers
+    SECURE_ZERO(key_block, hash->block_size);
     SECURE_ZERO(ipad, hash->block_size);
     SECURE_ZERO(opad, hash->block_size);
+
     return CF_SUCCESS;
 
 cleanup:
@@ -238,9 +225,9 @@ CF_STATUS ll_HMAC_Reset(ll_HMAC_CTX *ctx) {
     SECURE_ZERO(ctx->opad_ctx, ctx->hash->ctx_size);
 
     // Zero key material and reset fields
-    SECURE_ZERO(ctx->key, sizeof(ctx->key));
-    ctx->key_len = 0;
-    ctx->out_len = 0;
+    ctx->key         = NULL;
+    ctx->key_len     = 0;
+    ctx->out_len     = 0;
     ctx->isFinalized = 0;
     ctx->isHeapAlloc = wasHeapAlloc;
 
@@ -280,9 +267,7 @@ CF_STATUS ll_HMAC_CloneCtx(ll_HMAC_CTX *ctx_dest, const ll_HMAC_CTX *ctx_src) {
         SECURE_MEMCPY(ctx_dest->opad_ctx, ctx_src->opad_ctx, ctx_src->hash->ctx_size);
     }
 
-    // Copy key and metadata
-    SECURE_MEMCPY(ctx_dest->key, ctx_src->key, sizeof(ctx_dest->key));
-
+    ctx_dest->key         = ctx_src->key;
     ctx_dest->key_len     = ctx_src->key_len;
     ctx_dest->out_len     = ctx_src->out_len;
     ctx_dest->isFinalized = ctx_src->isFinalized;
