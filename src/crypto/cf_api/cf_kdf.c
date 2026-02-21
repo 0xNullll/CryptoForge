@@ -598,9 +598,6 @@ CF_STATUS CF_KDFOpts_Init(
     if ((info && info_len == 0) || (custom && custom_len == 0))
         return CF_ERR_INVALID_PARAM;
 
-    if (custom_len > CF_MAX_CUSTOMIZATION)
-        return CF_ERR_INVALID_LEN;
-
     CF_KDFOpts_Reset(opts);
 
     opts->info       = info;
@@ -620,11 +617,6 @@ CF_KDF_OPTS* CF_KDFOpts_InitAlloc(
     size_t iterations, CF_STATUS *status) {
     if ((info && info_len == 0) || (custom && custom_len == 0)) {
         if (status) *status = CF_ERR_INVALID_PARAM;
-        return NULL;
-    }
-
-    if (custom_len > CF_MAX_CUSTOMIZATION) {
-        if (status) *status = CF_ERR_INVALID_LEN;
         return NULL;
     }
 

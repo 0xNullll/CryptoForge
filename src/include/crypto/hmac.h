@@ -40,7 +40,7 @@ typedef struct _ll_HMAC_CTX {
     uint8_t opad_ctx[CF_MAX_HASH_CTX_SIZE];
     size_t out_len;
 
-    uint8_t key[CF_MAX_KEY_SIZE];
+    const uint8_t *key;
     size_t key_len;
 
     int isFinalized;

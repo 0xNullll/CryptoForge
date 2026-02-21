@@ -22,9 +22,6 @@
 
 /* Maximum context / key / IV / buffer sizes */
 #define CF_MAX_HASH_CTX_SIZE         512 // safe max
-#define CF_MAX_KEY_SIZE              MAX_KEY_SIZE
-#define CF_MAX_CUSTOMIZATION         MAX_CUSTOMIZATION
-#define CF_MAX_ENCODED_HEADER_LEN    MAX_ENCODED_HEADER_LEN
 #define CF_MAX_CIPHER_IV_SIZE        XCHACHA_EXTENDED_IV_SIZE
 #define CF_CIPHER_MAX_BLOCK_SIZE     AES_BLOCK_SIZE
 

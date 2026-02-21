@@ -54,14 +54,14 @@ typedef struct _ll_KMAC_CTX {
     void *cshake_ctx;
 
     // Key (raw bytes) and length
-    uint8_t key[MAX_KEY_SIZE];
+    const uint8_t *key;
     size_t  key_len;
 
     // Requested output length in bytes (L in the spec)
     size_t out_len;
 
     // Customization strings
-    uint8_t S[MAX_CUSTOMIZATION]; // Customization string (can be empty)
+    const uint8_t *S; // Customization string (can be empty)
     size_t  S_len;
 
     // Bookkeeping flags

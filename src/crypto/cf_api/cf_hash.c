@@ -1037,9 +1037,6 @@ CF_STATUS CF_HashOpts_Init(CF_HASH_OPTS *opts,
     if (!opts)
         return CF_ERR_NULL_PTR;
 
-    if (N_len > CF_MAX_CUSTOMIZATION || S_len > CF_MAX_CUSTOMIZATION)
-        return CF_ERR_INVALID_LEN;
-
     CF_HashOpts_Reset(opts);
 
     opts->emptyNameCustom = 1;
@@ -1063,10 +1060,6 @@ CF_STATUS CF_HashOpts_Init(CF_HASH_OPTS *opts,
 
 CF_HASH_OPTS* CF_HashOpts_InitAlloc(const uint8_t *N, size_t N_len,
                                     const uint8_t *S, size_t S_len, CF_STATUS *status) {
-    if (N_len > CF_MAX_CUSTOMIZATION || S_len > CF_MAX_CUSTOMIZATION) {
-        if (status) *status = CF_ERR_INVALID_LEN;
-        return NULL;
-    }
 
     CF_HASH_OPTS *opts = (CF_HASH_OPTS *)SECURE_ALLOC(sizeof(CF_HASH_OPTS));
     if (!opts) {
