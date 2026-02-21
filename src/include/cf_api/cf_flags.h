@@ -300,17 +300,17 @@ typedef enum {
 #define CF_CIPHER_FAMILY_MASK 0xFFFF0000
 #define CF_CIPHER_MODE_MASK   0x0000FFFF
 
-#define CF_IS_CIPHER(mode)     (((mode) & CF_CIPHER_FAMILY_MASK) == CF_CAT_AES || \
-                                ((mode) & CF_CIPHER_FAMILY_MASK) == CF_CAT_CHACHA)
+#define CF_IS_CIPHER(mode)         (((mode) & CF_CIPHER_FAMILY_MASK) == CF_CAT_AES || \
+                                    ((mode) & CF_CIPHER_FAMILY_MASK) == CF_CAT_CHACHA)
 
-#define CF_IS_AES(mode)         (((mode) & CF_CIPHER_FAMILY_MASK) == CF_CAT_AES)
-#define CF_IS_CHACHA(mode)      (((mode) & CF_CIPHER_FAMILY_MASK) == CF_CAT_CHACHA)
-#define CF_IS_AEAD(mode)        (((mode) & CF_CIPHER_FAMILY_MASK) == CF_CAT_AEAD)
+#define CF_IS_CIPHER_AES(mode)      (((mode) & CF_CIPHER_FAMILY_MASK) == CF_CAT_AES)
+#define CF_IS_CIPHER_CHACHA(mode)   (((mode) & CF_CIPHER_FAMILY_MASK) == CF_CAT_CHACHA)
+#define CF_IS_AEAD(mode)            (((mode) & CF_CIPHER_FAMILY_MASK) == CF_CAT_AEAD)
 
-#define CF_IS_AES_AEAD(mode)    (CF_IS_AEAD(mode) && ((mode) & 0x00F0) == 0x0000)
-#define CF_IS_CHACHA_AEAD(mode) (CF_IS_AEAD(mode) && ((mode) & 0x00F0) != 0x0000)
+#define CF_IS_AEAD_AES(mode)        (CF_IS_AEAD(mode) && ((mode) & 0x00F0) == 0x0000)
+#define CF_IS_AEAD_CHACHA(mode)     (CF_IS_AEAD(mode) && ((mode) & 0x00F0) != 0x0000)
 
-#define CF_GET_MODE(mode)       ((mode) & CF_CIPHER_MODE_MASK)
+#define CF_GET_MODE(mode)           ((mode) & CF_CIPHER_MODE_MASK)
 #define CF_IS_XCHACHA_MODE(mode) \
     (((mode) & CF_CIPHER_MODE_MASK) == CF_XCHACHA8 || \
      ((mode) & CF_CIPHER_MODE_MASK) == CF_XCHACHA12 || \
@@ -325,16 +325,16 @@ typedef enum {
     CF_KEY_256_SIZE = 32
 } CF_KEY_SIZE;
 
-#define CF_IS_AES_KEY_VALID(len) \
+#define CF_IS_CIPHER_AES_KEY_VALID(len) \
     ((len) == CF_KEY_128_SIZE || (len) == CF_KEY_192_SIZE || (len) == CF_KEY_256_SIZE)
 
-#define CF_IS_CHACHA_KEY_VALID(len) \
+#define CF_IS_CIPHER_CHACHA_KEY_VALID(len) \
     ((len) == CF_KEY_128_SIZE || (len) == CF_KEY_256_SIZE)
 
-#define CF_IS_XCHACHA_KEY_VALID(len) \
+#define CF_IS_CIPHER_XCHACHA_KEY_VALID(len) \
     ((len) == CF_KEY_256_SIZE)
 
-#define CF_IS_CHACHA_AEAD_KEY_VALID(len) \
+#define CF_IS_AEAD_CHACHA_KEY_VALID(len) \
     ((len) == CF_KEY_256_SIZE)
 
 // ======================
@@ -347,13 +347,13 @@ typedef enum {
     CF_AEAD_TAG_128_SIZE = 16
 } CF_AEAD_TAG_SIZE;
 
-#define CF_IS_VALID_GCM_TAG_SIZE(len) \
+#define CF_IS_VALID_AEAD_GCM_TAG_SIZE(len) \
     ((len) == CF_AEAD_TAG_32_SIZE  || \
      (len) == CF_AEAD_TAG_64_SIZE  || \
      (len) == CF_AEAD_TAG_96_SIZE || \
      (len) == CF_AEAD_TAG_128_SIZE)
 
-#define CF_IS_VALID_CHACHA_TAG_SIZE(len) \
+#define CF_IS_VALID_AEAD_CHACHA_TAG_SIZE(len) \
      ((len) == CF_AEAD_TAG_128_SIZE)
 
 // ======================

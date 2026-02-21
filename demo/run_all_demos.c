@@ -1,10 +1,10 @@
 #include "../src/include/config/demo_config.h"
 
 int main(void) {
-    CF_STATUS status;
+    // CF_STATUS status;
 
-    const char *input = "My Tagged Application";
-    size_t input_len = strlen(input);
+    // const char *input = "My Tagged Application";
+    // size_t input_len = strlen(input);
 
 #if ENABLE_TESTS
     // printf("\nCF_HASH structure test:\n");
