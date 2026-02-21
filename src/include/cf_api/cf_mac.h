@@ -84,12 +84,15 @@ typedef struct _CF_MAC_CTX {
     const CF_HASH *hash;          // mandetory for HMAC
     const CF_MAC_OPTS *opts;      // optional parameters
 
+    void *mac_ctx;                // low-level MAC context (internal)
     void *key_ctx;                // optional low-level key for CMAC/GMAC
 
-    void *mac_ctx;                // low-level MAC context (internal)
+    
     const uint8_t *key;           // user-supplied key bits
     size_t key_len;               // length of key in bytes
+
     size_t tag_len;               // requested tag length
+    
     uint32_t subflags;            // algorithm-specific subflags
     int isFinalized;
     int isHeapAlloc;

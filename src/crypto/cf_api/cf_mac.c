@@ -789,7 +789,7 @@ const size_t* CF_MAC_GetValidTagSizes(const CF_MAC *mac, size_t *count) {
     } else if (CF_MAC_IS_AES_CMAC(mac->id)) {
         *count = 13;
         return aes_cmac_sizes;
-    } else if (CF_MAC_AES_GMAC(mac->id)) {
+    } else if (CF_MAC_IS_AES_GMAC(mac->id)) {
         *count = 4;
         return aes_gmac_sizes;
     } else if (CF_MAC_IS_POLY1305(mac->id)) {
