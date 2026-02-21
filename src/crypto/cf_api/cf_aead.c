@@ -156,10 +156,10 @@ CF_STATUS CF_AEAD_Init(
     ctx->operation = op;
 
     // AES-specific initialization/checks
-    if (CF_IS_AES_AEAD(ctx->aead->id)) {
+    if (CF_IS_AEAD_AES(ctx->aead->id)) {
 
         // Check AES key length
-        if (!CF_IS_AES_KEY_VALID(ctx->key_len))
+        if (!CF_IS_CIPHER_AES_KEY_VALID(ctx->key_len))
             return CF_ERR_CIPHER_INVALID_KEY_LEN;
 
         // Check AES nonce Length minimum
@@ -183,10 +183,10 @@ CF_STATUS CF_AEAD_Init(
 
     }
     // ChaCha-specific checks
-    else if (CF_IS_CHACHA_AEAD(ctx->aead->id)) {
+    else if (CF_IS_AEAD_CHACHA(ctx->aead->id)) {
 
         // Check ChaCha20/XChaCha20 key length
-        if (!CF_IS_CHACHA_AEAD_KEY_VALID(ctx->key_len))
+        if (!CF_IS_AEAD_CHACHA_KEY_VALID(ctx->key_len))
             return CF_ERR_CIPHER_INVALID_KEY_LEN;
 
         if (ctx->aead->id == CF_CHACHA20_POLY1305) {
@@ -291,7 +291,7 @@ CF_STATUS CF_AEAD_Update(
     if ((ctx->magic ^ (uintptr_t)ctx->aead) != CF_CTX_MAGIC)
         return CF_ERR_CTX_CORRUPT;
 
-    if (CF_IS_AES_AEAD(ctx->aead->id)) {
+    if (CF_IS_AEAD_AES(ctx->aead->id)) {
 
         if (!ctx->key_ctx)
             return CF_ERR_CTX_UNINITIALIZED;
@@ -300,7 +300,7 @@ CF_STATUS CF_AEAD_Update(
         return CF_ERR_LIMIT_EXCEEDED;
 
     }
-    else if (CF_IS_CHACHA_AEAD(ctx->aead->id)) {
+    else if (CF_IS_AEAD_CHACHA(ctx->aead->id)) {
 
     if (ctx->total_data_len + in_len > CHACHA20_POLY1305_MAX_DATA_LEN)
         return CF_ERR_LIMIT_EXCEEDED;
@@ -330,7 +330,7 @@ CF_STATUS CF_AEAD_Final(
     if ((ctx->magic ^ (uintptr_t)ctx->aead) != CF_CTX_MAGIC)
         return CF_ERR_CTX_CORRUPT;
 
-    if (CF_IS_AES_AEAD(ctx->aead->id)) {
+    if (CF_IS_AEAD_AES(ctx->aead->id)) {
 
         if (!ctx->key_ctx)
             return CF_ERR_CTX_UNINITIALIZED;
@@ -597,12 +597,12 @@ bool CF_AEAD_IsValidKeyLength(const CF_AEAD *aead, size_t key_len) {
     if (!aead)
         return false;
 
-    if (CF_IS_AES_AEAD(aead->id)) {
-       if (CF_IS_AES_KEY_VALID(key_len))
+    if (CF_IS_AEAD_AES(aead->id)) {
+       if (CF_IS_CIPHER_AES_KEY_VALID(key_len))
         return true;
     }
-    else if (CF_IS_CHACHA_AEAD(aead->id)) {
-       if (CF_IS_CHACHA_AEAD_KEY_VALID(key_len))
+    else if (CF_IS_AEAD_CHACHA(aead->id)) {
+       if (CF_IS_AEAD_CHACHA_KEY_VALID(key_len))
         return true;
     }
 
@@ -613,12 +613,12 @@ bool CF_AEAD_IsValidTagLength(const CF_AEAD *aead, size_t tag_len) {
     if (!aead)
         return false;
 
-    if (CF_IS_AES_AEAD(aead->id)) {
-       if (CF_IS_VALID_GCM_TAG_SIZE(tag_len))
+    if (CF_IS_AEAD_AES(aead->id)) {
+       if (CF_IS_VALID_AEAD_GCM_TAG_SIZE(tag_len))
         return true;
     }
-    else if (CF_IS_CHACHA_AEAD(aead->id)) {
-       if (CF_IS_VALID_CHACHA_TAG_SIZE(tag_len))
+    else if (CF_IS_AEAD_CHACHA(aead->id)) {
+       if (CF_IS_VALID_AEAD_CHACHA_TAG_SIZE(tag_len))
         return true;
     }
 
@@ -630,13 +630,13 @@ const size_t* CF_AEAD_GetValidKeySizes(const CF_AEAD *aead, size_t *count) {
         return NULL;
 
     static const size_t aes_sizes[3] = {CF_KEY_128_SIZE, CF_KEY_192_SIZE, CF_KEY_256_SIZE};
-    static const size_t chacha_sizes[2] = {CF_KEY_256_SIZE};
+    static const size_t chacha_sizes[1] = {CF_KEY_256_SIZE};
 
-    if (CF_IS_AES_AEAD(aead->id)) {
+    if (CF_IS_AEAD_AES(aead->id)) {
         *count = 3;
         return aes_sizes;
-    } else if (CF_IS_CHACHA_AEAD(aead->id)) {
-        *count = 2;
+    } else if (CF_IS_AEAD_CHACHA(aead->id)) {
+        *count = 1;
         return chacha_sizes;
     }
 
@@ -651,10 +651,10 @@ const size_t* CF_AEAD_GetValidTagSizes(const CF_AEAD *aead, size_t *count) {
     static const size_t aes_sizes[4] = {CF_AEAD_TAG_32_SIZE, CF_AEAD_TAG_64_SIZE, CF_AEAD_TAG_96_SIZE, CF_AEAD_TAG_128_SIZE};
     static const size_t chacha_sizes[1] = {CF_AEAD_TAG_128_SIZE};
 
-    if (CF_IS_AES_AEAD(aead->id)) {
+    if (CF_IS_AEAD_AES(aead->id)) {
         *count = 4;
         return aes_sizes;
-    } else if (CF_IS_CHACHA_AEAD(aead->id)) {
+    } else if (CF_IS_AEAD_CHACHA(aead->id)) {
         *count = 1;
         return chacha_sizes;
     }

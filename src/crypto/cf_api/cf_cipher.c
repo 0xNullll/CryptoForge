@@ -384,7 +384,7 @@ CF_STATUS CF_Cipher_Init(
     ctx->operation = op;
 
     // AES-specific initialization
-    if (CF_IS_AES(ctx->cipher->id)) {
+    if (CF_IS_CIPHER_AES(ctx->cipher->id)) {
 
         if (!CF_AES_ECB || !CF_AES_CTR) {
             if (!ctx->opts)
@@ -392,7 +392,7 @@ CF_STATUS CF_Cipher_Init(
         }
 
         // Check AES key length
-        if (!CF_IS_AES_KEY_VALID(ctx->key_len))
+        if (!CF_IS_CIPHER_AES_KEY_VALID(ctx->key_len))
             return CF_ERR_CIPHER_INVALID_KEY_LEN;
 
         // Allocate memory for AES key schedule
@@ -408,14 +408,14 @@ CF_STATUS CF_Cipher_Init(
 
     } 
     // ChaCha-specific initialization
-    else if (CF_IS_CHACHA(ctx->cipher->id)) {
+    else if (CF_IS_CIPHER_CHACHA(ctx->cipher->id)) {
 
         // Check ChaCha/XChaCha key length
         if (CF_IS_XCHACHA_MODE(ctx->cipher->id)) {
-            if (!CF_IS_XCHACHA_KEY_VALID(ctx->key_len))
+            if (!CF_IS_CIPHER_XCHACHA_KEY_VALID(ctx->key_len))
             return CF_ERR_CIPHER_INVALID_KEY_LEN;
         } else {
-            if (!CF_IS_CHACHA_KEY_VALID(ctx->key_len))
+            if (!CF_IS_CIPHER_CHACHA_KEY_VALID(ctx->key_len))
             return CF_ERR_CIPHER_INVALID_KEY_LEN;
         }
 
@@ -894,16 +894,16 @@ bool CF_Cipher_IsValidKeyLength(const CF_CIPHER *cipher, size_t key_len) {
     if (!cipher)
         return false;
 
-    if (CF_IS_AES(cipher->id)) {
-       if (CF_IS_AES_KEY_VALID(key_len))
+    if (CF_IS_CIPHER_AES(cipher->id)) {
+       if (CF_IS_CIPHER_AES_KEY_VALID(key_len))
         return true;
     }
     else if (CF_IS_XCHACHA_MODE(cipher->id)) {
-       if (CF_IS_XCHACHA_KEY_VALID(key_len))
+       if (CF_IS_CIPHER_XCHACHA_KEY_VALID(key_len))
         return true;
     }
-    else if (CF_IS_CHACHA(cipher->id)) {
-       if (CF_IS_CHACHA_KEY_VALID(key_len))
+    else if (CF_IS_CIPHER_CHACHA(cipher->id)) {
+       if (CF_IS_CIPHER_CHACHA_KEY_VALID(key_len))
         return true;
     }
 
@@ -918,13 +918,13 @@ const size_t* CF_Cipher_GetValidKeySizes(const CF_CIPHER *cipher, size_t *count)
     static const size_t chacha_sizes[2] = {CF_KEY_128_SIZE, CF_KEY_256_SIZE};
     static const size_t xchacha_sizes[1] = {CF_KEY_256_SIZE};
 
-    if (CF_IS_AES(cipher->id)) {
+    if (CF_IS_CIPHER_AES(cipher->id)) {
         *count = 3;
         return aes_sizes;
     } else if (CF_IS_XCHACHA_MODE(cipher->id)) {
         *count = 1;
         return xchacha_sizes;
-    } else if (CF_IS_CHACHA(cipher->id)) {
+    } else if (CF_IS_CIPHER_CHACHA(cipher->id)) {
         *count = 2;
         return chacha_sizes;
     }

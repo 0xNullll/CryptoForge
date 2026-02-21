@@ -331,7 +331,7 @@ CF_STATUS CF_MAC_Init(CF_MAC_CTX *ctx, const CF_MAC *mac, const CF_MAC_OPTS *opt
     // AES-based MACs (CMAC / GMAC)
     else if (CF_MAC_IS_AES_CMAC(ctx->mac->id) || CF_MAC_IS_AES_GMAC(ctx->mac->id)) {
         // Validate AES key length
-        if (!CF_IS_AES_KEY_VALID(key_len))
+        if (!CF_IS_CIPHER_AES_KEY_VALID(key_len))
             return CF_ERR_CIPHER_INVALID_KEY_LEN;
 
         // Set default MAC tag length
@@ -353,7 +353,7 @@ CF_STATUS CF_MAC_Init(CF_MAC_CTX *ctx, const CF_MAC *mac, const CF_MAC_OPTS *opt
     // Poly1305 MAC initialization
     else if (CF_MAC_IS_POLY1305(ctx->mac->id)) {
         // Key must be exactly 32 bytes
-        if (key_len != LL_POLY1305_KEY_LEN)
+        if (key_len != CF_KEY_256_SIZE)
             return CF_ERR_MAC_INVALID_KEY_LEN;
 
         // Set default tag length
@@ -488,7 +488,7 @@ CF_STATUS CF_MAC_Final(CF_MAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
 
     } else if (CF_MAC_IS_AES_GMAC(ctx->mac->id)) {
         // GMAC tag length must be valid for GCM
-        if (!IS_VALID_GCM_TAG_SIZE(tag_len))
+        if (!CF_IS_VALID_AEAD_GCM_TAG_SIZE(tag_len))
             return CF_ERR_MAC_INVALID_TAG_LEN;
 
     } else if (CF_MAC_IS_POLY1305(ctx->mac->id)) {
@@ -543,7 +543,7 @@ CF_STATUS CF_MAC_Reset(CF_MAC_CTX *ctx) {
     }
 
     // Clear all context fields to prevent accidental reuse or leakage
-    ctx->hash          = NULL;
+    ctx->hash        = NULL;
     ctx->mac         = NULL;
     ctx->key         = NULL;
     ctx->key_len     = 0;
@@ -717,25 +717,88 @@ const char* CF_MAC_GetFullName(const CF_MAC_CTX *ctx) {
 }
 
 bool CF_MAC_IsValidKeyLength(const CF_MAC *mac, size_t key_len) {
-    if (!mac)
+    if (!mac || key_len == 0)
         return false;
 
-    if (key_len == 0)
-        return false;
-
-    if (CF_MAC_IS_HMAC(mac->id)) {
+    if (CF_MAC_IS_HMAC(mac->id) || CF_MAC_IS_KMAC_STD(mac->id)) {
         return true;
-    }
-    // else if (CF_MAC_IS_KMAC_STD(mac->id)) {
-    //    if (key_len > 0)
-    //     return true;
-    // }
-    else if (CF_IS_CHACHA(mac->id)) {
-       if (CF_IS_CHACHA_KEY_VALID(key_len))
-        return true;
+    } else if (CF_MAC_IS_AES_CMAC(mac->id) || CF_MAC_IS_AES_GMAC(mac->id)) {
+        if (CF_IS_CIPHER_AES_KEY_VALID(key_len))
+            return true;
+    } else if (CF_MAC_IS_POLY1305(mac->id)) {
+        if (key_len == CF_KEY_256_SIZE)
+            return true;
     }
 
     return false;
+}
+
+bool CF_MAC_IsValidTagLength(const CF_MAC *mac, size_t tag_len) {
+    if (!mac || tag_len == 0)
+        return false;
+
+    if (CF_MAC_IS_HMAC(mac->id) || CF_MAC_IS_KMAC_STD(mac->id)) {
+        return true;
+    } else if (CF_MAC_IS_AES_CMAC(mac->id)) {
+        if (tag_len < AES_BLOCK_SIZE || tag_len > 4)
+            return true;
+    } else if (CF_MAC_IS_AES_GMAC(mac->id)) {
+       if (CF_IS_VALID_AEAD_GCM_TAG_SIZE(tag_len))
+        return true;
+    } else if (CF_MAC_IS_POLY1305(mac->id)) {
+        if (tag_len == CF_AEAD_TAG_128_SIZE)
+            return true;
+    }
+
+    return false;
+}
+
+const size_t* CF_MAC_GetValidKeySizes(const CF_MAC *mac, size_t *count) {
+    if (!mac || !count)
+        return NULL;
+
+    static const size_t aes_sizes[3] = {CF_KEY_128_SIZE, CF_KEY_192_SIZE, CF_KEY_256_SIZE};
+    static const size_t poly1305_sizes[1] = {CF_KEY_256_SIZE};
+
+    if (CF_MAC_IS_HMAC(mac->id) || CF_MAC_IS_KMAC_STD(mac->id)) {
+        *count = 0;
+        return 0;
+    } else if (CF_MAC_IS_AES_CMAC(mac->id) || CF_MAC_IS_AES_GMAC(mac->id)) {
+        *count = 3;
+        return aes_sizes;
+    } else if (CF_MAC_IS_POLY1305(mac->id)) {
+        *count = 1;
+        return poly1305_sizes;
+    }
+
+    *count = 0;
+    return NULL;
+}
+
+const size_t* CF_MAC_GetValidTagSizes(const CF_MAC *mac, size_t *count) {
+    if (!mac || !count)
+        return NULL;
+
+    static const size_t aes_cmac_sizes[13] = {4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+    static const size_t aes_gmac_sizes[4] = {CF_AEAD_TAG_32_SIZE, CF_AEAD_TAG_64_SIZE, CF_AEAD_TAG_96_SIZE, CF_AEAD_TAG_128_SIZE};
+    static const size_t poly1305_sizes[1] = {CF_AEAD_TAG_128_SIZE};
+
+    if (CF_MAC_IS_HMAC(mac->id) || CF_MAC_IS_KMAC_STD(mac->id)) {
+        *count = 0;
+        return NULL;
+    } else if (CF_MAC_IS_AES_CMAC(mac->id)) {
+        *count = 13;
+        return aes_cmac_sizes;
+    } else if (CF_MAC_AES_GMAC(mac->id)) {
+        *count = 4;
+        return aes_gmac_sizes;
+    } else if (CF_MAC_IS_POLY1305(mac->id)) {
+        *count = 1;
+        return poly1305_sizes;
+    }
+
+    *count = 0;
+    return NULL;
 }
 
 CF_STATUS CF_MAC_CloneCtx(CF_MAC_CTX *dst, const CF_MAC_CTX *src) {
