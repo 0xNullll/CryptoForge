@@ -18,7 +18,8 @@
 #include "../../../include/crypto/cfb_mode.h"
 
 static bool ll_AES_CFB8_Process( const ll_AES_KEY *key, const uint8_t iv[AES_BLOCK_SIZE], const uint8_t *in, size_t in_len_bytes, uint8_t *out, bool enc) {
-    if (!key || !iv || !in || !out) return false;
+    if (!key || !iv || !in || !out)
+        return false;
 
     bool ok = false;
 

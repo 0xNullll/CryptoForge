@@ -33,34 +33,34 @@ static bool aes_ecb_dec_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, siz
 
 // AES-CBC
 static bool aes_cbc_enc_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, const CF_CIPHER_OPTS *opts) {
-    return ll_AES_CBC_Encrypt((const ll_AES_KEY *)ctx->key_ctx, opts->iv, in, in_len, out);
+    return ll_AES_CBC_Encrypt((const ll_AES_KEY *)ctx->key_ctx, opts ? opts->iv : NULL, in, in_len, out);
 }
 static bool aes_cbc_dec_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, const CF_CIPHER_OPTS *opts) {
-    return ll_AES_CBC_Decrypt((const ll_AES_KEY *)ctx->key_ctx, opts->iv, in, in_len, out);
+    return ll_AES_CBC_Decrypt((const ll_AES_KEY *)ctx->key_ctx, opts ? opts->iv : NULL, in, in_len, out);
 }
 
 // AES-OFB
 static bool aes_ofb_enc_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, const CF_CIPHER_OPTS *opts) {
-    return ll_AES_OFB_Encrypt((const ll_AES_KEY *)ctx->key_ctx, opts->iv, in, in_len, out);
+    return ll_AES_OFB_Encrypt((const ll_AES_KEY *)ctx->key_ctx, opts ? opts->iv : NULL, in, in_len, out);
 }
 static bool aes_ofb_dec_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, const CF_CIPHER_OPTS *opts) {
-    return ll_AES_OFB_Decrypt((const ll_AES_KEY *)ctx->key_ctx, opts->iv, in, in_len, out);
+    return ll_AES_OFB_Decrypt((const ll_AES_KEY *)ctx->key_ctx, opts ? opts->iv : NULL, in, in_len, out);
 }
 
 // AES-CFB8
 static bool aes_cfb8_enc_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, const CF_CIPHER_OPTS *opts) {
-    return ll_AES_CFB8_Encrypt((const ll_AES_KEY *)ctx->key_ctx, opts->iv, in, in_len, out);
+    return ll_AES_CFB8_Encrypt((const ll_AES_KEY *)ctx->key_ctx, opts ? opts->iv : NULL, in, in_len, out);
 }
 static bool aes_cfb8_dec_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, const CF_CIPHER_OPTS *opts) {
-    return ll_AES_CFB8_Decrypt((const ll_AES_KEY *)ctx->key_ctx, opts->iv, in, in_len, out);
+    return ll_AES_CFB8_Decrypt((const ll_AES_KEY *)ctx->key_ctx, opts ? opts->iv : NULL, in, in_len, out);
 }
 
 // AES-CFB128
 static bool aes_cfb128_enc_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, const CF_CIPHER_OPTS *opts) {
-    return ll_AES_CFB128_Encrypt((const ll_AES_KEY *)ctx->key_ctx, opts->iv, in, in_len, out);
+    return ll_AES_CFB128_Encrypt((const ll_AES_KEY *)ctx->key_ctx, opts ? opts->iv : NULL, in, in_len, out);
 }
 static bool aes_cfb128_dec_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, const CF_CIPHER_OPTS *opts) {
-    return ll_AES_CFB128_Decrypt((const ll_AES_KEY *)ctx->key_ctx, opts->iv, in, in_len, out);
+    return ll_AES_CFB128_Decrypt((const ll_AES_KEY *)ctx->key_ctx, opts ? opts->iv : NULL, in, in_len, out);
 }
 
 // AES-CTR
@@ -73,7 +73,7 @@ static bool aes_ctr_dec_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, siz
 
 // ChaCha8
 static bool chacha8_init_wrapper(CF_CIPHER_CTX *ctx, CF_CIPHER_OPTS *opts) {
-    return ll_CHACHA8_Init((ll_CHACHA8_CTX *)ctx->cipher_ctx, ctx->key, ctx->key_len, opts->iv, opts->chacha_counter);
+    return ll_CHACHA8_Init((ll_CHACHA8_CTX *)ctx->cipher_ctx, ctx->key, ctx->key_len, opts ? opts->iv : NULL, opts->chacha_counter);
 }
 static bool chacha8_cipher_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, const CF_CIPHER_OPTS *opts) {
     UNUSED(opts);
@@ -82,7 +82,7 @@ static bool chacha8_cipher_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, 
 
 // ChaCha12
 static bool chacha12_init_wrapper(CF_CIPHER_CTX *ctx, CF_CIPHER_OPTS *opts) {
-    return ll_CHACHA12_Init((ll_CHACHA12_CTX *)ctx->cipher_ctx, ctx->key, ctx->key_len, opts->iv, opts->chacha_counter);
+    return ll_CHACHA12_Init((ll_CHACHA12_CTX *)ctx->cipher_ctx, ctx->key, ctx->key_len, opts ? opts->iv : NULL, opts->chacha_counter);
 }
 static bool chacha12_cipher_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, const CF_CIPHER_OPTS *opts) {
     UNUSED(opts);
@@ -91,7 +91,7 @@ static bool chacha12_cipher_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in,
 
 // ChaCha20
 static bool chacha20_init_wrapper(CF_CIPHER_CTX *ctx, CF_CIPHER_OPTS *opts) {
-    return ll_CHACHA20_Init((ll_CHACHA20_CTX *)ctx->cipher_ctx, ctx->key, ctx->key_len, opts->iv, opts->chacha_counter);
+    return ll_CHACHA20_Init((ll_CHACHA20_CTX *)ctx->cipher_ctx, ctx->key, ctx->key_len, opts ? opts->iv : NULL, opts->chacha_counter);
 }
 static bool chacha20_cipher_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, const CF_CIPHER_OPTS *opts) {
     UNUSED(opts);
@@ -100,7 +100,7 @@ static bool chacha20_cipher_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in,
 
 // XChaCha8
 static bool xchacha8_init_wrapper(CF_CIPHER_CTX *ctx, CF_CIPHER_OPTS *opts) {
-    return ll_XCHACHA8_Init((ll_XCHACHA8_CTX *)ctx->cipher_ctx, ctx->key, opts->iv);
+    return ll_XCHACHA8_Init((ll_XCHACHA8_CTX *)ctx->cipher_ctx, ctx->key, opts ? opts->iv : NULL);
 }
 static bool xchacha8_cipher_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, const CF_CIPHER_OPTS *opts) {
     UNUSED(opts);
@@ -109,7 +109,7 @@ static bool xchacha8_cipher_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in,
 
 // XChaCha12
 static bool xchacha12_init_wrapper(CF_CIPHER_CTX *ctx, CF_CIPHER_OPTS *opts) {
-    return ll_XCHACHA12_Init((ll_XCHACHA12_CTX *)ctx->cipher_ctx, ctx->key, opts->iv);
+    return ll_XCHACHA12_Init((ll_XCHACHA12_CTX *)ctx->cipher_ctx, ctx->key, opts ? opts->iv : NULL);
 }
 static bool xchacha12_cipher_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, const CF_CIPHER_OPTS *opts) {
     UNUSED(opts);
@@ -119,7 +119,7 @@ static bool xchacha12_cipher_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in
 
 // XChaCha20
 static bool xchacha20_init_wrapper(CF_CIPHER_CTX *ctx, CF_CIPHER_OPTS *opts) {
-    return ll_XCHACHA20_Init((ll_XCHACHA20_CTX *)ctx->cipher_ctx, ctx->key, opts->iv);
+    return ll_XCHACHA20_Init((ll_XCHACHA20_CTX *)ctx->cipher_ctx, ctx->key, opts ? opts->iv : NULL);
 }
 static bool xchacha20_cipher_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, const CF_CIPHER_OPTS *opts) {
     UNUSED(opts);
@@ -385,6 +385,11 @@ CF_STATUS CF_Cipher_Init(
 
     // AES-specific initialization
     if (CF_IS_AES(ctx->cipher->id)) {
+
+        if (!CF_AES_ECB || !CF_AES_CTR) {
+            if (!ctx->opts)
+                return CF_ERR_CTX_UNINITIALIZED;
+        }
 
         // Check AES key length
         if (!CF_IS_AES_KEY_VALID(ctx->key_len))

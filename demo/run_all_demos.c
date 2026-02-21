@@ -336,12 +336,18 @@ int main(void) {
     // printf("------------High Level API------------\n");
     // test_all_aead_high();
     // printf("---------End Of High Level API---------\n");
+    test_ecb_kat();
+    test_cbc_kat();
+    test_cfb8_kat();
+    test_cfb128_kat();
+    test_ofb_kat();
+
     test_hmac_sha1_wycheproof();
     test_hmac_sha224_wycheproof();
     test_hmac_sha256_wycheproof();
     test_hmac_sha384_wycheproof();
     test_hmac_sha512_wycheproof();
-    test_hmac_sha512_224_wycheproof();
+    test_hmac_sha512_224_wycheproof(); 
     test_hmac_sha512_256_wycheproof();
     test_hmac_sha3_224_wycheproof();
     test_hmac_sha3_256_wycheproof();
