@@ -69,7 +69,7 @@ CryptoForge is intended for **educational, experimental**. It has **not undergon
 
 ### Hash Functions
 - **SHA family:** SHA-1, SHA-224, SHA-256, SHA-384, SHA-512  
-- **SHA3 / Keccak:** SHA3-224/256/384/512, keccak, rawSHAKE128/256, SHAKE128/256
+- **SHA3 / Keccak:** SHA3-224/256/384/512, Keccak, rawSHAKE128/256, SHAKE128/256
 - **cSHAKE** cSHAKE128/256
 - **Legacy:** MD5
 
