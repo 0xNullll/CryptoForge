@@ -1702,18 +1702,20 @@ void test_ecb_kat(void) {
             return;
         }
 
+        CF_CIPHER_OPTS opts = {0};
+
         uint8_t out[16] = {0};
         int failure = 0;
         int encrypt_mode = (strcmp(ecb_kat_test_vectors[i].mode, "ENCRYPT") == 0);
 
-        CF_STATUS status;
+        CF_STATUS status = CF_CipherOpts_Init(&opts, NULL, 0, NULL, 0, 0);
         if (encrypt_mode) {
             status = CF_Cipher_Encrypt(
                 cipher,
                 ecb_kat_test_vectors[i].key, ecb_kat_test_vectors[i].key_len,
                 ecb_kat_test_vectors[i].msg, ecb_kat_test_vectors[i].msg_len,
                 out,
-                NULL
+                &opts
             );
 
             if (status != CF_SUCCESS || memcmp(out, ecb_kat_test_vectors[i].ct, ecb_kat_test_vectors[i].ct_len) != 0) {
@@ -1730,7 +1732,7 @@ void test_ecb_kat(void) {
                 ecb_kat_test_vectors[i].key, ecb_kat_test_vectors[i].key_len,
                 ecb_kat_test_vectors[i].ct, ecb_kat_test_vectors[i].ct_len,
                 out,
-                NULL
+                &opts
             );
 
             if (status != CF_SUCCESS || memcmp(out, ecb_kat_test_vectors[i].msg, ecb_kat_test_vectors[i].msg_len) != 0) {
@@ -1878,7 +1880,7 @@ void test_cfb8_kat(void) {
 
             if (status != CF_SUCCESS || memcmp(out, cfb8_kat_test_vectors[i].ct, cfb8_kat_test_vectors[i].ct_len) != 0) {
                 CF_CipherOpts_Reset(&opts);
-                printf("CBC TcId %d FAILED (encryption mismatch)\n", cfb8_kat_test_vectors[i].tc_id);
+                printf("CFB8 TcId %d FAILED (encryption mismatch)\n", cfb8_kat_test_vectors[i].tc_id);
                 printf("Expected CT: ");
                 DEMO_print_hex(cfb8_kat_test_vectors[i].ct, cfb8_kat_test_vectors[i].ct_len);
                 printf("Computed CT: ");
@@ -1896,7 +1898,7 @@ void test_cfb8_kat(void) {
 
             if (status != CF_SUCCESS || memcmp(out, cfb8_kat_test_vectors[i].msg, cfb8_kat_test_vectors[i].msg_len) != 0) {
                 CF_CipherOpts_Reset(&opts);
-                printf("CBC TcId %d FAILED (decryption mismatch)\n", cfb8_kat_test_vectors[i].tc_id);
+                printf("CFB8 TcId %d FAILED (decryption mismatch)\n", cfb8_kat_test_vectors[i].tc_id);
                 printf("Expected PT: ");
                 DEMO_print_hex(cfb8_kat_test_vectors[i].msg, cfb8_kat_test_vectors[i].msg_len);
                 printf("Computed PT: ");
@@ -1960,7 +1962,7 @@ void test_cfb128_kat(void) {
 
             if (status != CF_SUCCESS || memcmp(out, cfb128_kat_test_vectors[i].ct, cfb128_kat_test_vectors[i].ct_len) != 0) {
                 CF_CipherOpts_Reset(&opts);
-                printf("CBC TcId %d FAILED (encryption mismatch)\n", cfb128_kat_test_vectors[i].tc_id);
+                printf("CFB128 TcId %d FAILED (encryption mismatch)\n", cfb128_kat_test_vectors[i].tc_id);
                 printf("Expected CT: ");
                 DEMO_print_hex(cfb128_kat_test_vectors[i].ct, cfb128_kat_test_vectors[i].ct_len);
                 printf("Computed CT: ");
@@ -1978,7 +1980,7 @@ void test_cfb128_kat(void) {
 
             if (status != CF_SUCCESS || memcmp(out, cfb128_kat_test_vectors[i].msg, cfb128_kat_test_vectors[i].msg_len) != 0) {
                 CF_CipherOpts_Reset(&opts);
-                printf("CBC TcId %d FAILED (decryption mismatch)\n", cfb128_kat_test_vectors[i].tc_id);
+                printf("CFB128 TcId %d FAILED (decryption mismatch)\n", cfb128_kat_test_vectors[i].tc_id);
                 printf("Expected PT: ");
                 DEMO_print_hex(cfb128_kat_test_vectors[i].msg, cfb128_kat_test_vectors[i].msg_len);
                 printf("Computed PT: ");

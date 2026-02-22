@@ -360,10 +360,17 @@ typedef enum {
 // Padding
 // ======================
 typedef enum {
+    CF_PAD_ZERO = 0,
     CF_PAD_PKCS7,
     CF_PAD_ISO7816_4,
     CF_PAD_X923
 } CF_PADDING_TYPE;
+
+#define CF_IS_PAD_SUBFLAG_VALID(id) \
+    ((id) == CF_PAD_ZERO      || \
+     (id) == CF_PAD_PKCS7     || \
+     (id) == CF_PAD_ISO7816_4 || \
+     (id) == CF_PAD_X923) \
 
 #define CF_CTX_MAGIC 0x43464D47  // "CFMG"
 
