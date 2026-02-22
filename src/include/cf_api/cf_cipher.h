@@ -59,6 +59,15 @@ typedef struct _CF_CIPHER {
     bool (*cipher_dec_fn)(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len,uint8_t *out, const CF_CIPHER_OPTS *opts);
 } CF_CIPHER;
 
+// Only initialization for AES-ECB/AES-ECB
+typedef struct _CF_CIPHER_BLOCK_MODE_STATE {
+    uint8_t buf[CF_CIPHER_MAX_BLOCK_SIZE];
+    size_t buf_len;
+    
+    uint8_t last_block[CF_CIPHER_MAX_BLOCK_SIZE];
+    int has_last_block;
+} CF_CIPHER_BLOCK_MODE_STATE;
+
 // ============================
 // Optional cipher parameters
 // ============================
@@ -74,7 +83,8 @@ typedef struct _CF_CIPHER_OPTS {
     // ChaCha / XChaCha
     uint32_t chacha_counter;     // 32-bit counter for ChaCha
 
-    uint32_t subflags;           // padding flags
+    CF_CIPHER_BLOCK_MODE_STATE block_state;  // only used for padded block modes
+    uint32_t subflags;                       // padding flags
 
     int isHeapAlloc;
 } CF_CIPHER_OPTS;
@@ -113,10 +123,13 @@ CF_API CF_CIPHER_CTX* CF_Cipher_InitAlloc(const CF_CIPHER *cipher, CF_CIPHER_OPT
                                           const uint8_t *key, size_t key_len, 
                                           CF_OPERATION op, CF_STATUS *status);
 
-/*
-* NOTE: PADDING IS NOT HANDLED YET, AWAITING FOR PADDING MODULE TO BE IMPLEMENTED FIRST.
-*/
-CF_API CF_STATUS CF_Cipher_Process(CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out);
+
+CF_API CF_STATUS CF_Cipher_Update(CF_CIPHER_CTX *ctx,
+                           const uint8_t *in, size_t in_len,
+                           uint8_t *out, size_t *out_len);
+
+CF_API CF_STATUS CF_Cipher_Final(CF_CIPHER_CTX *ctx,
+                          uint8_t *out, size_t *out_len);
 
 CF_API CF_STATUS CF_Cipher_Reset(CF_CIPHER_CTX *ctx);
 CF_API CF_STATUS CF_Cipher_Free(CF_CIPHER_CTX **p_ctx);
@@ -156,8 +169,10 @@ CF_API size_t CF_Cipher_GetOutputLength(const CF_CIPHER_CTX *ctx, size_t in_len)
 // ============================
 
 /*
- * NOTE: INVALID SUBFLAGS ARE NOT HANDLED YET
-*/
+ * WARNING: For padded block modes (ECB/CBC), each CF_CIPHER_CTX must have its
+ * own CF_CIPHER_OPTS instance. Sharing opts across multiple contexts will
+ * corrupt block_state and break padding logic.
+ */
 CF_API CF_STATUS CF_CipherOpts_Init(CF_CIPHER_OPTS *opts,
                                     const uint8_t *iv, size_t iv_len,
                                     const uint8_t ctr_block[AES_BLOCK_SIZE], // optional, can be NULL

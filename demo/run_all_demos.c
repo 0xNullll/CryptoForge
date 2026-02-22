@@ -1,6 +1,20 @@
 #include "../src/include/config/demo_config.h"
 
+#include "../src/include/cf_api/cf_defs.h"
+#include "../src/include/cf_api/cf_flags.h"
+#include "../src/include/cf_api/cf_hash.h"
+#include "../src/include/cf_api/cf_mac.h"
+#include "../src/include/cf_api/cf_kdf.h"
+#include "../src/include/cf_api/cf_cipher.h"
+#include "../src/include/cf_api/cf_aead.h"
+#include "../src/include/cf_api/cf_enc.h"
+
 int main(void) {
+
+    // uint8_t buf[16] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77}; 
+
+    // CF_STATUS status = CF_Pad_Apply(&buf, sizeof(buf), AES_BLOCK_SIZE / 2, AES_BLOCK_SIZE, CF_PAD_PKCS7);
+
     // CF_STATUS status;
 
     // const char *input = "My Tagged Application";
