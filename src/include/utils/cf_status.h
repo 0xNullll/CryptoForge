@@ -41,7 +41,8 @@ typedef enum {
     CF_ERR_UNSUPPORTED,             // Unsupported algorithm
     CF_ERR_OUTPUT_BUFFER_TOO_SMALL, // Output buffer too small
     CF_ERR_LIMIT_EXCEEDED,          // generic max/limit error
-
+    CF_ERR_OVERFLOW,                // generic overflow error
+     
     //
     // Memory / allocation issues
     //
@@ -126,7 +127,8 @@ FORCE_INLINE const char* CF_status_str(CF_STATUS status) {
         case CF_ERR_UNSUPPORTED: return "CF_ERR_UNSUPPORTED";
         case CF_ERR_OUTPUT_BUFFER_TOO_SMALL: return "CF_ERR_OUTPUT_BUFFER_TOO_SMALL";
         case CF_ERR_LIMIT_EXCEEDED: return "CF_ERR_LIMIT_EXCEEDED";
-
+        case CF_ERR_OVERFLOW: return "CF_ERR_OVERFLOW";
+        
         // --- Memory / context ---
         case CF_ERR_ALLOC_FAILED: return "CF_ERR_ALLOC_FAILED";
         case CF_ERR_CTX_CORRUPT: return "CF_ERR_CTX_CORRUPT";

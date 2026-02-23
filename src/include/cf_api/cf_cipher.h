@@ -55,18 +55,9 @@ typedef struct _CF_CIPHER {
 
     // Low-level function pointers
     bool (*cipher_init_fn)(CF_CIPHER_CTX *ctx, CF_CIPHER_OPTS *opts);
-    bool (*cipher_enc_fn)(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, const CF_CIPHER_OPTS *opts);
-    bool (*cipher_dec_fn)(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len,uint8_t *out, const CF_CIPHER_OPTS *opts);
+    bool (*cipher_enc_fn)(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, const CF_CIPHER_OPTS *opts);
+    bool (*cipher_dec_fn)(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len,uint8_t *out, size_t *out_len, const CF_CIPHER_OPTS *opts);
 } CF_CIPHER;
-
-// Only initialization for AES-ECB/AES-ECB
-typedef struct _CF_CIPHER_BLOCK_MODE_STATE {
-    uint8_t buf[CF_CIPHER_MAX_BLOCK_SIZE];
-    size_t buf_len;
-    
-    uint8_t last_block[CF_CIPHER_MAX_BLOCK_SIZE];
-    int has_last_block;
-} CF_CIPHER_BLOCK_MODE_STATE;
 
 // ============================
 // Optional cipher parameters
@@ -82,10 +73,6 @@ typedef struct _CF_CIPHER_OPTS {
 
     // ChaCha / XChaCha
     uint32_t chacha_counter;     // 32-bit counter for ChaCha
-
-    CF_CIPHER_BLOCK_MODE_STATE block_state;  // only used for padded block modes
-    uint32_t subflags;                       // padding flags
-
     int isHeapAlloc;
 } CF_CIPHER_OPTS;
 
@@ -124,12 +111,7 @@ CF_API CF_CIPHER_CTX* CF_Cipher_InitAlloc(const CF_CIPHER *cipher, CF_CIPHER_OPT
                                           CF_OPERATION op, CF_STATUS *status);
 
 
-CF_API CF_STATUS CF_Cipher_Update(CF_CIPHER_CTX *ctx,
-                           const uint8_t *in, size_t in_len,
-                           uint8_t *out, size_t *out_len);
-
-CF_API CF_STATUS CF_Cipher_Final(CF_CIPHER_CTX *ctx,
-                          uint8_t *out, size_t *out_len);
+CF_API CF_STATUS CF_Cipher_Process(CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len);
 
 CF_API CF_STATUS CF_Cipher_Reset(CF_CIPHER_CTX *ctx);
 CF_API CF_STATUS CF_Cipher_Free(CF_CIPHER_CTX **p_ctx);
@@ -139,12 +121,14 @@ CF_API CF_STATUS CF_Cipher_Free(CF_CIPHER_CTX **p_ctx);
 // ============================
 CF_API CF_STATUS CF_Cipher_Encrypt(const CF_CIPHER *cipher,
                                    const uint8_t *key, size_t key_len,
-                                   const uint8_t *in, size_t in_len, uint8_t *out,
+                                   const uint8_t *in, size_t in_len,
+                                   uint8_t *out, size_t *out_len,
                                    CF_CIPHER_OPTS *opts);
 
 CF_API CF_STATUS CF_Cipher_Decrypt(const CF_CIPHER *cipher,
                                    const uint8_t *key, size_t key_len,
-                                   const uint8_t *in, size_t in_len, uint8_t *out,
+                                   const uint8_t *in, size_t in_len,
+                                   uint8_t *out, size_t *out_len,
                                    CF_CIPHER_OPTS *opts);
 
 // ============================
@@ -168,21 +152,14 @@ CF_API size_t CF_Cipher_GetOutputLength(const CF_CIPHER_CTX *ctx, size_t in_len)
 // Optional parameters init / cleanup
 // ============================
 
-/*
- * WARNING: For padded block modes (ECB/CBC), each CF_CIPHER_CTX must have its
- * own CF_CIPHER_OPTS instance. Sharing opts across multiple contexts will
- * corrupt block_state and break padding logic.
- */
 CF_API CF_STATUS CF_CipherOpts_Init(CF_CIPHER_OPTS *opts,
                                     const uint8_t *iv, size_t iv_len,
                                     const uint8_t ctr_block[AES_BLOCK_SIZE], // optional, can be NULL
-                                    uint32_t chacha_counter,                 // optional, pass 0 for default
-                                    uint32_t subflags);                      // optional, for padding
+                                    uint32_t chacha_counter);                 // optional, pass 0 for default
 
 CF_API CF_CIPHER_OPTS* CF_CipherOpts_InitAlloc(const uint8_t *iv, size_t iv_len,
                                                const uint8_t ctr_block[AES_BLOCK_SIZE], // optional, can be NULL
                                                uint32_t chacha_counter,                 // optional, pass 0 for default
-                                               uint32_t subflags,                       // optional, for padding
                                                CF_STATUS *status);
 
 CF_API CF_STATUS CF_CipherOpts_Reset(CF_CIPHER_OPTS *opts);

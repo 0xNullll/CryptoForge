@@ -10,11 +10,6 @@
 #include "../src/include/cf_api/cf_enc.h"
 
 int main(void) {
-
-    // uint8_t buf[16] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77}; 
-
-    // CF_STATUS status = CF_Pad_Apply(&buf, sizeof(buf), AES_BLOCK_SIZE / 2, AES_BLOCK_SIZE, CF_PAD_PKCS7);
-
     // CF_STATUS status;
 
     // const char *input = "My Tagged Application";
@@ -350,11 +345,13 @@ int main(void) {
     // printf("------------High Level API------------\n");
     // test_all_aead_high();
     // printf("---------End Of High Level API---------\n");
-    test_ecb_kat();
-    test_cbc_kat();
-    test_cfb8_kat();
-    test_cfb128_kat();
-    test_ofb_kat();
+    test_aes_ecb_kat();
+    test_aes_cbc_kat();
+    test_aes_cfb8_kat();
+    test_aes_cfb128_kat();
+    test_aes_ofb_kat();
+
+    test_aes_cbc_pkcs7_wycheproof();
 
     test_hmac_sha1_wycheproof();
     test_hmac_sha224_wycheproof();

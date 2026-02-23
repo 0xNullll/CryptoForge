@@ -151,11 +151,11 @@ CF_API void test_aes_gcm_fips_style(void);
 CF_API void test_aes_gcm_empty_plaintext(void);
 CF_API void test_all_aead_high(void);
 
-CF_API void test_ecb_kat(void);
-CF_API void test_cbc_kat(void);
-CF_API void test_cfb8_kat(void);
-CF_API void test_cfb128_kat(void);
-CF_API void test_ofb_kat(void);
+CF_API void test_aes_ecb_kat(void);
+CF_API void test_aes_cbc_kat(void);
+CF_API void test_aes_cfb8_kat(void);
+CF_API void test_aes_cfb128_kat(void);
+CF_API void test_aes_ofb_kat(void);
 
 CF_API void test_hmac_sha1_wycheproof(void);
 CF_API void test_hmac_sha224_wycheproof(void);
@@ -181,6 +181,7 @@ CF_API void test_pbkdf2_hmac_sha224_wycheproof(void);
 CF_API void test_pbkdf2_hmac_sha256_wycheproof(void);
 CF_API void test_pbkdf2_hmac_sha384_wycheproof(void);
 CF_API void test_pbkdf2_hmac_sha512_wycheproof(void);
+CF_API void test_aes_cbc_pkcs7_wycheproof(void);
 CF_API void test_aes_gcm_wycheproof(void);
 CF_API void test_chacha20_poly1305_wycheproof(void);
 CF_API void test_xchacha20_poly1305_wycheproof(void);
