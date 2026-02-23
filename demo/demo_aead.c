@@ -861,7 +861,9 @@ void test_all_aead_high(void) {
     };
 
     uint8_t chacha_ct[CHACHA_BLOCK_SIZE * 2] = {0};
+    size_t chacha_ct_len;
     uint8_t chacha_dec[CHACHA_BLOCK_SIZE * 2] = {0};
+    size_t chacha_dec_len;
     uint8_t chacha_tag[CF_AEAD_TAG_128_SIZE] = {0};
 
     for (size_t i = 0; i < num_chacha_flags; i++) {
@@ -895,7 +897,7 @@ void test_all_aead_high(void) {
             expected_iv, expected_iv_len,
             chacha_aad, sizeof(chacha_aad),
             chacha_plain_text, sizeof(chacha_plain_text),
-            chacha_ct,
+            chacha_ct, &chacha_ct_len,
             chacha_tag, sizeof(chacha_tag));
 
         if (status != CF_SUCCESS) {
@@ -908,7 +910,7 @@ void test_all_aead_high(void) {
             expected_iv, expected_iv_len,
             chacha_aad, sizeof(chacha_aad),
             chacha_ct, sizeof(chacha_plain_text),
-            chacha_dec,
+            chacha_dec, &chacha_dec_len,
             chacha_tag, sizeof(chacha_tag));
 
         if (status != CF_SUCCESS) {
@@ -917,9 +919,9 @@ void test_all_aead_high(void) {
         }
 
         printf("%s CT : ", CF_AEAD_GetFullName(&ctx));
-        DEMO_print_hex(chacha_ct, sizeof(chacha_plain_text));
+        DEMO_print_hex(chacha_ct, chacha_ct_len);
         printf("%s DEC: ", CF_AEAD_GetFullName(&ctx));
-        DEMO_print_hex(chacha_dec, sizeof(chacha_plain_text));
+        DEMO_print_hex(chacha_dec, chacha_dec_len);
         printf("%s TAG : ", CF_AEAD_GetFullName(&ctx));
         DEMO_print_hex(chacha_tag, sizeof(chacha_tag));
 
@@ -995,7 +997,9 @@ void test_all_aead_high(void) {
     size_t num_aes_keys = sizeof(aes_key_test_vectors)/sizeof(aes_key_test_vectors[0]);
 
     uint8_t aes_ct[AES_BLOCK_SIZE * 4] = {0};
+    size_t aes_ct_len;
     uint8_t aes_dec[AES_BLOCK_SIZE * 4] = {0};
+    size_t aes_dec_len;
     uint8_t aes_tag[CF_AEAD_TAG_96_SIZE] = {0};
 
     for (size_t i = 0; i < num_aes_keys; i++) {
@@ -1026,7 +1030,7 @@ void test_all_aead_high(void) {
             aes_iv, sizeof(aes_iv),
             aes_aad, sizeof(aes_aad),
             aes_plain_text, sizeof(aes_plain_text),
-            aes_ct,
+            aes_ct, &aes_ct_len,
             aes_tag, sizeof(aes_tag));
 
         if (status != CF_SUCCESS) {
@@ -1039,7 +1043,7 @@ void test_all_aead_high(void) {
             aes_iv, sizeof(aes_iv),
             aes_aad, sizeof(aes_aad),
             aes_ct, sizeof(aes_plain_text),
-            aes_dec,
+            aes_dec, &aes_dec_len,
             aes_tag, sizeof(aes_tag));
 
         if (status != CF_SUCCESS) {
@@ -1048,9 +1052,9 @@ void test_all_aead_high(void) {
         }
 
         printf("%s CT : ", CF_AEAD_GetFullName(&ctx));
-        DEMO_print_hex(aes_ct, sizeof(chacha_plain_text));
+        DEMO_print_hex(aes_ct, aes_ct_len);
         printf("%s DEC: ", CF_AEAD_GetFullName(&ctx));
-        DEMO_print_hex(aes_dec, sizeof(chacha_plain_text));
+        DEMO_print_hex(aes_dec, aes_dec_len);
         printf("%s TAG : ", CF_AEAD_GetFullName(&ctx));
         DEMO_print_hex(aes_tag, sizeof(aes_tag));
 
@@ -1075,7 +1079,9 @@ void test_aes_gcm_wycheproof(void) {
         }
 
         uint8_t ct[600]  = {0};
+        size_t ct_len;
         uint8_t dec[600] = {0};
+        size_t dec_len;
         uint8_t tag[16]  = {0};
 
         int expected_valid = (strcmp(aes_gcm_test_vectors[i].result, "valid") == 0);
@@ -1089,7 +1095,7 @@ void test_aes_gcm_wycheproof(void) {
             aes_gcm_test_vectors[i].iv_len != 0 ? aes_gcm_test_vectors[i].iv : NULL,  aes_gcm_test_vectors[i].iv_len,
             aes_gcm_test_vectors[i].aad_len != 0 ? aes_gcm_test_vectors[i].aad : NULL, aes_gcm_test_vectors[i].aad_len,
             aes_gcm_test_vectors[i].msg_len != 0 ? aes_gcm_test_vectors[i].msg : NULL, aes_gcm_test_vectors[i].msg_len,
-            ct, tag, sizeof(tag)
+            ct, &ct_len, tag, sizeof(tag)
         );
 
         if (status != CF_SUCCESS && expected_valid) {
@@ -1101,7 +1107,7 @@ void test_aes_gcm_wycheproof(void) {
 
         int ct_match =
             (aes_gcm_test_vectors[i].ct_len == aes_gcm_test_vectors[i].msg_len) &&
-            (memcmp(ct, aes_gcm_test_vectors[i].ct, aes_gcm_test_vectors[i].ct_len) == 0);
+            (memcmp(ct, aes_gcm_test_vectors[i].ct, ct_len) == 0);
 
         int tag_match =
             (memcmp(tag, aes_gcm_test_vectors[i].tag, aes_gcm_test_vectors[i].tag_len) == 0);
@@ -1117,7 +1123,7 @@ void test_aes_gcm_wycheproof(void) {
                 printf("  Tag mismatch\n");
 
             printf("CT : ");
-            DEMO_print_hex(ct, aes_gcm_test_vectors[i].ct_len);
+            DEMO_print_hex(ct, ct_len);
 
             printf("Expected CT : ");
             DEMO_print_hex(aes_gcm_test_vectors[i].ct, aes_gcm_test_vectors[i].ct_len);
@@ -1138,7 +1144,7 @@ void test_aes_gcm_wycheproof(void) {
             aes_gcm_test_vectors[i].iv_len != 0 ? aes_gcm_test_vectors[i].iv : NULL,  aes_gcm_test_vectors[i].iv_len,
             aes_gcm_test_vectors[i].aad_len != 0 ? aes_gcm_test_vectors[i].aad : NULL, aes_gcm_test_vectors[i].aad_len,
             aes_gcm_test_vectors[i].ct_len != 0 ? ct : NULL, aes_gcm_test_vectors[i].ct_len,
-            dec,
+            dec, &dec_len,
             (uint8_t *)aes_gcm_test_vectors[i].tag, aes_gcm_test_vectors[i].tag_len
         );
 
@@ -1152,7 +1158,7 @@ void test_aes_gcm_wycheproof(void) {
         }
 
         if (expected_valid && decrypt_success &&
-            memcmp(dec, aes_gcm_test_vectors[i].msg, aes_gcm_test_vectors[i].msg_len) != 0) {
+            memcmp(dec, aes_gcm_test_vectors[i].msg, dec_len) != 0) {
             printf("AES-GCM TcId %d FAILED, Error code %u (decrypted plaintext mismatch)\n",
                    aes_gcm_test_vectors[i].tc_id, status);
             failure = 1;
@@ -1204,7 +1210,9 @@ void test_chacha20_poly1305_wycheproof(void) {
         }
 
         uint8_t ct[520]  = {0};
+        size_t ct_len;
         uint8_t dec[520] = {0};
+        size_t dec_len;
         uint8_t tag[16]  = {0};
 
         int expected_valid = (strcmp(chacha20_poly1305_test_vectors[i].result, "valid") == 0);
@@ -1218,7 +1226,7 @@ void test_chacha20_poly1305_wycheproof(void) {
             chacha20_poly1305_test_vectors[i].iv_len != 0 ? chacha20_poly1305_test_vectors[i].iv : NULL, chacha20_poly1305_test_vectors[i].iv_len,
             chacha20_poly1305_test_vectors[i].aad_len != 0 ? chacha20_poly1305_test_vectors[i].aad : NULL, chacha20_poly1305_test_vectors[i].aad_len,
             chacha20_poly1305_test_vectors[i].msg_len != 0 ? chacha20_poly1305_test_vectors[i].msg : NULL, chacha20_poly1305_test_vectors[i].msg_len,
-            ct, tag, sizeof(tag)
+            ct, &ct_len, tag, sizeof(tag)
         );
 
         if (status != CF_SUCCESS && expected_valid) {
@@ -1230,7 +1238,7 @@ void test_chacha20_poly1305_wycheproof(void) {
 
         int ct_match =
             (chacha20_poly1305_test_vectors[i].ct_len == chacha20_poly1305_test_vectors[i].msg_len) &&
-            (memcmp(ct, chacha20_poly1305_test_vectors[i].ct, chacha20_poly1305_test_vectors[i].ct_len) == 0);
+            (memcmp(ct, chacha20_poly1305_test_vectors[i].ct, ct_len) == 0);
 
         int tag_match =
             (memcmp(tag, chacha20_poly1305_test_vectors[i].tag, chacha20_poly1305_test_vectors[i].tag_len) == 0);
@@ -1246,7 +1254,7 @@ void test_chacha20_poly1305_wycheproof(void) {
                 printf("  Tag mismatch\n");
 
             printf("CT : ");
-            DEMO_print_hex(ct, chacha20_poly1305_test_vectors[i].ct_len);
+            DEMO_print_hex(ct, ct_len);
 
             printf("Expected CT : ");
             DEMO_print_hex(chacha20_poly1305_test_vectors[i].ct, chacha20_poly1305_test_vectors[i].ct_len);
@@ -1267,7 +1275,7 @@ void test_chacha20_poly1305_wycheproof(void) {
             chacha20_poly1305_test_vectors[i].iv_len != 0 ? chacha20_poly1305_test_vectors[i].iv : NULL, chacha20_poly1305_test_vectors[i].iv_len,
             chacha20_poly1305_test_vectors[i].aad_len != 0 ? chacha20_poly1305_test_vectors[i].aad : NULL, chacha20_poly1305_test_vectors[i].aad_len,
             chacha20_poly1305_test_vectors[i].ct_len != 0 ? ct : NULL, chacha20_poly1305_test_vectors[i].ct_len,
-            dec,
+            dec, &dec_len,
             (uint8_t *)chacha20_poly1305_test_vectors[i].tag, chacha20_poly1305_test_vectors[i].tag_len
         );
 
@@ -1281,7 +1289,7 @@ void test_chacha20_poly1305_wycheproof(void) {
         }
 
         if (expected_valid && decrypt_success &&
-            memcmp(dec, chacha20_poly1305_test_vectors[i].msg, chacha20_poly1305_test_vectors[i].msg_len) != 0) {
+            memcmp(dec, chacha20_poly1305_test_vectors[i].msg, dec_len) != 0) {
             printf("ChaCha20-Poly1305 TcId %d FAILED, Error code %u (decrypted plaintext mismatch)\n",
                    chacha20_poly1305_test_vectors[i].tc_id, status);
             failure = 1;
@@ -1318,7 +1326,6 @@ print_extra:
            total_failures);
 }
 
-
 void test_xchacha20_poly1305_wycheproof(void) {
     size_t num_test_vectors =
         sizeof(xchacha20_poly1305_test_vectors) / sizeof(xchacha20_poly1305_test_vectors[0]);
@@ -1334,7 +1341,9 @@ void test_xchacha20_poly1305_wycheproof(void) {
         }
 
         uint8_t ct[520]  = {0};
+        size_t ct_len;
         uint8_t dec[520] = {0};
+        size_t dec_len;
         uint8_t tag[16]  = {0};
 
         int expected_valid = (strcmp(xchacha20_poly1305_test_vectors[i].result, "valid") == 0);
@@ -1348,7 +1357,7 @@ void test_xchacha20_poly1305_wycheproof(void) {
             xchacha20_poly1305_test_vectors[i].iv_len != 0 ? xchacha20_poly1305_test_vectors[i].iv : NULL, xchacha20_poly1305_test_vectors[i].iv_len,
             xchacha20_poly1305_test_vectors[i].aad_len != 0 ? xchacha20_poly1305_test_vectors[i].aad : NULL, xchacha20_poly1305_test_vectors[i].aad_len,
             xchacha20_poly1305_test_vectors[i].msg_len != 0 ? xchacha20_poly1305_test_vectors[i].msg : NULL, xchacha20_poly1305_test_vectors[i].msg_len,
-            ct, tag, sizeof(tag)
+            ct, &ct_len, tag, sizeof(tag)
         );
 
         if (status != CF_SUCCESS && expected_valid) {
@@ -1360,7 +1369,7 @@ void test_xchacha20_poly1305_wycheproof(void) {
 
         int ct_match =
             (xchacha20_poly1305_test_vectors[i].ct_len == xchacha20_poly1305_test_vectors[i].msg_len) &&
-            (memcmp(ct, xchacha20_poly1305_test_vectors[i].ct, xchacha20_poly1305_test_vectors[i].ct_len) == 0);
+            (memcmp(ct, xchacha20_poly1305_test_vectors[i].ct, ct_len) == 0);
 
         int tag_match =
             (memcmp(tag, xchacha20_poly1305_test_vectors[i].tag, xchacha20_poly1305_test_vectors[i].tag_len) == 0);
@@ -1376,7 +1385,7 @@ void test_xchacha20_poly1305_wycheproof(void) {
                 printf("  Tag mismatch\n");
 
             printf("CT : ");
-            DEMO_print_hex(ct, xchacha20_poly1305_test_vectors[i].ct_len);
+            DEMO_print_hex(ct, ct_len);
 
             printf("Expected CT : ");
             DEMO_print_hex(xchacha20_poly1305_test_vectors[i].ct, xchacha20_poly1305_test_vectors[i].ct_len);
@@ -1397,7 +1406,7 @@ void test_xchacha20_poly1305_wycheproof(void) {
             xchacha20_poly1305_test_vectors[i].iv_len != 0 ? xchacha20_poly1305_test_vectors[i].iv : NULL, xchacha20_poly1305_test_vectors[i].iv_len,
             xchacha20_poly1305_test_vectors[i].aad_len != 0 ? xchacha20_poly1305_test_vectors[i].aad : NULL, xchacha20_poly1305_test_vectors[i].aad_len,
             xchacha20_poly1305_test_vectors[i].ct_len != 0 ? ct : NULL, xchacha20_poly1305_test_vectors[i].ct_len,
-            dec,
+            dec, &dec_len,
             (uint8_t *)xchacha20_poly1305_test_vectors[i].tag, xchacha20_poly1305_test_vectors[i].tag_len
         );
 
@@ -1411,7 +1420,7 @@ void test_xchacha20_poly1305_wycheproof(void) {
         }
 
         if (expected_valid && decrypt_success &&
-            memcmp(dec, xchacha20_poly1305_test_vectors[i].msg, xchacha20_poly1305_test_vectors[i].msg_len) != 0) {
+            memcmp(dec, xchacha20_poly1305_test_vectors[i].msg, dec_len) != 0) {
             printf("XChaCha20-Poly1305 TcId %d FAILED, Error code %u (decrypted plaintext mismatch)\n",
                    xchacha20_poly1305_test_vectors[i].tc_id, status);
             failure = 1;

@@ -278,7 +278,7 @@ CF_AEAD_CTX* CF_AEAD_InitAlloc(
 CF_STATUS CF_AEAD_Update(
     CF_AEAD_CTX *ctx,
     const uint8_t *in, size_t in_len,
-    uint8_t *out) {
+    uint8_t *out, size_t *out_len) {
     if (!ctx || !in || !out)
         return CF_ERR_NULL_PTR;
 
@@ -311,6 +311,8 @@ CF_STATUS CF_AEAD_Update(
         return CF_ERR_CTX_CORRUPT;
 
     ctx->total_data_len += in_len;
+
+    if (out_len) *out_len = in_len;
 
     return CF_SUCCESS;
 }
@@ -401,7 +403,8 @@ static FORCE_INLINE CF_STATUS CF_AEAD_EncDec(
     const uint8_t *iv, size_t iv_len,
     const uint8_t *aad, size_t aad_len,
     const uint8_t *in, size_t in_len,
-    uint8_t *out, uint8_t *tag, size_t tag_len,
+    uint8_t *out, size_t *out_len,
+    uint8_t *tag, size_t tag_len,
     CF_OPERATION op) {
     if (!key || !tag)
         return CF_ERR_NULL_PTR;
@@ -420,7 +423,7 @@ static FORCE_INLINE CF_STATUS CF_AEAD_EncDec(
     // Process input buffer (encrypt or decrypt depending on 'op')
     // Output is written to 'out'
     if (in && out && in_len != 0) {
-        st = CF_AEAD_Update(&ctx, in, in_len, out);
+        st = CF_AEAD_Update(&ctx, in, in_len, out, out_len);
         if (st != CF_SUCCESS || (ctx.magic ^ (uintptr_t)ctx.aead) != CF_CTX_MAGIC)
             goto cleanup;
     }
@@ -440,8 +443,13 @@ CF_STATUS CF_AEAD_Encrypt(
     const uint8_t *iv, size_t iv_len,
     const uint8_t *aad, size_t aad_len,
     const uint8_t *in, size_t in_len,
-    uint8_t *out, uint8_t *tag, size_t tag_len) {
-    return CF_AEAD_EncDec(aead, key, key_len, iv, iv_len, aad, aad_len, in, in_len, out, tag, tag_len, CF_OP_ENCRYPT);
+    uint8_t *out, size_t *out_len,
+    uint8_t *tag, size_t tag_len) {
+    return CF_AEAD_EncDec(aead, key, key_len,
+                          iv, iv_len, aad, aad_len,
+                          in, in_len, out, out_len,
+                          tag, tag_len,
+                          CF_OP_ENCRYPT);
 }
 
 CF_STATUS CF_AEAD_Decrypt(
@@ -450,8 +458,70 @@ CF_STATUS CF_AEAD_Decrypt(
     const uint8_t *iv, size_t iv_len,
     const uint8_t *aad, size_t aad_len,
     const uint8_t *in, size_t in_len,
-    uint8_t *out, uint8_t *tag, size_t tag_len) {
-    return CF_AEAD_EncDec(aead, key, key_len, iv, iv_len, aad, aad_len, in, in_len, out, tag, tag_len, CF_OP_DECRYPT);
+    uint8_t *out, size_t *out_len,
+    uint8_t *tag, size_t tag_len) {
+    return CF_AEAD_EncDec(aead, key, key_len,
+                          iv, iv_len, aad, aad_len,
+                          in, in_len, out, out_len,
+                          tag, tag_len,
+                          CF_OP_DECRYPT);
+}
+
+CF_STATUS CF_AEAD_EncryptAppendTag(
+    const CF_AEAD *aead,
+    const uint8_t *key, size_t key_len,
+    const uint8_t *iv, size_t iv_len,
+    const uint8_t *aad, size_t aad_len,
+    const uint8_t *in, size_t in_len,
+    uint8_t *out, size_t *out_len) {
+    if (!aead || !key || !iv)
+        return CF_ERR_NULL_PTR;
+
+    const size_t tag_len = CF_AEAD_GetMaxTagSize(aead);
+    uint8_t tag[CF_AEAD_TAG_128_SIZE];
+    size_t ciphertext_len = 0;
+
+    CF_STATUS st = CF_AEAD_EncDec(aead, key, key_len,
+                                   iv, iv_len,
+                                   aad, aad_len,
+                                   in, in_len,
+                                   out, &ciphertext_len,
+                                   tag, tag_len,
+                                   CF_OP_ENCRYPT);
+    if (st != CF_SUCCESS)
+        return st;
+
+    // append tag to the end of ciphertext
+    SECURE_MEMCPY(out + ciphertext_len, tag, tag_len);
+    *out_len = ciphertext_len + tag_len;
+
+    return CF_SUCCESS;
+}
+
+CF_STATUS CF_AEAD_DecryptAppendTag(
+    const CF_AEAD *aead,
+    const uint8_t *key, size_t key_len,
+    const uint8_t *iv, size_t iv_len,
+    const uint8_t *aad, size_t aad_len,
+    const uint8_t *in, size_t in_len, // in_len = ciphertext_len + tag_len
+    uint8_t *out, size_t *out_len) {
+    if (!aead || !key || !iv)
+        return CF_ERR_NULL_PTR;
+
+    size_t tag_len = CF_AEAD_GetMaxTagSize(aead); // same fixed tag size
+    if (in_len < tag_len)
+        return CF_ERR_INVALID_LEN;
+
+    const size_t ciphertext_len = in_len - tag_len;
+    const uint8_t *tag = in + ciphertext_len;
+
+    return CF_AEAD_EncDec(aead, key, key_len,
+                           iv, iv_len,
+                           aad, aad_len,
+                           in, ciphertext_len,
+                           out, out_len,
+                           (uint8_t*)tag, tag_len,
+                           CF_OP_DECRYPT);
 }
 
 CF_STATUS CF_AEAD_CloneCtx(CF_AEAD_CTX *dst, const CF_AEAD_CTX *src) {
@@ -661,4 +731,14 @@ const size_t* CF_AEAD_GetValidTagSizes(const CF_AEAD *aead, size_t *count) {
 
     *count = 0;
     return NULL;
+}
+
+size_t CF_AEAD_GetMaxTagSize(const CF_AEAD *aead) {
+    if (!aead)
+        return 0;
+
+    if (CF_IS_AEAD_AES(aead->id) || CF_IS_AEAD_CHACHA(aead->id))
+        return CF_AEAD_TAG_128_SIZE;
+
+    return 0;
 }
