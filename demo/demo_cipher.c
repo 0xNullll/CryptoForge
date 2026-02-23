@@ -8,6 +8,8 @@
 #include "../vectors/NIST/KAT/tv_aes_cfb128.h"
 #include "../vectors/NIST/KAT/tv_aes_ofb.h"
 
+#include "../vectors/wycheproof/tv_aes_cbc_pkcs5.h"
+
 void test_chacha20_rfc7539(void) {
     uint8_t key[32] = {
         0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
@@ -1380,316 +1382,7 @@ void test_aes_ctr_fips800_38a(void) {
         ((memcmp(expected_ct256, ct, sizeof(expected_ct256)) == 0 && memcmp(plain_text, dec, sizeof(plain_text)) == 0)) ? "PASSED" : "FAILED");
 }
 
-void test_all_cipher_high(void) {
-    uint32_t cf_chacha_flags[] = {
-        CF_CHACHA8,
-        CF_CHACHA12,
-        CF_CHACHA20,
-
-        CF_XCHACHA8,
-        CF_XCHACHA12,
-        CF_XCHACHA20,
-    };
-
-    size_t num_cf_chacha_flags = sizeof(cf_chacha_flags)/sizeof(cf_chacha_flags[0]);
-
-    static const uint8_t chacha_key128[CF_KEY_128_SIZE] = {
-        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-        0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
-    };
-
-    static const uint8_t chacha_key256[CF_KEY_256_SIZE] = {
-        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-        0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
-        0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
-        0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f
-    };
-
-    static const uint8_t *chacha_key_test_vectors[] = {
-        chacha_key128,
-        chacha_key256
-    };
-
-    static const size_t chacha_key_test_vectors_sizes[] = {
-        sizeof(chacha_key128),
-        sizeof(chacha_key256)
-    };
-
-    size_t num_chacha_keys = sizeof(chacha_key_test_vectors)/sizeof(chacha_key_test_vectors_sizes[0]);
-
-    uint8_t chacha_iv[12] = {
-        0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x4a,
-        0x00, 0x00, 0x00, 0x00
-    };
-
-    uint8_t xchacha_iv[CF_MAX_CIPHER_IV_SIZE] = {
-        0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x4a,
-        0x00, 0x00, 0x00, 0x00,
-
-        0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x4a,
-        0x00, 0x00, 0x00, 0x00
-    };
-
-    uint8_t chacha_plain_text[114] = {
-        0x4c, 0x61, 0x64, 0x69, 0x65, 0x73, 0x20, 0x61,
-        0x6e, 0x64, 0x20, 0x47, 0x65, 0x6e, 0x74, 0x6c,
-        0x65, 0x6d, 0x65, 0x6e, 0x20, 0x6f, 0x66, 0x20,
-        0x74, 0x68, 0x65, 0x20, 0x63, 0x6c, 0x61, 0x73,
-        0x73, 0x20, 0x6f, 0x66, 0x20, 0x27, 0x39, 0x39,
-        0x3a, 0x20, 0x49, 0x66, 0x20, 0x49, 0x20, 0x63,
-        0x6f, 0x75, 0x6c, 0x64, 0x20, 0x6f, 0x66, 0x66,
-        0x65, 0x72, 0x20, 0x79, 0x6f, 0x75, 0x20, 0x6f,
-        0x6e, 0x6c, 0x79, 0x20, 0x6f, 0x6e, 0x65, 0x20,
-        0x74, 0x69, 0x70, 0x20, 0x66, 0x6f, 0x72, 0x20,
-        0x74, 0x68, 0x65, 0x20, 0x66, 0x75, 0x74, 0x75,
-        0x72, 0x65, 0x2c, 0x20, 0x73, 0x75, 0x6e, 0x73,
-        0x63, 0x72, 0x65, 0x65, 0x6e, 0x20, 0x77, 0x6f,
-        0x75, 0x6c, 0x64, 0x20, 0x62, 0x65, 0x20, 0x69,
-        0x74, 0x2e
-    };
-
-    uint32_t chacha_count = 1;
-
-    for (size_t i = 0; i < num_cf_chacha_flags; i++) {
-        const CF_CIPHER *cipher = CF_Cipher_GetByFlag(cf_chacha_flags[i]);
-        if (!cipher) {
-            printf("Unknown Cipher flag %u\n", cf_chacha_flags[i]);
-            continue;
-        }
-
-        uint8_t output_ct[114] = {0};
-        uint8_t output_dec[114] = {0};
-
-        CF_STATUS status = CF_SUCCESS;
-        for (size_t j = 0; j < num_chacha_keys; j++) { 
-            if (chacha_key_test_vectors_sizes[j] == CF_KEY_128_SIZE &&
-                ((cf_chacha_flags[i] == CF_XCHACHA8) ||
-                (cf_chacha_flags[i] == CF_XCHACHA12) ||
-                (cf_chacha_flags[i] == CF_XCHACHA20)))
-                    continue;
-
-            CF_CIPHER_OPTS *ctxOpts = NULL;
-            CF_CIPHER_CTX ctx = {0};
-
-            if (((cf_chacha_flags[i] == CF_XCHACHA8) ||
-                (cf_chacha_flags[i] == CF_XCHACHA12) ||
-                (cf_chacha_flags[i] == CF_XCHACHA20))) {
-                ctxOpts = CF_CipherOpts_InitAlloc(chacha_iv, sizeof(chacha_iv), NULL, chacha_count, 0, &status);
-            } else {
-                ctxOpts = CF_CipherOpts_InitAlloc(xchacha_iv, sizeof(xchacha_iv), NULL, chacha_count, 0, &status);
-            }
-
-            if (status != CF_SUCCESS) {
-                printf("CF_CipherOpts_InitAlloc failed for %s\n", CF_Cipher_GetName(cipher));
-                continue;
-            }
-
-            // this init just to get the proper credentials for CF_Cipher_GetFullName() for algorithm name display for testing
-            status = CF_Cipher_Init(&ctx, cipher, ctxOpts, chacha_key_test_vectors[j], chacha_key_test_vectors_sizes[j], CF_OP_ENCRYPT);
-            if (status != CF_SUCCESS) {
-                CF_CipherOpts_Free(&ctxOpts);
-                printf("CF_Cipher_Init failed for %s, error status: %u\n", CF_Cipher_GetName(cipher), status);
-                CF_Cipher_Reset(&ctx);
-                continue;
-            }
-
-            status = CF_Cipher_Encrypt(cipher, chacha_key_test_vectors[j], chacha_key_test_vectors_sizes[j], chacha_plain_text, sizeof(chacha_plain_text), output_ct, ctxOpts);
-            if (status != CF_SUCCESS) {
-                CF_CipherOpts_Free(&ctxOpts);
-                printf("CF_Cipher_Encrypt failed for %s, error status: %u\n", CF_Cipher_GetFullName(&ctx), status);
-                continue;
-            }
-
-            // restart for testing
-            ctxOpts->chacha_counter = chacha_count;
-
-            status = CF_Cipher_Decrypt(cipher, chacha_key_test_vectors[j], chacha_key_test_vectors_sizes[j], output_ct, sizeof(output_ct), output_dec, ctxOpts);
-            if (status != CF_SUCCESS) {
-                CF_CipherOpts_Free(&ctxOpts);
-                printf("CF_Cipher_Decrypt failed for %s, error status: %u\n", CF_Cipher_GetFullName(&ctx), status);
-                continue;
-            }
-
-            printf("%s CT : ", CF_Cipher_GetFullName(&ctx));
-            DEMO_print_hex(output_ct, sizeof(output_ct));
-            printf("%s DEC: ", CF_Cipher_GetFullName(&ctx));
-            DEMO_print_hex(output_dec, sizeof(output_dec));
-            printf("\n");
-
-            CF_Cipher_Reset(&ctx);
-            CF_CipherOpts_Free(&ctxOpts);
-        }
-    }
-
-    putchar('\n');
-
-    static const uint8_t aes_plain_text[4 * AES_BLOCK_SIZE] = {
-        0x6b, 0xc1, 0xbe, 0xe2,
-        0x2e, 0x40, 0x9f, 0x96,
-        0xe9, 0x3d, 0x7e, 0x11,
-        0x73, 0x93, 0x17, 0x2a,
-
-        0xae, 0x2d, 0x8a, 0x57,
-        0x1e, 0x03, 0xac, 0x9c,
-        0x9e, 0xb7, 0x6f, 0xac,
-        0x45, 0xaf, 0x8e, 0x51,
-
-        0x30, 0xc8, 0x1c, 0x46,
-        0xa3, 0x5c, 0xe4, 0x11,
-        0xe5, 0xfb, 0xc1, 0x19,
-        0x1a, 0x0a, 0x52, 0xef,
-
-        0xf6, 0x9f, 0x24, 0x45,
-        0xdf, 0x4f, 0x9b, 0x17,
-        0xad, 0x2b, 0x41, 0x7b,
-        0xe6, 0x6c, 0x37, 0x10
-    };
-
-    static const uint8_t aes_key128[CF_KEY_128_SIZE] = {
-        0x2b, 0x7e, 0x15, 0x16,
-        0x28, 0xae, 0xd2, 0xa6,
-        0xab, 0xf7, 0x15, 0x88,
-        0x09, 0xcf, 0x4f, 0x3c
-    };
-
-    static const uint8_t aes_key192[CF_KEY_192_SIZE] = {
-        0x8e, 0x73, 0xb0, 0xf7,
-        0xda, 0x0e, 0x64, 0x52,
-        0xc8, 0x10, 0xf3, 0x2b,
-        0x80, 0x90, 0x79, 0xe5,
-        0x62, 0xf8, 0xea, 0xd2,
-        0x52, 0x2c, 0x6b, 0x7b
-    };
-
-    static const uint8_t aes_key256[CF_KEY_256_SIZE] = {
-        0x60, 0x3d, 0xeb, 0x10,
-        0x15, 0xca, 0x71, 0xbe,
-        0x2b, 0x73, 0xae, 0xf0,
-        0x85, 0x7d, 0x77, 0x81,
-        0x1f, 0x35, 0x2c, 0x07,
-        0x3b, 0x61, 0x08, 0xd7,
-        0x2d, 0x98, 0x10, 0xa3,
-        0x09, 0x14, 0xdf, 0xf4
-    };
-
-    static const uint8_t *aes_key_test_vectors[] = {
-        aes_key128,
-        aes_key192,
-        aes_key256
-    };
-
-    static const size_t aes_key_test_vectors_sizes[] = {
-        sizeof(aes_key128),
-        sizeof(aes_key192),
-        sizeof(aes_key256)
-    };
-
-    size_t num_aes_keys = sizeof(aes_key_test_vectors)/sizeof(aes_key_test_vectors[0]);
-
-    // Fixed AES IV (for testing purposes)
-    uint8_t aes_test_iv[AES_BLOCK_SIZE] = {
-        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-        0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
-    };
-
-
-    // fixed AES counter (for testing purposes)
-    uint8_t aes_test_fixed_counter[AES_BLOCK_SIZE] = {
-        0xf0,0xf1,0xf2,0xf3,0xf4,0xf5,0xf6,0xf7,
-        0xf8,0xf9,0xfa,0xfb,0xfc,0xfd,0xfe,0xff
-    };
-
-    uint32_t cf_aes_flags[] = {
-        CF_AES_ECB,
-        CF_AES_CBC,     // iv
-        CF_AES_OFB,     // iv
-        CF_AES_CFB8,    // iv
-        CF_AES_CFB128,  // iv
-        CF_AES_CTR      // counter
-    };
-
-    size_t num_cf_aes_flags = sizeof(cf_aes_flags)/sizeof(cf_aes_flags[0]);
-
-    for (size_t i = 0; i < num_cf_aes_flags; i++) {
-        const CF_CIPHER *cipher = CF_Cipher_GetByFlag(cf_aes_flags[i]);
-        if (!cipher) {
-            printf("Unknown Cipher flag %u\n", cf_aes_flags[i]);
-            continue;
-        }
-
-        CF_STATUS status;
-        CF_CIPHER_OPTS *ctxOpts = NULL;
-
-        if (cf_aes_flags[i] != CF_AES_ECB) {
-
-            uint8_t enc_counter[AES_BLOCK_SIZE];
-            memcpy(enc_counter, aes_test_fixed_counter, AES_BLOCK_SIZE);
-
-            ctxOpts = CF_CipherOpts_InitAlloc(
-                cf_aes_flags[i] != CF_AES_CTR ? aes_test_iv : NULL,      // mandetory for CBC/OFB/CFB8/CFB128
-                cf_aes_flags[i] != CF_AES_CTR ? sizeof(aes_test_iv) : 0, // mandetory for CBC/OFB/CFB8/CFB128
-                cf_aes_flags[i] == CF_AES_CTR ? enc_counter : NULL,      // mandetory for ctr
-                0, // chacha counter is not used in aes modes
-                0, // no padding flags yet
-                &status);
-
-            if (status != CF_SUCCESS) {
-                printf("CF_CipherOpts_InitAlloc failed for %s\n", CF_Cipher_GetName(cipher));
-                continue;
-            }
-        }
-
-        for (size_t j = 0; j < num_aes_keys; j++) {
-            CF_CIPHER_CTX ctx = {0};
-
-            uint8_t output_ct[4 * AES_BLOCK_SIZE] = {0};
-            uint8_t output_dec[4 * AES_BLOCK_SIZE] = {0};
-
-            // this init just to get the proper credentials for CF_Cipher_GetFullName() for algorithm name display for testing
-            status = CF_Cipher_Init(&ctx, cipher, ctxOpts, aes_key_test_vectors[j], aes_key_test_vectors_sizes[j], CF_OP_ENCRYPT);
-            if (status != CF_SUCCESS) {
-                printf("CF_Cipher_Init failed for %s, error status: %u\n", CF_Cipher_GetName(cipher), status);
-                CF_Cipher_Reset(&ctx);
-                continue;
-            }
-
-            status = CF_Cipher_Encrypt(cipher, aes_key_test_vectors[j], aes_key_test_vectors_sizes[j], aes_plain_text, sizeof(aes_plain_text), output_ct, ctxOpts);
-            if (status != CF_SUCCESS) {
-                printf("CF_Cipher_Encrypt failed for %s, error status: %u\n", CF_Cipher_GetFullName(&ctx), status);
-                continue;
-            }
-
-            if (ctxOpts && cf_aes_flags[i] == CF_AES_CTR) {
-                memcpy(ctxOpts->ctr_block, aes_test_fixed_counter, AES_BLOCK_SIZE);
-            }
-
-            status = CF_Cipher_Decrypt(cipher, aes_key_test_vectors[j], aes_key_test_vectors_sizes[j], output_ct, sizeof(output_ct), output_dec, ctxOpts);
-            if (status != CF_SUCCESS) {
-                printf("CF_Cipher_Decrypt failed for %s, error status: %u\n", CF_Cipher_GetFullName(&ctx), status);
-                continue;
-            }
-
-            if (ctxOpts && cf_aes_flags[i] == CF_AES_CTR) {
-                memcpy(ctxOpts->ctr_block, aes_test_fixed_counter, AES_BLOCK_SIZE);
-            }
-
-            printf("%s CT : ", CF_Cipher_GetFullName(&ctx));
-            DEMO_print_hex(output_ct, sizeof(output_ct));
-            printf("%s DEC: ", CF_Cipher_GetFullName(&ctx));
-            DEMO_print_hex(output_dec, sizeof(output_dec));
-            printf("\n");
-
-            CF_Cipher_Reset(&ctx);
-        }
-        if (ctxOpts)
-            CF_CipherOpts_Free(&ctxOpts);
-    }
-}
-
-void test_ecb_kat(void) {
+void test_aes_ecb_kat(void) {
     size_t num_test_vectors = sizeof(ecb_kat_test_vectors) / sizeof(ecb_kat_test_vectors[0]);
 
     size_t total_failures = 0;
@@ -1705,21 +1398,23 @@ void test_ecb_kat(void) {
         CF_CIPHER_OPTS opts = {0};
 
         uint8_t out[16] = {0};
+        size_t out_len;
         int failure = 0;
         int encrypt_mode = (strcmp(ecb_kat_test_vectors[i].mode, "ENCRYPT") == 0);
 
-        CF_STATUS status = CF_CipherOpts_Init(&opts, NULL, 0, NULL, 0, 0);
+        CF_STATUS status = CF_CipherOpts_Init(&opts, NULL, 0, NULL, 0);
         if (encrypt_mode) {
             status = CF_Cipher_Encrypt(
                 cipher,
                 ecb_kat_test_vectors[i].key, ecb_kat_test_vectors[i].key_len,
                 ecb_kat_test_vectors[i].msg, ecb_kat_test_vectors[i].msg_len,
                 out,
+                &out_len,
                 &opts
             );
 
             if (status != CF_SUCCESS || memcmp(out, ecb_kat_test_vectors[i].ct, ecb_kat_test_vectors[i].ct_len) != 0) {
-                printf("ECB TcId %d FAILED (encryption mismatch)\n", ecb_kat_test_vectors[i].tc_id);
+                printf("AES-ECB TcId %d FAILED (encryption mismatch)\n", ecb_kat_test_vectors[i].tc_id);
                 printf("Expected CT: ");
                 DEMO_print_hex(ecb_kat_test_vectors[i].ct, ecb_kat_test_vectors[i].ct_len);
                 printf("Computed CT: ");
@@ -1732,11 +1427,12 @@ void test_ecb_kat(void) {
                 ecb_kat_test_vectors[i].key, ecb_kat_test_vectors[i].key_len,
                 ecb_kat_test_vectors[i].ct, ecb_kat_test_vectors[i].ct_len,
                 out,
+                &out_len,
                 &opts
             );
 
             if (status != CF_SUCCESS || memcmp(out, ecb_kat_test_vectors[i].msg, ecb_kat_test_vectors[i].msg_len) != 0) {
-                printf("ECB TcId %d FAILED (decryption mismatch)\n", ecb_kat_test_vectors[i].tc_id);
+                printf("AES-ECB TcId %d FAILED (decryption mismatch)\n", ecb_kat_test_vectors[i].tc_id);
                 printf("Expected PT: ");
                 DEMO_print_hex(ecb_kat_test_vectors[i].msg, ecb_kat_test_vectors[i].msg_len);
                 printf("Computed PT: ");
@@ -1755,13 +1451,13 @@ void test_ecb_kat(void) {
         }
     }
 
-    printf("ECB KAT tests completed: %zu total, %zu passed, %zu failed\n",
+    printf("AES-ECB KAT tests completed: %zu total, %zu passed, %zu failed\n",
            num_test_vectors,
            total_success,
            total_failures);
 }
 
-void test_cbc_kat(void) {
+void test_aes_cbc_kat(void) {
     size_t num_test_vectors = sizeof(cbc_kat_test_vectors) / sizeof(cbc_kat_test_vectors[0]);
 
     size_t total_failures = 0;
@@ -1775,6 +1471,7 @@ void test_cbc_kat(void) {
         }
 
         uint8_t out[16] = {0};
+        size_t out_len;
         int failure = 0;
         int encrypt_mode = (strcmp(cbc_kat_test_vectors[i].mode, "ENCRYPT") == 0);
 
@@ -1784,8 +1481,7 @@ void test_cbc_kat(void) {
             cbc_kat_test_vectors[i].iv,
             cbc_kat_test_vectors[i].iv_len,
             NULL, // No AES Counter for AES-CBC
-            0,    // No ChaCha counter for AES-CBC
-            0);   // No subflags for AES-CBC
+            0);  // No ChaCha counter for AES-CBC
 
         if (encrypt_mode) {
             status = CF_Cipher_Encrypt(
@@ -1793,12 +1489,13 @@ void test_cbc_kat(void) {
                 cbc_kat_test_vectors[i].key, cbc_kat_test_vectors[i].key_len,
                 cbc_kat_test_vectors[i].msg, cbc_kat_test_vectors[i].msg_len,
                 out,
+                &out_len,
                 &opts
             );
 
             if (status != CF_SUCCESS || memcmp(out, cbc_kat_test_vectors[i].ct, cbc_kat_test_vectors[i].ct_len) != 0) {
                 CF_CipherOpts_Reset(&opts);
-                printf("CBC TcId %d FAILED (encryption mismatch)\n", cbc_kat_test_vectors[i].tc_id);
+                printf("AES-CBC TcId %d FAILED (encryption mismatch)\n", cbc_kat_test_vectors[i].tc_id);
                 printf("Expected CT: ");
                 DEMO_print_hex(cbc_kat_test_vectors[i].ct, cbc_kat_test_vectors[i].ct_len);
                 printf("Computed CT: ");
@@ -1811,12 +1508,13 @@ void test_cbc_kat(void) {
                 cbc_kat_test_vectors[i].key, cbc_kat_test_vectors[i].key_len,
                 cbc_kat_test_vectors[i].ct, cbc_kat_test_vectors[i].ct_len,
                 out,
+                &out_len,
                 &opts
             );
 
             if (status != CF_SUCCESS || memcmp(out, cbc_kat_test_vectors[i].msg, cbc_kat_test_vectors[i].msg_len) != 0) {
                 CF_CipherOpts_Reset(&opts);
-                printf("CBC TcId %d FAILED (decryption mismatch)\n", cbc_kat_test_vectors[i].tc_id);
+                printf("AES-CBC TcId %d FAILED (decryption mismatch)\n", cbc_kat_test_vectors[i].tc_id);
                 printf("Expected PT: ");
                 DEMO_print_hex(cbc_kat_test_vectors[i].msg, cbc_kat_test_vectors[i].msg_len);
                 printf("Computed PT: ");
@@ -1837,13 +1535,13 @@ void test_cbc_kat(void) {
         CF_CipherOpts_Reset(&opts);
     }
 
-    printf("CBC KAT tests completed: %zu total, %zu passed, %zu failed\n",
+    printf("AES-CBC KAT tests completed: %zu total, %zu passed, %zu failed\n",
            num_test_vectors,
            total_success,
            total_failures);
 }
 
-void test_cfb8_kat(void) {
+void test_aes_cfb8_kat(void) {
     size_t num_test_vectors = sizeof(cfb8_kat_test_vectors) / sizeof(cfb8_kat_test_vectors[0]);
 
     size_t total_failures = 0;
@@ -1857,6 +1555,7 @@ void test_cfb8_kat(void) {
         }
 
         uint8_t out[16] = {0};
+        size_t out_len;
         int failure = 0;
         int encrypt_mode = (strcmp(cfb8_kat_test_vectors[i].mode, "ENCRYPT") == 0);
 
@@ -1866,8 +1565,7 @@ void test_cfb8_kat(void) {
             cfb8_kat_test_vectors[i].iv,
             cfb8_kat_test_vectors[i].iv_len,
             NULL, // No AES Counter for AES-CFB8
-            0,    // No ChaCha counter for AES-CFB8
-            0);   // No subflags for AES-CFB8
+            0);  // No ChaCha counter for AES-CFB8
 
         if (encrypt_mode) {
             status = CF_Cipher_Encrypt(
@@ -1875,12 +1573,13 @@ void test_cfb8_kat(void) {
                 cfb8_kat_test_vectors[i].key, cfb8_kat_test_vectors[i].key_len,
                 cfb8_kat_test_vectors[i].msg, cfb8_kat_test_vectors[i].msg_len,
                 out,
+                &out_len,
                 &opts
             );
 
             if (status != CF_SUCCESS || memcmp(out, cfb8_kat_test_vectors[i].ct, cfb8_kat_test_vectors[i].ct_len) != 0) {
                 CF_CipherOpts_Reset(&opts);
-                printf("CFB8 TcId %d FAILED (encryption mismatch)\n", cfb8_kat_test_vectors[i].tc_id);
+                printf("AES-CFB8 TcId %d FAILED (encryption mismatch)\n", cfb8_kat_test_vectors[i].tc_id);
                 printf("Expected CT: ");
                 DEMO_print_hex(cfb8_kat_test_vectors[i].ct, cfb8_kat_test_vectors[i].ct_len);
                 printf("Computed CT: ");
@@ -1893,12 +1592,13 @@ void test_cfb8_kat(void) {
                 cfb8_kat_test_vectors[i].key, cfb8_kat_test_vectors[i].key_len,
                 cfb8_kat_test_vectors[i].ct, cfb8_kat_test_vectors[i].ct_len,
                 out,
+                &out_len,
                 &opts
             );
 
             if (status != CF_SUCCESS || memcmp(out, cfb8_kat_test_vectors[i].msg, cfb8_kat_test_vectors[i].msg_len) != 0) {
                 CF_CipherOpts_Reset(&opts);
-                printf("CFB8 TcId %d FAILED (decryption mismatch)\n", cfb8_kat_test_vectors[i].tc_id);
+                printf("AES-CFB8 TcId %d FAILED (decryption mismatch)\n", cfb8_kat_test_vectors[i].tc_id);
                 printf("Expected PT: ");
                 DEMO_print_hex(cfb8_kat_test_vectors[i].msg, cfb8_kat_test_vectors[i].msg_len);
                 printf("Computed PT: ");
@@ -1919,13 +1619,13 @@ void test_cfb8_kat(void) {
         CF_CipherOpts_Reset(&opts);
     }
 
-    printf("CFB8 KAT tests completed: %zu total, %zu passed, %zu failed\n",
+    printf("AES-CFB8 KAT tests completed: %zu total, %zu passed, %zu failed\n",
            num_test_vectors,
            total_success,
            total_failures);
 }
 
-void test_cfb128_kat(void) {
+void test_aes_cfb128_kat(void) {
     size_t num_test_vectors = sizeof(cfb128_kat_test_vectors) / sizeof(cfb128_kat_test_vectors[0]);
 
     size_t total_failures = 0;
@@ -1939,6 +1639,7 @@ void test_cfb128_kat(void) {
         }
 
         uint8_t out[16] = {0};
+        size_t out_len;
         int failure = 0;
         int encrypt_mode = (strcmp(cfb128_kat_test_vectors[i].mode, "ENCRYPT") == 0);
 
@@ -1948,8 +1649,7 @@ void test_cfb128_kat(void) {
             cfb128_kat_test_vectors[i].iv,
             cfb128_kat_test_vectors[i].iv_len,
             NULL, // No AES Counter for AES-CFB128
-            0,    // No ChaCha counter for AES-CFB128
-            0);   // No subflags for AES-CFB128
+            0);   // No ChaCha counter for AES-CFB128
 
         if (encrypt_mode) {
             status = CF_Cipher_Encrypt(
@@ -1957,12 +1657,13 @@ void test_cfb128_kat(void) {
                 cfb128_kat_test_vectors[i].key, cfb128_kat_test_vectors[i].key_len,
                 cfb128_kat_test_vectors[i].msg, cfb128_kat_test_vectors[i].msg_len,
                 out,
+                &out_len,
                 &opts
             );
 
             if (status != CF_SUCCESS || memcmp(out, cfb128_kat_test_vectors[i].ct, cfb128_kat_test_vectors[i].ct_len) != 0) {
                 CF_CipherOpts_Reset(&opts);
-                printf("CFB128 TcId %d FAILED (encryption mismatch)\n", cfb128_kat_test_vectors[i].tc_id);
+                printf("AES-CFB128 TcId %d FAILED (encryption mismatch)\n", cfb128_kat_test_vectors[i].tc_id);
                 printf("Expected CT: ");
                 DEMO_print_hex(cfb128_kat_test_vectors[i].ct, cfb128_kat_test_vectors[i].ct_len);
                 printf("Computed CT: ");
@@ -1975,12 +1676,13 @@ void test_cfb128_kat(void) {
                 cfb128_kat_test_vectors[i].key, cfb128_kat_test_vectors[i].key_len,
                 cfb128_kat_test_vectors[i].ct, cfb128_kat_test_vectors[i].ct_len,
                 out,
+                &out_len,
                 &opts
             );
 
             if (status != CF_SUCCESS || memcmp(out, cfb128_kat_test_vectors[i].msg, cfb128_kat_test_vectors[i].msg_len) != 0) {
                 CF_CipherOpts_Reset(&opts);
-                printf("CFB128 TcId %d FAILED (decryption mismatch)\n", cfb128_kat_test_vectors[i].tc_id);
+                printf("AES-CFB128 TcId %d FAILED (decryption mismatch)\n", cfb128_kat_test_vectors[i].tc_id);
                 printf("Expected PT: ");
                 DEMO_print_hex(cfb128_kat_test_vectors[i].msg, cfb128_kat_test_vectors[i].msg_len);
                 printf("Computed PT: ");
@@ -2001,13 +1703,13 @@ void test_cfb128_kat(void) {
         CF_CipherOpts_Reset(&opts);
     }
 
-    printf("CFB128 KAT tests completed: %zu total, %zu passed, %zu failed\n",
+    printf("AES-CFB128 KAT tests completed: %zu total, %zu passed, %zu failed\n",
            num_test_vectors,
            total_success,
            total_failures);
 }
 
-void test_ofb_kat(void) {
+void test_aes_ofb_kat(void) {
     size_t num_test_vectors = sizeof(ofb_kat_test_vectors) / sizeof(ofb_kat_test_vectors[0]);
 
     size_t total_failures = 0;
@@ -2021,6 +1723,7 @@ void test_ofb_kat(void) {
         }
 
         uint8_t out[16] = {0};
+        size_t out_len;
         int failure = 0;
         int encrypt_mode = (strcmp(ofb_kat_test_vectors[i].mode, "ENCRYPT") == 0);
 
@@ -2030,8 +1733,7 @@ void test_ofb_kat(void) {
             ofb_kat_test_vectors[i].iv,
             ofb_kat_test_vectors[i].iv_len,
             NULL, // No AES Counter for AES-OFB
-            0,    // No ChaCha counter for AES-OFB
-            0);   // No subflags for AES-OFB
+            0);   // No ChaCha counter for AES-OFB
 
         if (encrypt_mode) {
             status = CF_Cipher_Encrypt(
@@ -2039,12 +1741,13 @@ void test_ofb_kat(void) {
                 ofb_kat_test_vectors[i].key, ofb_kat_test_vectors[i].key_len,
                 ofb_kat_test_vectors[i].msg, ofb_kat_test_vectors[i].msg_len,
                 out,
+                &out_len,
                 &opts
             );
 
             if (status != CF_SUCCESS || memcmp(out, ofb_kat_test_vectors[i].ct, ofb_kat_test_vectors[i].ct_len) != 0) {
                 CF_CipherOpts_Reset(&opts);
-                printf("CBC TcId %d FAILED (encryption mismatch)\n", ofb_kat_test_vectors[i].tc_id);
+                printf("AES-OFB TcId %d FAILED (encryption mismatch)\n", ofb_kat_test_vectors[i].tc_id);
                 printf("Expected CT: ");
                 DEMO_print_hex(ofb_kat_test_vectors[i].ct, ofb_kat_test_vectors[i].ct_len);
                 printf("Computed CT: ");
@@ -2057,12 +1760,13 @@ void test_ofb_kat(void) {
                 ofb_kat_test_vectors[i].key, ofb_kat_test_vectors[i].key_len,
                 ofb_kat_test_vectors[i].ct, ofb_kat_test_vectors[i].ct_len,
                 out,
+                &out_len,
                 &opts
             );
 
             if (status != CF_SUCCESS || memcmp(out, ofb_kat_test_vectors[i].msg, ofb_kat_test_vectors[i].msg_len) != 0) {
                 CF_CipherOpts_Reset(&opts);
-                printf("CBC TcId %d FAILED (decryption mismatch)\n", ofb_kat_test_vectors[i].tc_id);
+                printf("AES-OFB TcId %d FAILED (decryption mismatch)\n", ofb_kat_test_vectors[i].tc_id);
                 printf("Expected PT: ");
                 DEMO_print_hex(ofb_kat_test_vectors[i].msg, ofb_kat_test_vectors[i].msg_len);
                 printf("Computed PT: ");
@@ -2083,9 +1787,126 @@ void test_ofb_kat(void) {
         CF_CipherOpts_Reset(&opts);
     }
 
-    printf("OFB KAT tests completed: %zu total, %zu passed, %zu failed\n",
+    printf("AES-OFB KAT tests completed: %zu total, %zu passed, %zu failed\n",
            num_test_vectors,
            total_success,
+           total_failures);
+}
+
+void test_aes_cbc_pkcs7_wycheproof(void) {
+    size_t num_test_vectors = sizeof(cbc_pkcs5_test_vectors) / sizeof(cbc_pkcs5_test_vectors[0]);
+    size_t total_failures = 0;
+    size_t total_successes = 0;
+
+    for (size_t i = 0; i < num_test_vectors; i++) {
+        const CF_CIPHER *cipher = CF_Cipher_GetByFlag(CF_AES_CBC_PKCS7);
+        if (!cipher) {
+            printf("Unknown Cipher flag for test vector %d\n", cbc_pkcs5_test_vectors[i].tc_id);
+            continue;
+        }
+
+        CF_CIPHER_OPTS opts = {0};
+        CF_STATUS status = CF_CipherOpts_Init(
+            &opts,
+            cbc_pkcs5_test_vectors[i].iv,
+            cbc_pkcs5_test_vectors[i].iv_len,
+            NULL,
+            0
+        );
+
+        if (status != CF_SUCCESS) {
+            printf("AES-CBC-PKCS7 TcId %d FAILED: CF_CipherOpts_Init failed\n", cbc_pkcs5_test_vectors[i].tc_id);
+            total_failures++;
+            continue;
+        }
+
+        uint8_t ct[256] = {0};
+        uint8_t dec[256] = {0};
+        size_t out_len;
+        int expected_valid = (strcmp(cbc_pkcs5_test_vectors[i].result, "valid") == 0);
+        int failure = 0;
+
+        // ---------------- Encrypt ----------------
+        status = CF_Cipher_Encrypt(
+            cipher,
+            cbc_pkcs5_test_vectors[i].key, cbc_pkcs5_test_vectors[i].key_len,
+            cbc_pkcs5_test_vectors[i].msg, cbc_pkcs5_test_vectors[i].msg_len,
+            ct,
+            &out_len,
+            &opts
+        );
+
+        if (status != CF_SUCCESS && expected_valid) {
+            printf("AES-CBC-PKCS7 TcId %d FAILED: CF_Cipher_Encrypt failed\n", cbc_pkcs5_test_vectors[i].tc_id);
+            failure = 1;
+            goto print_extra;
+        }
+
+        if (expected_valid && memcmp(ct, cbc_pkcs5_test_vectors[i].ct, cbc_pkcs5_test_vectors[i].ct_len) != 0) {
+            printf("AES-CBC-PKCS7 TcId %d FAILED: Ciphertext mismatch\n", cbc_pkcs5_test_vectors[i].tc_id);
+            failure = 1;
+            goto print_extra;
+        }
+
+        // ---------------- Decrypt ----------------
+        status = CF_Cipher_Decrypt(
+            cipher,
+            cbc_pkcs5_test_vectors[i].key, cbc_pkcs5_test_vectors[i].key_len,
+            cbc_pkcs5_test_vectors[i].ct, cbc_pkcs5_test_vectors[i].ct_len,
+            dec,
+            &out_len,
+            &opts
+        );
+
+        if (status != CF_SUCCESS && expected_valid) {
+            printf("AES-CBC-PKCS7 TcId %d FAILED: CF_Cipher_Decrypt failed\n", cbc_pkcs5_test_vectors[i].tc_id);
+            failure = 1;
+            goto print_extra;
+        }
+
+        if (expected_valid && memcmp(dec, cbc_pkcs5_test_vectors[i].msg, cbc_pkcs5_test_vectors[i].msg_len) != 0) {
+            printf("AES-CBC-PKCS7 TcId %d FAILED: Decrypted plaintext mismatch\n", cbc_pkcs5_test_vectors[i].tc_id);
+            failure = 1;
+            goto print_extra;
+        }
+
+print_extra:
+        if (failure) {
+            total_failures++;
+
+            if (cbc_pkcs5_test_vectors[i].comment && cbc_pkcs5_test_vectors[i].comment[0] != '\0')
+                printf("  Comment: %s\n", cbc_pkcs5_test_vectors[i].comment);
+
+            if (cbc_pkcs5_test_vectors[i].flags_len > 0) {
+                printf("  Flags: ");
+                for (size_t f = 0; f < cbc_pkcs5_test_vectors[i].flags_len; f++) {
+                    printf("%s", cbc_pkcs5_test_vectors[i].flags[f]);
+                    if (f + 1 < cbc_pkcs5_test_vectors[i].flags_len) printf(", ");
+                }
+                printf("\n");
+            }
+
+            printf("  Computed CT: ");
+            DEMO_print_hex(ct, cbc_pkcs5_test_vectors[i].ct_len);
+            printf("  Expected CT: ");
+            DEMO_print_hex(cbc_pkcs5_test_vectors[i].ct, cbc_pkcs5_test_vectors[i].ct_len);
+
+            printf("  Computed PT: ");
+            DEMO_print_hex(dec, cbc_pkcs5_test_vectors[i].msg_len);
+            printf("  Expected PT: ");
+            DEMO_print_hex(cbc_pkcs5_test_vectors[i].msg, cbc_pkcs5_test_vectors[i].msg_len);
+
+            printf("\n");
+        } else {
+            total_successes++;
+        }
+
+        CF_CipherOpts_Reset(&opts);
+    }
+
+    printf("AES-CBC-PKCS7 Wycheproof tests completed: %zu total, %zu passed, %zu failed\n",
+           num_test_vectors,
+           total_successes,
            total_failures);
 }
 

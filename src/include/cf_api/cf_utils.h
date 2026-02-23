@@ -51,13 +51,4 @@ CF_API int CF_Compare(const uint8_t *a, const uint8_t *b, size_t len);
  */
 CF_API int CF_CompareLex(const uint8_t *a, const uint8_t *b, size_t len);
 
-// ========================
-// Padding Helpers
-// ========================
-CF_API CF_STATUS CF_Pad_Apply(uint8_t *buf, size_t buf_len, size_t data_len,
-                              size_t block_size, CF_PADDING_TYPE type);
-
-CF_API CF_STATUS CF_Pad_Remove(uint8_t *buf, size_t buf_len, size_t *data_len,
-                               size_t block_size, CF_PADDING_TYPE type);
-
 #endif // CF_UTILS_H

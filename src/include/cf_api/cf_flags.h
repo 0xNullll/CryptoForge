@@ -273,6 +273,8 @@ typedef enum {
     CF_AES_CFB128 = CF_CAT_AES | 0x0010,
     CF_AES_CTR    = CF_CAT_AES | 0x0020,
 
+    CF_AES_CBC_PKCS7 = CF_CAT_AES | 0x0040,
+
     /* ChaCha Stream Cipher Modes */
     CF_CHACHA8    = CF_CAT_CHACHA | 0x0001,
     CF_CHACHA12   = CF_CAT_CHACHA | 0x0002,
@@ -355,22 +357,6 @@ typedef enum {
 
 #define CF_IS_VALID_AEAD_CHACHA_TAG_SIZE(len) \
      ((len) == CF_AEAD_TAG_128_SIZE)
-
-// ======================
-// Padding
-// ======================
-typedef enum {
-    CF_PAD_ZERO = 0,
-    CF_PAD_PKCS7,
-    CF_PAD_ISO7816_4,
-    CF_PAD_X923
-} CF_PADDING_TYPE;
-
-#define CF_IS_PAD_SUBFLAG_VALID(id) \
-    ((id) == CF_PAD_ZERO      || \
-     (id) == CF_PAD_PKCS7     || \
-     (id) == CF_PAD_ISO7816_4 || \
-     (id) == CF_PAD_X923) \
 
 #define CF_CTX_MAGIC 0x43464D47  // "CFMG"
 
