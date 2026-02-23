@@ -92,8 +92,8 @@ CF_API const CF_HASH *CF_Hash_GetByFlag(uint32_t algo_flag);
 //
 // Hash initialization / cleanup
 //
-CF_API CF_STATUS CF_Hash_Init(CF_HASH_CTX *ctx, const CF_HASH *md, const CF_HASH_OPTS *opts);
-CF_API CF_HASH_CTX* CF_Hash_InitAlloc(const CF_HASH *md, const CF_HASH_OPTS *opts, CF_STATUS *status);
+CF_API CF_STATUS CF_Hash_Init(CF_HASH_CTX *ctx, const CF_HASH *hash, const CF_HASH_OPTS *opts);
+CF_API CF_HASH_CTX* CF_Hash_InitAlloc(const CF_HASH *hash, const CF_HASH_OPTS *opts, CF_STATUS *status);
 
 CF_API CF_STATUS CF_Hash_Update(CF_HASH_CTX *ctx, const uint8_t *data, size_t data_len);
 CF_API CF_STATUS CF_Hash_Final(CF_HASH_CTX *ctx, uint8_t *digest, size_t digest_len);
@@ -108,7 +108,7 @@ CF_API CF_STATUS CF_Hash_Free(CF_HASH_CTX **p_ctx);
 // One-shot hash convenience
 //
 CF_API CF_STATUS CF_Hash_Compute(
-    const CF_HASH        *md,
+    const CF_HASH      *hash,
     const uint8_t      *data,
     size_t              data_len,
     uint8_t            *digest,
@@ -117,8 +117,8 @@ CF_API CF_STATUS CF_Hash_Compute(
 );
 
 CF_API CF_STATUS CF_Hash_ComputeFixed(
-    const CF_HASH  *md,
-    const uint8_t *data,
+    const CF_HASH  *hash,
+    const uint8_t  *data,
     size_t         data_len,
     uint8_t       *digest
 );
@@ -129,9 +129,9 @@ CF_API CF_STATUS CF_Hash_ComputeFixed(
 CF_API CF_STATUS CF_Hash_CloneCtx(CF_HASH_CTX *dst, const CF_HASH_CTX *src);
 CF_API CF_HASH_CTX *CF_Hash_CloneCtxAlloc(const CF_HASH_CTX *src, CF_STATUS *status);
 
-CF_API size_t CF_Hash_GetDigestSize(const CF_HASH_CTX *ctx);  // fixed-output hashes
-CF_API size_t CF_Hash_GetBlockSize(const CF_HASH_CTX *ctx);
-CF_API const char* CF_Hash_GetName(const CF_HASH *md);
+CF_API size_t CF_Hash_GetDigestSize(const CF_HASH *hash);  // fixed-output hashes
+CF_API size_t CF_Hash_GetBlockSize(const CF_HASH *hash);
+CF_API const char* CF_Hash_GetName(const CF_HASH *hash);
 CF_STATUS CF_Hash_ValidateCtx(const CF_HASH_CTX *ctx);
 
 //

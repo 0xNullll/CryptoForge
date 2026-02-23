@@ -101,7 +101,7 @@ static CF_STATUS cmac_clone_ctx_wrapper(CF_MAC_CTX *dest_ctx, const CF_MAC_CTX *
 
 // GMAC
 static CF_STATUS gmac_init_wrapper(CF_MAC_CTX *ctx, const CF_MAC_OPTS *opts) {
-    return ll_GMAC_Init((ll_GMAC_CTX *)ctx->mac_ctx, (const ll_AES_KEY *)ctx->key_ctx, opts->iv, opts->iv_len);
+    return ll_GMAC_Init((ll_GMAC_CTX *)ctx->mac_ctx, (const ll_AES_KEY *)ctx->key_ctx, opts ? opts->iv : NULL, opts ? opts->iv_len : 0);
 }
 static CF_STATUS gmac_update_wrapper(CF_MAC_CTX *ctx, const uint8_t *data, size_t data_len) {
     return ll_GMAC_Update((ll_GMAC_CTX *)ctx->mac_ctx, data, data_len);
@@ -179,7 +179,7 @@ static const CF_MAC *CF_get_kmac(void) {
         .id = CF_KMAC_STD,
         .ctx_size = sizeof(ll_KMAC_CTX),
         .key_ctx_size = 0,
-        .default_tag_len = 0,
+        .default_tag_len = CF_KMAC_DEFAULT_OUTPUT_LEN_128,
         .mac_init_fn = kmac_init_wrapper,
         .mac_update_fn = kmac_update_wrapper,
         .mac_final_fn = kmac_final_wrapper,
@@ -334,6 +334,12 @@ CF_STATUS CF_MAC_Init(CF_MAC_CTX *ctx, const CF_MAC *mac, const CF_MAC_OPTS *opt
         if (!CF_IS_CIPHER_AES_KEY_VALID(key_len))
             return CF_ERR_CIPHER_INVALID_KEY_LEN;
 
+        // CMAC does not require an IV; GMAC requires a valid IV
+        if (CF_MAC_IS_AES_GMAC(ctx->mac->id)) {
+            if (!ctx->opts)
+                return CF_ERR_CTX_OPTS_UNINITIALIZED;
+        }
+
         // Set default MAC tag length
         ctx->tag_len = ctx->mac->default_tag_len;
 
@@ -468,12 +474,15 @@ CF_STATUS CF_MAC_Final(CF_MAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
         return CF_ERR_INVALID_LEN;
 
     // Handle previously finalized contexts
+    if (!ctx->isFinalized) {
+        // First finalization: store requested output length
+        ctx->tag_len = tag_len;
+    }
+
+    // Subsequent finalizations
     if (ctx->isFinalized) {
-        // Only KMAC can be re-finalized with a different tag length
-        if (!CF_MAC_IS_KMAC_STD(ctx->mac->id))
-            return CF_ERR_HASH_FINALIZED;
-        
-        ctx->tag_len = tag_len; // Update tag length for KMAC
+        if (!CF_IS_KMAC_XOF(ctx->subflags) && tag_len != ctx->tag_len)
+            return CF_ERR_INVALID_LEN;  // enforce fixed length for standard KMAC
     }
 
     // Validate tag length based on MAC type
@@ -565,6 +574,7 @@ CF_STATUS CF_MAC_Free(CF_MAC_CTX **p_ctx) {
 
     if (ctx->isHeapAlloc) {
         SECURE_ZERO(ctx, sizeof(CF_MAC_CTX));
+        *p_ctx = NULL; // make caller pointer NULL
     }
 
     return CF_SUCCESS;
@@ -670,6 +680,7 @@ const char* CF_MAC_GetFullName(const CF_MAC_CTX *ctx) {
     switch (ctx->mac->id) {
         case CF_HMAC:
             switch (ctx->subflags) {
+                case CF_MD5:        return "HMAC-MD-5";
                 case CF_SHA1:       return "HMAC-SHA-1";
                 case CF_SHA224:     return "HMAC-SHA-224";
                 case CF_SHA256:     return "HMAC-SHA-256";
@@ -974,8 +985,10 @@ CF_STATUS CF_MACOpts_Free(CF_MAC_OPTS **p_opts) {
     if (ret != CF_SUCCESS)
         return ret;
 
-    if (opts->isHeapAlloc)
+    if (opts->isHeapAlloc) {
         SECURE_FREE(opts, sizeof(*opts));
+        *p_opts = NULL; // make caller pointer NULL
+    }
 
     return CF_SUCCESS;
 }

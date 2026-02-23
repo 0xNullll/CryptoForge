@@ -145,6 +145,10 @@ CF_API void test_aes_ctr_fips800_38a(void);
 
 CF_API void test_all_cipher_high(void);
 
+
+CF_API void cf_hash_api_test(void);
+CF_API void cf_mac_api_test(void);
+
 CF_API void test_chacha20_poly1305_wychaproof(void);
 CF_API void test_xchacha20_poly1305_wychaproof(void);
 CF_API void test_aes_gcm_fips_style(void);

@@ -26,9 +26,9 @@
 #define CF_ENABLE_BARRIER 0
 #endif
 
-// #ifndef CF_DEBUG
-// #define CF_DEBUG 1
-// #endif
+#ifndef CF_DEBUG
+#define CF_DEBUG 1
+#endif
 
 // enable demo/test code (1 = on, 0 = off)
 #ifndef ENABLE_TESTS

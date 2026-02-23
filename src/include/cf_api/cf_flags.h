@@ -27,6 +27,8 @@
 
 #define CF_MAX_DEFAULT_HASH_BLOCK_SIZE 168
 #define CF_MAX_DEFAULT_DIGEST_SIZE     64
+#define CF_MAX_DEFAULT_MAC_SIZE        16
+#define CF_MAX_CIPHER_KEY_SIZE         32
 
 // ======================
 // Digest / Hash Sizes
