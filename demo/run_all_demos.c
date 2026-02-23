@@ -338,7 +338,9 @@ int main(void) {
     // printf("---------End Of High Level API---------\n");
     cf_hash_api_test();
     cf_mac_api_test();
-
+    cf_kdf_api_test();
+    cf_cipher_api_test();
+    
     test_aes_ecb_kat();
     test_aes_cbc_kat();
     test_aes_cfb8_kat();

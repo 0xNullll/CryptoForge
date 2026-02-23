@@ -42,8 +42,9 @@ extern "C" {
 #endif
 
 typedef struct _CF_HASH {
-    uint32_t id;             // CF hash ID/flag
-    uint8_t domain;          // Optional Keccak domain/prefix for cSHAKE
+    uint32_t id;    // CF hash ID/flag
+    uint8_t domain; // Optional Keccak domain/prefix for cSHAKE
+    
     size_t digest_size;      // output size in bytes
     size_t block_size;       // internal block size
     size_t ctx_size;         // size of low-level context

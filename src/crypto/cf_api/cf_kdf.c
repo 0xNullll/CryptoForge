@@ -56,7 +56,7 @@ static CF_STATUS pbkdf2_extract_wrapper(CF_KDF_CTX *ctx, const CF_KDF_OPTS *opts
 }
 
 static CF_STATUS pbkdf2_expand_wrapper(CF_KDF_CTX *ctx, uint8_t *out, size_t out_len, const CF_KDF_OPTS *opts) {
-    return ll_PBKDF2_Expand((ll_PBKDF2_CTX *)ctx->kdf_ctx, out, out_len, opts->iterations);
+    return ll_PBKDF2_Expand((ll_PBKDF2_CTX *)ctx->kdf_ctx, out, out_len, opts ? opts->iterations : 0);
 }
 static CF_STATUS pbkdf2_reset_wrapper(CF_KDF_CTX *ctx) {
     return ll_PBKDF2_Reset((ll_PBKDF2_CTX *)ctx->kdf_ctx);
@@ -67,7 +67,7 @@ static CF_STATUS pbkdf2_clone_ctx_wrapper(CF_KDF_CTX *ctx_dest, const CF_KDF_CTX
 
 // KMAC-XOF
 static CF_STATUS kkdf_xof_init_wrapper(CF_KDF_CTX *ctx, const CF_KDF_OPTS *opts) {
-    return ll_KMAC_Init((ll_KMAC_CTX *)ctx->kdf_ctx, ctx->ikm, ctx->ikm_len, opts->S, opts->S_len, ctx->subflags);
+    return ll_KMAC_Init((ll_KMAC_CTX *)ctx->kdf_ctx, ctx->ikm, ctx->ikm_len, opts ? opts->S : NULL, opts ? opts->S_len : 0, ctx->subflags);
 }
 
 static CF_STATUS kkdf_xof_extract_wrapper(CF_KDF_CTX *ctx, const CF_KDF_OPTS *opts) {
@@ -201,7 +201,7 @@ CF_STATUS CF_KDF_Init(
 
     } 
     // KMAC-XOF initialization
-    else if (CF_MAC_IS_KMAC_XOF(ctx->kdf->id)) {
+    else if (CF_KDF_IS_KMAC_XOF(ctx->kdf->id)) {
         // Must specify a KMAC type
         if ((ctx->subflags & CF_MAC_KMAC_MASK) == 0)
             return CF_ERR_INVALID_PARAM;
@@ -385,6 +385,7 @@ CF_STATUS CF_KDF_Free(CF_KDF_CTX **p_ctx) {
 
     if (ctx->isHeapAlloc) {
         SECURE_ZERO(ctx, sizeof(CF_KDF_CTX));
+        *p_ctx = NULL; // make caller pointer NULL
     }
 
     return CF_SUCCESS;
@@ -456,6 +457,7 @@ const char* CF_KDF_GetFullName(const CF_KDF_CTX *ctx) {
 
     case CF_HKDF:
         switch (ctx->subflags) {
+            case CF_MD5:        return "HKDF-MD-5";
             case CF_SHA1:       return "HKDF-SHA-1";
             case CF_SHA224:     return "HKDF-SHA-224";
             case CF_SHA256:     return "HKDF-SHA-256";
@@ -472,6 +474,7 @@ const char* CF_KDF_GetFullName(const CF_KDF_CTX *ctx) {
 
     case CF_PBKDF2:
         switch (ctx->subflags) {
+            case CF_MD5:        return "PBKDF2-MD-5";
             case CF_SHA1:       return "PBKDF2-SHA-1";
             case CF_SHA224:     return "PBKDF2-SHA-224";
             case CF_SHA256:     return "PBKDF2-SHA-256";
@@ -676,8 +679,10 @@ CF_STATUS CF_KDFOpts_Free(CF_KDF_OPTS **p_opts) {
     if (ret != CF_SUCCESS)
         return ret;
 
-    if (opts->isHeapAlloc)
+    if (opts->isHeapAlloc) {
         SECURE_FREE(opts, sizeof(*opts));
+        *p_opts = NULL; // make caller pointer NULL
+    }
 
     return CF_SUCCESS;
 }

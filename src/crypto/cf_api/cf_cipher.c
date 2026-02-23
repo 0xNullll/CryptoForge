@@ -187,6 +187,22 @@ static const CF_CIPHER *CF_get_aes_cbc(void) {
 }
 
 //
+// AES-CBC-PKCS7
+//
+static const CF_CIPHER *CF_get_aes_cbc_pkcs7(void) {
+    static CF_CIPHER cipher = {
+        .id = CF_AES_CBC_PKCS7,
+        .ctx_size = 0,
+        .key_ctx_size = sizeof(ll_AES_KEY),
+        .block_size = 0,
+        .cipher_init_fn = NULL,
+        .cipher_enc_fn = aes_cbc_pkcs7_enc_wrapper,
+        .cipher_dec_fn = aes_cbc_pkcs7_dec_wrapper
+    };
+    return &cipher;
+}
+
+//
 // AES-OFB
 //
 static const CF_CIPHER *CF_get_aes_ofb(void) {
@@ -246,22 +262,6 @@ static const CF_CIPHER *CF_get_aes_ctr(void) {
         .cipher_init_fn = NULL,
         .cipher_enc_fn = aes_ctr_enc_wrapper,
         .cipher_dec_fn = aes_ctr_dec_wrapper
-    };
-    return &cipher;
-}
-
-//
-// AES-CBC-PKCS7
-//
-static const CF_CIPHER *CF_get_aes_cbc_pkcs7(void) {
-    static CF_CIPHER cipher = {
-        .id = CF_AES_CBC,
-        .ctx_size = 0,
-        .key_ctx_size = sizeof(ll_AES_KEY),
-        .block_size = 0,
-        .cipher_init_fn = NULL,
-        .cipher_enc_fn = aes_cbc_pkcs7_enc_wrapper,
-        .cipher_dec_fn = aes_cbc_pkcs7_dec_wrapper
     };
     return &cipher;
 }
@@ -429,13 +429,16 @@ CF_STATUS CF_Cipher_Init(
     // AES-specific initialization
     if (CF_IS_CIPHER_AES(ctx->cipher->id)) {
 
-        if (!ctx->opts)
-            return CF_ERR_CTX_OPTS_UNINITIALIZED;
+        if (ctx->cipher->id != CF_AES_ECB) {
 
-        // IV required for CBC/CFB/OFB
-        if (ctx->cipher->id != CF_AES_ECB && ctx->cipher->id != CF_AES_CTR) {
-            if (ctx->opts->iv_len != AES_BLOCK_SIZE)
-                return CF_ERR_INVALID_PARAM;
+            if (!ctx->opts)
+                return CF_ERR_CTX_OPTS_UNINITIALIZED;
+
+            // IV required for CBC/CFB/OFB
+            if (ctx->cipher->id != CF_AES_CTR) {
+                if (ctx->opts->iv_len != AES_BLOCK_SIZE)
+                    return CF_ERR_INVALID_PARAM;
+            }
         }
 
         // Check AES key length
@@ -797,12 +800,11 @@ const char* CF_Cipher_GetName(const CF_CIPHER *cipher) {
     switch (cipher->id) {
         case CF_AES_ECB:        return "AES-ECB";
         case CF_AES_CBC:        return "AES-CBC";
+        case CF_AES_CBC_PKCS7:  return "AES-CBC-PKCS7";
         case CF_AES_OFB:        return "AES-OFB";
         case CF_AES_CFB8:       return "AES-CFB8";
         case CF_AES_CFB128:     return "AES-CFB128";
         
-        case CF_AES_CBC_PKCS7:  return "AES-CBC-PKCS7";
-
         case CF_CHACHA8:    return "ChaCha8";
         case CF_CHACHA12:   return "ChaCha12";
         case CF_CHACHA20:   return "ChaCha20";
@@ -837,6 +839,14 @@ const char* CF_Cipher_GetFullName(const CF_CIPHER_CTX *ctx) {
                 default: return "AES-UNKNOWN-CBC";
             }
 
+        case CF_AES_CBC_PKCS7:
+            switch (ctx->key_len) {
+                case CF_KEY_128_SIZE: return "AES-128-CBC-PKCS7";
+                case CF_KEY_192_SIZE: return "AES-192-CBC-PKCS7";
+                case CF_KEY_256_SIZE: return "AES-256-CBC-PKCS7";
+                default: return "AES-UNKNOWN-CBC-PKCS7";
+            }
+
         case CF_AES_OFB:
             switch (ctx->key_len) {
                 case CF_KEY_128_SIZE: return "AES-128-OFB";
@@ -867,14 +877,6 @@ const char* CF_Cipher_GetFullName(const CF_CIPHER_CTX *ctx) {
                 case CF_KEY_192_SIZE: return "AES-192-CTR";
                 case CF_KEY_256_SIZE: return "AES-256-CTR";
                 default: return "AES-UNKNOWN-CTR";
-            }
-
-        case CF_AES_CBC_PKCS7:
-            switch (ctx->key_len) {
-                case CF_KEY_128_SIZE: return "AES-128-CBC-PKCS7";
-                case CF_KEY_192_SIZE: return "AES-192-CBC-PKCS7";
-                case CF_KEY_256_SIZE: return "AES-256-CBC-PKCS7";
-                default: return "AES-UNKNOWN-CBC";
             }
 
         // ===== ChaCha =====

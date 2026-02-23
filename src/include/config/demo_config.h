@@ -90,7 +90,6 @@ FORCE_INLINE void DEMO_print_str(const char *label, const char *data, size_t len
 
 // Test helper (for dev)
 CF_API void test_all_hashes(const uint8_t *input, size_t input_len, const CF_HASH_OPTS *opts);
-CF_API void test_all_hashes_high(const uint8_t *input, size_t input_len, const CF_HASH_OPTS *opts);
 
 CF_API void test_all_hmacs(const uint8_t *key, size_t key_len, const uint8_t *input, size_t input_len);
 CF_API void test_all_kmacs(
@@ -106,7 +105,6 @@ CF_API void test_all_kmacs_verify_array(const uint8_t *key, size_t key_len,
 CF_API void test_aes_cmac_fips800_38b(void);
 CF_API void test_all_gmacs(void);
 CF_API void test_all_poly1305(void);
-CF_API void test_all_macs_high(void);
 
 CF_API void test_all_hkdfs(
     const uint8_t *info, size_t info_len,
@@ -116,7 +114,6 @@ CF_API void test_all_hkdfs(
 CF_API void test_all_pbkdf2s(const uint8_t *password, size_t password_len,
                              const uint8_t *salt, size_t salt_len,
                              size_t dk_len, size_t iteration_count);
-CF_API void test_all_kdf_high(void);
 
 CF_API void test_base16(const char *label, const uint8_t *input, size_t len, uint32_t mode);
 CF_API void test_hex_base16(const char *label, const uint8_t *input, size_t len, uint32_t mode);
@@ -143,17 +140,15 @@ CF_API void test_aes_cfb128_fips800_38a(void);
 CF_API void test_aes_ofb_fips800_38a(void);
 CF_API void test_aes_ctr_fips800_38a(void);
 
-CF_API void test_all_cipher_high(void);
-
-
-CF_API void cf_hash_api_test(void);
-CF_API void cf_mac_api_test(void);
-
 CF_API void test_chacha20_poly1305_wychaproof(void);
 CF_API void test_xchacha20_poly1305_wychaproof(void);
 CF_API void test_aes_gcm_fips_style(void);
 CF_API void test_aes_gcm_empty_plaintext(void);
-CF_API void test_all_aead_high(void);
+
+CF_API void cf_hash_api_test(void);
+CF_API void cf_mac_api_test(void);
+CF_API void cf_kdf_api_test(void);
+CF_API void cf_cipher_api_test(void);
 
 CF_API void test_aes_ecb_kat(void);
 CF_API void test_aes_cbc_kat(void);

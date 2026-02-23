@@ -193,8 +193,8 @@ void cf_mac_api_test(void) {
                 do_mac_compute_test(mac, key, key_len, sub_flags[j]);
                 do_mac_clone_test(ctx);
 
-                printf("[*] Passed smoke-test for MAC %s with key length %zu\n",
-                       CF_MAC_GetFullName(ctx), key_len);
+                printf("[*] Passed smoke-test for MAC %s\n",
+                       CF_MAC_GetFullName(ctx));
 
                 CF_STATUS fr = CF_MAC_Free(&ctx);
                 CF_ASSERT(fr == CF_SUCCESS);
