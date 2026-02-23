@@ -760,8 +760,10 @@ CF_STATUS CF_Hash_Final(CF_HASH_CTX *ctx, uint8_t *digest, size_t digest_len) {
     // Handle XOF (Extendable-Output Function) hashes
     if (CF_IS_XOF(ctx->hash->id)) {
         // Variable-length output requires non-zero length
-        if (digest_len == 0)
-            return CF_ERR_INVALID_LEN;
+        size_t out_len = digest_len;
+        if (out_len == 0) {
+            out_len = ctx->hash->default_out_len;
+        }
 
         // First call to final produces the initial output
         if (!ctx->isFinalized) {
@@ -771,7 +773,7 @@ CF_STATUS CF_Hash_Final(CF_HASH_CTX *ctx, uint8_t *digest, size_t digest_len) {
         } else {
             // Subsequent calls use the squeeze function to extend output
             if (!ctx->hash->hash_squeeze_fn || 
-                !ctx->hash->hash_squeeze_fn(ctx->digest_ctx, digest, digest_len))
+                !ctx->hash->hash_squeeze_fn(ctx->digest_ctx, digest, out_len))
                 return CF_ERR_CTX_CORRUPT;
         }
 
@@ -831,8 +833,10 @@ CF_STATUS CF_Hash_Free(CF_HASH_CTX **p_ctx) {
 
     CF_Hash_Reset(ctx);
 
-    if (ctx->isHeapAlloc)
-        SECURE_ZERO(ctx, sizeof(CF_HASH_CTX));
+    if (ctx->isHeapAlloc) {
+        SECURE_FREE(ctx, sizeof(CF_HASH_CTX));
+        *p_ctx = NULL; // make caller pointer NULL
+    }
 
     return CF_SUCCESS;
 }
@@ -987,12 +991,12 @@ CF_HASH_CTX *CF_Hash_CloneCtxAlloc(const CF_HASH_CTX *src, CF_STATUS *status) {
     return dst;
 }
 
-size_t CF_Hash_GetDigestSize(const CF_HASH_CTX *ctx) {
-    return ctx ? (ctx->hash ? ctx->hash->digest_size : 0) : 0;
+size_t CF_Hash_GetDigestSize(const CF_HASH *hash) {
+    return hash ? hash->digest_size : 0;
 }
 
-size_t CF_Hash_GetBlockSize(const CF_HASH_CTX *ctx) {
-    return ctx ? (ctx->hash ? ctx->hash->block_size : 0) : 0;
+size_t CF_Hash_GetBlockSize(const CF_HASH *hash) {
+    return hash ? hash->block_size : 0;
 }
 
 const char* CF_Hash_GetName(const CF_HASH *hash) {
@@ -1105,8 +1109,10 @@ CF_STATUS CF_HashOpts_Free(CF_HASH_OPTS **p_opts) {
     if (ret != CF_SUCCESS)
         return ret;
 
-    if (opts->isHeapAlloc)
+    if (opts->isHeapAlloc) {
         SECURE_FREE(opts, sizeof(*opts));
+        *p_opts = NULL; // make caller pointer NULL
+    }
 
     return CF_SUCCESS;
 }

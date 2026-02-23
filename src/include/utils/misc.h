@@ -31,12 +31,6 @@
   #define CF_API
 #endif
 
-#ifdef CF_DEBUG
-    #define CF_ASSERT(expr) assert(expr)
-#else
-    #define CF_ASSERT(expr) ((void)0)
-#endif
-
 #ifdef _MSC_VER
   #define FORCE_INLINE __forceinline
 #else
@@ -57,6 +51,21 @@
 #define CPU_BIG_ENDIAN 1
 #else
 #define CPU_BIG_ENDIAN 0
+#endif
+
+#ifdef CF_DEBUG
+  #ifndef CF_ASSERT
+  #define CF_ASSERT(expr)                                           \
+      do {                                                          \
+          if (!(expr)) {                                            \
+              fprintf(stderr, "Assertion failed: %s\n", #expr);     \
+              fprintf(stderr, "  File: %s\n", __FILE__);            \
+              fprintf(stderr, "  Line: %d\n", __LINE__);            \
+              fflush(stderr);                                       \
+              abort();                                              \
+          }                                                         \
+      } while (0)
+  #endif
 #endif
 
 #ifndef UNUSED

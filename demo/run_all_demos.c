@@ -1,14 +1,5 @@
 #include "../src/include/config/demo_config.h"
 
-#include "../src/include/cf_api/cf_defs.h"
-#include "../src/include/cf_api/cf_flags.h"
-#include "../src/include/cf_api/cf_hash.h"
-#include "../src/include/cf_api/cf_mac.h"
-#include "../src/include/cf_api/cf_kdf.h"
-#include "../src/include/cf_api/cf_cipher.h"
-#include "../src/include/cf_api/cf_aead.h"
-#include "../src/include/cf_api/cf_enc.h"
-
 int main(void) {
     // CF_STATUS status;
 
@@ -345,6 +336,9 @@ int main(void) {
     // printf("------------High Level API------------\n");
     // test_all_aead_high();
     // printf("---------End Of High Level API---------\n");
+    cf_hash_api_test();
+    cf_mac_api_test();
+
     test_aes_ecb_kat();
     test_aes_cbc_kat();
     test_aes_cfb8_kat();

@@ -377,40 +377,42 @@ CF_STATUS ll_KMAC_CloneCtx(ll_KMAC_CTX *ctx_dest, const ll_KMAC_CTX *ctx_src) {
     if (!ctx_dest || !ctx_src)
         return CF_ERR_NULL_PTR;
 
-    // Zero the destination first
+    // Reset destination first (frees any existing cshake_ctx)
     ll_KMAC_Reset(ctx_dest);
 
-    // Clone CSHAKE context if present
-    if (ctx_src->cshake_ctx) {
-        size_t cshake_ctx_size = LL_KMAC_IS_128(ctx_src->type) ? CSHAKE128_BLOCK_SIZE : CSHAKE256_BLOCK_SIZE;
+    // Copy type and XOF flag
+    ctx_dest->type  = ctx_src->type;
+    ctx_dest->isXOF = ctx_src->isXOF;
 
-        ctx_dest->cshake_ctx = SECURE_ALLOC(cshake_ctx_size);
+    // Allocate and clone CSHAKE context (always owned)
+    if (ctx_src->cshake_ctx) {
+        size_t ctx_size = LL_KMAC_IS_128(ctx_src->type)
+                            ? sizeof(ll_CSHAKE128_CTX)
+                            : sizeof(ll_CSHAKE256_CTX);
+
+        ctx_dest->cshake_ctx = SECURE_ALLOC(ctx_size);
         if (!ctx_dest->cshake_ctx)
             return CF_ERR_ALLOC_FAILED;
 
-        SECURE_MEMCPY(ctx_dest->cshake_ctx, ctx_src->cshake_ctx, cshake_ctx_size);
+        SECURE_MEMCPY(ctx_dest->cshake_ctx, ctx_src->cshake_ctx, ctx_size);
     } else {
         ctx_dest->cshake_ctx = NULL;
     }
 
-    // Copy key and customization arrays
+    // Shallow copy key/customization
     ctx_dest->key     = ctx_src->key;
     ctx_dest->key_len = ctx_src->key_len;
     ctx_dest->S       = ctx_src->S;
     ctx_dest->S_len   = ctx_src->S_len;
 
-    // Copy output length
-    ctx_dest->out_len = ctx_src->out_len;
-
-    // Copy flags
+    // Copy bookkeeping fields
+    ctx_dest->out_len          = ctx_src->out_len;
     ctx_dest->isFinalized      = ctx_src->isFinalized;
     ctx_dest->customAbsorbed   = ctx_src->customAbsorbed;
     ctx_dest->emptyNameCustom  = ctx_src->emptyNameCustom;
-    ctx_dest->isXOF            = ctx_src->isXOF;
-    ctx_dest->isHeapAlloc      = 0; // dst is “new”, caller owns it
 
-    // Copy KMAC type
-    ctx_dest->type = ctx_src->type;
+    // Dest context is independent
+    ctx_dest->isHeapAlloc = 0;
 
     return CF_SUCCESS;
 }
