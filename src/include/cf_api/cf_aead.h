@@ -102,7 +102,7 @@ CF_API CF_AEAD_CTX* CF_AEAD_InitAlloc(const CF_AEAD *aead,
 
 CF_API CF_STATUS CF_AEAD_Update(CF_AEAD_CTX *ctx,
                                 const uint8_t *in, size_t in_len,
-                                uint8_t *out);
+                                uint8_t *out, size_t *out_len);
 
 CF_API CF_STATUS CF_AEAD_Final(CF_AEAD_CTX *ctx,
                                uint8_t *tag, size_t tag_len);
@@ -118,14 +118,35 @@ CF_API CF_STATUS CF_AEAD_Encrypt(const CF_AEAD *aead,
                                  const uint8_t *iv, size_t iv_len,
                                  const uint8_t *aad, size_t aad_len,
                                  const uint8_t *in, size_t in_len,
-                                 uint8_t *out, uint8_t *tag, size_t tag_len);
+                                 uint8_t *out, size_t *out_len,
+                                 uint8_t *tag, size_t tag_len);
 
 CF_API CF_STATUS CF_AEAD_Decrypt(const CF_AEAD *aead,
                                  const uint8_t *key, size_t key_len,
                                  const uint8_t *iv, size_t iv_len,
                                  const uint8_t *aad, size_t aad_len,
                                  const uint8_t *in, size_t in_len,
-                                 uint8_t *out, uint8_t *tag, size_t tag_len);
+                                 uint8_t *out, size_t *out_len,
+                                 uint8_t *tag, size_t tag_len);
+
+// ============================
+// One-shot AEAD convenience functions (ciphertext + tag combined)
+// ============================
+CF_API CF_STATUS CF_AEAD_EncryptAppendTag(
+    const CF_AEAD *aead,
+    const uint8_t *key, size_t key_len,
+    const uint8_t *iv, size_t iv_len,
+    const uint8_t *aad, size_t aad_len,
+    const uint8_t *in, size_t in_len,
+    uint8_t *out, size_t *out_len);  // out_len = ciphertext_len + fixed_tag_len
+
+CF_API CF_STATUS CF_AEAD_DecryptAppendTag(
+    const CF_AEAD *aead,
+    const uint8_t *key, size_t key_len,
+    const uint8_t *iv, size_t iv_len,
+    const uint8_t *aad, size_t aad_len,
+    const uint8_t *in, size_t in_len, // in_len = ciphertext_len + fixed_tag_len
+    uint8_t *out, size_t *out_len);
 
 // ============================
 // Cloning
@@ -143,7 +164,7 @@ CF_API bool CF_AEAD_IsValidKeyLength(const CF_AEAD *aead, size_t key_len);
 CF_API bool CF_AEAD_IsValidTagLength(const CF_AEAD *aead, size_t tag_len);
 CF_API const size_t* CF_AEAD_GetValidKeySizes(const CF_AEAD *aead, size_t *count);
 CF_API const size_t* CF_AEAD_GetValidTagSizes(const CF_AEAD *aead, size_t *count);
-
+CF_API size_t CF_AEAD_GetMaxTagSize(const CF_AEAD *aead);
 #ifdef __cplusplus
 }
 #endif
