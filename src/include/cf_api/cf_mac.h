@@ -43,6 +43,7 @@ extern "C" {
 // ============================
 typedef struct _CF_MAC {
     uint32_t id;                  // CF MAC ID / flag
+    
     size_t ctx_size;              // low-level context size
     size_t key_ctx_size;          // low-level cipher key context size
     size_t default_tag_len;

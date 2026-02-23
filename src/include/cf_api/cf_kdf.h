@@ -40,16 +40,13 @@ extern "C" {
 // ============================
 typedef struct _CF_KDF {
     uint32_t id;
+
     size_t ctx_size;
 
     CF_STATUS (*kdf_init_fn)(struct _CF_KDF_CTX *ctx, const struct _CF_KDF_OPTS *opts);
-    
     CF_STATUS (*kdf_extract_fn)(struct _CF_KDF_CTX *ctx, const struct _CF_KDF_OPTS *opts);
-    
     CF_STATUS (*kdf_expand_fn)(struct _CF_KDF_CTX *ctx, uint8_t *out, size_t out_len, const struct _CF_KDF_OPTS *opts);
-    
     CF_STATUS (*kdf_reset_fn)(struct _CF_KDF_CTX *ctx);
-
     CF_STATUS (*kdf_clone_ctx_fn)(struct _CF_KDF_CTX *ctx_dest, const struct _CF_KDF_CTX *ctx_src);
 } CF_KDF;
 

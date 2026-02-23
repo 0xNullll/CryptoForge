@@ -1,27 +1,15 @@
-/*
- * CryptoForge - cf_flags.h / CryptoForge API flags and definitions (hash, MAC, KDF, RNG, encoding, cipher)
- * Copyright (C) 2026 0xNullll
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at:
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 #ifndef CF_FLAGS_H
 #define CF_FLAGS_H
 
 #include "../config/crypto_config.h"
+#include <stdint.h>
 
-/* Maximum context / key / IV / buffer sizes */
-#define CF_MAX_HASH_CTX_SIZE         512 // safe max
+_Static_assert(sizeof(uint32_t) == 4, "uint32_t must be 32-bit");
+
+/* =======================================
+   MAX SIZES & GENERAL CONSTANTS
+   ======================================= */
+#define CF_MAX_HASH_CTX_SIZE         512
 #define CF_MAX_CIPHER_IV_SIZE        XCHACHA_EXTENDED_IV_SIZE
 #define CF_CIPHER_MAX_BLOCK_SIZE     AES_BLOCK_SIZE
 
@@ -30,10 +18,13 @@
 #define CF_MAX_DEFAULT_MAC_SIZE        16
 #define CF_MAX_CIPHER_KEY_SIZE         32
 
-// ======================
-// Digest / Hash Sizes
-// ======================
+#define CF_CTX_MAGIC 0x43464D47  // "CFMG"
 
+_Static_assert(CF_CTX_MAGIC == 0x43464D47u, "CF_CTX_MAGIC modified unexpectedly");
+
+/* =======================================
+   HASH / DIGEST BLOCK SIZES
+   ======================================= */
 typedef enum {
     /* MD5 / SHA1 */
     CF_MD5_BLOCK_SIZE        = 64,
@@ -92,17 +83,32 @@ typedef enum {
     CF_KMAC_XOF_DEFAULT_OUTPUT_LEN_256 = 64
 } CF_DIGEST_DEFAULT_SIZE;
 
-// ======================
-// Digest / Hash IDs
-// ======================
-
+/* =======================================
+   CATEGORY FLAGS
+   ======================================= */
 typedef enum {
     CF_CAT_DIGEST  = 0x00000000, // Standard digest algorithms
     CF_CAT_XOF     = 0x10000000, // SHAKE / cSHAKE / RawXOF
     CF_CAT_MAC     = 0x20000000, // MAC algorithms: HMAC, CMAC, GMAC, Poly1305
-    CF_CAT_KDF     = 0x30000000, // Key derivation algorithms: HKDF, PBKDF2, KMAC-XOF
-    CF_CAT_KECCAK  = 0x08000000  // KECCAK-based family marker
+    CF_CAT_KDF     = 0x40000000  // Key derivation algorithms: HKDF, PBKDF2, KMAC-XOF
 } CF_CATEGORY;
+
+#define CF_CATEGORY_MASK 0xF0000000u
+
+// Ensure each category fits within the mask
+static_assert((CF_CAT_DIGEST & CF_CATEGORY_MASK) == CF_CAT_DIGEST, "CF_CAT_DIGEST exceeds category mask");
+static_assert((CF_CAT_XOF    & CF_CATEGORY_MASK) == CF_CAT_XOF,    "CF_CAT_XOF exceeds category mask");
+static_assert((CF_CAT_MAC    & CF_CATEGORY_MASK) == CF_CAT_MAC,    "CF_CAT_MAC exceeds category mask");
+static_assert((CF_CAT_KDF    & CF_CATEGORY_MASK) == CF_CAT_KDF,    "CF_CAT_KDF exceeds category mask");
+
+static_assert((CF_CAT_DIGEST & CF_CAT_XOF) == 0, "CF_CAT_DIGEST and CF_CAT_XOF overlap");
+static_assert((CF_CAT_DIGEST & CF_CAT_MAC) == 0, "CF_CAT_DIGEST and CF_CAT_MAC overlap");
+static_assert((CF_CAT_DIGEST & CF_CAT_KDF) == 0, "CF_CAT_DIGEST and CF_CAT_KDF overlap");
+
+static_assert((CF_CAT_XOF & CF_CAT_MAC) == 0, "CF_CAT_XOF and CF_CAT_MAC overlap");
+static_assert((CF_CAT_XOF & CF_CAT_KDF) == 0, "CF_CAT_XOF and CF_CAT_KDF overlap");
+
+static_assert((CF_CAT_MAC & CF_CAT_KDF) == 0, "CF_CAT_MAC and CF_CAT_KDF overlap");
 
 typedef enum {
     /* Standard Digest IDs */
@@ -116,10 +122,10 @@ typedef enum {
     CF_SHA512_256  = CF_CAT_DIGEST | 0x0008,
 
     /* KECCAK variants */
-    CF_SHA3_224    = CF_CAT_DIGEST | CF_CAT_KECCAK | 0x0010,
-    CF_SHA3_256    = CF_CAT_DIGEST | CF_CAT_KECCAK | 0x0011,
-    CF_SHA3_384    = CF_CAT_DIGEST | CF_CAT_KECCAK | 0x0012,
-    CF_SHA3_512    = CF_CAT_DIGEST | CF_CAT_KECCAK | 0x0013,
+    CF_SHA3_224    = CF_CAT_DIGEST | 0x0010,
+    CF_SHA3_256    = CF_CAT_DIGEST | 0x0011,
+    CF_SHA3_384    = CF_CAT_DIGEST | 0x0012,
+    CF_SHA3_512    = CF_CAT_DIGEST | 0x0013,
 
     /* XOFs */
     CF_SHAKE128    = CF_CAT_DIGEST | CF_CAT_XOF | 0x0010,
@@ -130,6 +136,42 @@ typedef enum {
     CF_CSHAKE256   = CF_CAT_DIGEST | CF_CAT_XOF | 0x0031
 } CF_HASH_FLAGS;
 
+/* Category checks */
+#define CF_IS_DIGEST(id)  (((id) & CF_CATEGORY_MASK) == CF_CAT_DIGEST)
+#define CF_IS_XOF(id)     (((id) & CF_CATEGORY_MASK) == CF_CAT_XOF)
+#define CF_IS_MAC(id)     (((id) & CF_CATEGORY_MASK) == CF_CAT_MAC)
+#define CF_IS_KDF(id)     (((id) & CF_CATEGORY_MASK) == CF_CAT_KDF)
+
+#define CF_IS_KECCAK(id)  ((id) == CF_SHA3_224 || (id) == CF_SHA3_256 || \
+                           (id) == CF_SHA3_384 || (id) == CF_SHA3_512)
+
+/* =======================================
+   MAC FLAGS
+   ======================================= */
+#define CF_MAC_FLAG_MASK    0xFFFFF000
+#define CF_MAC_SUBFLAG_MASK 0x00000FFF
+#define CF_XOF_MASK         0x00100000
+#define CF_HASH_MASK        0x000000FF
+#define CF_MAC_KMAC_MASK    0x00000F00
+
+// Compile-time checks
+static_assert((CF_HASH_MASK & CF_MAC_KMAC_MASK) == 0, "HASH/KMAC overlap");
+static_assert((CF_HASH_MASK & CF_MAC_FLAG_MASK) == 0, "HASH/MAC_FLAG overlap");
+static_assert((CF_HASH_MASK & CF_XOF_MASK) == 0, "HASH/XOF overlap");
+
+static_assert((CF_MAC_KMAC_MASK & CF_XOF_MASK) == 0, "KMAC/XOF overlap");
+
+static_assert((CF_MAC_SUBFLAG_MASK & CF_MAC_FLAG_MASK) == 0, "SUBFLAG/MAC_FLAG overlap");
+static_assert((CF_MAC_SUBFLAG_MASK & CF_XOF_MASK) == 0, "SUBFLAG/XOF overlap");
+
+typedef enum {
+    CF_HMAC     = CF_CAT_MAC | 0x1000,
+    CF_KMAC_STD = CF_CAT_MAC | 0x2000,
+    CF_AES_CMAC = CF_CAT_MAC | 0x3000,
+    CF_AES_GMAC = CF_CAT_MAC | 0x4000,
+    CF_POLY1305 = CF_CAT_MAC | 0x5000
+} CF_MAC_FLAGS;
+
 typedef enum {
     CF_KMAC128      = 0x100,
     CF_KMAC256      = 0x200,
@@ -137,64 +179,33 @@ typedef enum {
     CF_KMAC_XOF256  = 0x400
 } CF_KMAC_TYPE_FLAGS;
 
-// ======================
-// Digest / MAC helper macros
-// ======================
-#define CF_IS_DIGEST(id)   (((id) & 0xF0000000) == CF_CAT_DIGEST)
-#define CF_IS_XOF(id)      (((id) & 0xF0000000) == CF_CAT_XOF)
-#define CF_IS_MAC(id)      (((id) & 0xF0000000) == CF_CAT_MAC)
 #define CF_IS_KMAC_XOF(id) ((id) == CF_KMAC_XOF128 || (id) == CF_KMAC_XOF256)
-#define CF_IS_KECCAK(id) \
-    ((id) == CF_SHA3_224    || (id) == CF_SHA3_256   || \
-     (id) == CF_SHA3_384    || (id) == CF_SHA3_512   || \
-     (id) == CF_SHAKE128    || (id) == CF_SHAKE256   || \
-     (id) == CF_RAWSHAKE128 || (id) == CF_RAWSHAKE256|| \
-     (id) == CF_CSHAKE128   || (id) == CF_CSHAKE256)
 
-
-// ======================
-// MAC Flags
-// ======================
-#define CF_MAC_FLAG_MASK    0xFFFFF000
-#define CF_MAC_SUBFLAG_MASK 0x00000FFF
-#define CF_XOF_MASK         0x00100000
-#define CF_HASH_MASK        0x000000FF
-#define CF_MAC_KMAC_MASK    0x00000F00
-
-typedef enum {
-    CF_HMAC     = CF_CAT_MAC | 0x1000, // HMAC with hash subflags
-    CF_KMAC_STD = CF_CAT_MAC | 0x2000, // KMAC standard with type subflags
-    CF_AES_CMAC = CF_CAT_MAC | 0x3000, // CMAC standard
-    CF_AES_GMAC = CF_CAT_MAC | 0x4000, // GMAC standard
-    CF_POLY1305 = CF_CAT_MAC | 0x5000  // Poly1305 standard
-} CF_MAC_FLAGS;
-
+/* MAC Checks */
 #define CF_MAC_IS_HMAC(id)      (((id) & CF_MAC_FLAG_MASK) == CF_HMAC)
 #define CF_MAC_IS_KMAC_STD(id)  (((id) & CF_MAC_FLAG_MASK) == CF_KMAC_STD)
-#define CF_MAC_IS_KMAC_XOF(id)  (((id) & CF_MAC_FLAG_MASK ) == CF_KMAC_XOF)
 #define CF_MAC_IS_AES_CMAC(id)  (((id) & CF_MAC_FLAG_MASK) == CF_AES_CMAC)
 #define CF_MAC_IS_AES_GMAC(id)  (((id) & CF_MAC_FLAG_MASK) == CF_AES_GMAC)
 #define CF_MAC_IS_POLY1305(id)  (((id) & CF_MAC_FLAG_MASK) == CF_POLY1305)
 #define CF_MAC_IS_XOF(id)       (((id) & CF_XOF_MASK) != 0)
 #define CF_MAC_GET_HASH(id)     ((id) & CF_HASH_MASK)
 
-// ======================
-// KDF IDs
-// ======================
+/* =======================================
+   KDF FLAGS
+   ======================================= */
 typedef enum {
-    CF_HKDF         = CF_CAT_KDF | 0x1000, // HKDF with hash subflags
-    CF_PBKDF2       = CF_CAT_KDF | 0x2000, // PBKDF2 with hash subflags
-    CF_KMAC_XOF     = CF_CAT_KDF | 0x3000  // KMAC-XOF type
+    CF_HKDF     = CF_CAT_KDF | 0x1000,
+    CF_PBKDF2   = CF_CAT_KDF | 0x2000,
+    CF_KMAC_XOF = CF_CAT_KDF | 0x3000
 } CF_KDF_FLAGS;
 
-#define CF_IS_KDF(id)          (((id) & 0xF0000000) == CF_CAT_KDF)
-#define CF_KDF_IS_PBKDF2(id)    ((id) == CF_HKDF)
-#define CF_KDF_IS_HKDF(id)      ((id) == CF_PBKDF2)
+#define CF_KDF_IS_HKDF(id)      ((id) == CF_HKDF)
+#define CF_KDF_IS_PBKDF2(id)    ((id) == CF_PBKDF2)
 #define CF_KDF_IS_KMAC_XOF(id)  ((id) == CF_KMAC_XOF)
 
-// ======================
-// Encoding / Decoding Flags
-// ======================
+/* =======================================
+   ENCODING / DECODING FLAGS
+   ======================================= */
 typedef enum {
     /* Base16 / Hex */
     CF_BASE16_UPPER       = 0x01,  // '0'-'9','A'-'F'
@@ -249,9 +260,16 @@ typedef enum {
 #define CF_BASE64_MASK 0x0000FC00  // Mask for all Base64 flags (STD, URL, NOPAD, ENC/DEC)
 #define CF_BASE85_MASK 0x007F0000  // Mask for all Base85 flags (STD, EXT, Z85, IGNORE_WS)
 
-// ======================
-// Cipher Families
-// ======================
+// Static assertions to ensure masks don't overlap outside their intended bit positions
+static_assert((CF_BASE16_MASK & ~0x0000000F) == 0, "CF_BASE16_MASK exceeds 4 bits");
+static_assert((CF_BASE32_MASK & ~0x000000F0) == 0, "CF_BASE32_MASK exceeds bits 4-7");
+static_assert((CF_BASE58_MASK & ~0x00000300) == 0, "CF_BASE58_MASK exceeds bits 8-9");
+static_assert((CF_BASE64_MASK & ~0x0000FC00) == 0, "CF_BASE64_MASK exceeds bits 10-15");
+static_assert((CF_BASE85_MASK & ~0x007F0000) == 0, "CF_BASE85_MASK exceeds bits 16-22");
+
+/* =======================================
+   CIPHER FLAGS
+   ======================================= */
 typedef enum {
     CF_OP_DECRYPT = 0,
     CF_OP_ENCRYPT = 1
@@ -263,87 +281,66 @@ typedef enum {
     CF_CAT_AEAD   = 0x00040000  // AEAD family
 } CF_CIPHER_CATEGORY;
 
-// ======================
-// AES / ChaCha Mode Flags
-// ======================
+/* AES modes */
 typedef enum {
-    /* AES Block Cipher Modes */
-    CF_AES_ECB    = CF_CAT_AES | 0x0001,
-    CF_AES_CBC    = CF_CAT_AES | 0x0002,
-    CF_AES_OFB    = CF_CAT_AES | 0x0004,
-    CF_AES_CFB8   = CF_CAT_AES | 0x0008,
-    CF_AES_CFB128 = CF_CAT_AES | 0x0010,
-    CF_AES_CTR    = CF_CAT_AES | 0x0020,
+    CF_AES_ECB       = CF_CAT_AES | 0x0001,
+    CF_AES_CBC       = CF_CAT_AES | 0x0002,
+    CF_AES_CBC_PKCS7 = CF_CAT_AES | 0x0004,
+    CF_AES_OFB       = CF_CAT_AES | 0x0008,
+    CF_AES_CFB8      = CF_CAT_AES | 0x0010,
+    CF_AES_CFB128    = CF_CAT_AES | 0x0020,
+    CF_AES_CTR       = CF_CAT_AES | 0x0030
+} CF_AES_MODE_FLAGS;
 
-    CF_AES_CBC_PKCS7 = CF_CAT_AES | 0x0040,
-
-    /* ChaCha Stream Cipher Modes */
+/* ChaCha modes */
+typedef enum {
     CF_CHACHA8    = CF_CAT_CHACHA | 0x0001,
     CF_CHACHA12   = CF_CAT_CHACHA | 0x0002,
     CF_CHACHA20   = CF_CAT_CHACHA | 0x0004,
     CF_XCHACHA8   = CF_CAT_CHACHA | 0x0008,
     CF_XCHACHA12  = CF_CAT_CHACHA | 0x0010,
     CF_XCHACHA20  = CF_CAT_CHACHA | 0x0020
-} CF_CIPHER_MODE_FLAGS;
+} CF_CHACHA_MODE_FLAGS;
 
-// ======================
-// AEAD Mode Flags (split AES vs ChaCha families)
-// ======================
+/* AEAD modes */
 typedef enum {
-    /* AES modes */
-    CF_AES_GCM = CF_CAT_AEAD | 0x0001,  // AES-GCM
-
-    /* ChaCha20-Poly1305 Modes */
-    CF_CHACHA20_POLY1305  = CF_CAT_AEAD | 0x0010, // ChaCha20-Poly1305
-    CF_XCHACHA20_POLY1305 = CF_CAT_AEAD | 0x0020  // XChaCha20-Poly1305
+    CF_AES_GCM = CF_CAT_AEAD | 0x0001,
+    CF_CHACHA20_POLY1305  = CF_CAT_AEAD | 0x0010,
+    CF_XCHACHA20_POLY1305 = CF_CAT_AEAD | 0x0020
 } CF_AEAD_MODE_FLAGS;
 
-// ======================
-// Masks & helpers
-// ======================
-#define CF_CIPHER_FAMILY_MASK 0xFFFF0000
-#define CF_CIPHER_MODE_MASK   0x0000FFFF
+/* Cipher checks */
+#define CF_CIPHER_FAMILY_MASK 0xFFFF0000u
+#define CF_CIPHER_MODE_MASK   0x0000FFFFu
 
-#define CF_IS_CIPHER(mode)         (((mode) & CF_CIPHER_FAMILY_MASK) == CF_CAT_AES || \
-                                    ((mode) & CF_CIPHER_FAMILY_MASK) == CF_CAT_CHACHA)
+#define CF_IS_CIPHER(mode)        ((((mode) & CF_CIPHER_FAMILY_MASK) == CF_CAT_AES) || (((mode) & CF_CIPHER_FAMILY_MASK) == CF_CAT_CHACHA))
+#define CF_IS_CIPHER_AES(mode)    (((mode) & CF_CIPHER_FAMILY_MASK) == CF_CAT_AES)
+#define CF_IS_CIPHER_CHACHA(mode) (((mode) & CF_CIPHER_FAMILY_MASK) == CF_CAT_CHACHA)
+#define CF_IS_AEAD(mode)          (((mode) & CF_CIPHER_FAMILY_MASK) == CF_CAT_AEAD)
+#define CF_IS_AEAD_AES(mode)      (CF_IS_AEAD(mode) && ((mode) & 0x00F0) == 0x0000)
+#define CF_IS_AEAD_CHACHA(mode)   (CF_IS_AEAD(mode) && ((mode) & 0x00F0) != 0x0000)
+#define CF_IS_XCHACHA_MODE(mode)  ((mode) == CF_XCHACHA8 || \
+                                   (mode) == CF_XCHACHA12 || \
+                                   (mode) == CF_XCHACHA20)
 
-#define CF_IS_CIPHER_AES(mode)      (((mode) & CF_CIPHER_FAMILY_MASK) == CF_CAT_AES)
-#define CF_IS_CIPHER_CHACHA(mode)   (((mode) & CF_CIPHER_FAMILY_MASK) == CF_CAT_CHACHA)
-#define CF_IS_AEAD(mode)            (((mode) & CF_CIPHER_FAMILY_MASK) == CF_CAT_AEAD)
-
-#define CF_IS_AEAD_AES(mode)        (CF_IS_AEAD(mode) && ((mode) & 0x00F0) == 0x0000)
-#define CF_IS_AEAD_CHACHA(mode)     (CF_IS_AEAD(mode) && ((mode) & 0x00F0) != 0x0000)
-
-#define CF_GET_MODE(mode)           ((mode) & CF_CIPHER_MODE_MASK)
-#define CF_IS_XCHACHA_MODE(mode) \
-    (((mode) & CF_CIPHER_MODE_MASK) == CF_XCHACHA8 || \
-     ((mode) & CF_CIPHER_MODE_MASK) == CF_XCHACHA12 || \
-     ((mode) & CF_CIPHER_MODE_MASK) == CF_XCHACHA20)
-
-// ======================
-// AES / ChaCha Key Sizes
-// ======================
+/* =======================================
+   KEY & TAG SIZES
+   ======================================= */
 typedef enum {
     CF_KEY_128_SIZE = 16,
     CF_KEY_192_SIZE = 24,
     CF_KEY_256_SIZE = 32
 } CF_KEY_SIZE;
 
-#define CF_IS_CIPHER_AES_KEY_VALID(len) \
-    ((len) == CF_KEY_128_SIZE || (len) == CF_KEY_192_SIZE || (len) == CF_KEY_256_SIZE)
+_Static_assert(CF_KEY_128_SIZE == 16, "128-bit key size incorrect");
+_Static_assert(CF_KEY_192_SIZE == 24, "192-bit key size incorrect");
+_Static_assert(CF_KEY_256_SIZE == 32, "256-bit key size incorrect");
 
-#define CF_IS_CIPHER_CHACHA_KEY_VALID(len) \
-    ((len) == CF_KEY_128_SIZE || (len) == CF_KEY_256_SIZE)
+#define CF_IS_CIPHER_AES_KEY_VALID(len)     ((len) == CF_KEY_128_SIZE || (len) == CF_KEY_192_SIZE || (len) == CF_KEY_256_SIZE)
+#define CF_IS_CIPHER_CHACHA_KEY_VALID(len)  ((len) == CF_KEY_128_SIZE || (len) == CF_KEY_256_SIZE)
+#define CF_IS_CIPHER_XCHACHA_KEY_VALID(len) ((len) == CF_KEY_256_SIZE)
+#define CF_IS_AEAD_CHACHA_KEY_VALID(len)    ((len) == CF_KEY_256_SIZE)
 
-#define CF_IS_CIPHER_XCHACHA_KEY_VALID(len) \
-    ((len) == CF_KEY_256_SIZE)
-
-#define CF_IS_AEAD_CHACHA_KEY_VALID(len) \
-    ((len) == CF_KEY_256_SIZE)
-
-// ======================
-// AES / ChaCha Tag Sizes
-// ======================
 typedef enum {
     CF_AEAD_TAG_32_SIZE  = 4,
     CF_AEAD_TAG_64_SIZE  = 8,
@@ -351,15 +348,16 @@ typedef enum {
     CF_AEAD_TAG_128_SIZE = 16
 } CF_AEAD_TAG_SIZE;
 
-#define CF_IS_VALID_AEAD_GCM_TAG_SIZE(len) \
-    ((len) == CF_AEAD_TAG_32_SIZE  || \
-     (len) == CF_AEAD_TAG_64_SIZE  || \
-     (len) == CF_AEAD_TAG_96_SIZE || \
-     (len) == CF_AEAD_TAG_128_SIZE)
+#define CF_IS_VALID_AEAD_GCM_TAG_SIZE(len) ((len) == CF_AEAD_TAG_32_SIZE  || \
+                                           (len) == CF_AEAD_TAG_64_SIZE  || \
+                                           (len) == CF_AEAD_TAG_96_SIZE || \
+                                           (len) == CF_AEAD_TAG_128_SIZE)
 
-#define CF_IS_VALID_AEAD_CHACHA_TAG_SIZE(len) \
-     ((len) == CF_AEAD_TAG_128_SIZE)
+#define CF_IS_VALID_AEAD_CHACHA_TAG_SIZE(len) ((len) == CF_AEAD_TAG_128_SIZE)
 
-#define CF_CTX_MAGIC 0x43464D47  // "CFMG"
+_Static_assert(CF_AEAD_TAG_32_SIZE  == 4,  "32-bit tag size incorrect");
+_Static_assert(CF_AEAD_TAG_64_SIZE  == 8,  "64-bit tag size incorrect");
+_Static_assert(CF_AEAD_TAG_96_SIZE  == 12, "96-bit tag size incorrect");
+_Static_assert(CF_AEAD_TAG_128_SIZE == 16, "128-bit tag size incorrect");
 
 #endif // CF_FLAGS_H

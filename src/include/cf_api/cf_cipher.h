@@ -49,6 +49,7 @@ extern "C" {
 // ============================
 typedef struct _CF_CIPHER {
     uint32_t id;                  // CF_CIPHER ID / flag
+
     size_t ctx_size;              // low-level context size
     size_t key_ctx_size;          // low-level expanded key size
     size_t block_size;            // cipher block size (0 for stream ciphers)
