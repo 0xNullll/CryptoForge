@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#ifndef DEMO_CONFIG_H
-#define DEMO_CONFIG_H
+#ifndef TEST_CONFIG_H
+#define TEST_CONFIG_H
 
 #include "crypto_config.h"
 #include "../utils/cf_status.h"
@@ -68,12 +68,6 @@
 extern "C" {
 #endif
 
-typedef struct _DEMO_ENC_TEST{
-    uint32_t enc;
-    uint32_t dec;
-    const char *desc;
-} DEMO_ENC_TEST;
-
 // Utility to print a digest in hex
 FORCE_INLINE void DEMO_print_hex(const uint8_t *digest, size_t size) {
     for (size_t i = 0; i < size; i++)
@@ -88,67 +82,17 @@ FORCE_INLINE void DEMO_print_str(const char *label, const char *data, size_t len
     printf("\"\n");
 }
 
-// Test helper (for dev)
-CF_API void test_all_hashes(const uint8_t *input, size_t input_len, const CF_HASH_OPTS *opts);
-
-CF_API void test_all_hmacs(const uint8_t *key, size_t key_len, const uint8_t *input, size_t input_len);
-CF_API void test_all_kmacs(
-    const uint8_t *key, size_t key_len,
-    const uint8_t *input, size_t input_len,
-    const uint8_t *S, size_t S_len);
-CF_API void test_all_kmacs_verify_array(const uint8_t *key, size_t key_len,
-                                 const uint8_t *input, size_t input_len,
-                                 const uint8_t *S, size_t S_len,
-                                 const uint8_t *expected_digests[4],
-                                 const size_t expected_digests_len[4]);
-
-CF_API void test_aes_cmac_fips800_38b(void);
-CF_API void test_all_gmacs(void);
-CF_API void test_all_poly1305(void);
-
-CF_API void test_all_hkdfs(
-    const uint8_t *info, size_t info_len,
-    const uint8_t *salt, size_t salt_len,
-    const uint8_t *ikm, size_t ikm_len,
-    size_t okm_len);
-CF_API void test_all_pbkdf2s(const uint8_t *password, size_t password_len,
-                             const uint8_t *salt, size_t salt_len,
-                             size_t dk_len, size_t iteration_count);
-
-CF_API void test_base16(const char *label, const uint8_t *input, size_t len, uint32_t mode);
-CF_API void test_hex_base16(const char *label, const uint8_t *input, size_t len, uint32_t mode);
-CF_API void test_base32(const char *label, const uint8_t *input, size_t len, uint32_t enc_mode, uint32_t dec_mod);
-CF_API void test_hex_base32(const char *label, const uint8_t *input, size_t len, uint32_t enc_mode, uint32_t dec_mod);
-CF_API void test_base58(const char *label, const uint8_t *input, size_t len);
-CF_API void test_hex_base58(const char *label, const uint8_t *input, size_t len);
-CF_API void test_base64(const char *label, const uint8_t *input, size_t len, uint32_t enc_mode, uint32_t dec_mode);
-CF_API void test_hex_base64(const char *label, const uint8_t *input, size_t len, uint32_t enc_mode, uint32_t dec_mode);
-CF_API void test_base85(const char *label, const uint8_t *input, size_t len, uint32_t enc_mode, uint32_t dec_mode);
-CF_API void test_hex_base85(const char *label, const uint8_t *input, size_t len, uint32_t enc_mode, uint32_t dec_mode);
-CF_API void test_all_encoders_high(const uint8_t *input, size_t input_len);
-
-CF_API void test_chacha20_rfc7539(void);
-
-CF_API void test_aes128_fips197(void);
-CF_API void test_aes192_fips197(void);
-CF_API void test_aes256_fips197(void);
-
-CF_API void test_aes_ecb_fist800_38a(void);
-CF_API void test_aes_cbc_fips800_38a(void);
-CF_API void test_aes_cfb8_fips800_38a(void);
-CF_API void test_aes_cfb128_fips800_38a(void);
-CF_API void test_aes_ofb_fips800_38a(void);
-CF_API void test_aes_ctr_fips800_38a(void);
-
 CF_API void test_chacha20_poly1305_wychaproof(void);
 CF_API void test_xchacha20_poly1305_wychaproof(void);
 CF_API void test_aes_gcm_fips_style(void);
 CF_API void test_aes_gcm_empty_plaintext(void);
 
+CF_API void cf_encoder_api_test(void);
 CF_API void cf_hash_api_test(void);
 CF_API void cf_mac_api_test(void);
 CF_API void cf_kdf_api_test(void);
 CF_API void cf_cipher_api_test(void);
+CF_API void cf_aead_api_test(void);
 
 CF_API void test_aes_ecb_kat(void);
 CF_API void test_aes_cbc_kat(void);
@@ -191,4 +135,4 @@ CF_API void test_xchacha20_poly1305_wycheproof(void);
 
 #endif // ENABLE_TESTS
 
-#endif // DEMO_CONFIG_H
+#endif // TEST_CONFIG_H

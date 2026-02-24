@@ -28,7 +28,6 @@
 #include "../utils/cf_status.h"
 
 #include "../config/libs.h"
-#include "../config/demo_config.h"
 
 #ifdef __cplusplus
 extern "C" {

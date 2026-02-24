@@ -1,4 +1,4 @@
-#include "../src/include/config/demo_config.h"
+#include "../../src/include/config/test_config.h"
 
 // ============================
 // Placeholder helpers using macros

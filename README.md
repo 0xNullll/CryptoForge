@@ -15,30 +15,32 @@ CryptoForge is intended for **educational, experimental**. It has **not undergon
 ├─ /src
 │   ├─ /crypto
 │   │   ├─ /aead
-│   │   │   ├─ /aes           <-- AES-GCM
-│   │   │   └─ /chacha        <-- ChaCha20-Poly1305 and XChaCha20-Poly1305
-│   │   ├─ /cf_api            <-- Public API implementations
-│   │   ├─ /enc               <-- Base16/32/58/64/85 encoders
+│   │   │   ├─ /aes           <-- AES-GCM implementation file
+│   │   │   └─ /chacha        <-- ChaCha20-Poly1305 and XChaCha20-Poly1305 AEAD
+│   │   ├─ /cf_api            <-- Public API implementations for all crypto primitives
+│   │   ├─ /enc               <-- Encoder implementations (Base16/32/58/64/85)
 │   │   ├─ /hash
-│   │   │   ├─ /md            <-- Legacy hashes (MD5)
+│   │   │   ├─ /md            <-- Legacy hash algorithms (MD5)
 │   │   │   └─ /sha
-│   │   │       └─ /keccak    <-- SHA3 / Keccak / SHAKE
-│   │   ├─ /kdf               <-- PBKDF2, HKDF
-│   │   ├─ /mac               <-- HMAC, CMAC, GMAC, KMAC, Poly1305
+│   │   │       └─ /keccak    <-- SHA3 / Keccak / SHAKE implementations
+│   │   ├─ /kdf               <-- Key derivation functions (PBKDF2, HKDF)
+│   │   ├─ /mac               <-- Message authentication codes (HMAC, CMAC, GMAC, KMAC, Poly1305)
 │   │   └─ /cipher
 │   │       ├─ /aes           <-- AES core + standard modes (ECB, CBC, CFB, OFB, CTR)
-│   │       └─ /chacha        <-- ChaCha/XChaCha core + stream implementations
+│   │       └─ /chacha        <-- ChaCha/XChaCha core and stream implementations
 │   ├─ /include
 │   │   ├─ /cf_api            <-- Public API headers (cf_*)
 │   │   ├─ /crypto            <-- Internal crypto headers
 │   │   ├─ /config            <-- Build/runtime configuration headers
-│   │   └─ /utils             <-- Utility headers
-│   ├─ /utils                 <-- Utility implementations (memory, misc helpers)
-├─ /demo                      <-- Test programs and demos
-├─ /vectors                   <-- Auto-generated test vector headers for cryptography validation
+│   │   └─ /utils             <-- Utility headers (memory, helpers)
+│   ├─ /utils                 <-- Utility implementations
+├─ /tests                     <-- Test programs and demos
+│   ├─ /smoke                 <-- Lightweight, fast internal smoke tests
+│   └─ /thirdparty            <-- Tests using third-party vectors (Wycheproof, NIST KATs)
+├─ /vectors                   <-- Auto-generated test vector headers
 │   ├─ /NIST
-│   │   └─ /KAT               <-- NIST Known Answer Tests (AES, SHA, etc.)
-│   └─ /wycheproof            <-- Wycheproof tests for edge cases and subtle bugsand cross-verification
+│   │   └─ /KAT               <-- NIST Known Answer Tests for AES, SHA, etc.
+│   └─ /wycheproof            <-- Wycheproof JSON vectors converted to headers for edge case testing
 └─ LICENSE, README.md
 ```
 

@@ -165,6 +165,7 @@ CF_API bool CF_AEAD_IsValidTagLength(const CF_AEAD *aead, size_t tag_len);
 CF_API const size_t* CF_AEAD_GetValidKeySizes(const CF_AEAD *aead, size_t *count);
 CF_API const size_t* CF_AEAD_GetValidTagSizes(const CF_AEAD *aead, size_t *count);
 CF_API size_t CF_AEAD_GetMaxTagSize(const CF_AEAD *aead);
+
 #ifdef __cplusplus
 }
 #endif
