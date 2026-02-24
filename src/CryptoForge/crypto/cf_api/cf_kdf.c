@@ -1,7 +1,6 @@
 /*
  * CryptoForge - cf_kdf.c / High-level KDF context and utility implementation
  * Copyright (C) 2026 0xNullll
- * Copyright (C) 2026 0xNullll
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.

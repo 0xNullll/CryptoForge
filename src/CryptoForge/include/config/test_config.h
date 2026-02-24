@@ -82,11 +82,6 @@ FORCE_INLINE void DEMO_print_str(const char *label, const char *data, size_t len
     printf("\"\n");
 }
 
-CF_API void test_chacha20_poly1305_wychaproof(void);
-CF_API void test_xchacha20_poly1305_wychaproof(void);
-CF_API void test_aes_gcm_fips_style(void);
-CF_API void test_aes_gcm_empty_plaintext(void);
-
 CF_API void cf_encoder_api_test(void);
 CF_API void cf_hash_api_test(void);
 CF_API void cf_mac_api_test(void);

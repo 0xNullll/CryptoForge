@@ -1,4 +1,6 @@
-#include "../../src/include/config/test_config.h"
+#include "../../src/CryptoForge/include/config/test_config.h"
+
+#if ENABLE_TESTS
 
 // ============================
 // Placeholder helpers using macros
@@ -207,3 +209,5 @@ void cf_mac_api_test(void) {
 
     printf("[*] MAC API smoke-test completed successfully.\n");
 }
+
+#endif // ENABLE_TESTS

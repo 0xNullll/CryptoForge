@@ -51,4 +51,21 @@ CF_API int CF_Compare(const uint8_t *a, const uint8_t *b, size_t len);
  */
 CF_API int CF_CompareLex(const uint8_t *a, const uint8_t *b, size_t len);
 
+/**
+ * @brief Fill a buffer with high-quality entropy from the operating system
+ * 
+ * Attempts to gather `len` bytes of random data from the OS. On Linux, it
+ * uses `getrandom()` if available, falling back to `/dev/urandom`. On Windows,
+ * it uses `BCryptGenRandom`. This function is suitable for cryptographic purposes.
+ * 
+ * Returns `CF_SUCCESS` on success, or a `CF_ERR_*` code on failure:
+ *   - CF_ERR_NULL_PTR: buf is NULL or len is zero
+ *   - CF_ERR_OS_FAIL: OS entropy source failed
+ * 
+ * @param buf Pointer to buffer to fill with entropy
+ * @param len Number of bytes to generate
+ * @return CF_STATUS CF_SUCCESS on success, or CF_ERR_* on failure
+ */
+CF_API CF_STATUS CF_EntropyFromOS(uint8_t *buf, size_t len);
+
 #endif // CF_UTILS_H

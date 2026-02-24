@@ -2,7 +2,7 @@
 #define CF_FLAGS_H
 
 #include "../config/crypto_config.h"
-#include <stdint.h>
+#include "../config/libs.h"
 
 _Static_assert(sizeof(uint32_t) == 4, "uint32_t must be 32-bit");
 

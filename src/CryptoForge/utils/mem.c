@@ -17,15 +17,31 @@
 #include "../include/utils/mem.h"
 
 #if CF_ENABLE_BARRIER
+//
+// Compiler-specific memory barrier
+//
+
+// GCC / Clang: use an empty volatile asm block
+// This tells the compiler that memory pointed to by 'ptr' of length 'len'
+// may be read/written, preventing it from reordering or optimizing away
+// memory operations around this point.
 #if defined(__GNUC__) || defined(__clang__)
     #define CF_MEM_BARRIER(ptr, len) \
         __asm__ volatile("" : : "m" (*(volatile char (*)[len]) (ptr)) : "memory")
+
+// MSVC: use intrinsic _ReadWriteBarrier()
+// This prevents the compiler from moving memory operations across this barrier
 #elif defined(_MSC_VER)
     #define CF_MEM_BARRIER(ptr, len) _ReadWriteBarrier()
+
+// Fallback: do nothing but silence unused variable warnings
+// If the compiler/platform is unknown, we can't enforce a barrier
+// but this keeps code compilable.
 #else
     #define CF_MEM_BARRIER(ptr, len) do { (void)(ptr); (void)(len); } while(0)
 #endif
-#endif
+
+#endif // CF_ENABLE_BARRIER
 
 void secure_zero(void *buf, size_t len) {
     if (!buf || len == 0) return;
@@ -45,12 +61,14 @@ void secure_zero(void *buf, size_t len) {
 #else
     // Fallback: volatile pointer to prevent compiler optimization
     volatile unsigned char *p = (volatile unsigned char *)buf;
-    while (len--) *p++ = 0;
+    size_t tmp_len = len;  // store original length for barrier
+    while (tmp_len--) *p++ = 0;
 
     // Compiler barrier: pretend memory was read
-#if defined(__GNUC__) || defined(__clang__)
-    asm volatile ("" : : "m" (*(char (*)[len]) buf) : "memory");
-#endif
+#if CF_ENABLE_BARRIER
+    // use original len, not decremented tmp_len
+    CF_MEM_BARRIER(buf, len);
+#endif // CF_ENABLE_BARRIER
 #endif
 }
 
@@ -74,12 +92,13 @@ void secure_memset(void *dst, int val, size_t len) {
     } else {
         // Non-zero value — fallback to volatile write loop
         volatile unsigned char *p = (volatile unsigned char*)dst;
-        while (len--) *p++ = (unsigned char)val;
+        size_t tmp_len = len;  // store original length for barrier
+        while (tmp_len--) *p++ = (unsigned char)val;
 
 #if CF_ENABLE_BARRIER
     // compiler barrier to prevent reordering/elimination
     CF_MEM_BARRIER(dst, len);
-#endif
+#endif // CF_ENABLE_BARRIER
     }
 }
 
@@ -106,6 +125,7 @@ int secure_mem_equal(const uint8_t *a, const uint8_t *b, size_t len) {
     }
 
 #if defined(__GNUC__) || defined(__clang__)
+    // force compiler to see diff as “used” memory
     __asm__ volatile("" : "+r"(diff) : : "memory");
 #elif defined(_MSC_VER)
     _ReadWriteBarrier();
@@ -142,6 +162,13 @@ int secure_mem_compare_lex(const uint8_t *a, const uint8_t *b, size_t len) {
 
         seen |= diff;
     }
+
+#if defined(__GNUC__) || defined(__clang__)
+    // force compiler to see diff as “used” memory
+    __asm__ volatile("" : : "r"(lt), "r"(gt), "r"(seen) : "memory");
+#elif defined(_MSC_VER)
+    _ReadWriteBarrier();
+#endif
 
     return (int)gt - (int)lt;
 }

@@ -1,4 +1,6 @@
-#include "../../src/include/config/test_config.h"
+#include "../../src/CryptoForge/include/config/test_config.h"
+
+#if ENABLE_TESTS
 
 // ============================
 // Placeholder helpers
@@ -146,3 +148,5 @@ void cf_hash_api_test(void) {
 
     printf("[*] Hash API smoke-test completed successfully.\n");
 }
+
+#endif // ENABLE_TESTS

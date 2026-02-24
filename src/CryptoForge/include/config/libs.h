@@ -19,10 +19,23 @@
 #define LIBS_H
 
 #if defined(_WIN32)
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <windows.h>
+#if defined(_WIN32) && defined(_MSC_VER)
+#include <bcrypt.h>
+#pragma comment(lib, "bcrypt.lib")
+#else
+#include <wincrypt.h>
+#endif
 #else
 #include <unistd.h>
 #include <sys/mman.h>
+#include <fcntl.h>
+#include <errno.h>
+#if defined(__linux__)
+#include <sys/random.h>
+#endif
 #endif
 
 #include <stdio.h>

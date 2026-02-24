@@ -1,4 +1,4 @@
-#include "../../src/include/config/test_config.h"
+#include "../../src/CryptoForge/include/config/test_config.h"
 
 #if ENABLE_TESTS
 
