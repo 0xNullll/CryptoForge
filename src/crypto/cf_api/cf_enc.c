@@ -290,6 +290,7 @@ CF_STATUS CF_Enc_Free(CF_ENCODER_CTX **p_ctx) {
 
     if (ctx->isHeapAlloc) {
         SECURE_FREE(ctx, sizeof(*ctx));  // free the heap memory
+        *p_ctx = NULL; // make caller pointer NULL
     }
 
     return CF_SUCCESS;

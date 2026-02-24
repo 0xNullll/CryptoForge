@@ -1,10 +1,10 @@
-#include "../src/include/config/demo_config.h"
+#include "../../src/include/config/test_config.h"
 
 #if ENABLE_TESTS
 
-#include "../vectors/wycheproof/tv_aes_gcm.h"
-#include "../vectors/wycheproof/tv_chacha20_poly1305.h"
-#include "../vectors/wycheproof/tv_xchacha20_poly1305.h"
+#include "../../vectors/wycheproof/tv_aes_gcm.h"
+#include "../../vectors/wycheproof/tv_chacha20_poly1305.h"
+#include "../../vectors/wycheproof/tv_xchacha20_poly1305.h"
 
 void test_chacha20_poly1305_wychaproof(void) {
     ll_CHACHA20_POLY1305_CTX ctx = {0};
