@@ -1,4 +1,6 @@
-#include "../../src/include/config/test_config.h"
+#include "../../src/CryptoForge/include/config/test_config.h"
+
+#if ENABLE_TESTS
 
 #define MAX_TEST_ENCODER_BUF 620
 
@@ -162,3 +164,5 @@ void cf_encoder_api_test(void) {
 
     printf("[*] Encoder API smoke-test completed successfully.\n");
 }
+
+#endif // ENABLE_TESTS

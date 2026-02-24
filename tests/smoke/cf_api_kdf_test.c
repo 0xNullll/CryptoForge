@@ -1,4 +1,6 @@
-#include "../../src/include/config/test_config.h"
+#include "../../src/CryptoForge/include/config/test_config.h"
+
+#if ENABLE_TESTS
 
 // ============================
 // Helpers
@@ -172,3 +174,5 @@ void cf_kdf_api_test(void) {
     do_kdf_opts_test();
     printf("[*] KDF API smoke-test completed successfully.\n");
 }
+
+#endif // ENABLE_TESTS

@@ -38,6 +38,7 @@ typedef enum {
     CF_ERR_NULL_PTR,                // Passed NULL pointer
     CF_ERR_INVALID_LEN,             // Invalid length
     CF_ERR_BAD_STATE,               // Wrong call order
+    CF_ERR_OS_FAIL,                 // generic OS error  
     CF_ERR_UNSUPPORTED,             // Unsupported algorithm
     CF_ERR_OUTPUT_BUFFER_TOO_SMALL, // Output buffer too small
     CF_ERR_LIMIT_EXCEEDED,          // generic max/limit error

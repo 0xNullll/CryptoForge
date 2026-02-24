@@ -27,12 +27,12 @@
 #endif
 
 #ifndef CF_DEBUG
-#define CF_DEBUG 1
+#define CF_DEBUG 0
 #endif
 
 // enable demo/test code (1 = on, 0 = off)
 #ifndef ENABLE_TESTS
-#define ENABLE_TESTS 1
+#define ENABLE_TESTS 0
 #endif
 
 // Check every input byte in cf_enc and enforce max length / null termination (1 = on, 0 = off)
