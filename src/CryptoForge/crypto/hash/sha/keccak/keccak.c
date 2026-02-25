@@ -269,25 +269,6 @@ bool ll_keccak_sponge_init(ll_KECCAK_CTX *ctx, size_t rate, uint8_t suffix) {
     return true;
 }
 
-// void print_keccak_state_twisted(const uint64_t state[5][5]) {
-//     printf("Keccak state (twisted byte view):\n");
-
-//     // Loop over lanes in "twisted" order (swap x and y for illustration)
-//     for (int y = 0; y < 5; y++) {
-//         for (int x = 0; x < 5; x++) {
-//             uint64_t lane = state[x][y];
-//             // Print lane byte-by-byte, LSB first
-//             for (int b = 0; b < 8; b++) {
-//                 uint8_t byte = (lane >> (8*b)) & 0xFF;
-//                 printf("%02X ", byte);
-//             }
-//             printf("  "); // separate lanes
-//         }
-//         printf("\n");
-//     }
-//     printf("\n");
-// }
-
 // absorb into ctx (buffers partial blocks, processes full blocks)
 bool ll_keccak_sponge_absorb(ll_KECCAK_CTX *ctx, const uint8_t *input, size_t inlen) {
     if (ctx->finalized) return false; // Cannot absorb after finalization

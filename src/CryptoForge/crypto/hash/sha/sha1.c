@@ -33,20 +33,18 @@
 // Low-level API functions
 // -------------------------
 bool ll_sha1_init(ll_SHA1_CTX *ctx) {
-    SECURE_ZERO(ctx, sizeof(*ctx));
     ctx->h0 = 0x67452301UL;
     ctx->h1 = 0xefcdab89UL;
     ctx->h2 = 0x98badcfeUL;
     ctx->h3 = 0x10325476UL;
     ctx->h4 = 0xc3d2e1f0UL;
+    ctx->len = 0, ctx->num = 0;
     return true;
 }
 
 static bool ll_sha1_process_block(ll_SHA1_CTX *ctx, const uint8_t *block) {
-    uint32_t W[80];
+    uint32_t W[80] = {0};
     uint32_t A,B,C,D,E,TEMP;
-
-    SECURE_ZERO(W, sizeof(W));
 
     // Copy block to W[0..15] (big-endian)
     for(int i = 0; i < 16; i++)
