@@ -77,7 +77,7 @@ void ll_GHASH_Process(
 }
 
 // Increment last 32 bits of 16-byte block (GCM counter)
-static void Inc32(uint8_t CB[16]) {
+static FORCE_INLINE void Inc32(uint8_t CB[16]) {
     uint32_t val = LOAD32BE(CB + 12);
     val++;
     STORE32BE(CB + 12, val);

@@ -19,7 +19,8 @@
 
 static size_t ll_pkcs7_pad(uint8_t *buf, size_t buf_len, size_t data_len, size_t block_size) {
     size_t pad_len = block_size - (data_len % block_size);
-    if (buf_len < data_len + pad_len) return 0; // still need this check
+    if (buf_len < data_len + pad_len)
+        return 0; // still need this check
 
     // Constant-time fill
     uint8_t pad_byte = (uint8_t)pad_len;

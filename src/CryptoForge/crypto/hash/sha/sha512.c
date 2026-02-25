@@ -104,7 +104,7 @@ static bool SHA512ProcessBlock(ll_SHA512_CTX *ctx, const uint8_t *block) {
 
     for (int t=0; t<80; t++) {
         T1 = h + SHA512_BSIG1(e) + SHA512_CH(e,f,g) + K512[t] + W[t];
-        T2 = SHA512_BSIG0(a) + SHA512_MAJ(a,b,c);
+        T2 =     SHA512_BSIG0(a) + SHA512_MAJ(a,b,c);
         h=g; g=f; f=e; e=d+T1;
         d=c; c=b; b=a; a=T1+T2;
     }
@@ -206,7 +206,6 @@ bool ll_sha384_final(ll_SHA384_CTX *ctx, uint8_t digest[SHA384_DIGEST_SIZE]) {
 // SHA-512/224
 // ======================================
 bool ll_sha512_224_init(ll_SHA512_224_CTX *ctx) {
-    SECURE_ZERO(ctx, sizeof(*ctx));
     ctx->state[0] = U64(0x8c3d37c819544da2);
     ctx->state[1] = U64(0x73e1996689dcd4d6);
     ctx->state[2] = U64(0x1dfab7ae32ff9c82);
@@ -235,7 +234,6 @@ bool ll_sha512_224_final(ll_SHA512_224_CTX *ctx, uint8_t digest[SHA512_224_DIGES
 // SHA-512/256
 // ======================================
 bool ll_sha512_256_init(ll_SHA512_256_CTX *ctx) {
-    SECURE_ZERO(ctx, sizeof(*ctx));
     ctx->state[0] = U64(0x22312194fc2bf72c);
     ctx->state[1] = U64(0x9f555fa3c84c64c2);
     ctx->state[2] = U64(0x2393b86b6f53b151);
