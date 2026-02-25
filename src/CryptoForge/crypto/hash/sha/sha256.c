@@ -81,7 +81,7 @@ static bool ll_sha256_process_block(ll_SHA256_CTX *ctx, const uint8_t *block) {
 
     for(int t=0;t<64;t++){
         T1 = H + SHA256_BSIG1(E) + SHA256_CH(E,F,G) + K256[t] + W[t];
-        T2 = SHA256_BSIG0(A) + SHA256_MAJ(A,B,C);
+        T2 =     SHA256_BSIG0(A) + SHA256_MAJ(A,B,C);
         H=G; G=F; F=E; E=D+T1;
         D=C; C=B; B=A; A=T1+T2;
     }
@@ -155,7 +155,6 @@ bool ll_sha256_final(ll_SHA256_CTX *ctx, uint8_t digest[SHA256_DIGEST_SIZE]) {
 // SHA-224 Low-level implementation
 // ======================================
 bool ll_sha224_init(ll_SHA224_CTX *ctx) {
-    SECURE_ZERO(ctx, sizeof(*ctx));
     ctx->state[0] = 0xc1059ed8UL;
     ctx->state[1] = 0x367cd507UL;
     ctx->state[2] = 0x3070dd17UL;
@@ -164,6 +163,8 @@ bool ll_sha224_init(ll_SHA224_CTX *ctx) {
     ctx->state[5] = 0x68581511UL;
     ctx->state[6] = 0x64f98fa7UL;
     ctx->state[7] = 0xbefa4fa4UL;
+    ctx->buf_len = 0;
+    ctx->len = 0;
     return true;
 }
 

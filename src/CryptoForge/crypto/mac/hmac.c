@@ -219,8 +219,6 @@ CF_STATUS ll_HMAC_Reset(ll_HMAC_CTX *ctx) {
     if (!ctx || !ctx->hash)
         return CF_ERR_NULL_PTR;
 
-    int wasHeapAlloc = ctx->isHeapAlloc;
-
     SECURE_ZERO(ctx->ipad_ctx, ctx->hash->ctx_size);
     SECURE_ZERO(ctx->opad_ctx, ctx->hash->ctx_size);
 
@@ -229,7 +227,6 @@ CF_STATUS ll_HMAC_Reset(ll_HMAC_CTX *ctx) {
     ctx->key_len     = 0;
     ctx->out_len     = 0;
     ctx->isFinalized = 0;
-    ctx->isHeapAlloc = wasHeapAlloc;
 
     return CF_SUCCESS;
 }

@@ -130,15 +130,15 @@ CryptoForge is best suited for:
 ## Performance Notes
 
 CryptoForge prioritizes **clarity, correctness, and safety** over raw speed.  
-Current benchmarks indicate that most algorithms are approximately **10× slower than highly-optimized libraries** such as OpenSSL or Crypto++.  
+
+Benchmarks against highly-optimized libraries like **Crypto++** suggest CryptoForge is roughly **4× slower on average**, though performance depends on the algorithm—sometimes it can be comparable or even faster. Note that your CPU may outperform the hardware used in standard benchmarks. 
 
 This is expected because:
-
 - CryptoForge uses **pure C implementations** without CPU-specific assembly optimizations (AES-NI, AVX, NEON, etc.).  
-- High-level API calls enforce **memory safety and zeroization**.  
-- The library is primarily designed for **education, experimentation, and research**, rather than production-grade performance.
+- High-level API calls enforce **memory safety and zeroization**, which adds overhead.  
+- The library is primarily intended for **education, experimentation, and research**, rather than production-grade performance.  
 
-Performance may improve as algorithms are optimized or compiled with advanced flags, but **speed is not the main design goal at this stage**.
+Performance may improve with compiler optimizations or targeted algorithmic tweaks, but **speed is not the main design goal** at this stage.
 
 ---
 

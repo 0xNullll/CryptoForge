@@ -64,21 +64,32 @@ static const uint8_t rCon[11] = {
  * Equivalent to the XTIME operation defined in the AES specification.
  */
 static FORCE_INLINE uint8_t XtimeByte(uint8_t b) {
-    // If the highest bit is set, apply modulo reduction with the AES polynomial 0x1b
-    return (b << 1) ^ ((b & 0x80) ? 0x1b : 0x00);
+    // Create mask: 0x1b if high bit is set, 0x00 otherwise
+    uint8_t mask = -(b >> 7);  // high bit: 1 -> 0xFF, 0 -> 0x00
+    return (b << 1) ^ (0x1b & mask);
 }
 
 /*
- * Multiply two bytes in GF(2^8) using repeated XTIME operations.
+ * Multiply two bytes in GF(2^8) using branchless mask
  * Performs bitwise multiplication modulo the AES irreducible polynomial.
  */
 static uint8_t Mul(uint8_t x, uint8_t y) {
     uint8_t r = 0;
-    while (y) {
-        if (y & 1) r ^= x;
+
+    for (int i = 0; i < 8; i++) {
+        // Create mask: 0xFF if LSB of y is 1, 0x00 if 0
+        uint8_t mask = -(y & 1);
+
+        // Conditionally XOR x into r using mask
+        r ^= x & mask;
+
+        // Multiply x by 2 in GF(2^8) (Xtime)
         x = XtimeByte(x);
+
+        // Shift y to process next bit
         y >>= 1;
     }
+
     return r;
 }
 
@@ -107,42 +118,96 @@ static uint32_t SubWord(uint32_t w) {
     return LOAD32BE(b);
 }
 
+/*
+ * SubBytes transformation on AES state.
+ * Each byte of the 4x4 state matrix is substituted with the S-box.
+ * Provides non-linear diffusion for every round.
+ */
 static void SubBytes(uint8_t state[4][4]) {
-    for (int r = 0; r < 4; r++) {
-        for (int c = 0; c < 4; c++) {
-            state[r][c] = sBox[state[r][c]];
-        }
-    }
+    // Row 0
+    state[0][0] = sBox[state[0][0]];
+    state[0][1] = sBox[state[0][1]];
+    state[0][2] = sBox[state[0][2]];
+    state[0][3] = sBox[state[0][3]];
+
+    // Row 1
+    state[1][0] = sBox[state[1][0]];
+    state[1][1] = sBox[state[1][1]];
+    state[1][2] = sBox[state[1][2]];
+    state[1][3] = sBox[state[1][3]];
+
+    // Row 2
+    state[2][0] = sBox[state[2][0]];
+    state[2][1] = sBox[state[2][1]];
+    state[2][2] = sBox[state[2][2]];
+    state[2][3] = sBox[state[2][3]];
+
+    // Row 3
+    state[3][0] = sBox[state[3][0]];
+    state[3][1] = sBox[state[3][1]];
+    state[3][2] = sBox[state[3][2]];
+    state[3][3] = sBox[state[3][3]];
 }
 
+/*
+ * InvSubBytes – inverse S-box transformation.
+ * Each byte of the state is replaced using the inverse S-box (rsBox).
+ * Reverses the SubBytes operation during decryption.
+ */
 static void InvSubBytes(uint8_t state[4][4]) {
-    for (int r = 0; r < 4; r++) {
-        for (int c = 0; c < 4; c++) {
-            state[r][c] = rsBox[state[r][c]];
-        }
-    }
+    // Row 0
+    state[0][0] = rsBox[state[0][0]];
+    state[0][1] = rsBox[state[0][1]];
+    state[0][2] = rsBox[state[0][2]];
+    state[0][3] = rsBox[state[0][3]];
+
+    // Row 1
+    state[1][0] = rsBox[state[1][0]];
+    state[1][1] = rsBox[state[1][1]];
+    state[1][2] = rsBox[state[1][2]];
+    state[1][3] = rsBox[state[1][3]];
+
+    // Row 2
+    state[2][0] = rsBox[state[2][0]];
+    state[2][1] = rsBox[state[2][1]];
+    state[2][2] = rsBox[state[2][2]];
+    state[2][3] = rsBox[state[2][3]];
+
+    // Row 3
+    state[3][0] = rsBox[state[3][0]];
+    state[3][1] = rsBox[state[3][1]];
+    state[3][2] = rsBox[state[3][2]];
+    state[3][3] = rsBox[state[3][3]];
 }
 
+/*
+ * ShiftRows transformation.
+ * Rotates each row of the state by a fixed offset.
+ * Row 0: unchanged
+ * Row 1: left rotate 1
+ * Row 2: left rotate 2
+ * Row 3: left rotate 3
+ * Enhances diffusion by moving bytes to different columns.
+ */
 static void ShiftRows(uint8_t state[4][4]) {
     uint8_t tmp;
 
-    // Row 1: shift left by 1
+    // Row 1: left rotate 1
     tmp = state[1][0];
     state[1][0] = state[1][1];
     state[1][1] = state[1][2];
     state[1][2] = state[1][3];
     state[1][3] = tmp;
 
-    // Row 2: shift left by 2
+    // Row 2: left rotate 2
     tmp = state[2][0];
     state[2][0] = state[2][2];
     state[2][2] = tmp;
-
     tmp = state[2][1];
     state[2][1] = state[2][3];
     state[2][3] = tmp;
 
-    // Row 3: shift left by 3 (or right by 1)
+    // Row 3: left rotate 3 (equivalent to right rotate 1)
     tmp = state[3][3];
     state[3][3] = state[3][2];
     state[3][2] = state[3][1];
@@ -150,26 +215,30 @@ static void ShiftRows(uint8_t state[4][4]) {
     state[3][0] = tmp;
 }
 
+/*
+ * InvShiftRows – inverse of ShiftRows.
+ * Rotates each row in the opposite direction.
+ * Used in AES decryption to undo the diffusion step.
+ */
 static void InvShiftRows(uint8_t state[4][4]) {
     uint8_t tmp;
 
-    // Row 1: shift right by 1
+    // Row 1: right rotate 1
     tmp = state[1][3];
     state[1][3] = state[1][2];
     state[1][2] = state[1][1];
     state[1][1] = state[1][0];
     state[1][0] = tmp;
 
-    // Row 2: shift right by 2
+    // Row 2: right rotate 2
     tmp = state[2][0];
     state[2][0] = state[2][2];
     state[2][2] = tmp;
-
     tmp = state[2][1];
     state[2][1] = state[2][3];
     state[2][3] = tmp;
 
-    // Row 3: shift right by 3 (or left by 1)
+    // Row 3: right rotate 3 (equivalent to left rotate 1)
     tmp = state[3][0];
     state[3][0] = state[3][1];
     state[3][1] = state[3][2];
@@ -177,84 +246,175 @@ static void InvShiftRows(uint8_t state[4][4]) {
     state[3][3] = tmp;
 }
 
+/*
+ * MixColumns – mixes each column of the state.
+ * Each byte in a column is replaced by a linear combination
+ * of all 4 bytes in that column, using finite field multiplication.
+ * Provides inter-column diffusion.
+ */
 static void MixColumns(uint8_t state[4][4]) {
-    for (int c = 0; c < 4; c++) {
-        uint8_t a0 = state[0][c];
-        uint8_t a1 = state[1][c];
-        uint8_t a2 = state[2][c];
-        uint8_t a3 = state[3][c];
+    uint8_t a0, a1, a2, a3, t;
 
-        uint8_t t = a0 ^ a1 ^ a2 ^ a3;
+    // Column 0
+    a0 = state[0][0]; a1 = state[1][0]; a2 = state[2][0]; a3 = state[3][0];
+    t = a0 ^ a1 ^ a2 ^ a3;
+    state[0][0] = a0 ^ t ^ XtimeByte(a0 ^ a1);
+    state[1][0] = a1 ^ t ^ XtimeByte(a1 ^ a2);
+    state[2][0] = a2 ^ t ^ XtimeByte(a2 ^ a3);
+    state[3][0] = a3 ^ t ^ XtimeByte(a3 ^ a0);
 
-        state[0][c] = a0 ^ t ^ XtimeByte(a0 ^ a1);
-        state[1][c] = a1 ^ t ^ XtimeByte(a1 ^ a2);
-        state[2][c] = a2 ^ t ^ XtimeByte(a2 ^ a3);
-        state[3][c] = a3 ^ t ^ XtimeByte(a3 ^ a0);
-    }
+    // Column 1
+    a0 = state[0][1]; a1 = state[1][1]; a2 = state[2][1]; a3 = state[3][1];
+    t = a0 ^ a1 ^ a2 ^ a3;
+    state[0][1] = a0 ^ t ^ XtimeByte(a0 ^ a1);
+    state[1][1] = a1 ^ t ^ XtimeByte(a1 ^ a2);
+    state[2][1] = a2 ^ t ^ XtimeByte(a2 ^ a3);
+    state[3][1] = a3 ^ t ^ XtimeByte(a3 ^ a0);
+
+    // Column 2
+    a0 = state[0][2]; a1 = state[1][2]; a2 = state[2][2]; a3 = state[3][2];
+    t = a0 ^ a1 ^ a2 ^ a3;
+    state[0][2] = a0 ^ t ^ XtimeByte(a0 ^ a1);
+    state[1][2] = a1 ^ t ^ XtimeByte(a1 ^ a2);
+    state[2][2] = a2 ^ t ^ XtimeByte(a2 ^ a3);
+    state[3][2] = a3 ^ t ^ XtimeByte(a3 ^ a0);
+
+    // Column 3
+    a0 = state[0][3]; a1 = state[1][3]; a2 = state[2][3]; a3 = state[3][3];
+    t = a0 ^ a1 ^ a2 ^ a3;
+    state[0][3] = a0 ^ t ^ XtimeByte(a0 ^ a1);
+    state[1][3] = a1 ^ t ^ XtimeByte(a1 ^ a2);
+    state[2][3] = a2 ^ t ^ XtimeByte(a2 ^ a3);
+    state[3][3] = a3 ^ t ^ XtimeByte(a3 ^ a0);
 }
 
+/*
+ * InvMixColumns – inverse of MixColumns.
+ * Each column is transformed using the inverse polynomial in GF(2^8).
+ * Used during AES decryption to undo the linear mixing.
+ */
 static void InvMixColumns(uint8_t state[4][4]) {
-    for (int c = 0; c < 4; c++) {
-        uint8_t a0 = state[0][c];
-        uint8_t a1 = state[1][c];
-        uint8_t a2 = state[2][c];
-        uint8_t a3 = state[3][c];
+    uint8_t a0, a1, a2, a3;
 
-        state[0][c] = Mul(a0,0x0e)^Mul(a1,0x0b)^Mul(a2,0x0d)^Mul(a3,0x09);
-        state[1][c] = Mul(a0,0x09)^Mul(a1,0x0e)^Mul(a2,0x0b)^Mul(a3,0x0d);
-        state[2][c] = Mul(a0,0x0d)^Mul(a1,0x09)^Mul(a2,0x0e)^Mul(a3,0x0b);
-        state[3][c] = Mul(a0,0x0b)^Mul(a1,0x0d)^Mul(a2,0x09)^Mul(a3,0x0e);
-    }
+    // Column 0
+    a0 = state[0][0]; a1 = state[1][0]; a2 = state[2][0]; a3 = state[3][0];
+    state[0][0] = Mul(a0,0x0e) ^ Mul(a1,0x0b) ^ Mul(a2,0x0d) ^ Mul(a3,0x09);
+    state[1][0] = Mul(a0,0x09) ^ Mul(a1,0x0e) ^ Mul(a2,0x0b) ^ Mul(a3,0x0d);
+    state[2][0] = Mul(a0,0x0d) ^ Mul(a1,0x09) ^ Mul(a2,0x0e) ^ Mul(a3,0x0b);
+    state[3][0] = Mul(a0,0x0b) ^ Mul(a1,0x0d) ^ Mul(a2,0x09) ^ Mul(a3,0x0e);
+
+    // Column 1
+    a0 = state[0][1]; a1 = state[1][1]; a2 = state[2][1]; a3 = state[3][1];
+    state[0][1] = Mul(a0,0x0e) ^ Mul(a1,0x0b) ^ Mul(a2,0x0d) ^ Mul(a3,0x09);
+    state[1][1] = Mul(a0,0x09) ^ Mul(a1,0x0e) ^ Mul(a2,0x0b) ^ Mul(a3,0x0d);
+    state[2][1] = Mul(a0,0x0d) ^ Mul(a1,0x09) ^ Mul(a2,0x0e) ^ Mul(a3,0x0b);
+    state[3][1] = Mul(a0,0x0b) ^ Mul(a1,0x0d) ^ Mul(a2,0x09) ^ Mul(a3,0x0e);
+
+    // Column 2
+    a0 = state[0][2]; a1 = state[1][2]; a2 = state[2][2]; a3 = state[3][2];
+    state[0][2] = Mul(a0,0x0e) ^ Mul(a1,0x0b) ^ Mul(a2,0x0d) ^ Mul(a3,0x09);
+    state[1][2] = Mul(a0,0x09) ^ Mul(a1,0x0e) ^ Mul(a2,0x0b) ^ Mul(a3,0x0d);
+    state[2][2] = Mul(a0,0x0d) ^ Mul(a1,0x09) ^ Mul(a2,0x0e) ^ Mul(a3,0x0b);
+    state[3][2] = Mul(a0,0x0b) ^ Mul(a1,0x0d) ^ Mul(a2,0x09) ^ Mul(a3,0x0e);
+
+    // Column 3
+    a0 = state[0][3]; a1 = state[1][3]; a2 = state[2][3]; a3 = state[3][3];
+    state[0][3] = Mul(a0,0x0e) ^ Mul(a1,0x0b) ^ Mul(a2,0x0d) ^ Mul(a3,0x09);
+    state[1][3] = Mul(a0,0x09) ^ Mul(a1,0x0e) ^ Mul(a2,0x0b) ^ Mul(a3,0x0d);
+    state[2][3] = Mul(a0,0x0d) ^ Mul(a1,0x09) ^ Mul(a2,0x0e) ^ Mul(a3,0x0b);
+    state[3][3] = Mul(a0,0x0b) ^ Mul(a1,0x0d) ^ Mul(a2,0x09) ^ Mul(a3,0x0e);
 }
 
+/*
+ * AddRoundKey – XOR the state with the current round key.
+ * Round key is represented as 4 32-bit words.
+ * This is the main step where the key material influences the state.
+ */
 static void AddRoundKey(uint8_t state[4][4], const uint32_t roundKey[4]) {
-    for (int c = 0; c < 4; c++) {
-        uint32_t rk_word = roundKey[c];
+    uint32_t rk_word;
 
-        state[0][c] ^= (uint8_t)((rk_word >> 24) & 0xFF);
-        state[1][c] ^= (uint8_t)((rk_word >> 16) & 0xFF);
-        state[2][c] ^= (uint8_t)((rk_word >> 8) & 0xFF);
-        state[3][c] ^= (uint8_t)(rk_word & 0xFF);
-    }
+    // Column 0
+    rk_word = roundKey[0];
+    state[0][0] ^= (uint8_t)((rk_word >> 24) & 0xFF);
+    state[1][0] ^= (uint8_t)((rk_word >> 16) & 0xFF);
+    state[2][0] ^= (uint8_t)((rk_word >> 8) & 0xFF);
+    state[3][0] ^= (uint8_t)(rk_word & 0xFF);
+
+    // Column 1
+    rk_word = roundKey[1];
+    state[0][1] ^= (uint8_t)((rk_word >> 24) & 0xFF);
+    state[1][1] ^= (uint8_t)((rk_word >> 16) & 0xFF);
+    state[2][1] ^= (uint8_t)((rk_word >> 8) & 0xFF);
+    state[3][1] ^= (uint8_t)(rk_word & 0xFF);
+
+    // Column 2
+    rk_word = roundKey[2];
+    state[0][2] ^= (uint8_t)((rk_word >> 24) & 0xFF);
+    state[1][2] ^= (uint8_t)((rk_word >> 16) & 0xFF);
+    state[2][2] ^= (uint8_t)((rk_word >> 8) & 0xFF);
+    state[3][2] ^= (uint8_t)(rk_word & 0xFF);
+
+    // Column 3
+    rk_word = roundKey[3];
+    state[0][3] ^= (uint8_t)((rk_word >> 24) & 0xFF);
+    state[1][3] ^= (uint8_t)((rk_word >> 16) & 0xFF);
+    state[2][3] ^= (uint8_t)((rk_word >> 8) & 0xFF);
+    state[3][3] ^= (uint8_t)(rk_word & 0xFF);
 }
 
-
+/*
+ * KeyExpansion – generates the round keys from the original AES key.
+ * rk: pointer to output round key array (4*(Nr+1) words)
+ * key: original user key bytes
+ * keySize: length of user key (16, 24, 32 bytes)
+ * rounds: number of AES rounds (10, 12, 14)
+ */
 static void KeyExpansion(uint32_t *rk, const uint8_t *key, size_t keySize, uint32_t rounds) {
-    uint32_t Nk = (uint32_t)(keySize / 4); // 4, 6, or 8
+    uint32_t Nk = (uint32_t)(keySize / 4); // Number of 32-bit words in key (4, 6, 8)
 
+    // Copy initial key bytes directly into first Nk words of rk
     for (uint32_t i = 0; i < Nk; i++) {
         rk[i] = LOAD32BE(key + 4*i);
     }
 
+    // Generate remaining round keys
     for (uint32_t i = Nk; i < 4 * (rounds + 1); i++) {
         uint32_t temp = rk[i - 1];
 
         if (i % Nk == 0) {
+            // RotWord + SubWord + Rcon for first word in each key block
             temp = SubWord(RotWord(temp));
             temp ^= ((uint32_t)rCon[i / Nk] << 24);
         }
         else if (Nk > 6 && i % Nk == 4) {
-            temp = SubWord(temp); // AES-256 only
+            // AES-256 specific extra SubWord
+            temp = SubWord(temp);
         }
 
+        // XOR with word Nk positions before
         rk[i] = rk[i - Nk] ^ temp;
     }
 }
 
-
+/*
+ * Cipher – encrypt a single 16-byte block using the AES round keys
+ * rk: round key array
+ * Nr: number of rounds
+ * in: 16-byte input plaintext block
+ * out: 16-byte output ciphertext block
+ */
 static void Cipher(const uint32_t *rk, uint32_t Nr, const uint8_t in[AES_BLOCK_SIZE], uint8_t out[AES_BLOCK_SIZE]) {
     uint8_t state[4][4] = {0};
 
-    // Load input bytes into state (column-major)
+    // Load input into state (AES column-major order)
     for (int c = 0; c < 4; c++)
         for (int r = 0; r < 4; r++)
             state[r][c] = in[c*4 + r];
 
+    // Initial AddRoundKey (round 0)
+    AddRoundKey(state, rk);
 
-    // --- Initial AddRoundKey (round 0) ---
-    AddRoundKey(state, rk); // rk[0..3]
-
-    // --- Main rounds (1 to Nr-1) ---
+    // Main rounds 1..Nr-1
     for (uint32_t round = 1; round < Nr; round++) {
         SubBytes(state);
         ShiftRows(state);
@@ -262,60 +422,70 @@ static void Cipher(const uint32_t *rk, uint32_t Nr, const uint8_t in[AES_BLOCK_S
         AddRoundKey(state, &rk[round*4]);
     }
 
-    // --- Final round (Nr) ---
+    // Final round (no MixColumns)
     SubBytes(state);
     ShiftRows(state);
     AddRoundKey(state, &rk[Nr*4]);
 
-    // Copy state back to output (column-major)
+    // Copy state back to output
     for (int c = 0; c < 4; c++)
         for (int r = 0; r < 4; r++)
             out[c*4 + r] = state[r][c];
 
+    // Clear state from stack to prevent leakage
     SECURE_ZERO(state, sizeof(state));
 }
 
+/*
+ * InvCipher – decrypt a single 16-byte block using AES round keys
+ * rk: round key array
+ * Nr: number of rounds
+ * in: 16-byte ciphertext block
+ * out: 16-byte plaintext block
+ */
 static void InvCipher(const uint32_t *rk, uint32_t Nr, const uint8_t in[AES_BLOCK_SIZE], uint8_t out[AES_BLOCK_SIZE]) {
     uint8_t state[4][4] = {0};
 
-    // Load input bytes into state (column-major)
+    // Load input into state (column-major)
     for (int c = 0; c < 4; c++)
         for (int r = 0; r < 4; r++)
             state[r][c] = in[c*4 + r];
 
-    // --- Initial AddRoundKey (last round key) ---
+    // Initial AddRoundKey with last round key
     AddRoundKey(state, &rk[Nr*4]);
 
-    // --- Main rounds (Nr-1 down to 1) ---
+    // Main rounds Nr-1 down to 1
     for (uint32_t round = Nr-1; round > 0; round--) {
-        InvShiftRows(state);
+        InvShiftRows(state); 
         InvSubBytes(state);
         AddRoundKey(state, &rk[round*4]);
         InvMixColumns(state);
     }
 
-    // --- Final round ---
+    // Final round (no InvMixColumns)
     InvShiftRows(state);
     InvSubBytes(state);
     AddRoundKey(state, rk);
 
-    // Copy state back to output (column-major)
+    // Copy state back to output
     for (int c = 0; c < 4; c++)
         for (int r = 0; r < 4; r++)
             out[c*4 + r] = state[r][c];
 
+    // Clear sensitive data
     SECURE_ZERO(state, sizeof(state));
 }
 
 /*
  * Initialize AES encryption key schedule.
+ * Determines number of rounds based on key size and performs key expansion.
  */
 bool ll_AES_SetEncryptKey(ll_AES_KEY *key, const uint8_t *userKey, size_t UserkeySize) {
     if (!key || !userKey) return false;
 
     SECURE_ZERO(key, sizeof(*key));
 
-    // Determine number of rounds
+    // Set number of rounds based on key length
     switch (UserkeySize) {
         case AES_128_KEY_SIZE: key->Nr = AES_128_ROUNDS; break;
         case AES_192_KEY_SIZE: key->Nr = AES_192_ROUNDS; break;
@@ -329,12 +499,15 @@ bool ll_AES_SetEncryptKey(ll_AES_KEY *key, const uint8_t *userKey, size_t Userke
 
 /*
  * Initialize AES decryption key schedule.
- * (Same expansion, inverse order handled by InvCipher)
+ * Same expansion as encryption; InvCipher handles the inverse operations.
  */
 bool ll_AES_SetDecryptKey(ll_AES_KEY *key, const uint8_t *userKey, size_t UserkeySize) {
     return ll_AES_SetEncryptKey(key, userKey, UserkeySize);
 }
 
+/*
+ * Encrypt a single AES block.
+ */
 bool ll_AES_EncryptBlock(const ll_AES_KEY *key, const uint8_t in[AES_BLOCK_SIZE], uint8_t out[AES_BLOCK_SIZE]) {
     if (!in || !out || !key) return false;
 
@@ -342,6 +515,9 @@ bool ll_AES_EncryptBlock(const ll_AES_KEY *key, const uint8_t in[AES_BLOCK_SIZE]
     return true;
 }
 
+/*
+ * Decrypt a single AES block.
+ */
 bool ll_AES_DecryptBlock(const ll_AES_KEY *key, const uint8_t in[AES_BLOCK_SIZE], uint8_t out[AES_BLOCK_SIZE]) {
     if (!in || !out || !key) return false;
 

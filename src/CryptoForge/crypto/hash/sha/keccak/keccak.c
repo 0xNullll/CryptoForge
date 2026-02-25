@@ -304,12 +304,12 @@ bool ll_keccak_sponge_final(ll_KECCAK_CTX *ctx) {
     // zero-fill the remaining bytes in the rate block
     SECURE_MEMSET(ctx->buf + num, 0, r - num);
 
-    if (num == r - 1)
-        ctx->buf[num] ^= ctx->suffix ^ 0x80;  // combine suffix + final bit
-    else {
-        ctx->buf[num] ^= ctx->suffix;
-        ctx->buf[r - 1] ^= 0x80;
-    }
+    // Apply domain separation suffix (multi-rate padding)
+    ctx->buf[num] ^= ctx->suffix;
+
+    // Set the most significant bit of the last byte to 1 (10*1 padding)
+    // Ensures the padding is unambiguous
+    ctx->buf[r - 1] ^= 0x80;
 
     // Absorb the last block and permute
     absorb_block(ctx->state, ctx->buf, r);
