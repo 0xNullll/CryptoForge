@@ -127,6 +127,21 @@ CryptoForge is best suited for:
 
 ---
 
+## Performance Notes
+
+CryptoForge prioritizes **clarity, correctness, and safety** over raw speed.  
+Current benchmarks indicate that most algorithms are approximately **10× slower than highly-optimized libraries** such as OpenSSL or Crypto++.  
+
+This is expected because:
+
+- CryptoForge uses **pure C implementations** without CPU-specific assembly optimizations (AES-NI, AVX, NEON, etc.).  
+- High-level API calls enforce **memory safety and zeroization**.  
+- The library is primarily designed for **education, experimentation, and research**, rather than production-grade performance.
+
+Performance may improve as algorithms are optimized or compiled with advanced flags, but **speed is not the main design goal at this stage**.
+
+---
+
 ## Sources / References
 
 ### RFCs

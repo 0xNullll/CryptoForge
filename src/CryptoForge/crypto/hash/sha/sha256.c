@@ -52,7 +52,6 @@ static const uint32_t K256[64] = {
 // SHA-256 Low-level implementation
 // ======================================
 bool ll_sha256_init(ll_SHA256_CTX *ctx) {
-    SECURE_ZERO(ctx, sizeof(*ctx));
     ctx->state[0] = 0x6a09e667UL;
     ctx->state[1] = 0xbb67ae85UL;
     ctx->state[2] = 0x3c6ef372UL;
@@ -61,6 +60,9 @@ bool ll_sha256_init(ll_SHA256_CTX *ctx) {
     ctx->state[5] = 0x9b05688cUL;
     ctx->state[6] = 0x1f83d9abUL;
     ctx->state[7] = 0x5be0cd19UL;
+
+    ctx->len = 0;
+    ctx->buf_len = 0;
     return true;
 }
 

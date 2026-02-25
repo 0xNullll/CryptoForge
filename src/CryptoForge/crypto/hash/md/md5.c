@@ -129,7 +129,6 @@ static bool ll_md5_process_block(ll_MD5_CTX *ctx, const uint8_t block[64]){
 }
 
 bool ll_md5_init(ll_MD5_CTX *ctx){
-    SECURE_ZERO(ctx, sizeof(*ctx));
     ctx->state[0]=0x67452301UL;
     ctx->state[1]=0xefcdab89UL;
     ctx->state[2]=0x98badcfeUL;

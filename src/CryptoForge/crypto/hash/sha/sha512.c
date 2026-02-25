@@ -75,7 +75,6 @@ static const uint64_t K512[80] = {
 // SHA-512 Low-level functions
 // ======================================
 bool ll_sha512_init(ll_SHA512_CTX *ctx) {
-    SECURE_ZERO(ctx, sizeof(*ctx));
     ctx->state[0] = U64(0x6a09e667f3bcc908);
     ctx->state[1] = U64(0xbb67ae8584caa73b);
     ctx->state[2] = U64(0x3c6ef372fe94f82b);
