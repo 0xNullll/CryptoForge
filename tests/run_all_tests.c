@@ -10,6 +10,9 @@ int main(void) {
     cf_cipher_api_test();
     cf_aead_api_test();
 
+    test_shake128_kat();
+    test_shake256_kat();
+
     test_aes_ecb_kat();
     test_aes_cbc_kat();
     test_aes_cfb8_kat();

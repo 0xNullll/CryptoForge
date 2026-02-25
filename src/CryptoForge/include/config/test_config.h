@@ -89,6 +89,9 @@ CF_API void cf_kdf_api_test(void);
 CF_API void cf_cipher_api_test(void);
 CF_API void cf_aead_api_test(void);
 
+CF_API void test_shake128_kat(void);
+CF_API void test_shake256_kat(void);
+
 CF_API void test_aes_ecb_kat(void);
 CF_API void test_aes_cbc_kat(void);
 CF_API void test_aes_cfb8_kat(void);

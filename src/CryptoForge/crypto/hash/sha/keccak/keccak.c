@@ -301,6 +301,7 @@ bool ll_keccak_sponge_final(ll_KECCAK_CTX *ctx) {
     size_t r = ctx->rate;
     size_t num = ctx->buf_len;
 
+    // zero-fill the remaining bytes in the rate block
     SECURE_MEMSET(ctx->buf + num, 0, r - num);
 
     if (num == r - 1)
@@ -310,11 +311,13 @@ bool ll_keccak_sponge_final(ll_KECCAK_CTX *ctx) {
         ctx->buf[r - 1] ^= 0x80;
     }
 
+    // Absorb the last block and permute
     absorb_block(ctx->state, ctx->buf, r);
     ll_keccak_p(ctx->state, 64, KECCAK_ROUNDS);
 
     ctx->buf_len = 0;
     ctx->finalized = 1;
+
     return true;
 }
 
