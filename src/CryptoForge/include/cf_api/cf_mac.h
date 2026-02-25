@@ -430,6 +430,21 @@ CF_API const size_t* CF_MAC_GetValidTagSizes(const CF_MAC *mac, size_t *count);
  *   src - source CF_MAC_CTX struct to clone
  */
 CF_API CF_STATUS CF_MAC_CloneCtx(CF_MAC_CTX *dst, const CF_MAC_CTX *src);
+
+/*
+ * CF_MAC_CloneCtxAlloc
+ *
+ * Allocates a new CF_MAC_CTX on the heap and clones the contents of src.
+ * Performs deep copy of key_ctx and low-level MAC context as needed.
+ *
+ * Returns:
+ *   pointer to cloned CF_MAC_CTX on success
+ *   NULL on failure, with *status set to an error code
+ *
+ * Parameters:
+ *   src    - source CF_MAC_CTX to clone
+ *   status - pointer to receive CF_STATUS result
+ */
 CF_API CF_MAC_CTX* CF_MAC_CloneCtxAlloc(const CF_MAC_CTX *src, CF_STATUS *status);
 
 /*
