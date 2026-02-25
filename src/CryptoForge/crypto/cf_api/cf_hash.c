@@ -769,13 +769,14 @@ CF_STATUS CF_Hash_Final(CF_HASH_CTX *ctx, uint8_t *digest, size_t digest_len) {
         if (!ctx->isFinalized) {
             if (!ctx->hash->hash_final_fn(ctx->digest_ctx, digest))
                 return CF_ERR_CTX_CORRUPT;
+
+            // Mark context as finalized to prevent reuse
             ctx->isFinalized = 1;
-        } else {
-            // Subsequent calls use the squeeze function to extend output
-            if (!ctx->hash->hash_squeeze_fn || 
-                !ctx->hash->hash_squeeze_fn(ctx->digest_ctx, digest, out_len))
-                return CF_ERR_CTX_CORRUPT;
         }
+        // Subsequent calls use the squeeze function to extend output
+        if (!ctx->hash->hash_squeeze_fn || 
+            !ctx->hash->hash_squeeze_fn(ctx->digest_ctx, digest, out_len))
+            return CF_ERR_CTX_CORRUPT;
 
     } else {
         // Non-XOF hash: fixed-length output
