@@ -247,7 +247,8 @@ static const CF_MAC *CF_get_poly1305(void) {
     return &mac;
 }
 
-// Table of all supported MACs
+// Static table mapping MAC algorithm IDs to their respective getter
+// functions. Used internally to retrieve a CF_MAC descriptor by flag.
 static const CF_ALGO_ENTRY cf_mac_table[] = {
     { CF_HMAC,      (const void* (*)(void))CF_get_hmac     },
     { CF_KMAC_STD,  (const void* (*)(void))CF_get_kmac     },
@@ -519,7 +520,6 @@ CF_STATUS CF_MAC_Final(CF_MAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
 
     return CF_SUCCESS;
 }
-
 
 CF_STATUS CF_MAC_Reset(CF_MAC_CTX *ctx) {
     if (!ctx)
