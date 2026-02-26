@@ -362,7 +362,8 @@ static const CF_CIPHER *CF_get_xchacha20(void) {
     return &cipher;
 }
 
-// Table of all supported Ciphers
+// Static table mapping cipher algorithm IDs to their respective getter
+// functions. Used internally to retrieve a CF_CIPHER descriptor by flag.
 static const CF_ALGO_ENTRY cf_Cipher_table[] = {
     { CF_AES_ECB,       (const void* (*)(void))CF_get_aes_ecb    },
     { CF_AES_CBC,       (const void* (*)(void))CF_get_aes_cbc    },
@@ -382,9 +383,6 @@ static const CF_ALGO_ENTRY cf_Cipher_table[] = {
 };
 
 const CF_CIPHER *CF_Cipher_GetByFlag(uint32_t algo_flag) {
-    if (!CF_IS_CIPHER(algo_flag)) 
-        return NULL;
-
     size_t table_len = sizeof(cf_Cipher_table) / sizeof(cf_Cipher_table[0]);
     for (size_t i = 0; i < table_len; i++) {
         if (cf_Cipher_table[i].flag == algo_flag) {

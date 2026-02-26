@@ -620,8 +620,9 @@ static const CF_HASH *CF_get_cshake256(void) {
     return &hash;
 }
 
-// Table of all supported hashes
-static const CF_ALGO_ENTRY CF_HASH_table[] = {
+// Static table mapping hash algorithm IDs to their respective getter
+// functions. Used internally to retrieve a CF_HASH descriptor by flag.
+static const CF_ALGO_ENTRY cf_hash_table[] = {
     { CF_MD5,           (const void* (*)(void))CF_get_md5 },
     { CF_SHA1,          (const void* (*)(void))CF_get_sha1 },
     { CF_SHA224,        (const void* (*)(void))CF_get_sha224 },
@@ -643,10 +644,10 @@ static const CF_ALGO_ENTRY CF_HASH_table[] = {
 };
 
 const CF_HASH *CF_Hash_GetByFlag(uint32_t algo_flag) {
-    size_t table_len = sizeof(CF_HASH_table) / sizeof(CF_HASH_table[0]);
+    size_t table_len = sizeof(cf_hash_table) / sizeof(cf_hash_table[0]);
     for (size_t i = 0; i < table_len; i++) {
-        if (CF_HASH_table[i].flag == algo_flag) {
-            return (const CF_HASH*)CF_HASH_table[i].getter_fn();
+        if (cf_hash_table[i].flag == algo_flag) {
+            return (const CF_HASH*)cf_hash_table[i].getter_fn();
         }
     }
     return NULL;
@@ -992,6 +993,16 @@ CF_HASH_CTX *CF_Hash_CloneCtxAlloc(const CF_HASH_CTX *src, CF_STATUS *status) {
     return dst;
 }
 
+CF_STATUS CF_Hash_ValidateCtx(const CF_HASH_CTX *ctx) {
+    if (!ctx)
+        return CF_ERR_NULL_PTR;
+
+    if ((ctx->magic ^ (uintptr_t)ctx->hash) != CF_CTX_MAGIC)
+        return CF_ERR_CTX_CORRUPT;
+
+    return CF_SUCCESS;
+}
+
 size_t CF_Hash_GetDigestSize(const CF_HASH *hash) {
     return hash ? hash->digest_size : 0;
 }
@@ -1024,16 +1035,6 @@ const char* CF_Hash_GetName(const CF_HASH *hash) {
         case CF_CSHAKE256:    return "CSHAKE-256";
         default:              return "UNKNOWN-HASH";
     }
-}
-
-CF_STATUS CF_Hash_ValidateCtx(const CF_HASH_CTX *ctx) {
-    if (!ctx)
-        return CF_ERR_NULL_PTR;
-
-    if ((ctx->magic ^ (uintptr_t)ctx->hash) != CF_CTX_MAGIC)
-        return CF_ERR_CTX_CORRUPT;
-
-    return CF_SUCCESS;
 }
 
 CF_STATUS CF_HashOpts_Init(CF_HASH_OPTS *opts,

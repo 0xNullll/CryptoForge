@@ -181,7 +181,8 @@ static const CF_ENCODER *CF_get_base85(void) {
     return &enc;
 }
 
-// Table of all supported MACs
+// Static table mapping encoder algorithm IDs to their respective getter
+// functions. Used internally to retrieve a CF_ENCODER descriptor by flag.
 static const CF_ALGO_ENTRY cf_encoder_table[] = {
     { CF_BASE16_MASK,  (const void* (*)(void))CF_get_base16 },
     { CF_BASE32_MASK,  (const void* (*)(void))CF_get_base32 },
@@ -461,51 +462,52 @@ uint8_t* CF_Enc_DecodeAllocRaw(CF_ENCODER_CTX *ctx, const void *src, size_t src_
     return CF_Enc_DecodeAlloc(ctx, (const char *)src, src_len, out_len, status);
 }
 
+CF_STATUS CF_Enc_CloneCtx(CF_ENCODER_CTX *dst, const CF_ENCODER_CTX *src) {
+    if (!dst || !src)
+        return CF_ERR_NULL_PTR;
 
-size_t CF_Enc_RequiredEncLen(uint32_t enc_flags, size_t input_len) {
-    if (!CF_IS_ENC(enc_flags) || input_len == 0)
-        return 0;
+    // Verify that the encoder pointer hasn’t been tampered with by checking it against the bound magic value.
+    if ((src->magic ^ (uintptr_t)src->encoder) != CF_CTX_MAGIC)
+        return CF_ERR_CTX_CORRUPT;
 
-    if (enc_flags & CF_BASE16_MASK)
-        return BASE16_ENC_LEN(input_len);
-    if (enc_flags & CF_BASE32_MASK)
-        return BASE32_ENC_LEN(input_len);
-    if (enc_flags & CF_BASE58_MASK)
-        return BASE58_ENC_LEN(input_len);
-    if (enc_flags & CF_BASE64_MASK)
-        return BASE64_ENC_LEN(input_len);
-    if (enc_flags & CF_BASE85_MASK) {
-        // Decide between ASCII85 or Z85
-        if (enc_flags & CF_BASE85_Z85_ENC)
-            return Z85_ENC_LEN(input_len);
-        else
-            return ASCII85_ENC_LEN(input_len);
-    }
+    // Start with a clean slate
+    CF_Enc_Reset(dst);
 
-    return 0;
+    // Copy metadata (shallow)
+    dst->magic       = src->magic;
+    dst->encoder     = src->encoder;
+    dst->encFlags    = src->encFlags;
+    dst->decFlags    = src->decFlags;
+    dst->isHeapAlloc = 0;
+    
+    return CF_SUCCESS;
 }
 
-size_t CF_Enc_RequiredDecLen(uint32_t dec_flags, size_t input_len) {
-    if (!CF_IS_DEC(dec_flags) || input_len == 0)
-        return 0;
-
-    if (dec_flags & CF_BASE16_MASK)
-        return BASE16_DEC_LEN(input_len);
-    if (dec_flags & CF_BASE32_MASK)
-        return BASE32_DEC_LEN(input_len);
-    if (dec_flags & CF_BASE58_MASK)
-        return BASE58_DEC_LEN(input_len);
-    if (dec_flags & CF_BASE64_MASK)
-        return BASE64_DEC_LEN(input_len);
-    if (dec_flags & CF_BASE85_MASK) {
-        // Decide between ASCII85 or Z85
-        if (dec_flags & CF_BASE85_Z85_DEC)
-            return Z85_DEC_LEN(input_len);
-        else
-            return ASCII85_DEC_LEN(input_len);
+CF_ENCODER_CTX *CF_Enc_CloneCtxAlloc(const CF_ENCODER_CTX *src, CF_STATUS *status) {
+    if (!src) {
+        if (status) *status = CF_ERR_NULL_PTR;
+        return NULL;
     }
 
-    return 0;
+    CF_ENCODER_CTX *dst = (CF_ENCODER_CTX *)SECURE_ALLOC(sizeof(CF_ENCODER_CTX));
+    if (!dst) {
+        if (status) *status = CF_ERR_ALLOC_FAILED;
+        return NULL;
+    }
+
+    // Deep copy contents
+    CF_STATUS ret = CF_Enc_CloneCtx(dst, src);
+    if (ret != CF_SUCCESS) {
+        if (status) *status = ret;
+        CF_Enc_Free(&dst);
+        return NULL;
+    }
+
+    // cloned context is heap-allocated
+    dst->isHeapAlloc = 1;
+
+    if (status) *status = CF_SUCCESS;
+    return dst;
 }
 
 CF_STATUS CF_Enc_ValidateCtx(const CF_ENCODER_CTX *ctx) {
@@ -666,6 +668,52 @@ const char *CF_Enc_GetName(const CF_ENCODER_CTX *ctx) {
     return "UNKNOWN-ENCODER";
 }
 
+size_t CF_Enc_RequiredEncLen(uint32_t enc_flags, size_t input_len) {
+    if (!CF_IS_ENC(enc_flags) || input_len == 0)
+        return 0;
+
+    if (enc_flags & CF_BASE16_MASK)
+        return BASE16_ENC_LEN(input_len);
+    if (enc_flags & CF_BASE32_MASK)
+        return BASE32_ENC_LEN(input_len);
+    if (enc_flags & CF_BASE58_MASK)
+        return BASE58_ENC_LEN(input_len);
+    if (enc_flags & CF_BASE64_MASK)
+        return BASE64_ENC_LEN(input_len);
+    if (enc_flags & CF_BASE85_MASK) {
+        // Decide between ASCII85 or Z85
+        if (enc_flags & CF_BASE85_Z85_ENC)
+            return Z85_ENC_LEN(input_len);
+        else
+            return ASCII85_ENC_LEN(input_len);
+    }
+
+    return 0;
+}
+
+size_t CF_Enc_RequiredDecLen(uint32_t dec_flags, size_t input_len) {
+    if (!CF_IS_DEC(dec_flags) || input_len == 0)
+        return 0;
+
+    if (dec_flags & CF_BASE16_MASK)
+        return BASE16_DEC_LEN(input_len);
+    if (dec_flags & CF_BASE32_MASK)
+        return BASE32_DEC_LEN(input_len);
+    if (dec_flags & CF_BASE58_MASK)
+        return BASE58_DEC_LEN(input_len);
+    if (dec_flags & CF_BASE64_MASK)
+        return BASE64_DEC_LEN(input_len);
+    if (dec_flags & CF_BASE85_MASK) {
+        // Decide between ASCII85 or Z85
+        if (dec_flags & CF_BASE85_Z85_DEC)
+            return Z85_DEC_LEN(input_len);
+        else
+            return ASCII85_DEC_LEN(input_len);
+    }
+
+    return 0;
+}
+
 size_t CF_Enc_MinInput(const CF_ENCODER_CTX *ctx) {
     if (!ctx || !ctx->encoder)
         return 0;
@@ -686,52 +734,4 @@ size_t CF_Enc_MinOutput(const CF_ENCODER_CTX *ctx) {
         return CF_ERR_CTX_CORRUPT;
 
     return ctx->encoder->min_output;
-}
-
-CF_STATUS CF_Enc_CloneCtx(CF_ENCODER_CTX *dst, const CF_ENCODER_CTX *src) {
-    if (!dst || !src)
-        return CF_ERR_NULL_PTR;
-
-    // Verify that the encoder pointer hasn’t been tampered with by checking it against the bound magic value.
-    if ((src->magic ^ (uintptr_t)src->encoder) != CF_CTX_MAGIC)
-        return CF_ERR_CTX_CORRUPT;
-
-    // Start with a clean slate
-    CF_Enc_Reset(dst);
-
-    // Copy metadata (shallow)
-    dst->magic       = src->magic;
-    dst->encoder     = src->encoder;
-    dst->encFlags    = src->encFlags;
-    dst->decFlags    = src->decFlags;
-    dst->isHeapAlloc = 0;
-    
-    return CF_SUCCESS;
-}
-
-CF_ENCODER_CTX *CF_Enc_CloneCtxAlloc(const CF_ENCODER_CTX *src, CF_STATUS *status) {
-    if (!src) {
-        if (status) *status = CF_ERR_NULL_PTR;
-        return NULL;
-    }
-
-    CF_ENCODER_CTX *dst = (CF_ENCODER_CTX *)SECURE_ALLOC(sizeof(CF_ENCODER_CTX));
-    if (!dst) {
-        if (status) *status = CF_ERR_ALLOC_FAILED;
-        return NULL;
-    }
-
-    // Deep copy contents
-    CF_STATUS ret = CF_Enc_CloneCtx(dst, src);
-    if (ret != CF_SUCCESS) {
-        if (status) *status = ret;
-        CF_Enc_Free(&dst);
-        return NULL;
-    }
-
-    // cloned context is heap-allocated
-    dst->isHeapAlloc = 1;
-
-    if (status) *status = CF_SUCCESS;
-    return dst;
 }

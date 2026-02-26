@@ -646,6 +646,102 @@ cleanup:
     return st;
 }
 
+CF_STATUS CF_MAC_CloneCtx(CF_MAC_CTX *dst, const CF_MAC_CTX *src) {
+    if (!dst || !src)
+        return CF_ERR_NULL_PTR;
+
+    if ((src->magic ^ (uintptr_t)src->mac) != CF_CTX_MAGIC)
+        return CF_ERR_CTX_CORRUPT;
+
+    // Start with a clean slate
+    CF_MAC_Reset(dst);
+
+    // Copy metadata
+    dst->magic       = src->magic;
+    dst->mac         = src->mac;
+    dst->hash        = src->hash;
+    dst->opts        = src->opts;
+    dst->tag_len     = src->tag_len;
+    dst->subflags    = src->subflags;
+    dst->isFinalized = src->isFinalized;
+    dst->isHeapAlloc = 0;
+    
+    // Copy key pointer and length (shallow copy)
+    dst->key     = src->key;
+    dst->key_len = src->key_len;
+
+    CF_STATUS st = CF_SUCCESS;
+
+    // Deep copy key_ctx if it exists
+    if (src->key_ctx) {
+        if (src->mac->key_ctx_size == 0)
+            return CF_ERR_CTX_CORRUPT;
+
+        dst->key_ctx = SECURE_ALLOC(src->mac->key_ctx_size);
+        if (!dst->key_ctx) {
+            st = CF_ERR_ALLOC_FAILED;
+            goto cleanup;
+        }
+        SECURE_MEMCPY(dst->key_ctx, src->key_ctx, src->mac->key_ctx_size);
+    }
+
+    // Deep copy low-level MAC context
+    if (src->mac_ctx) {
+        if (src->mac->ctx_size == 0) {
+            st = CF_ERR_CTX_CORRUPT;
+            goto cleanup;
+        }
+
+        dst->mac_ctx = SECURE_ALLOC(src->mac->ctx_size);
+        if (!dst->mac_ctx) {
+            st = CF_ERR_ALLOC_FAILED;
+            goto cleanup;
+        }
+
+        st = src->mac->mac_clone_ctx_fn(dst, src);
+        if (st != CF_SUCCESS)
+            goto cleanup;
+    }
+
+    return st;
+
+cleanup:
+    // Cleanup any partially allocated memory
+    if (dst->key_ctx && src->mac->key_ctx_size)
+        SECURE_FREE(dst->key_ctx, src->mac->key_ctx_size);
+    if (dst->mac_ctx && src->mac->ctx_size)
+        SECURE_FREE(dst->mac_ctx, src->mac->ctx_size);
+
+    return st;
+}
+
+CF_MAC_CTX *CF_MAC_CloneCtxAlloc(const CF_MAC_CTX *src, CF_STATUS *status) {
+    if (!src) {
+        if (status) *status = CF_ERR_NULL_PTR;
+        return NULL;
+    }
+
+    CF_MAC_CTX *dst = (CF_MAC_CTX *)SECURE_ALLOC(sizeof(CF_MAC_CTX));
+    if (!dst) {
+        if (status) *status = CF_ERR_ALLOC_FAILED;
+        return NULL;
+    }
+
+    // Deep copy contents
+    CF_STATUS ret = CF_MAC_CloneCtx(dst, src);
+    if (ret != CF_SUCCESS) {
+        if (status) *status = ret;
+        CF_MAC_Free(&dst);
+        return NULL;
+    }
+
+    // cloned context is heap-allocated
+    dst->isHeapAlloc = 1;
+
+    if (status) *status = CF_SUCCESS;
+    return dst;
+}
+
 CF_STATUS CF_MAC_ValidateCtx(const CF_MAC_CTX *ctx) {
     if (!ctx)
         return CF_ERR_NULL_PTR;
@@ -810,102 +906,6 @@ const size_t* CF_MAC_GetValidTagSizes(const CF_MAC *mac, size_t *count) {
 
     *count = 0;
     return NULL;
-}
-
-CF_STATUS CF_MAC_CloneCtx(CF_MAC_CTX *dst, const CF_MAC_CTX *src) {
-    if (!dst || !src)
-        return CF_ERR_NULL_PTR;
-
-    if ((src->magic ^ (uintptr_t)src->mac) != CF_CTX_MAGIC)
-        return CF_ERR_CTX_CORRUPT;
-
-    // Start with a clean slate
-    CF_MAC_Reset(dst);
-
-    // Copy metadata
-    dst->magic       = src->magic;
-    dst->mac         = src->mac;
-    dst->hash        = src->hash;
-    dst->opts        = src->opts;
-    dst->tag_len     = src->tag_len;
-    dst->subflags    = src->subflags;
-    dst->isFinalized = src->isFinalized;
-    dst->isHeapAlloc = 0;
-    
-    // Copy key pointer and length (shallow copy)
-    dst->key     = src->key;
-    dst->key_len = src->key_len;
-
-    CF_STATUS st = CF_SUCCESS;
-
-    // Deep copy key_ctx if it exists
-    if (src->key_ctx) {
-        if (src->mac->key_ctx_size == 0)
-            return CF_ERR_CTX_CORRUPT;
-
-        dst->key_ctx = SECURE_ALLOC(src->mac->key_ctx_size);
-        if (!dst->key_ctx) {
-            st = CF_ERR_ALLOC_FAILED;
-            goto cleanup;
-        }
-        SECURE_MEMCPY(dst->key_ctx, src->key_ctx, src->mac->key_ctx_size);
-    }
-
-    // Deep copy low-level MAC context
-    if (src->mac_ctx) {
-        if (src->mac->ctx_size == 0) {
-            st = CF_ERR_CTX_CORRUPT;
-            goto cleanup;
-        }
-
-        dst->mac_ctx = SECURE_ALLOC(src->mac->ctx_size);
-        if (!dst->mac_ctx) {
-            st = CF_ERR_ALLOC_FAILED;
-            goto cleanup;
-        }
-
-        st = src->mac->mac_clone_ctx_fn(dst, src);
-        if (st != CF_SUCCESS)
-            goto cleanup;
-    }
-
-    return st;
-
-cleanup:
-    // Cleanup any partially allocated memory
-    if (dst->key_ctx && src->mac->key_ctx_size)
-        SECURE_FREE(dst->key_ctx, src->mac->key_ctx_size);
-    if (dst->mac_ctx && src->mac->ctx_size)
-        SECURE_FREE(dst->mac_ctx, src->mac->ctx_size);
-
-    return st;
-}
-
-CF_MAC_CTX *CF_MAC_CloneCtxAlloc(const CF_MAC_CTX *src, CF_STATUS *status) {
-    if (!src) {
-        if (status) *status = CF_ERR_NULL_PTR;
-        return NULL;
-    }
-
-    CF_MAC_CTX *dst = (CF_MAC_CTX *)SECURE_ALLOC(sizeof(CF_MAC_CTX));
-    if (!dst) {
-        if (status) *status = CF_ERR_ALLOC_FAILED;
-        return NULL;
-    }
-
-    // Deep copy contents
-    CF_STATUS ret = CF_MAC_CloneCtx(dst, src);
-    if (ret != CF_SUCCESS) {
-        if (status) *status = ret;
-        CF_MAC_Free(&dst);
-        return NULL;
-    }
-
-    // cloned context is heap-allocated
-    dst->isHeapAlloc = 1;
-
-    if (status) *status = CF_SUCCESS;
-    return dst;
 }
 
 CF_STATUS CF_MACOpts_Init(CF_MAC_OPTS *opts,
