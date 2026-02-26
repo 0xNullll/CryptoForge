@@ -383,6 +383,9 @@ static const CF_ALGO_ENTRY cf_Cipher_table[] = {
 };
 
 const CF_CIPHER *CF_Cipher_GetByFlag(uint32_t algo_flag) {
+    if (!CF_IS_CIPHER(algo_flag)) 
+        return NULL;
+
     size_t table_len = sizeof(cf_Cipher_table) / sizeof(cf_Cipher_table[0]);
     for (size_t i = 0; i < table_len; i++) {
         if (cf_Cipher_table[i].flag == algo_flag) {

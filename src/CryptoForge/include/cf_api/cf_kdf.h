@@ -134,10 +134,8 @@ typedef struct _CF_KDF_CTX {
     // Optional user-supplied parameters (borrowed).
     const CF_KDF_OPTS *opts;
 
-    // --- Internal state (library-managed) ---
     void *kdf_ctx;           // Low-level KDF state
 
-    // --- User inputs (borrowed) ---
     const uint8_t *ikm;      // Input keying material (IKM)
     size_t ikm_len;
 
