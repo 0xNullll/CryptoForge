@@ -1,5 +1,22 @@
 /*
- * CryptoForge - cf_defs.h / CryptoForge API (hash, MAC, etc.) type definitions
+ * CryptoForge - cf_defs.h
+ *
+ * Core forward declarations and shared type definitions for the
+ * CryptoForge public API.
+ *
+ * This header centralizes opaque structure declarations used across
+ * the library (hash, MAC, KDF, cipher, AEAD, encoder, etc.) in order
+ * to:
+ *
+ *   - Avoid circular header dependencies
+ *   - Reduce compilation coupling
+ *   - Enforce opaque context design
+ *   - Provide a single source of common algorithm entry definitions
+ *
+ * No algorithm implementations are defined here.
+ * This file only declares shared types and generic algorithm
+ * registration structures used internally by the framework.
+ *
  * Copyright (C) 2026 0xNullll
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

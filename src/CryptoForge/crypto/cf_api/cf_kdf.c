@@ -130,7 +130,8 @@ static const CF_KDF *CF_get_kkdf_xof(void) {
     return &kdf;
 }
 
-// Table of all supported KDFs
+// Static table mapping KDF algorithm IDs to their respective getter
+// functions. Used internally to retrieve a CF_KDF descriptor by flag.
 static const CF_ALGO_ENTRY cf_kdf_table[] = {
     { CF_HKDF,      (const void* (*)(void))CF_get_hkdf     },
     { CF_PBKDF2,    (const void* (*)(void))CF_get_pbkdf2   },
@@ -434,83 +435,6 @@ cleanup:
     return st;        
 }
 
-const char* CF_KDF_GetName(const CF_KDF *kdf) {
-    if (!kdf)
-        return NULL;
-
-    switch (kdf->id) {
-        case CF_HKDF: return "HKDF";
-        case CF_PBKDF2: return "PBKDF2";
-        case CF_KMAC_XOF: return "KMAC-XOF";
-
-        default:
-            return "UNKNOWN-KDF";
-    }
-}
-
-const char* CF_KDF_GetFullName(const CF_KDF_CTX *ctx) {
-    if (!ctx || !ctx->kdf)
-        return NULL;
-
-    switch (ctx->kdf->id) {
-
-    case CF_HKDF:
-        switch (ctx->subflags) {
-            case CF_MD5:        return "HKDF-MD-5";
-            case CF_SHA1:       return "HKDF-SHA-1";
-            case CF_SHA224:     return "HKDF-SHA-224";
-            case CF_SHA256:     return "HKDF-SHA-256";
-            case CF_SHA384:     return "HKDF-SHA-384";
-            case CF_SHA512:     return "HKDF-SHA-512";
-            case CF_SHA512_224: return "HKDF-SHA-512/224";
-            case CF_SHA512_256: return "HKDF-SHA-512/256";
-            case CF_SHA3_224:   return "HKDF-SHA-3/224";
-            case CF_SHA3_256:   return "HKDF-SHA-3/256";
-            case CF_SHA3_384:   return "HKDF-SHA-3/384";
-            case CF_SHA3_512:   return "HKDF-SHA-3/512";
-            default:            return "HKDF-UNKNOWN";
-        }
-
-    case CF_PBKDF2:
-        switch (ctx->subflags) {
-            case CF_MD5:        return "PBKDF2-MD-5";
-            case CF_SHA1:       return "PBKDF2-SHA-1";
-            case CF_SHA224:     return "PBKDF2-SHA-224";
-            case CF_SHA256:     return "PBKDF2-SHA-256";
-            case CF_SHA384:     return "PBKDF2-SHA-384";
-            case CF_SHA512:     return "PBKDF2-SHA-512";
-            case CF_SHA512_224: return "PBKDF2-SHA-512/224";
-            case CF_SHA512_256: return "PBKDF2-SHA-512/256";
-            case CF_SHA3_224:   return "PBKDF2-SHA-3/224";
-            case CF_SHA3_256:   return "PBKDF2-SHA-3/256";
-            case CF_SHA3_384:   return "PBKDF2-SHA-3/384";
-            case CF_SHA3_512:   return "PBKDF2-SHA-3/512";
-            default:            return "PBKDF2-UNKNOWN";
-        }
-
-        case CF_KMAC_XOF:
-            switch (ctx->subflags) {
-                case CF_KMAC_XOF128:  return "KMAC-XOF-128";
-                case CF_KMAC_XOF256:  return "KMAC-XOF-256";
-                default:              return "KMAC-UNKNOWN";
-            }
-
-        default:
-            return "UNKNOWN-KDF";
-    }
-}
-
-CF_STATUS CF_KDF_ValidateCtx(const CF_KDF_CTX *ctx) {
-    if (!ctx)
-        return CF_ERR_NULL_PTR;
-
-    // Verify that the KDF pointer hasn’t been tampered with by checking it against the bound magic value.
-    if ((ctx->magic ^ (uintptr_t)ctx->kdf) != CF_CTX_MAGIC)
-        return CF_ERR_CTX_CORRUPT;
-
-    return CF_SUCCESS;
-}
-
 CF_STATUS CF_KDF_CloneCtx(CF_KDF_CTX *dst, const CF_KDF_CTX *src) {
     if (!dst || !src)
         return CF_ERR_NULL_PTR;
@@ -587,6 +511,83 @@ CF_KDF_CTX *CF_KDF_CloneCtxAlloc(const CF_KDF_CTX *src, CF_STATUS *status) {
 
     if (status) *status = CF_SUCCESS;
     return dst;
+}
+
+CF_STATUS CF_KDF_ValidateCtx(const CF_KDF_CTX *ctx) {
+    if (!ctx)
+        return CF_ERR_NULL_PTR;
+
+    // Verify that the KDF pointer hasn’t been tampered with by checking it against the bound magic value.
+    if ((ctx->magic ^ (uintptr_t)ctx->kdf) != CF_CTX_MAGIC)
+        return CF_ERR_CTX_CORRUPT;
+
+    return CF_SUCCESS;
+}
+
+const char* CF_KDF_GetName(const CF_KDF *kdf) {
+    if (!kdf)
+        return NULL;
+
+    switch (kdf->id) {
+        case CF_HKDF: return "HKDF";
+        case CF_PBKDF2: return "PBKDF2";
+        case CF_KMAC_XOF: return "KMAC-XOF";
+
+        default:
+            return "UNKNOWN-KDF";
+    }
+}
+
+const char* CF_KDF_GetFullName(const CF_KDF_CTX *ctx) {
+    if (!ctx || !ctx->kdf)
+        return NULL;
+
+    switch (ctx->kdf->id) {
+
+    case CF_HKDF:
+        switch (ctx->subflags) {
+            case CF_MD5:        return "HKDF-MD-5";
+            case CF_SHA1:       return "HKDF-SHA-1";
+            case CF_SHA224:     return "HKDF-SHA-224";
+            case CF_SHA256:     return "HKDF-SHA-256";
+            case CF_SHA384:     return "HKDF-SHA-384";
+            case CF_SHA512:     return "HKDF-SHA-512";
+            case CF_SHA512_224: return "HKDF-SHA-512/224";
+            case CF_SHA512_256: return "HKDF-SHA-512/256";
+            case CF_SHA3_224:   return "HKDF-SHA-3/224";
+            case CF_SHA3_256:   return "HKDF-SHA-3/256";
+            case CF_SHA3_384:   return "HKDF-SHA-3/384";
+            case CF_SHA3_512:   return "HKDF-SHA-3/512";
+            default:            return "HKDF-UNKNOWN";
+        }
+
+    case CF_PBKDF2:
+        switch (ctx->subflags) {
+            case CF_MD5:        return "PBKDF2-MD-5";
+            case CF_SHA1:       return "PBKDF2-SHA-1";
+            case CF_SHA224:     return "PBKDF2-SHA-224";
+            case CF_SHA256:     return "PBKDF2-SHA-256";
+            case CF_SHA384:     return "PBKDF2-SHA-384";
+            case CF_SHA512:     return "PBKDF2-SHA-512";
+            case CF_SHA512_224: return "PBKDF2-SHA-512/224";
+            case CF_SHA512_256: return "PBKDF2-SHA-512/256";
+            case CF_SHA3_224:   return "PBKDF2-SHA-3/224";
+            case CF_SHA3_256:   return "PBKDF2-SHA-3/256";
+            case CF_SHA3_384:   return "PBKDF2-SHA-3/384";
+            case CF_SHA3_512:   return "PBKDF2-SHA-3/512";
+            default:            return "PBKDF2-UNKNOWN";
+        }
+
+        case CF_KMAC_XOF:
+            switch (ctx->subflags) {
+                case CF_KMAC_XOF128:  return "KMAC-XOF-128";
+                case CF_KMAC_XOF256:  return "KMAC-XOF-256";
+                default:              return "KMAC-UNKNOWN";
+            }
+
+        default:
+            return "UNKNOWN-KDF";
+    }
 }
 
 CF_STATUS CF_KDFOpts_Init(

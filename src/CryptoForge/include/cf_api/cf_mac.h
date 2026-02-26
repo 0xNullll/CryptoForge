@@ -41,68 +41,131 @@ extern "C" {
 // ============================
 // MAC Algorithm Descriptor
 // ============================
-// Represents a MAC algorithm type, including context sizes and
-// low-level function pointers. Each CF_MAC instance is static and
-// shared across contexts.
+// Describes a MAC algorithm implementation.
+// Each CF_MAC instance is static, immutable, and shared across contexts.
 typedef struct _CF_MAC {
-    uint32_t id;                  // Unique MAC ID / algorithm flag
-    
-    size_t ctx_size;              // Size of low-level MAC context
-    size_t key_ctx_size;          // Size of low-level key context (AES CMAC/GMAC)
-    size_t default_tag_len;       // Default output tag length
 
-    // Low-level function pointers
-    CF_STATUS (*mac_init_fn)(struct _CF_MAC_CTX *ctx, const struct _CF_MAC_OPTS *opts);
-    CF_STATUS (*mac_update_fn)(struct _CF_MAC_CTX *ctx, const uint8_t *data, size_t data_len);
-    CF_STATUS (*mac_final_fn)(struct _CF_MAC_CTX *ctx, uint8_t *tag, size_t tag_len);
-    CF_STATUS (*mac_reset_fn)(struct _CF_MAC_CTX *ctx);
-    CF_STATUS (*mac_verify_fn)(struct _CF_MAC_CTX *ctx,
-                               const uint8_t *data, size_t data_len,
-                               const uint8_t *expected_tag, size_t expected_tag_len,
-                               const struct _CF_MAC_OPTS *opts);
-    CF_STATUS (*mac_clone_ctx_fn)(struct _CF_MAC_CTX *ctx_dest, const struct _CF_MAC_CTX *ctx_src);
+    // Unique algorithm identifier / flag.
+    uint32_t id;
+
+    // Size (in bytes) required for the internal MAC state.
+    size_t ctx_size;
+
+    // Size (in bytes) required for optional key-specific state (AES-CMAC/GMAC).
+    size_t key_ctx_size;
+
+    // Default authentication tag length (in bytes).
+    size_t default_tag_len;
+
+    // --- Low-level entry points ---
+    // Implement algorithm-specific logic; invoked by high-level API.
+
+    // Initializes the context and binds key material.
+    // Must be called before any update/final operations.
+    CF_STATUS (*mac_init_fn)(
+        struct _CF_MAC_CTX *ctx,
+        const struct _CF_MAC_OPTS *opts);
+
+    // Processes input data.
+    // Can be called multiple times after initialization.
+    CF_STATUS (*mac_update_fn)(
+        struct _CF_MAC_CTX *ctx,
+        const uint8_t *data,
+        size_t data_len);
+
+    // Finalizes computation and writes the authentication tag.
+    // Transition: context moves to "finalized" state; further updates require reset.
+    CF_STATUS (*mac_final_fn)(
+        struct _CF_MAC_CTX *ctx,
+        uint8_t *tag,
+        size_t tag_len);
+
+    // Resets the context to its initial state.
+    // Allows reuse with the same key or new key material.
+    CF_STATUS (*mac_reset_fn)(
+        struct _CF_MAC_CTX *ctx);
+
+    // Convenience routine: processes data and verifies tag.
+    // Must be implemented in constant time to prevent timing attacks.
+    CF_STATUS (*mac_verify_fn)(
+        struct _CF_MAC_CTX *ctx,
+        const uint8_t *data,
+        size_t data_len,
+        const uint8_t *expected_tag,
+        size_t expected_tag_len,
+        const struct _CF_MAC_OPTS *opts);
+
+    // Clones internal state from src to dest.
+    // Useful for checkpointing or branching computation.
+    CF_STATUS (*mac_clone_ctx_fn)(
+        struct _CF_MAC_CTX *ctx_dest,
+        const struct _CF_MAC_CTX *ctx_src);
+
 } CF_MAC;
 
 // ============================
 // Optional MAC Parameters
 // ============================
-// Parameters that can modify MAC behavior, such as IVs for GMAC
-// or customization strings for KMAC. Lifetime is managed by caller.
+// Parameters that modify MAC behavior.
+// All pointer fields are borrowed and must remain valid for the duration
+// of the MAC operation.
 typedef struct _CF_MAC_OPTS {
-    uint32_t magic;             // CF_CTX_MAGIC for integrity checks
 
-    uint8_t iv[AES_BLOCK_SIZE]; // Optional IV for GMAC
-    size_t iv_len;              // Length of IV in bytes
+    // Integrity guard (CF_CTX_MAGIC).
+    // Verified by public API entry points.
+    uint32_t magic;
 
-    const uint8_t *S;           // Optional customization string (KMAC)
-    size_t S_len;               // Length of customization string
+    // Optional initialization vector (CMAC/GMAC).
+    // Only the first iv_len bytes are used.
+    uint8_t iv[AES_BLOCK_SIZE];
+    size_t iv_len;
 
-    int isHeapAlloc;            // True if this struct was allocated on the heap
+    // Optional customization string (KMAC).
+    const uint8_t *S;
+    size_t S_len;
+
+    // Indicates whether this structure was heap allocated.
+    // If set, it must be released via the appropriate free routine.
+    int isHeapAlloc;
+
 } CF_MAC_OPTS;
 
 // ============================
 // MAC Context
 // ============================
-// Holds runtime state for a single MAC computation. Includes
-// algorithm descriptor, optional parameters, key material,
-// low-level context buffers, tag length, flags, and state.
+// Holds runtime state for a single MAC computation.
+// By default, not thread-safe; concurrent usage requires cloning via the library-provided clone function.
 typedef struct _CF_MAC_CTX {
-    uint64_t magic;               // CF_CTX_MAGIC ^ (uintptr_t)mac, for integrity
 
-    const CF_MAC *mac;            // Pointer to the algorithm descriptor
-    const CF_HASH *hash;          // Required only for HMAC
-    const CF_MAC_OPTS *opts;      // Optional parameters
+    // Integrity guard: CF_CTX_MAGIC ^ (uintptr_t)mac.
+    uint64_t magic;
 
-    void *mac_ctx;                // Low-level MAC context (internal)
-    void *key_ctx;                // Optional low-level key context (AES CMAC/GMAC)
+    // --- Algorithm binding (library-owned) ---
+    const CF_MAC *mac;       // Descriptor is static and immutable
+    const CF_HASH *hash;     // Optional hash descriptor (HMAC)
+    const CF_MAC_OPTS *opts; // Optional user-supplied parameters (borrowed)
 
-    const uint8_t *key;           // Pointer to user-supplied key
-    size_t key_len;               // Length of key in bytes
+    // --- Internal state (library-managed) ---
+    void *mac_ctx;           // Low-level MAC state
+    void *key_ctx;           // Optional key-specific state (AES-CMAC/GMAC)
 
-    size_t tag_len;               // Requested tag length
-    uint32_t subflags;            // Algorithm-specific flags
-    int isFinalized;              // True if MAC has been finalized
-    int isHeapAlloc;              // True if this context was allocated on the heap
+    // --- User inputs (borrowed) ---
+    const uint8_t *key;      // Key material; must remain valid until init completes
+    size_t key_len;
+
+    // Requested tag length or the default tag length
+    size_t tag_len;
+
+    // Algorithm-specific flags
+    uint32_t subflags;
+
+    // True if mac_final_fn has been called
+    int isFinalized;
+
+    // Indicates whether this structure was heap allocated.
+    // If set, it must be released via the appropriate free routine.
+    int isHeapAlloc;
+
 } CF_MAC_CTX;
 
 /*
@@ -128,7 +191,7 @@ CF_API const CF_MAC *CF_MAC_GetByFlag(uint32_t mac_flag);
  * MAC-specific buffers, and prepares the context for updates and finalization.
  *
  * Returns:
- *   CF_SUCCESS                   - initialization succeeded
+ *   CF_SUCCESS                    - initialization succeeded
  *   CF_ERR_NULL_PTR               - if ctx, mac, or key is NULL
  *   CF_ERR_UNSUPPORTED            - unsupported MAC type or hash
  *   CF_ERR_INVALID_PARAM          - invalid subflags or key/IV for MAC
@@ -178,11 +241,11 @@ CF_API CF_MAC_CTX* CF_MAC_InitAlloc(const CF_MAC *mac, const CF_MAC_OPTS *opts,
  * repeatedly for streaming input before calling CF_MAC_Final.
  *
  * Returns:
- *   CF_SUCCESS             - update succeeded
- *   CF_ERR_NULL_PTR        - ctx is NULL
+ *   CF_SUCCESS               - update succeeded
+ *   CF_ERR_NULL_PTR          - ctx is NULL
  *   CF_ERR_CTX_UNINITIALIZED - context not initialized
- *   CF_ERR_CTX_CORRUPT     - context integrity check failed
- *   CF_ERR_MAC_FINALIZED   - context already finalized
+ *   CF_ERR_CTX_CORRUPT       - context integrity check failed
+ *   CF_ERR_MAC_FINALIZED     - context already finalized
  *
  * Parameters:
  *   ctx      - pointer to initialized CF_MAC_CTX
@@ -221,11 +284,11 @@ CF_API CF_STATUS CF_MAC_Final(CF_MAC_CTX *ctx, uint8_t *tag, size_t tag_len);
  * accidental reuse or leakage of sensitive data.
  *
  * Returns:
- *   CF_SUCCESS         - reset completed successfully
- *   CF_ERR_NULL_PTR    - if ctx is NULL
+ *   CF_SUCCESS               - reset completed successfully
+ *   CF_ERR_NULL_PTR          - if ctx is NULL
  *   CF_ERR_CTX_UNINITIALIZED - if ctx->mac is NULL
- *   CF_ERR_UNSUPPORTED - if the MAC type is invalid
- *   CF_ERR_CTX_CORRUPT - if internal sizes are inconsistent
+ *   CF_ERR_UNSUPPORTED       - if the MAC type is invalid
+ *   CF_ERR_CTX_CORRUPT       - if internal sizes are inconsistent
  *
  * Parameters:
  *   ctx - pointer to CF_MAC_CTX to reset
@@ -286,11 +349,11 @@ CF_API CF_STATUS CF_MAC_Verify(const CF_MAC *mac,
  * initializes it, updates it with the data, and finalizes it to produce the authentication tag.
  *
  * Returns:
- *   CF_SUCCESS        - MAC successfully computed
- *   CF_ERR_NULL_PTR   - if mac, key, or tag pointer is NULL
+ *   CF_SUCCESS         - MAC successfully computed
+ *   CF_ERR_NULL_PTR    - if mac, key, or tag pointer is NULL
  *   CF_ERR_CTX_CORRUPT - if context integrity fails during computation
  *   CF_ERR_INVALID_LEN - if tag_len is invalid for the chosen MAC
- *   other CF_ERR_*    - from underlying CF_MAC_Init, CF_MAC_Update, or CF_MAC_Final
+ *   other CF_ERR_*     - from underlying CF_MAC_Init, CF_MAC_Update, or CF_MAC_Final
  *
  * Parameters:
  *   mac       - pointer to the CF_MAC descriptor describing the algorithm
@@ -309,6 +372,40 @@ CF_API CF_STATUS CF_MAC_Compute(const CF_MAC *mac,
                                 uint8_t *tag, size_t tag_len,
                                 const CF_MAC_OPTS *opts, uint32_t subflags);
 
+/*
+ * CF_MAC_CloneCtx
+ *
+ * Copies a CF_MAC_CTX from src to dst.
+ * Performs a shallow copy of metadata, options, and key pointer,
+ * and deep copies key_ctx and low-level MAC context if they exist.
+ *
+ * Returns:
+ *   CF_SUCCESS        - on success
+ *   CF_ERR_NULL_PTR   - if dst or src is NULL
+ *   CF_ERR_CTX_CORRUPT - if src context is invalid or inconsistent
+ *   CF_ERR_ALLOC_FAILED - if memory allocation fails for deep copy
+ *
+ * Parameters:
+ *   dst - destination CF_MAC_CTX struct (must be pre-allocated)
+ *   src - source CF_MAC_CTX struct to clone
+ */
+CF_API CF_STATUS CF_MAC_CloneCtx(CF_MAC_CTX *dst, const CF_MAC_CTX *src);
+
+/*
+ * CF_MAC_CloneCtxAlloc
+ *
+ * Allocates a new CF_MAC_CTX on the heap and clones the contents of src.
+ * Performs deep copy of key_ctx and low-level MAC context as needed.
+ *
+ * Returns:
+ *   pointer to cloned CF_MAC_CTX on success
+ *   NULL on failure, with *status set to an error code
+ *
+ * Parameters:
+ *   src    - source CF_MAC_CTX to clone
+ *   status - pointer to receive CF_STATUS result
+ */
+CF_API CF_MAC_CTX* CF_MAC_CloneCtxAlloc(const CF_MAC_CTX *src, CF_STATUS *status);
 
 /*
  * CF_MAC_ValidateCtx
@@ -316,8 +413,8 @@ CF_API CF_STATUS CF_MAC_Compute(const CF_MAC *mac,
  * Validates a CF_MAC_CTX structure by checking the bound magic value.
  *
  * Returns:
- *   CF_SUCCESS        - if the context is valid
- *   CF_ERR_NULL_PTR   - if ctx is NULL
+ *   CF_SUCCESS         - if the context is valid
+ *   CF_ERR_NULL_PTR    - if ctx is NULL
  *   CF_ERR_CTX_CORRUPT - if the context appears tampered or corrupt
  *
  * Parameters:
@@ -413,49 +510,14 @@ CF_API const size_t* CF_MAC_GetValidKeySizes(const CF_MAC *mac, size_t *count);
 CF_API const size_t* CF_MAC_GetValidTagSizes(const CF_MAC *mac, size_t *count);
 
 /*
- * CF_MAC_CloneCtx
- *
- * Copies a CF_MAC_CTX from src to dst.
- * Performs a shallow copy of metadata, options, and key pointer,
- * and deep copies key_ctx and low-level MAC context if they exist.
- *
- * Returns:
- *   CF_SUCCESS        - on success
- *   CF_ERR_NULL_PTR   - if dst or src is NULL
- *   CF_ERR_CTX_CORRUPT - if src context is invalid or inconsistent
- *   CF_ERR_ALLOC_FAILED - if memory allocation fails for deep copy
- *
- * Parameters:
- *   dst - destination CF_MAC_CTX struct (must be pre-allocated)
- *   src - source CF_MAC_CTX struct to clone
- */
-CF_API CF_STATUS CF_MAC_CloneCtx(CF_MAC_CTX *dst, const CF_MAC_CTX *src);
-
-/*
- * CF_MAC_CloneCtxAlloc
- *
- * Allocates a new CF_MAC_CTX on the heap and clones the contents of src.
- * Performs deep copy of key_ctx and low-level MAC context as needed.
- *
- * Returns:
- *   pointer to cloned CF_MAC_CTX on success
- *   NULL on failure, with *status set to an error code
- *
- * Parameters:
- *   src    - source CF_MAC_CTX to clone
- *   status - pointer to receive CF_STATUS result
- */
-CF_API CF_MAC_CTX* CF_MAC_CloneCtxAlloc(const CF_MAC_CTX *src, CF_STATUS *status);
-
-/*
  * CF_MACOpts_Init
  *
  * Initializes a CF_MAC_OPTS context with optional IV and custom data.
  * Performs a deep copy of the IV and shallow copy of the custom data.
  *
  * Returns:
- *   CF_SUCCESS        - on success
- *   CF_ERR_NULL_PTR   - if opts is NULL
+ *   CF_SUCCESS         - on success
+ *   CF_ERR_NULL_PTR    - if opts is NULL
  *   CF_ERR_INVALID_LEN - if iv_len > AES_BLOCK_SIZE
  *
  * Parameters:
@@ -527,8 +589,8 @@ CF_API CF_STATUS CF_MACOpts_Free(CF_MAC_OPTS **p_opts);
  * Does not allocate memory; dst must be pre-allocated.
  *
  * Returns:
- *   CF_SUCCESS        - on success
- *   CF_ERR_NULL_PTR   - if dst or src is NULL
+ *   CF_SUCCESS         - on success
+ *   CF_ERR_NULL_PTR    - if dst or src is NULL
  *   CF_ERR_CTX_CORRUPT - if src magic value is invalid
  *
  * Parameters:

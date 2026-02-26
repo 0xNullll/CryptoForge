@@ -101,7 +101,8 @@ static const CF_AEAD *CF_get_xchacha20_poly1305(void) {
     return &aead;
 }
 
-// Table of all supported AEAD aeads
+// Static table mapping AEAD cipher algorithm IDs to their respective getter
+// functions. Used internally to retrieve a CF_AEAD descriptor by flag.
 static const CF_ALGO_ENTRY cf_aead_table[] = {
     { CF_AES_GCM,             (const void* (*)(void))CF_get_aes_gcm            },
     { CF_CHACHA20_POLY1305,   (const void* (*)(void))CF_get_chacha20_poly1305  },
