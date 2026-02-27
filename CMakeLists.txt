@@ -21,7 +21,6 @@ option(CF_BUILD_TESTS "Build tests" ON)
 # CryptoForge configurable flags
 # -------------------------------
 option(ENABLE_CF_BARRIER        "Enable compiler barriers" OFF)
-option(ENABLE_CF_TESTS          "Enable demo/test code" OFF)
 option(ENABLE_CF_TESTS_VERBOSE  "Enable verbose demo/test output" OFF)
 option(ENABLE_CF_BASE_TRUNC     "Enforce truncation on null" OFF)
 option(ENABLE_CF_DEBUG          "Enable debug features" OFF)
@@ -48,8 +47,6 @@ endif()
 # Other configurable macros
 add_compile_definitions(
     ENABLE_BARRIER=$<BOOL:${ENABLE_CF_BARRIER}>
-    ENABLE_TESTS=$<BOOL:${ENABLE_CF_TESTS}>
-    ENABLE_TESTS_VERBOSE=$<BOOL:${ENABLE_CF_TESTS_VERBOSE}>
     BASE_TRUNCATE_ON_NULL=$<BOOL:${ENABLE_CF_BASE_TRUNC}>
     CF_DEBUG=$<BOOL:${ENABLE_CF_DEBUG}>
 )

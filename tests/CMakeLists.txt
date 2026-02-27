@@ -14,15 +14,22 @@ file(GLOB_RECURSE TEST_SRC
 # -------------------------------
 add_executable(cf_tests ${TEST_SRC})
 
-# Link against the CryptoForge library
+# Always enable test logic
+target_compile_definitions(cf_tests PRIVATE ENABLE_TESTS=1)
+
+# Conditionally enable verbose mode
+target_compile_definitions(cf_tests PRIVATE
+    ENABLE_TESTS_VERBOSE=$<BOOL:${ENABLE_CF_TESTS_VERBOSE}>
+)
+
 if(CF_LINK_SHARED)
     target_link_libraries(cf_tests PRIVATE cryptoforge_shared)
-    
-    # Copy DLL next to the test EXE after build
+
     add_custom_command(TARGET cf_tests POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<TARGET_FILE:cryptoforge_shared>
-        $<TARGET_FILE_DIR:cf_tests>
+            $<TARGET_RUNTIME_DLLS:cf_tests>
+            $<TARGET_FILE_DIR:cf_tests>
+        COMMAND_EXPAND_LISTS
     )
 else()
     target_link_libraries(cf_tests PRIVATE cryptoforge_static)

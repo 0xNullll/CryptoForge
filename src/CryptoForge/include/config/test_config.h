@@ -82,50 +82,50 @@ FORCE_INLINE void DEMO_print_str(const char *label, const char *data, size_t len
     printf("\"\n");
 }
 
-CF_API void cf_encoder_api_test(void);
-CF_API void cf_hash_api_test(void);
-CF_API void cf_mac_api_test(void);
-CF_API void cf_kdf_api_test(void);
-CF_API void cf_cipher_api_test(void);
-CF_API void cf_aead_api_test(void);
+void cf_encoder_api_test(void);
+void cf_hash_api_test(void);
+void cf_mac_api_test(void);
+void cf_kdf_api_test(void);
+void cf_cipher_api_test(void);
+void cf_aead_api_test(void);
 
-CF_API void test_shake128_kat(void);
-CF_API void test_shake256_kat(void);
+void test_shake128_kat(void);
+void test_shake256_kat(void);
 
-CF_API void test_aes_ecb_kat(void);
-CF_API void test_aes_cbc_kat(void);
-CF_API void test_aes_cfb8_kat(void);
-CF_API void test_aes_cfb128_kat(void);
-CF_API void test_aes_ofb_kat(void);
+void test_aes_ecb_kat(void);
+void test_aes_cbc_kat(void);
+void test_aes_cfb8_kat(void);
+void test_aes_cfb128_kat(void);
+void test_aes_ofb_kat(void);
 
-CF_API void test_hmac_sha1_wycheproof(void);
-CF_API void test_hmac_sha224_wycheproof(void);
-CF_API void test_hmac_sha256_wycheproof(void);
-CF_API void test_hmac_sha384_wycheproof(void);
-CF_API void test_hmac_sha512_wycheproof(void);
-CF_API void test_hmac_sha512_224_wycheproof(void);
-CF_API void test_hmac_sha512_256_wycheproof(void);
-CF_API void test_hmac_sha3_224_wycheproof(void);
-CF_API void test_hmac_sha3_256_wycheproof(void);
-CF_API void test_hmac_sha3_384_wycheproof(void);
-CF_API void test_hmac_sha3_512_wycheproof(void);
-CF_API void test_kmac128_no_customization_wycheproof(void);
-CF_API void test_kmac256_no_customization_wycheproof(void);
-CF_API void test_aes_cmac_wycheproof(void);
-CF_API void test_aes_gmac_wycheproof(void);
-CF_API void test_hkdf_sha1_wycheproof(void);
-CF_API void test_hkdf_sha256_wycheproof(void);
-CF_API void test_hkdf_sha384_wycheproof(void);
-CF_API void test_hkdf_sha512_wycheproof(void);
-CF_API void test_pbkdf2_hmac_sha1_wycheproof(void);
-CF_API void test_pbkdf2_hmac_sha224_wycheproof(void);
-CF_API void test_pbkdf2_hmac_sha256_wycheproof(void);
-CF_API void test_pbkdf2_hmac_sha384_wycheproof(void);
-CF_API void test_pbkdf2_hmac_sha512_wycheproof(void);
-CF_API void test_aes_cbc_pkcs7_wycheproof(void);
-CF_API void test_aes_gcm_wycheproof(void);
-CF_API void test_chacha20_poly1305_wycheproof(void);
-CF_API void test_xchacha20_poly1305_wycheproof(void);
+void test_hmac_sha1_wycheproof(void);
+void test_hmac_sha224_wycheproof(void);
+void test_hmac_sha256_wycheproof(void);
+void test_hmac_sha384_wycheproof(void);
+void test_hmac_sha512_wycheproof(void);
+void test_hmac_sha512_224_wycheproof(void);
+void test_hmac_sha512_256_wycheproof(void);
+void test_hmac_sha3_224_wycheproof(void);
+void test_hmac_sha3_256_wycheproof(void);
+void test_hmac_sha3_384_wycheproof(void);
+void test_hmac_sha3_512_wycheproof(void);
+void test_kmac128_no_customization_wycheproof(void);
+void test_kmac256_no_customization_wycheproof(void);
+void test_aes_cmac_wycheproof(void);
+void test_aes_gmac_wycheproof(void);
+void test_hkdf_sha1_wycheproof(void);
+void test_hkdf_sha256_wycheproof(void);
+void test_hkdf_sha384_wycheproof(void);
+void test_hkdf_sha512_wycheproof(void);
+void test_pbkdf2_hmac_sha1_wycheproof(void);
+void test_pbkdf2_hmac_sha224_wycheproof(void);
+void test_pbkdf2_hmac_sha256_wycheproof(void);
+void test_pbkdf2_hmac_sha384_wycheproof(void);
+void test_pbkdf2_hmac_sha512_wycheproof(void);
+void test_aes_cbc_pkcs7_wycheproof(void);
+void test_aes_gcm_wycheproof(void);
+void test_chacha20_poly1305_wycheproof(void);
+void test_xchacha20_poly1305_wycheproof(void);
 
 #ifdef __cplusplus
 }

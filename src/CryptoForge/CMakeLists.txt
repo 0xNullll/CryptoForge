@@ -51,18 +51,15 @@ elseif(MSVC)
 endif()
 
 # -------------------------------
-# Create static library
-# -------------------------------
-add_library(cryptoforge_static STATIC $<TARGET_OBJECTS:cryptoforge_obj>)
-set_target_properties(cryptoforge_static PROPERTIES OUTPUT_NAME "cryptoforge")
-
-# -------------------------------
-# Optional shared library
+# Create static or shared library
 # -------------------------------
 if(CF_LINK_SHARED)
-    add_library(cryptoforge_shared SHARED $<TARGET_OBJECTS:cryptoforge_obj>)
-    set_target_properties(cryptoforge_shared PROPERTIES OUTPUT_NAME "cryptoforge")
+    add_library(cryptoforge SHARED $<TARGET_OBJECTS:cryptoforge_obj>)
+else()
+    add_library(cryptoforge STATIC $<TARGET_OBJECTS:cryptoforge_obj>)
 endif()
+
+set_target_properties(cryptoforge PROPERTIES OUTPUT_NAME "cryptoforge")
 
 # -------------------------------
 # Optional Windows libraries
