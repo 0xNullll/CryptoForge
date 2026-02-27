@@ -167,4 +167,4 @@ $ ctest --test-dir build_release --output-on-failure -C Release
 - Multi-config generators (Visual Studio) require specifying `--config <BuildType>`.
 - Copying the DLL next to the test executable ensures runtime loading on Windows.
 - Library and test macros are isolated; the library does not see test macros.
-- If the build or CMake setup doesn’t work as expected, please be aware this project is new and experimental; feedback or corrections are welcome.
+- If the build or CMake setup doesn’t work as expected, please be aware this project is new and experimental; feedback or corrections are welcome!
