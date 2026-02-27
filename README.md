@@ -1,10 +1,10 @@
 # CryptoForge
 
-**CryptoForge** is a **modular, lightweight C cryptographic library** implementing SHA variants, HMAC, KMAC, Keccak, AES, ChaCha, AEAD constructions, KDFs, MACs, and encoding utilities.  
+**CryptoForge** is a **modular, lightweight C cryptographic library** implementing SHA variants, HMAC, KMAC, Keccak, AES, ChaCha, AEAD constructions, KDFs, MACs, and encoding utilities.
 
 It is designed with **layered APIs**, separating low-level primitives (`ll_*`) from user-facing functions (`CF_*`), while remaining lightweight and portable.
 
-CryptoForge is intended for **educational, experimental**. It has **not undergone formal audits**.  
+CryptoForge is intended for **educational, experimental**. It has **not undergone formal audits**.
 
 ---
 
@@ -49,34 +49,34 @@ CryptoForge is intended for **educational, experimental**. It has **not undergon
 ## Layered API Design
 
 1. **Low-Level / Context Layer (`ll_*`)**
-   - Implements atomic primitives: AES, ChaCha, SHA family, SHAKE, HMAC, KMAC, PBKDF2, etc.  
-   - Maintains deterministic state and supports streaming operations.  
-   - Minimal internal helpers; some `ll_*` call other `ll_*` primitives.  
-   - No user-facing checks or policy enforcement.  
+   - Implements atomic primitives: AES, ChaCha, SHA family, SHAKE, HMAC, KMAC, PBKDF2, etc.
+   - Maintains deterministic state and supports streaming operations.
+   - Minimal internal helpers; some `ll_*` call other `ll_*` primitives.
+   - No user-facing checks or policy enforcement.
 
 2. **Facade / User-Facing Layer (`cf_*`)**
-   - Dispatcher layer by enum/macro for algorithm selection.  
-   - Supports streaming, pipelining, and memory-safe APIs.  
-   - Enforces key sizes and nonce rules for AEAD.  
-   - Handles zeroization, error codes, and resource management.  
+   - Dispatcher layer by enum/macro for algorithm selection.
+   - Supports streaming, pipelining, and memory-safe APIs.
+   - Enforces key sizes and nonce rules for AEAD.
+   - Handles zeroization, error codes, and resource management.
 
 ---
 
 ## Main Features
 
 ### Symmetric Ciphers
-- **AES:** ECB, CBC, CFB8, CFB128, OFB, CTR modes  
-- **ChaCha / XChaCha:**  ChaCha8, ChaCha12, ChaCha20, XChaCha8 XChaCha12, XChaCha20  
-- **AEAD Constructions:** AES-GCM, ChaCha20-Poly1305, XChaCha20-Poly1305  
+- **AES:** ECB, CBC, CFB8, CFB128, OFB, CTR modes
+- **ChaCha / XChaCha:**  ChaCha8, ChaCha12, ChaCha20, XChaCha8 XChaCha12, XChaCha20
+- **AEAD Constructions:** AES-GCM, ChaCha20-Poly1305, XChaCha20-Poly1305
 
 ### Hash Functions
-- **SHA family:** SHA-1, SHA-224, SHA-256, SHA-384, SHA-512  
+- **SHA family:** SHA-1, SHA-224, SHA-256, SHA-384, SHA-512
 - **SHA3 / Keccak:** SHA3-224/256/384/512, Keccak, rawSHAKE128/256, SHAKE128/256
 - **cSHAKE** cSHAKE128/256
 - **Legacy:** MD5
 
 ### Message Authentication Codes (MACs)
-- HMAC, CMAC, GMAC, KMAC, KMAC-XOF, Poly1305  
+- HMAC, CMAC, GMAC, KMAC, KMAC-XOF, Poly1305
 
 ### Key Derivation Functions (KDFs)
 - PBKDF2, HKDF, KMAC-XOF
@@ -85,9 +85,9 @@ CryptoForge is intended for **educational, experimental**. It has **not undergon
 - Base16, Base32, Base58, Base64, Base85
 
 ### Miscellaneous
-- Modular, layered API for flexibility  
-- Portable and lightweight, suitable for embedded targets  
-- Configurable memory footprint via compile-time options  
+- Modular, layered API for flexibility
+- Portable and lightweight, suitable for embedded targets
+- Configurable memory footprint via compile-time options
 
 ---
 
@@ -111,11 +111,11 @@ However, **CryptoForge is not production-ready** at this stage:
   - **NIST MCTs (Monte Carlo tests)**
   - Other internal or synthetic test suites  
   These cover different usage patterns, boundary conditions, and input scenarios.
-- Side-channel resistance beyond basic constant-time logic  
+- Side-channel resistance beyond basic constant-time logic
   (e.g., cache, power, or microarchitectural attacks) has **not been formally evaluated**.
 - The API surface and internal behavior may change as the project evolves.
 
-**Do not use CryptoForge to protect sensitive, high-value, or real-world secrets** without  
+**Do not use CryptoForge to protect sensitive, high-value, or real-world secrets** without
 independent review and additional hardening.
 
 CryptoForge is best suited for:
@@ -129,14 +129,14 @@ CryptoForge is best suited for:
 
 ## Performance Notes
 
-CryptoForge prioritizes **clarity, correctness, and safety** over raw speed.  
+CryptoForge prioritizes **clarity, correctness, and safety** over raw speed.
 
-Benchmarks against highly-optimized libraries like **Crypto++** suggest CryptoForge is roughly **4× slower on average**, though performance depends on the algorithm—sometimes it can be comparable or even faster. Note that your CPU may outperform the hardware used in standard benchmarks. 
+Benchmarks against highly-optimized libraries like **Crypto++** suggest CryptoForge is roughly **4× slower on average**, though performance depends on the algorithm—sometimes it can be comparable or even faster. Note that your CPU may outperform the hardware used in standard benchmarks.
 
 This is expected because:
-- CryptoForge uses **pure C implementations** without CPU-specific assembly optimizations (AES-NI, AVX, NEON, etc.).  
-- High-level API calls enforce **memory safety and zeroization**, which adds overhead.  
-- The library is primarily intended for **education, experimentation, and research**, rather than production-grade performance.  
+- CryptoForge uses **pure C implementations** without CPU-specific assembly optimizations (AES-NI, AVX, NEON, etc.).
+- High-level API calls enforce **memory safety and zeroization**, which adds overhead.
+- The library is primarily intended for **education, experimentation, and research**, rather than production-grade performance.
 
 Performance may improve with compiler optimizations or targeted algorithmic tweaks, but **speed is not the main design goal** at this stage.
 
@@ -170,6 +170,21 @@ Performance may improve with compiler optimizations or targeted algorithmic twea
 
 ---
 
+## Build and Install
+
+### Clone the Repository
+
+```bash
+git clone https://github.com/0xNullll/CryptoForge
+cd CryptoForge
+```
+
+### Installation Instructions
+
+After obtaining the source code, please refer to [INSTALL](INSTALL.md) for detailed instructions on building and installing CryptoForge.
+
+---
+
 ## License
 
-This project is released under the **Apache-2.0 license**. See '[LICENSE](LICENSE)' for full text.
+This project is released under the **Apache-2.0 license**. See [LICENSE](LICENSE) for full text.
