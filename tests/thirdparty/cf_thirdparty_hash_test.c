@@ -8,11 +8,13 @@
 void test_shake128_kat(void) {
     size_t num_test_vectors = sizeof(shake128_kat_vectors) / sizeof(shake128_kat_vectors[0]);
     size_t total_failures = 0;
-    size_t total_success = 0;
+    size_t total_successes = 0;
 
     const CF_HASH *hash = CF_Hash_GetByFlag(CF_SHAKE128);
     if (!hash) {
-        printf("SHAKE128 not available\n");
+#if ENABLE_TESTS_VERBOSE
+            printf("Unknown KDF flag %u\n", CF_SHAKE128);
+#endif
         return;
     }
 
@@ -23,14 +25,18 @@ void test_shake128_kat(void) {
 
         CF_HASH_CTX *ctx = CF_Hash_InitAlloc(hash, NULL, &status);
         if (!ctx || status != CF_SUCCESS) {
+#if ENABLE_TESTS_VERBOSE
             printf("Failed to init SHAKE128 ctx for TcId %d\n", tv->tc_id);
+#endif
             total_failures++;
             continue;
         }
 
         status = CF_Hash_Update(ctx, tv->msg, tv->msg_len);
         if (status != CF_SUCCESS) {
+#if ENABLE_TESTS_VERBOSE
             printf("SHAKE128 update failed for TcId %d\n", tv->tc_id);
+#endif
             CF_Hash_Free(&ctx);
             total_failures++;
             continue;
@@ -38,13 +44,16 @@ void test_shake128_kat(void) {
 
         status = CF_Hash_Final(ctx, out, tv->out_len);
         if (status != CF_SUCCESS) {
+#if ENABLE_TESTS_VERBOSE
             printf("SHAKE128 final failed for TcId %d\n", tv->tc_id);
+#endif
             CF_Hash_Free(&ctx);
             total_failures++;
             continue;
         }
 
         if (status != CF_SUCCESS || memcmp(out, tv->output, tv->out_len) != 0) {
+#if ENABLE_TESTS_VERBOSE
             printf("SHAKE128 TcId %d FAILED\n", tv->tc_id);
             if (tv->type && tv->type[0] != '\0') {
                 printf("  Comment: %s\n", tv->type);
@@ -54,26 +63,33 @@ void test_shake128_kat(void) {
             printf("\nComputed: ");
             for (size_t j = 0; j < tv->out_len; j++) printf("%02x", out[j]);
             printf("\n");
+#endif
             total_failures++;
         } else {
-            total_success++;
+            total_successes++;
         }
 
         CF_Hash_Free(&ctx);
     }
 
+#if ENABLE_TESTS_VERBOSE
     printf("SHAKE128 KAT tests completed: %zu total, %zu passed, %zu failed\n",
-           num_test_vectors, total_success, total_failures);
+           num_test_vectors, total_successes, total_failures);
+#else
+    printf("  %-25s %zu/%zu passed, %zu failed\n", "SHAKE128", total_successes, num_test_vectors, total_failures);
+#endif
 }
 
 void test_shake256_kat(void) {
     size_t num_test_vectors = sizeof(shake256_kat_vectors) / sizeof(shake256_kat_vectors[0]);
     size_t total_failures = 0;
-    size_t total_success = 0;
+    size_t total_successes = 0;
 
     const CF_HASH *hash = CF_Hash_GetByFlag(CF_SHAKE256);
     if (!hash) {
-        printf("SHAKE256 not available\n");
+#if ENABLE_TESTS_VERBOSE
+            printf("Unknown KDF flag %u\n", CF_SHAKE256);
+#endif
         return;
     }
 
@@ -84,14 +100,18 @@ void test_shake256_kat(void) {
 
         CF_HASH_CTX *ctx = CF_Hash_InitAlloc(hash, NULL, &status);
         if (!ctx || status != CF_SUCCESS) {
+#if ENABLE_TESTS_VERBOSE
             printf("Failed to init SHAKE256 ctx for TcId %d\n", tv->tc_id);
+#endif
             total_failures++;
             continue;
         }
 
         status = CF_Hash_Update(ctx, tv->msg, tv->msg_len);
         if (status != CF_SUCCESS) {
+#if ENABLE_TESTS_VERBOSE
             printf("SHAKE256 update failed for TcId %d\n", tv->tc_id);
+#endif
             CF_Hash_Free(&ctx);
             total_failures++;
             continue;
@@ -99,13 +119,16 @@ void test_shake256_kat(void) {
 
         status = CF_Hash_Final(ctx, out, tv->out_len);
         if (status != CF_SUCCESS) {
+#if ENABLE_TESTS_VERBOSE
             printf("SHAKE256 final failed for TcId %d\n", tv->tc_id);
+#endif
             CF_Hash_Free(&ctx);
             total_failures++;
             continue;
         }
 
         if (status != CF_SUCCESS || memcmp(out, tv->output, tv->out_len) != 0) {
+#if ENABLE_TESTS_VERBOSE
             printf("SHAKE256 TcId %d FAILED\n", tv->tc_id);
             if (tv->type && tv->type[0] != '\0') {
                 printf("  Comment: %s\n", tv->type);
@@ -115,16 +138,21 @@ void test_shake256_kat(void) {
             printf("\nComputed: ");
             for (size_t j = 0; j < tv->out_len; j++) printf("%02x", out[j]);
             printf("\n");
+#endif
             total_failures++;
         } else {
-            total_success++;
+            total_successes++;
         }
 
         CF_Hash_Free(&ctx);
     }
 
+#if ENABLE_TESTS_VERBOSE
     printf("SHAKE256 KAT tests completed: %zu total, %zu passed, %zu failed\n",
-           num_test_vectors, total_success, total_failures);
+           num_test_vectors, total_successes, total_failures);
+#else
+    printf("  %-25s %zu/%zu passed, %zu failed\n", "SHAKE256", total_successes, num_test_vectors, total_failures);
+#endif
 }
 
 #endif // ENABLE_TESTS

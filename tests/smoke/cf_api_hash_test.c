@@ -101,7 +101,12 @@ static void do_hash_opts_test(void) {
 }
 
 void cf_hash_api_test(void) {
+#if ENABLE_TESTS_VERBOSE
     printf("[*] Hash API smoke-test starting...\n");
+#else
+    printf("Hash API tests:\n");
+#endif
+
 
     // Iterate over all hash algorithms
     uint32_t algo_flags[] = {
@@ -140,13 +145,19 @@ void cf_hash_api_test(void) {
         CF_ASSERT(fr == CF_SUCCESS);
         CF_ASSERT(ctx == NULL);
 
+#if ENABLE_TESTS_VERBOSE
         printf("[*] Passed smoke-test for hash %s\n", CF_Hash_GetName(hash));
+#else
+        printf("  %-20s  passed\n", CF_Hash_GetName(hash));
+#endif
     }
 
     // Test options API
     do_hash_opts_test();
 
+#if ENABLE_TESTS_VERBOSE
     printf("[*] Hash API smoke-test completed successfully.\n");
+#endif
 }
 
 #endif // ENABLE_TESTS

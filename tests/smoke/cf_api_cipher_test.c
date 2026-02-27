@@ -133,7 +133,11 @@ static void do_cipher_oneshot_test(const CF_CIPHER *cipher, const uint8_t *key, 
 // Smoke-test entry
 // ============================
 void cf_cipher_api_test(void) {
+#if ENABLE_TESTS_VERBOSE
     printf("[*] Cipher API smoke-test starting...\n");
+#else
+    printf("Cipher API tests:\n");
+#endif
 
     uint8_t key[CF_KEY_256_SIZE] = {0};
 
@@ -213,8 +217,11 @@ void cf_cipher_api_test(void) {
             do_cipher_oneshot_test(cipher, key, key_len, CF_OP_ENCRYPT);
             do_cipher_oneshot_test(cipher, key, key_len, CF_OP_DECRYPT);
 
-            printf("[*] Passed smoke-test for cipher %s\n",
-                   CF_Cipher_GetFullName(ctx));
+#if ENABLE_TESTS_VERBOSE
+            printf("[*] Passed smoke-test for cipher %s\n", CF_Cipher_GetFullName(ctx));
+#else
+            printf("  %-20s  passed\n", CF_Cipher_GetFullName(ctx));
+#endif
 
             st = CF_Cipher_Free(&ctx);
             CF_ASSERT(st == CF_SUCCESS);
@@ -225,7 +232,9 @@ void cf_cipher_api_test(void) {
         }
     }
 
+#if ENABLE_TESTS_VERBOSE
     printf("[*] Cipher API smoke-test completed successfully.\n");
+#endif
 }
 
 #endif // ENABLE_TESTS

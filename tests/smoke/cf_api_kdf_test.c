@@ -85,7 +85,11 @@ static void do_kdf_compute_test(const CF_KDF *kdf, const CF_KDF_OPTS *opts, uint
 // Smoke-test entry
 // ============================
 void cf_kdf_api_test(void) {
+#if ENABLE_TESTS_VERBOSE
     printf("[*] KDF API smoke-test starting...\n");
+#else
+    printf("KDF API tests:\n");
+#endif
 
     uint8_t ikm[CF_MAX_DEFAULT_DIGEST_SIZE] = {0};
 
@@ -160,8 +164,11 @@ void cf_kdf_api_test(void) {
             // One-shot compute
             do_kdf_compute_test(kdf, p_opts, subflags[j]);
 
-            printf("[*] Passed smoke-test for KDF %s\n",
-                    CF_KDF_GetFullName(ctx));
+#if ENABLE_TESTS_VERBOSE
+            printf("[*] Passed smoke-test for KDF %s\n", CF_KDF_GetFullName(ctx));
+#else
+            printf("  %-20s  passed\n", CF_KDF_GetFullName(ctx));
+#endif
 
             CF_STATUS fr = CF_KDF_Free(&ctx);
             CF_ASSERT(fr == CF_SUCCESS);
@@ -172,7 +179,10 @@ void cf_kdf_api_test(void) {
     }
 
     do_kdf_opts_test();
+
+#if ENABLE_TESTS_VERBOSE
     printf("[*] KDF API smoke-test completed successfully.\n");
+#endif
 }
 
 #endif // ENABLE_TESTS

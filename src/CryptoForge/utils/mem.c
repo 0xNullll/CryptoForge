@@ -16,7 +16,7 @@
  */
 #include "../include/utils/mem.h"
 
-#if CF_ENABLE_BARRIER
+#if ENABLE_BARRIER
 //
 // Compiler-specific memory barrier
 //
@@ -41,7 +41,7 @@
     #define CF_MEM_BARRIER(ptr, len) do { (void)(ptr); (void)(len); } while(0)
 #endif
 
-#endif // CF_ENABLE_BARRIER
+#endif // ENABLE_BARRIER
 
 void secure_zero(void *buf, size_t len) {
     if (!buf || len == 0) return;
@@ -65,10 +65,10 @@ void secure_zero(void *buf, size_t len) {
     while (tmp_len--) *p++ = 0;
 
     // Compiler barrier: pretend memory was read
-#if CF_ENABLE_BARRIER
+#if ENABLE_BARRIER
     // use original len, not decremented tmp_len
     CF_MEM_BARRIER(buf, len);
-#endif // CF_ENABLE_BARRIER
+#endif // ENABLE_BARRIER
 #endif
 }
 
@@ -95,10 +95,10 @@ void secure_memset(void *dst, int val, size_t len) {
         size_t tmp_len = len;  // store original length for barrier
         while (tmp_len--) *p++ = (unsigned char)val;
 
-#if CF_ENABLE_BARRIER
+#if ENABLE_BARRIER
     // compiler barrier to prevent reordering/elimination
     CF_MEM_BARRIER(dst, len);
-#endif // CF_ENABLE_BARRIER
+#endif // ENABLE_BARRIER
     }
 }
 
@@ -109,7 +109,7 @@ void secure_memcpy(void *dst, const void *src, size_t len) {
     // but can optionally combine with compiler barrier if paranoid
     memcpy(dst, src, len);
 
-#if CF_ENABLE_BARRIER
+#if ENABLE_BARRIER
     // compiler barrier to prevent reordering/elimination
     CF_MEM_BARRIER(dst, len);
 #endif
