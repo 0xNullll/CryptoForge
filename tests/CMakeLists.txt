@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.24)
 # Collect all test sources
 # -------------------------------
 file(GLOB_RECURSE TEST_SRC
-    "run_all_tests.c"       # include the main runner
+    "cf_tests.c"            # include the main runner
     "smoke/*.c"             # all smoke tests
     "thirdparty/*.c"        # all thirdparty tests
 )
@@ -22,17 +22,17 @@ target_compile_definitions(cf_tests PRIVATE
     ENABLE_TESTS_VERBOSE=$<BOOL:${ENABLE_CF_TESTS_VERBOSE}>
 )
 
-if(CF_LINK_SHARED)
-    target_link_libraries(cf_tests PRIVATE cryptoforge_shared)
+# Link to the main cryptoforge target, static or shared
+target_link_libraries(cf_tests PRIVATE cryptoforge)
 
+# If using shared library on Windows, copy DLLs after build
+if(CF_LINK_SHARED AND WIN32)
     add_custom_command(TARGET cf_tests POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_RUNTIME_DLLS:cf_tests>
             $<TARGET_FILE_DIR:cf_tests>
         COMMAND_EXPAND_LISTS
     )
-else()
-    target_link_libraries(cf_tests PRIVATE cryptoforge_static)
 endif()
 
 # Include directories for headers and vectors

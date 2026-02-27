@@ -44,7 +44,7 @@ typedef struct _ll_POLY1305_CTX {
     uint32_t acc[5];
 
     /* partial block buffer */
-    uint8_t  buffer[LL_POLY1305_BLOCK_LEN];
+    uint8_t  buffer[LL_POLY1305_BLOCK_LEN + 1];
     size_t   buffer_len;
 
     int isFinalized;

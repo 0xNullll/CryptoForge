@@ -65,8 +65,5 @@ set_target_properties(cryptoforge PROPERTIES OUTPUT_NAME "cryptoforge")
 # Optional Windows libraries
 # -------------------------------
 if(MSVC)
-    target_link_libraries(cryptoforge_static PRIVATE bcrypt)
-    if(CF_LINK_SHARED)
-        target_link_libraries(cryptoforge_shared PRIVATE bcrypt)
-    endif()
+    target_link_libraries(cryptoforge PRIVATE bcrypt)
 endif()
