@@ -126,7 +126,11 @@ static void do_mac_opts_test(void) {
 }
 
 void cf_mac_api_test(void) {
+#if ENABLE_TESTS_VERBOSE
     printf("[*] MAC API smoke-test starting...\n");
+#else
+    printf("MAC API tests:\n");
+#endif
 
     uint8_t key[CF_MAX_CIPHER_KEY_SIZE] = {0};
 
@@ -195,9 +199,11 @@ void cf_mac_api_test(void) {
                 do_mac_compute_test(mac, key, key_len, sub_flags[j]);
                 do_mac_clone_test(ctx);
 
-                printf("[*] Passed smoke-test for MAC %s\n",
-                       CF_MAC_GetFullName(ctx));
-
+#if ENABLE_TESTS_VERBOSE
+                printf("[*] Passed smoke-test for MAC %s\n", CF_MAC_GetFullName(ctx));
+#else
+                printf("  %-20s  passed\n", CF_MAC_GetFullName(ctx));
+#endif
                 CF_STATUS fr = CF_MAC_Free(&ctx);
                 CF_ASSERT(fr == CF_SUCCESS);
                 CF_ASSERT(ctx == NULL);
@@ -207,7 +213,9 @@ void cf_mac_api_test(void) {
 
     do_mac_opts_test();
 
+#if ENABLE_TESTS_VERBOSE
     printf("[*] MAC API smoke-test completed successfully.\n");
+#endif
 }
 
 #endif // ENABLE_TESTS

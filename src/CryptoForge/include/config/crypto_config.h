@@ -17,22 +17,29 @@
 #ifndef CRYPTO_CONFIG_H
 #define CRYPTO_CONFIG_H
 
+// Default BUILDING_CF_DLL (1 = on, 0 = off)
 #ifndef BUILDING_CF_DLL
 #define BUILDING_CF_DLL 1
 #endif
 
+// Default BUILDING_CF_SHARED for Linux/macOS (1 = on, 0 = off)
+#ifndef BUILDING_CF_SHARED
+#define BUILDING_CF_SHARED 0
+#endif
+
 // Enable or disable compiler barriers (1 = on, 0 = off)
-#ifndef CF_ENABLE_BARRIER
-#define CF_ENABLE_BARRIER 0
+#ifndef ENABLE_BARRIER
+#define ENABLE_BARRIER 0
 #endif
 
-#ifndef CF_DEBUG
-#define CF_DEBUG 0
-#endif
-
-// enable demo/test code (1 = on, 0 = off)
+// Enable demo/test code (1 = on, 0 = off)
 #ifndef ENABLE_TESTS
 #define ENABLE_TESTS 1
+#endif
+
+// Enable verbose test code output (1 = on, 0 = off)
+#ifndef ENABLE_TESTS_VERBOSE
+#define ENABLE_TESTS_VERBOSE 0
 #endif
 
 // Check every input byte in cf_enc and enforce max length / null termination (1 = on, 0 = off)

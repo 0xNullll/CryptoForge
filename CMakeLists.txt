@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.24)
 
 project(CryptoForge
-    VERSION 1.0
+    VERSION 0.1.0
     LANGUAGES C
 )
 
@@ -14,22 +14,44 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 # -------------------------------
 # Build options
 # -------------------------------
-option(CF_LINK_SHARED "Build and link tests against shared library" OFF)
+option(CF_LINK_SHARED "Build library as shared (DLL/.so)" OFF)
 option(CF_BUILD_TESTS "Build tests" ON)
 
 # -------------------------------
 # CryptoForge configurable flags
 # -------------------------------
-option(ENABLE_CF_BARRIER "Enable compiler barriers" OFF)
-option(ENABLE_CF_DEBUG   "Enable debug mode" ON)
-option(ENABLE_CF_TESTS   "Enable demo/test code" OFF)
-option(ENABLE_BASE_TRUNC "Enforce truncation on null" OFF)
+option(ENABLE_CF_BARRIER        "Enable compiler barriers" OFF)
+option(ENABLE_CF_TESTS          "Enable demo/test code" OFF)
+option(ENABLE_CF_TESTS_VERBOSE  "Enable verbose demo/test output" OFF)
+option(ENABLE_CF_BASE_TRUNC     "Enforce truncation on null" OFF)
+option(ENABLE_CF_DEBUG          "Enable debug features" OFF)
 
+# -------------------------------
+# Map flags to preprocessor macros
+# -------------------------------
+# BUILDING_CF_DLL / BUILDING_CF_SHARED
+if(CF_LINK_SHARED)
+    if(WIN32)
+        set(BUILDING_CF_DLL ON)
+        add_compile_definitions(BUILDING_CF_DLL=1)
+    elseif(UNIX)
+        set(BUILDING_CF_SHARED ON)
+        add_compile_definitions(BUILDING_CF_SHARED=1)
+    endif()
+else()
+    add_compile_definitions(
+        BUILDING_CF_DLL=0
+        BUILDING_CF_SHARED=0
+    )
+endif()
+
+# Other configurable macros
 add_compile_definitions(
-    CF_ENABLE_BARRIER=$<BOOL:${ENABLE_CF_BARRIER}>
-    CF_DEBUG=$<BOOL:${ENABLE_CF_DEBUG}>
+    ENABLE_BARRIER=$<BOOL:${ENABLE_CF_BARRIER}>
     ENABLE_TESTS=$<BOOL:${ENABLE_CF_TESTS}>
-    BASE_TRUNCATE_ON_NULL=$<BOOL:${ENABLE_BASE_TRUNC}>
+    ENABLE_TESTS_VERBOSE=$<BOOL:${ENABLE_CF_TESTS_VERBOSE}>
+    BASE_TRUNCATE_ON_NULL=$<BOOL:${ENABLE_CF_BASE_TRUNC}>
+    CF_DEBUG=$<BOOL:${ENABLE_CF_DEBUG}>
 )
 
 # -------------------------------
@@ -51,6 +73,25 @@ endif()
 set(CMAKE_CONFIGURATION_TYPES "Debug;RelWithDebInfo;Release;MaxOptRelease" CACHE STRING "" FORCE)
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the build type." FORCE)
+endif()
+
+# -------------------------------
+# Optional user-specified output folder
+# -------------------------------
+set(OUTPUT_DIR "" CACHE PATH "Optional folder to drop build artifacts into")
+if(NOT OUTPUT_DIR STREQUAL "")
+    # Single-configuration generators
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${OUTPUT_DIR}")
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_DIR}")
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${OUTPUT_DIR}")
+
+    # Multi-configuration generators (Visual Studio, Xcode)
+    foreach(OUTPUTCONFIG IN ITEMS Debug RelWithDebInfo Release MaxOptRelease)
+        string(TOUPPER "${OUTPUTCONFIG}" OUTPUTCONFIG_UPPER)
+        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG_UPPER} "${OUTPUT_DIR}")
+        set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${OUTPUTCONFIG_UPPER} "${OUTPUT_DIR}")
+        set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${OUTPUTCONFIG_UPPER} "${OUTPUT_DIR}")
+    endforeach()
 endif()
 
 # -------------------------------

@@ -21,14 +21,20 @@
 #include "../config/crypto_config.h"
 #include "../config/libs.h"
 
-#ifdef _WIN32
-  #ifdef BUILDING_CF_DLL
-    #define CF_API __declspec(dllexport)
-  #else
-    #define CF_API __declspec(dllimport)
-  #endif
+#if defined(_WIN32) || defined(_WIN64)
+    #if BUILDING_CF_DLL
+        #define CF_API __declspec(dllexport)   // exporting DLL symbols
+    #else
+        #define CF_API                          // static library
+    #endif
+#elif defined(__GNUC__) || defined(__clang__)
+    #if BUILDING_CF_SHARED
+        #define CF_API __attribute__((visibility("default")))  // exporting shared lib symbols
+    #else
+        #define CF_API                                         // static library
+    #endif
 #else
-  #define CF_API
+    #define CF_API                                             // fallback
 #endif
 
 #ifdef _MSC_VER
@@ -53,19 +59,17 @@
 #define CPU_BIG_ENDIAN 0
 #endif
 
-#ifdef CF_DEBUG
-  #ifndef CF_ASSERT
-  #define CF_ASSERT(expr)                                           \
-      do {                                                          \
-          if (!(expr)) {                                            \
-              fprintf(stderr, "Assertion failed: %s\n", #expr);     \
-              fprintf(stderr, "  File: %s\n", __FILE__);            \
-              fprintf(stderr, "  Line: %d\n", __LINE__);            \
-              fflush(stderr);                                       \
-              abort();                                              \
-          }                                                         \
-      } while (0)
-  #endif
+#ifndef CF_ASSERT
+#define CF_ASSERT(expr)                                           \
+    do {                                                          \
+        if (!(expr)) {                                            \
+            fprintf(stderr, "Assertion failed: %s\n", #expr);     \
+            fprintf(stderr, "  File: %s\n", __FILE__);            \
+            fprintf(stderr, "  Line: %d\n", __LINE__);            \
+            fflush(stderr);                                       \
+            abort();                                              \
+        }                                                         \
+    } while (0)
 #endif
 
 #ifndef UNUSED

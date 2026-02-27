@@ -5,7 +5,11 @@
 #define MAX_TEST_ENCODER_BUF 620
 
 void cf_encoder_api_test(void) {
-    printf("[*] Encoder API smoke-test starting...\n");
+    #if ENABLE_TESTS_VERBOSE
+        printf("[*] Encoder API smoke-test starting...\n");
+    #else
+        printf("Encoder API tests:\n");
+    #endif
 
     // -------------------------
     // Test strings
@@ -79,7 +83,9 @@ void cf_encoder_api_test(void) {
         CF_ASSERT(ctx != NULL && st == CF_SUCCESS);
 
         const char *enc_name = CF_Enc_GetName(ctx);
+#if ENABLE_TESTS_VERBOSE
         printf("[*] Testing encoder: %s\n", enc_name);
+#endif
 
         // -------------------------
         // String tests
@@ -94,7 +100,9 @@ void cf_encoder_api_test(void) {
 
             // Skip Z85 if length is not multiple of 4 (adjust if needed)
             if ((enc_flags[i] & CF_BASE85_Z85_ENC) && (src_len % 4 != 0)) {
+#if ENABLE_TESTS_VERBOSE
                 printf("[!] Skipping Z85 decoding for non-multiple-of-4 input\n");
+#endif
                 continue;
             }
 
@@ -125,7 +133,9 @@ void cf_encoder_api_test(void) {
 
             // Skip Z85 if length is not multiple of 4 (adjust if needed)
             if ((enc_flags[i] & CF_BASE85_Z85_ENC) && (src_len % 4 != 0)) {
+#if ENABLE_TESTS_VERBOSE
                 printf("[!] Skipping Z85 decoding for non-multiple-of-4 input\n");
+#endif
                 continue;
             }
 
@@ -159,10 +169,16 @@ void cf_encoder_api_test(void) {
         st = CF_Enc_Free(&ctx);
         CF_ASSERT(st == CF_SUCCESS && ctx == NULL);
 
+#if ENABLE_TESTS_VERBOSE
         printf("[*] Passed smoke-test for encoder %s\n", enc_name);
+#else
+        printf("  %-20s  passed\n", enc_name);
+#endif
     }
 
+#if ENABLE_TESTS_VERBOSE
     printf("[*] Encoder API smoke-test completed successfully.\n");
+#endif
 }
 
 #endif // ENABLE_TESTS

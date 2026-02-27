@@ -17,12 +17,14 @@ void test_hkdf_sha1_wycheproof(void) {
         sizeof(hkdf_sha1_test_vectors) / sizeof(hkdf_sha1_test_vectors[0]);
 
     size_t total_failures = 0;
-    size_t total_success = 0;
+    size_t total_successes = 0;
 
     for (size_t i = 0; i < num_test_vectors; i++) {
         const CF_KDF *kdf = CF_KDF_GetByFlag(CF_HKDF);
         if (!kdf) {
+#if ENABLE_TESTS_VERBOSE
             printf("Unknown KDF flag %u\n", CF_HKDF);
+#endif
             return;
         }
 
@@ -47,7 +49,9 @@ void test_hkdf_sha1_wycheproof(void) {
             );
 
             if (!opts || status != CF_SUCCESS) {
+#if ENABLE_TESTS_VERBOSE
                 printf("HKDF TcId %d FAILED to init options\n", hkdf_sha1_test_vectors[i].tc_id);
+#endif
                 failure = 1;
                 goto print_extra;
             }
@@ -66,7 +70,9 @@ void test_hkdf_sha1_wycheproof(void) {
         );
 
         if (!ctx || status != CF_SUCCESS) {
+#if ENABLE_TESTS_VERBOSE
             printf("HKDF TcId %d FAILED to init context\n", hkdf_sha1_test_vectors[i].tc_id);
+#endif
             failure = 1;
             if (opts)
                 CF_KDFOpts_Free(&opts);
@@ -82,8 +88,10 @@ void test_hkdf_sha1_wycheproof(void) {
         );
 
         if (status != CF_SUCCESS && expected_valid) {
+#if ENABLE_TESTS_VERBOSE
             printf("HKDF TcId %d FAILED (extract rejected valid vector)\n",
                    hkdf_sha1_test_vectors[i].tc_id);
+#endif
             failure = 1;
             CF_KDF_Free(&ctx);
             if (opts)
@@ -100,8 +108,10 @@ void test_hkdf_sha1_wycheproof(void) {
         );
 
         if (status != CF_SUCCESS && expected_valid) {
+#if ENABLE_TESTS_VERBOSE
             printf("HKDF TcId %d FAILED (expand rejected valid vector)\n",
                    hkdf_sha1_test_vectors[i].tc_id);
+#endif
             failure = 1;
             CF_KDF_Free(&ctx);
             if (opts)
@@ -114,15 +124,17 @@ void test_hkdf_sha1_wycheproof(void) {
         // -----------------------------
         if (expected_valid &&
             memcmp(okm, hkdf_sha1_test_vectors[i].okm, hkdf_sha1_test_vectors[i].okm_len) != 0) {
+#if ENABLE_TESTS_VERBOSE
             printf("HKDF TcId %d FAILED, derived key mismatch\n",
                    hkdf_sha1_test_vectors[i].tc_id);
-            failure = 1;
 
             printf("Derived OKM : ");
             DEMO_print_hex(okm, hkdf_sha1_test_vectors[i].okm_len);
 
             printf("Expected OKM : ");
             DEMO_print_hex(hkdf_sha1_test_vectors[i].okm, hkdf_sha1_test_vectors[i].okm_len);
+#endif
+            failure = 1;
         }
 
         CF_KDF_Free(&ctx);
@@ -133,6 +145,7 @@ print_extra:
         if (failure) {
             total_failures++;
 
+#if ENABLE_TESTS_VERBOSE
             if (hkdf_sha1_test_vectors[i].comment &&
                 hkdf_sha1_test_vectors[i].comment[0] != '\0') {
                 printf("  Comment: %s\n", hkdf_sha1_test_vectors[i].comment);
@@ -149,15 +162,20 @@ print_extra:
             }
 
             printf("\n");
+#endif
         } else {
-            total_success++;
+            total_successes++;
         }
     }
 
+#if ENABLE_TESTS_VERBOSE
     printf("HKDF-SHA1 Wycheproof tests completed: %zu total, %zu passed, %zu failed\n",
            num_test_vectors,
-           total_success,
+           total_successes,
            total_failures);
+#else
+    printf("  %-25s %zu/%zu passed, %zu failed\n", "HKDF-SHA1", total_successes, num_test_vectors, total_failures);
+#endif
 }
 
 void test_hkdf_sha256_wycheproof(void) {
@@ -165,12 +183,14 @@ void test_hkdf_sha256_wycheproof(void) {
         sizeof(hkdf_sha256_test_vectors) / sizeof(hkdf_sha256_test_vectors[0]);
 
     size_t total_failures = 0;
-    size_t total_success = 0;
+    size_t total_successes = 0;
 
     for (size_t i = 0; i < num_test_vectors; i++) {
         const CF_KDF *kdf = CF_KDF_GetByFlag(CF_HKDF);
         if (!kdf) {
+#if ENABLE_TESTS_VERBOSE
             printf("Unknown KDF flag %u\n", CF_HKDF);
+#endif
             return;
         }
 
@@ -195,7 +215,9 @@ void test_hkdf_sha256_wycheproof(void) {
             );
 
             if (!opts || status != CF_SUCCESS) {
+#if ENABLE_TESTS_VERBOSE
                 printf("HKDF TcId %d FAILED to init options\n", hkdf_sha256_test_vectors[i].tc_id);
+#endif
                 failure = 1;
                 goto print_extra;
             }
@@ -214,7 +236,9 @@ void test_hkdf_sha256_wycheproof(void) {
         );
 
         if (!ctx || status != CF_SUCCESS) {
+#if ENABLE_TESTS_VERBOSE
             printf("HKDF TcId %d FAILED to init context\n", hkdf_sha256_test_vectors[i].tc_id);
+#endif
             failure = 1;
             if (opts)
                 CF_KDFOpts_Free(&opts);
@@ -230,8 +254,10 @@ void test_hkdf_sha256_wycheproof(void) {
         );
 
         if (status != CF_SUCCESS && expected_valid) {
+#if ENABLE_TESTS_VERBOSE
             printf("HKDF TcId %d FAILED (extract rejected valid vector)\n",
                    hkdf_sha256_test_vectors[i].tc_id);
+#endif
             failure = 1;
             CF_KDF_Free(&ctx);
             if (opts)
@@ -248,8 +274,10 @@ void test_hkdf_sha256_wycheproof(void) {
         );
 
         if (status != CF_SUCCESS && expected_valid) {
+#if ENABLE_TESTS_VERBOSE
             printf("HKDF TcId %d FAILED (expand rejected valid vector)\n",
                    hkdf_sha256_test_vectors[i].tc_id);
+#endif
             failure = 1;
             CF_KDF_Free(&ctx);
             if (opts)
@@ -262,16 +290,18 @@ void test_hkdf_sha256_wycheproof(void) {
         // -----------------------------
         if (expected_valid &&
             memcmp(okm, hkdf_sha256_test_vectors[i].okm, hkdf_sha256_test_vectors[i].okm_len) != 0) {
+#if ENABLE_TESTS_VERBOSE
             printf("HKDF TcId %d FAILED, derived key mismatch\n",
                    hkdf_sha256_test_vectors[i].tc_id);
-            failure = 1;
 
             printf("Derived OKM : ");
             DEMO_print_hex(okm, hkdf_sha256_test_vectors[i].okm_len);
 
             printf("Expected OKM : ");
             DEMO_print_hex(hkdf_sha256_test_vectors[i].okm, hkdf_sha256_test_vectors[i].okm_len);
-        }
+#endif
+            failure = 1;
+            }
 
         CF_KDF_Free(&ctx);
         if (opts)
@@ -281,6 +311,7 @@ print_extra:
         if (failure) {
             total_failures++;
 
+#if ENABLE_TESTS_VERBOSE
             if (hkdf_sha256_test_vectors[i].comment &&
                 hkdf_sha256_test_vectors[i].comment[0] != '\0') {
                 printf("  Comment: %s\n", hkdf_sha256_test_vectors[i].comment);
@@ -297,15 +328,20 @@ print_extra:
             }
 
             printf("\n");
+#endif
         } else {
-            total_success++;
+            total_successes++;
         }
     }
 
+#if ENABLE_TESTS_VERBOSE
     printf("HKDF-SHA256 Wycheproof tests completed: %zu total, %zu passed, %zu failed\n",
            num_test_vectors,
-           total_success,
+           total_successes,
            total_failures);
+#else
+    printf("  %-25s %zu/%zu passed, %zu failed\n", "HKDF-SHA256", total_successes, num_test_vectors, total_failures);
+#endif
 }
 
 void test_hkdf_sha384_wycheproof(void) {
@@ -313,12 +349,14 @@ void test_hkdf_sha384_wycheproof(void) {
         sizeof(hkdf_sha384_test_vectors) / sizeof(hkdf_sha384_test_vectors[0]);
 
     size_t total_failures = 0;
-    size_t total_success = 0;
+    size_t total_successes = 0;
 
     for (size_t i = 0; i < num_test_vectors; i++) {
         const CF_KDF *kdf = CF_KDF_GetByFlag(CF_HKDF);
         if (!kdf) {
+#if ENABLE_TESTS_VERBOSE
             printf("Unknown KDF flag %u\n", CF_HKDF);
+#endif
             return;
         }
 
@@ -343,7 +381,9 @@ void test_hkdf_sha384_wycheproof(void) {
             );
 
             if (!opts || status != CF_SUCCESS) {
+#if ENABLE_TESTS_VERBOSE
                 printf("HKDF TcId %d FAILED to init options\n", hkdf_sha384_test_vectors[i].tc_id);
+#endif
                 failure = 1;
                 goto print_extra;
             }
@@ -362,7 +402,9 @@ void test_hkdf_sha384_wycheproof(void) {
         );
 
         if (!ctx || status != CF_SUCCESS) {
+#if ENABLE_TESTS_VERBOSE
             printf("HKDF TcId %d FAILED to init context\n", hkdf_sha384_test_vectors[i].tc_id);
+#endif
             failure = 1;
             if (opts)
                 CF_KDFOpts_Free(&opts);
@@ -378,8 +420,10 @@ void test_hkdf_sha384_wycheproof(void) {
         );
 
         if (status != CF_SUCCESS && expected_valid) {
+#if ENABLE_TESTS_VERBOSE
             printf("HKDF TcId %d FAILED (extract rejected valid vector)\n",
                    hkdf_sha384_test_vectors[i].tc_id);
+#endif
             failure = 1;
             CF_KDF_Free(&ctx);
             if (opts)
@@ -396,8 +440,10 @@ void test_hkdf_sha384_wycheproof(void) {
         );
 
         if (status != CF_SUCCESS && expected_valid) {
+#if ENABLE_TESTS_VERBOSE
             printf("HKDF TcId %d FAILED (expand rejected valid vector)\n",
                    hkdf_sha384_test_vectors[i].tc_id);
+#endif
             failure = 1;
             CF_KDF_Free(&ctx);
             if (opts)
@@ -410,15 +456,17 @@ void test_hkdf_sha384_wycheproof(void) {
         // -----------------------------
         if (expected_valid &&
             memcmp(okm, hkdf_sha384_test_vectors[i].okm, hkdf_sha384_test_vectors[i].okm_len) != 0) {
+#if ENABLE_TESTS_VERBOSE
             printf("HKDF TcId %d FAILED, derived key mismatch\n",
                    hkdf_sha384_test_vectors[i].tc_id);
-            failure = 1;
 
             printf("Derived OKM : ");
             DEMO_print_hex(okm, hkdf_sha384_test_vectors[i].okm_len);
 
             printf("Expected OKM : ");
             DEMO_print_hex(hkdf_sha384_test_vectors[i].okm, hkdf_sha384_test_vectors[i].okm_len);
+#endif
+            failure = 1;
         }
 
         CF_KDF_Free(&ctx);
@@ -429,6 +477,7 @@ print_extra:
         if (failure) {
             total_failures++;
 
+#if ENABLE_TESTS_VERBOSE
             if (hkdf_sha384_test_vectors[i].comment &&
                 hkdf_sha384_test_vectors[i].comment[0] != '\0') {
                 printf("  Comment: %s\n", hkdf_sha384_test_vectors[i].comment);
@@ -445,15 +494,20 @@ print_extra:
             }
 
             printf("\n");
+#endif
         } else {
-            total_success++;
+            total_successes++;
         }
     }
 
+#if ENABLE_TESTS_VERBOSE
     printf("HKDF-SHA384 Wycheproof tests completed: %zu total, %zu passed, %zu failed\n",
            num_test_vectors,
-           total_success,
+           total_successes,
            total_failures);
+#else
+    printf("  %-25s %zu/%zu passed, %zu failed\n", "HKDF-SHA384", total_successes, num_test_vectors, total_failures);
+#endif
 }
 
 void test_hkdf_sha512_wycheproof(void) {
@@ -461,12 +515,14 @@ void test_hkdf_sha512_wycheproof(void) {
         sizeof(hkdf_sha512_test_vectors) / sizeof(hkdf_sha512_test_vectors[0]);
 
     size_t total_failures = 0;
-    size_t total_success = 0;
+    size_t total_successes = 0;
 
     for (size_t i = 0; i < num_test_vectors; i++) {
         const CF_KDF *kdf = CF_KDF_GetByFlag(CF_HKDF);
         if (!kdf) {
+#if ENABLE_TESTS_VERBOSE
             printf("Unknown KDF flag %u\n", CF_HKDF);
+#endif
             return;
         }
 
@@ -491,7 +547,9 @@ void test_hkdf_sha512_wycheproof(void) {
             );
 
             if (!opts || status != CF_SUCCESS) {
+#if ENABLE_TESTS_VERBOSE
                 printf("HKDF TcId %d FAILED to init options\n", hkdf_sha512_test_vectors[i].tc_id);
+#endif
                 failure = 1;
                 goto print_extra;
             }
@@ -510,7 +568,9 @@ void test_hkdf_sha512_wycheproof(void) {
         );
 
         if (!ctx || status != CF_SUCCESS) {
+#if ENABLE_TESTS_VERBOSE
             printf("HKDF TcId %d FAILED to init context\n", hkdf_sha512_test_vectors[i].tc_id);
+#endif
             failure = 1;
             if (opts)
                 CF_KDFOpts_Free(&opts);
@@ -526,8 +586,10 @@ void test_hkdf_sha512_wycheproof(void) {
         );
 
         if (status != CF_SUCCESS && expected_valid) {
+#if ENABLE_TESTS_VERBOSE
             printf("HKDF TcId %d FAILED (extract rejected valid vector)\n",
                    hkdf_sha512_test_vectors[i].tc_id);
+#endif
             failure = 1;
             CF_KDF_Free(&ctx);
             if (opts)
@@ -544,8 +606,10 @@ void test_hkdf_sha512_wycheproof(void) {
         );
 
         if (status != CF_SUCCESS && expected_valid) {
+#if ENABLE_TESTS_VERBOSE
             printf("HKDF TcId %d FAILED (expand rejected valid vector)\n",
                    hkdf_sha512_test_vectors[i].tc_id);
+#endif
             failure = 1;
             CF_KDF_Free(&ctx);
             if (opts)
@@ -558,16 +622,18 @@ void test_hkdf_sha512_wycheproof(void) {
         // -----------------------------
         if (expected_valid &&
             memcmp(okm, hkdf_sha512_test_vectors[i].okm, hkdf_sha512_test_vectors[i].okm_len) != 0) {
+#if ENABLE_TESTS_VERBOSE
             printf("HKDF TcId %d FAILED, derived key mismatch\n",
                    hkdf_sha512_test_vectors[i].tc_id);
-            failure = 1;
 
             printf("Derived OKM : ");
             DEMO_print_hex(okm, hkdf_sha512_test_vectors[i].okm_len);
 
             printf("Expected OKM : ");
             DEMO_print_hex(hkdf_sha512_test_vectors[i].okm, hkdf_sha512_test_vectors[i].okm_len);
-        }
+#endif
+            failure = 1;
+            }
 
         CF_KDF_Free(&ctx);
         if (opts)
@@ -577,6 +643,7 @@ print_extra:
         if (failure) {
             total_failures++;
 
+#if ENABLE_TESTS_VERBOSE
             if (hkdf_sha512_test_vectors[i].comment &&
                 hkdf_sha512_test_vectors[i].comment[0] != '\0') {
                 printf("  Comment: %s\n", hkdf_sha512_test_vectors[i].comment);
@@ -593,15 +660,20 @@ print_extra:
             }
 
             printf("\n");
+#endif
         } else {
-            total_success++;
+            total_successes++;
         }
     }
 
+#if ENABLE_TESTS_VERBOSE
     printf("HKDF-SHA512 Wycheproof tests completed: %zu total, %zu passed, %zu failed\n",
            num_test_vectors,
-           total_success,
+           total_successes,
            total_failures);
+#else
+    printf("  %-25s %zu/%zu passed, %zu failed\n", "HKDF-SHA512", total_successes, num_test_vectors, total_failures);
+#endif
 }
 
 void test_pbkdf2_hmac_sha1_wycheproof(void) {
@@ -609,12 +681,14 @@ void test_pbkdf2_hmac_sha1_wycheproof(void) {
         sizeof(pbkdf2_hmac_sha1_test_vectors) / sizeof(pbkdf2_hmac_sha1_test_vectors[0]);
 
     size_t total_failures = 0;
-    size_t total_success = 0;
+    size_t total_successes = 0;
 
     for (size_t i = 0; i < num_test_vectors; i++) {
         const CF_KDF *kdf = CF_KDF_GetByFlag(CF_PBKDF2);
         if (!kdf) {
+#if ENABLE_TESTS_VERBOSE
             printf("Unknown KDF flag %u\n", CF_PBKDF2);
+#endif
             return;
         }
 
@@ -637,7 +711,9 @@ void test_pbkdf2_hmac_sha1_wycheproof(void) {
         );
 
         if (!opts || status != CF_SUCCESS) {
+#if ENABLE_TESTS_VERBOSE
             printf("PBKDF2 TcId %d FAILED to init options\n", pbkdf2_hmac_sha1_test_vectors[i].tc_id);
+#endif
             failure = 1;
             goto print_extra;
         }
@@ -655,7 +731,9 @@ void test_pbkdf2_hmac_sha1_wycheproof(void) {
         );
 
         if (!ctx || status != CF_SUCCESS) {
+#if ENABLE_TESTS_VERBOSE
             printf("PBKDF2 TcId %d FAILED to init context\n", pbkdf2_hmac_sha1_test_vectors[i].tc_id);
+#endif
             failure = 1;
             if (opts)
                 CF_KDFOpts_Free(&opts);
@@ -671,8 +749,10 @@ void test_pbkdf2_hmac_sha1_wycheproof(void) {
         );
 
         if (status != CF_SUCCESS && expected_valid) {
+#if ENABLE_TESTS_VERBOSE
             printf("PBKDF2 TcId %d FAILED (extract rejected valid vector)\n",
                    pbkdf2_hmac_sha1_test_vectors[i].tc_id);
+#endif
             failure = 1;
             CF_KDF_Free(&ctx);
             if (opts)
@@ -686,8 +766,10 @@ void test_pbkdf2_hmac_sha1_wycheproof(void) {
         );
 
         if (status != CF_SUCCESS && expected_valid) {
+#if ENABLE_TESTS_VERBOSE
             printf("PBKDF2 TcId %d FAILED (expand rejected valid vector)\n",
                    pbkdf2_hmac_sha1_test_vectors[i].tc_id);
+#endif
             failure = 1;
             CF_KDF_Free(&ctx);
             if (opts)
@@ -700,15 +782,17 @@ void test_pbkdf2_hmac_sha1_wycheproof(void) {
         // -----------------------------
         if (expected_valid &&
             memcmp(dk, pbkdf2_hmac_sha1_test_vectors[i].dk, pbkdf2_hmac_sha1_test_vectors[i].dk_len) != 0) {
+#if ENABLE_TESTS_VERBOSE
             printf("PBKDF2 TcId %d FAILED, derived key mismatch\n",
                    pbkdf2_hmac_sha1_test_vectors[i].tc_id);
-            failure = 1;
 
             printf("Derived DK : ");
             DEMO_print_hex(dk, pbkdf2_hmac_sha1_test_vectors[i].dk_len);
 
             printf("Expected DK : ");
             DEMO_print_hex(pbkdf2_hmac_sha1_test_vectors[i].dk, pbkdf2_hmac_sha1_test_vectors[i].dk_len);
+#endif
+            failure = 1;
         }
 
         CF_KDF_Free(&ctx);
@@ -719,6 +803,7 @@ print_extra:
         if (failure) {
             total_failures++;
 
+#if ENABLE_TESTS_VERBOSE
             if (pbkdf2_hmac_sha1_test_vectors[i].comment &&
                 pbkdf2_hmac_sha1_test_vectors[i].comment[0] != '\0') {
                 printf("  Comment: %s\n", pbkdf2_hmac_sha1_test_vectors[i].comment);
@@ -735,15 +820,20 @@ print_extra:
             }
 
             printf("\n");
+#endif
         } else {
-            total_success++;
+            total_successes++;
         }
     }
 
+#if ENABLE_TESTS_VERBOSE
     printf("PBKDF2-SHA1 Wycheproof tests completed: %zu total, %zu passed, %zu failed\n",
            num_test_vectors,
-           total_success,
+           total_successes,
            total_failures);
+#else
+    printf("  %-25s %zu/%zu passed, %zu failed\n", "PBKDF2-SHA1", total_successes, num_test_vectors, total_failures);
+#endif
 }
 
 void test_pbkdf2_hmac_sha224_wycheproof(void) {
@@ -751,12 +841,14 @@ void test_pbkdf2_hmac_sha224_wycheproof(void) {
         sizeof(pbkdf2_hmac_sha224_test_vectors) / sizeof(pbkdf2_hmac_sha224_test_vectors[0]);
 
     size_t total_failures = 0;
-    size_t total_success = 0;
+    size_t total_successes = 0;
 
     for (size_t i = 0; i < num_test_vectors; i++) {
         const CF_KDF *kdf = CF_KDF_GetByFlag(CF_PBKDF2);
         if (!kdf) {
+#if ENABLE_TESTS_VERBOSE
             printf("Unknown KDF flag %u\n", CF_PBKDF2);
+#endif
             return;
         }
 
@@ -779,7 +871,9 @@ void test_pbkdf2_hmac_sha224_wycheproof(void) {
         );
 
         if (!opts || status != CF_SUCCESS) {
+#if ENABLE_TESTS_VERBOSE
             printf("PBKDF2 TcId %d FAILED to init options\n", pbkdf2_hmac_sha224_test_vectors[i].tc_id);
+#endif
             failure = 1;
             goto print_extra;
         }
@@ -797,7 +891,9 @@ void test_pbkdf2_hmac_sha224_wycheproof(void) {
         );
 
         if (!ctx || status != CF_SUCCESS) {
+#if ENABLE_TESTS_VERBOSE
             printf("PBKDF2 TcId %d FAILED to init context\n", pbkdf2_hmac_sha224_test_vectors[i].tc_id);
+#endif
             failure = 1;
             if (opts)
                 CF_KDFOpts_Free(&opts);
@@ -813,8 +909,10 @@ void test_pbkdf2_hmac_sha224_wycheproof(void) {
         );
 
         if (status != CF_SUCCESS && expected_valid) {
+#if ENABLE_TESTS_VERBOSE
             printf("PBKDF2 TcId %d FAILED (extract rejected valid vector)\n",
                    pbkdf2_hmac_sha224_test_vectors[i].tc_id);
+#endif
             failure = 1;
             CF_KDF_Free(&ctx);
             if (opts)
@@ -828,8 +926,10 @@ void test_pbkdf2_hmac_sha224_wycheproof(void) {
         );
 
         if (status != CF_SUCCESS && expected_valid) {
+#if ENABLE_TESTS_VERBOSE
             printf("PBKDF2 TcId %d FAILED (expand rejected valid vector)\n",
                    pbkdf2_hmac_sha224_test_vectors[i].tc_id);
+#endif
             failure = 1;
             CF_KDF_Free(&ctx);
             if (opts)
@@ -842,15 +942,17 @@ void test_pbkdf2_hmac_sha224_wycheproof(void) {
         // -----------------------------
         if (expected_valid &&
             memcmp(dk, pbkdf2_hmac_sha224_test_vectors[i].dk, pbkdf2_hmac_sha224_test_vectors[i].dk_len) != 0) {
+#if ENABLE_TESTS_VERBOSE
             printf("PBKDF2 TcId %d FAILED, derived key mismatch\n",
                    pbkdf2_hmac_sha224_test_vectors[i].tc_id);
-            failure = 1;
 
             printf("Derived DK : ");
             DEMO_print_hex(dk, pbkdf2_hmac_sha224_test_vectors[i].dk_len);
 
             printf("Expected DK : ");
             DEMO_print_hex(pbkdf2_hmac_sha224_test_vectors[i].dk, pbkdf2_hmac_sha224_test_vectors[i].dk_len);
+#endif
+            failure = 1;
         }
 
         CF_KDF_Free(&ctx);
@@ -861,6 +963,7 @@ print_extra:
         if (failure) {
             total_failures++;
 
+#if ENABLE_TESTS_VERBOSE
             if (pbkdf2_hmac_sha224_test_vectors[i].comment &&
                 pbkdf2_hmac_sha224_test_vectors[i].comment[0] != '\0') {
                 printf("  Comment: %s\n", pbkdf2_hmac_sha224_test_vectors[i].comment);
@@ -877,15 +980,20 @@ print_extra:
             }
 
             printf("\n");
+#endif
         } else {
-            total_success++;
+            total_successes++;
         }
     }
 
+#if ENABLE_TESTS_VERBOSE
     printf("PBKDF2-SHA224 Wycheproof tests completed: %zu total, %zu passed, %zu failed\n",
            num_test_vectors,
-           total_success,
+           total_successes,
            total_failures);
+#else
+    printf("  %-25s %zu/%zu passed, %zu failed\n", "PBKDF2-SHA224", total_successes, num_test_vectors, total_failures);
+#endif
 }
 
 void test_pbkdf2_hmac_sha256_wycheproof(void) {
@@ -893,12 +1001,14 @@ void test_pbkdf2_hmac_sha256_wycheproof(void) {
         sizeof(pbkdf2_hmac_sha256_test_vectors) / sizeof(pbkdf2_hmac_sha256_test_vectors[0]);
 
     size_t total_failures = 0;
-    size_t total_success = 0;
+    size_t total_successes = 0;
 
     for (size_t i = 0; i < num_test_vectors; i++) {
         const CF_KDF *kdf = CF_KDF_GetByFlag(CF_PBKDF2);
         if (!kdf) {
+#if ENABLE_TESTS_VERBOSE
             printf("Unknown KDF flag %u\n", CF_PBKDF2);
+#endif
             return;
         }
 
@@ -921,7 +1031,9 @@ void test_pbkdf2_hmac_sha256_wycheproof(void) {
         );
 
         if (!opts || status != CF_SUCCESS) {
+#if ENABLE_TESTS_VERBOSE
             printf("PBKDF2 TcId %d FAILED to init options\n", pbkdf2_hmac_sha256_test_vectors[i].tc_id);
+#endif
             failure = 1;
             goto print_extra;
         }
@@ -939,7 +1051,9 @@ void test_pbkdf2_hmac_sha256_wycheproof(void) {
         );
 
         if (!ctx || status != CF_SUCCESS) {
+#if ENABLE_TESTS_VERBOSE
             printf("PBKDF2 TcId %d FAILED to init context\n", pbkdf2_hmac_sha256_test_vectors[i].tc_id);
+#endif
             failure = 1;
             if (opts)
                 CF_KDFOpts_Free(&opts);
@@ -955,8 +1069,10 @@ void test_pbkdf2_hmac_sha256_wycheproof(void) {
         );
 
         if (status != CF_SUCCESS && expected_valid) {
+#if ENABLE_TESTS_VERBOSE
             printf("PBKDF2 TcId %d FAILED (extract rejected valid vector)\n",
                    pbkdf2_hmac_sha256_test_vectors[i].tc_id);
+#endif
             failure = 1;
             CF_KDF_Free(&ctx);
             if (opts)
@@ -970,8 +1086,10 @@ void test_pbkdf2_hmac_sha256_wycheproof(void) {
         );
 
         if (status != CF_SUCCESS && expected_valid) {
+#if ENABLE_TESTS_VERBOSE
             printf("PBKDF2 TcId %d FAILED (expand rejected valid vector)\n",
                    pbkdf2_hmac_sha256_test_vectors[i].tc_id);
+#endif
             failure = 1;
             CF_KDF_Free(&ctx);
             if (opts)
@@ -984,16 +1102,18 @@ void test_pbkdf2_hmac_sha256_wycheproof(void) {
         // -----------------------------
         if (expected_valid &&
             memcmp(dk, pbkdf2_hmac_sha256_test_vectors[i].dk, pbkdf2_hmac_sha256_test_vectors[i].dk_len) != 0) {
+#if ENABLE_TESTS_VERBOSE
             printf("PBKDF2 TcId %d FAILED, derived key mismatch\n",
                    pbkdf2_hmac_sha256_test_vectors[i].tc_id);
-            failure = 1;
 
             printf("Derived DK : ");
             DEMO_print_hex(dk, pbkdf2_hmac_sha256_test_vectors[i].dk_len);
 
             printf("Expected DK : ");
             DEMO_print_hex(pbkdf2_hmac_sha256_test_vectors[i].dk, pbkdf2_hmac_sha256_test_vectors[i].dk_len);
-        }
+#endif
+            failure = 1;
+            }
 
         CF_KDF_Free(&ctx);
         if (opts)
@@ -1003,6 +1123,7 @@ print_extra:
         if (failure) {
             total_failures++;
 
+#if ENABLE_TESTS_VERBOSE
             if (pbkdf2_hmac_sha256_test_vectors[i].comment &&
                 pbkdf2_hmac_sha256_test_vectors[i].comment[0] != '\0') {
                 printf("  Comment: %s\n", pbkdf2_hmac_sha256_test_vectors[i].comment);
@@ -1019,15 +1140,20 @@ print_extra:
             }
 
             printf("\n");
+#endif
         } else {
-            total_success++;
+            total_successes++;
         }
     }
 
+#if ENABLE_TESTS_VERBOSE
     printf("PBKDF2-SHA256 Wycheproof tests completed: %zu total, %zu passed, %zu failed\n",
            num_test_vectors,
-           total_success,
+           total_successes,
            total_failures);
+#else
+    printf("  %-25s %zu/%zu passed, %zu failed\n", "PBKDF2-SHA256", total_successes, num_test_vectors, total_failures);
+#endif
 }
 
 void test_pbkdf2_hmac_sha384_wycheproof(void) {
@@ -1035,12 +1161,14 @@ void test_pbkdf2_hmac_sha384_wycheproof(void) {
         sizeof(pbkdf2_hmac_sha384_test_vectors) / sizeof(pbkdf2_hmac_sha384_test_vectors[0]);
 
     size_t total_failures = 0;
-    size_t total_success = 0;
+    size_t total_successes = 0;
 
     for (size_t i = 0; i < num_test_vectors; i++) {
         const CF_KDF *kdf = CF_KDF_GetByFlag(CF_PBKDF2);
         if (!kdf) {
+#if ENABLE_TESTS_VERBOSE
             printf("Unknown KDF flag %u\n", CF_PBKDF2);
+#endif
             return;
         }
 
@@ -1063,7 +1191,9 @@ void test_pbkdf2_hmac_sha384_wycheproof(void) {
         );
 
         if (!opts || status != CF_SUCCESS) {
+#if ENABLE_TESTS_VERBOSE
             printf("PBKDF2 TcId %d FAILED to init options\n", pbkdf2_hmac_sha384_test_vectors[i].tc_id);
+#endif
             failure = 1;
             goto print_extra;
         }
@@ -1081,7 +1211,9 @@ void test_pbkdf2_hmac_sha384_wycheproof(void) {
         );
 
         if (!ctx || status != CF_SUCCESS) {
+#if ENABLE_TESTS_VERBOSE
             printf("PBKDF2 TcId %d FAILED to init context\n", pbkdf2_hmac_sha384_test_vectors[i].tc_id);
+#endif
             failure = 1;
             if (opts)
                 CF_KDFOpts_Free(&opts);
@@ -1097,8 +1229,10 @@ void test_pbkdf2_hmac_sha384_wycheproof(void) {
         );
 
         if (status != CF_SUCCESS && expected_valid) {
+#if ENABLE_TESTS_VERBOSE
             printf("PBKDF2 TcId %d FAILED (extract rejected valid vector)\n",
                    pbkdf2_hmac_sha384_test_vectors[i].tc_id);
+#endif
             failure = 1;
             CF_KDF_Free(&ctx);
             if (opts)
@@ -1112,8 +1246,10 @@ void test_pbkdf2_hmac_sha384_wycheproof(void) {
         );
 
         if (status != CF_SUCCESS && expected_valid) {
+#if ENABLE_TESTS_VERBOSE
             printf("PBKDF2 TcId %d FAILED (expand rejected valid vector)\n",
                    pbkdf2_hmac_sha384_test_vectors[i].tc_id);
+#endif
             failure = 1;
             CF_KDF_Free(&ctx);
             if (opts)
@@ -1126,15 +1262,17 @@ void test_pbkdf2_hmac_sha384_wycheproof(void) {
         // -----------------------------
         if (expected_valid &&
             memcmp(dk, pbkdf2_hmac_sha384_test_vectors[i].dk, pbkdf2_hmac_sha384_test_vectors[i].dk_len) != 0) {
+#if ENABLE_TESTS_VERBOSE
             printf("PBKDF2 TcId %d FAILED, derived key mismatch\n",
                    pbkdf2_hmac_sha384_test_vectors[i].tc_id);
-            failure = 1;
 
             printf("Derived DK : ");
             DEMO_print_hex(dk, pbkdf2_hmac_sha384_test_vectors[i].dk_len);
 
             printf("Expected DK : ");
             DEMO_print_hex(pbkdf2_hmac_sha384_test_vectors[i].dk, pbkdf2_hmac_sha384_test_vectors[i].dk_len);
+#endif
+            failure = 1;
         }
 
         CF_KDF_Free(&ctx);
@@ -1145,6 +1283,7 @@ print_extra:
         if (failure) {
             total_failures++;
 
+#if ENABLE_TESTS_VERBOSE
             if (pbkdf2_hmac_sha384_test_vectors[i].comment &&
                 pbkdf2_hmac_sha384_test_vectors[i].comment[0] != '\0') {
                 printf("  Comment: %s\n", pbkdf2_hmac_sha384_test_vectors[i].comment);
@@ -1161,15 +1300,20 @@ print_extra:
             }
 
             printf("\n");
+#endif
         } else {
-            total_success++;
+            total_successes++;
         }
     }
 
+#if ENABLE_TESTS_VERBOSE
     printf("PBKDF2-SHA384 Wycheproof tests completed: %zu total, %zu passed, %zu failed\n",
            num_test_vectors,
-           total_success,
+           total_successes,
            total_failures);
+#else
+    printf("  %-25s %zu/%zu passed, %zu failed\n", "PBKDF2-SHA384", total_successes, num_test_vectors, total_failures);
+#endif
 }
 
 void test_pbkdf2_hmac_sha512_wycheproof(void) {
@@ -1177,12 +1321,14 @@ void test_pbkdf2_hmac_sha512_wycheproof(void) {
         sizeof(pbkdf2_hmac_sha512_test_vectors) / sizeof(pbkdf2_hmac_sha512_test_vectors[0]);
 
     size_t total_failures = 0;
-    size_t total_success = 0;
+    size_t total_successes = 0;
 
     for (size_t i = 0; i < num_test_vectors; i++) {
         const CF_KDF *kdf = CF_KDF_GetByFlag(CF_PBKDF2);
         if (!kdf) {
+#if ENABLE_TESTS_VERBOSE
             printf("Unknown KDF flag %u\n", CF_PBKDF2);
+#endif
             return;
         }
 
@@ -1205,7 +1351,9 @@ void test_pbkdf2_hmac_sha512_wycheproof(void) {
         );
 
         if (!opts || status != CF_SUCCESS) {
+#if ENABLE_TESTS_VERBOSE
             printf("PBKDF2 TcId %d FAILED to init options\n", pbkdf2_hmac_sha512_test_vectors[i].tc_id);
+#endif
             failure = 1;
             goto print_extra;
         }
@@ -1223,7 +1371,9 @@ void test_pbkdf2_hmac_sha512_wycheproof(void) {
         );
 
         if (!ctx || status != CF_SUCCESS) {
+#if ENABLE_TESTS_VERBOSE
             printf("PBKDF2 TcId %d FAILED to init context\n", pbkdf2_hmac_sha512_test_vectors[i].tc_id);
+#endif
             failure = 1;
             if (opts)
                 CF_KDFOpts_Free(&opts);
@@ -1239,8 +1389,10 @@ void test_pbkdf2_hmac_sha512_wycheproof(void) {
         );
 
         if (status != CF_SUCCESS && expected_valid) {
+#if ENABLE_TESTS_VERBOSE
             printf("PBKDF2 TcId %d FAILED (extract rejected valid vector)\n",
                    pbkdf2_hmac_sha512_test_vectors[i].tc_id);
+#endif
             failure = 1;
             CF_KDF_Free(&ctx);
             if (opts)
@@ -1254,8 +1406,10 @@ void test_pbkdf2_hmac_sha512_wycheproof(void) {
         );
 
         if (status != CF_SUCCESS && expected_valid) {
+#if ENABLE_TESTS_VERBOSE
             printf("PBKDF2 TcId %d FAILED (expand rejected valid vector)\n",
                    pbkdf2_hmac_sha512_test_vectors[i].tc_id);
+#endif
             failure = 1;
             CF_KDF_Free(&ctx);
             if (opts)
@@ -1268,15 +1422,17 @@ void test_pbkdf2_hmac_sha512_wycheproof(void) {
         // -----------------------------
         if (expected_valid &&
             memcmp(dk, pbkdf2_hmac_sha512_test_vectors[i].dk, pbkdf2_hmac_sha512_test_vectors[i].dk_len) != 0) {
+#if ENABLE_TESTS_VERBOSE
             printf("PBKDF2 TcId %d FAILED, derived key mismatch\n",
                    pbkdf2_hmac_sha512_test_vectors[i].tc_id);
-            failure = 1;
 
             printf("Derived DK : ");
             DEMO_print_hex(dk, pbkdf2_hmac_sha512_test_vectors[i].dk_len);
 
             printf("Expected DK : ");
             DEMO_print_hex(pbkdf2_hmac_sha512_test_vectors[i].dk, pbkdf2_hmac_sha512_test_vectors[i].dk_len);
+#endif
+            failure = 1;
         }
 
         CF_KDF_Free(&ctx);
@@ -1287,6 +1443,7 @@ print_extra:
         if (failure) {
             total_failures++;
 
+#if ENABLE_TESTS_VERBOSE
             if (pbkdf2_hmac_sha512_test_vectors[i].comment &&
                 pbkdf2_hmac_sha512_test_vectors[i].comment[0] != '\0') {
                 printf("  Comment: %s\n", pbkdf2_hmac_sha512_test_vectors[i].comment);
@@ -1303,15 +1460,20 @@ print_extra:
             }
 
             printf("\n");
+#endif
         } else {
-            total_success++;
+            total_successes++;
         }
     }
 
+#if ENABLE_TESTS_VERBOSE
     printf("PBKDF2-SHA512 Wycheproof tests completed: %zu total, %zu passed, %zu failed\n",
            num_test_vectors,
-           total_success,
+           total_successes,
            total_failures);
+#else
+    printf("  %-25s %zu/%zu passed, %zu failed\n", "PBKDF2-SHA512", total_successes, num_test_vectors, total_failures);
+#endif
 }
 
 #endif // ENABLE_TESTS

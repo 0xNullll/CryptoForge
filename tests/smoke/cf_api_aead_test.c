@@ -62,7 +62,11 @@ static void do_aead_clone_test(CF_AEAD_CTX *ctx) {
 // Smoke-test entry
 // ============================
 void cf_aead_api_test(void) {
+#if ENABLE_TESTS_VERBOSE
     printf("[*] AEAD API smoke-test starting...\n");
+#else
+    printf("AEAD API tests:\n");
+#endif
 
     uint8_t key_128[CF_KEY_128_SIZE] = {0};
     uint8_t key_192[CF_KEY_192_SIZE] = {0};
@@ -112,8 +116,11 @@ void cf_aead_api_test(void) {
                     do_aead_clone_test(ctx);
                     do_aead_oneshot_test(aead, key, key_len, iv, iv_len, aad, sizeof(aad), tag_len);
 
-                    printf("[*] Passed smoke-test for AEAD %s and tag %zu\n",
-                           CF_AEAD_GetFullName(ctx), tag_len*8);
+#if ENABLE_TESTS_VERBOSE
+                    printf("[*] Passed smoke-test for AEAD %s and tag %zu\n", CF_AEAD_GetFullName(ctx), tag_len*8);
+#else
+                    printf("  %-20s Tag-%-3zu passed\n", CF_AEAD_GetFullName(ctx), tag_len*8);
+#endif
 
                     st = CF_AEAD_Free(&ctx);
                     CF_ASSERT(st == CF_SUCCESS);
@@ -134,8 +141,11 @@ void cf_aead_api_test(void) {
             do_aead_clone_test(ctx);
             do_aead_oneshot_test(aead, key, key_len, iv, iv_len, aad, sizeof(aad), tag_len);
 
-            printf("[*] Passed smoke-test for AEAD %s and tag %zu\n",
-                   CF_AEAD_GetFullName(ctx), tag_len*8);
+#if ENABLE_TESTS_VERBOSE
+            printf("[*] Passed smoke-test for AEAD %s and tag %zu\n", CF_AEAD_GetFullName(ctx), tag_len*8);
+#else
+            printf("  %-20s Tag-%-3zu passed\n", CF_AEAD_GetFullName(ctx), tag_len*8);
+#endif
 
             st = CF_AEAD_Free(&ctx);
             CF_ASSERT(st == CF_SUCCESS);
@@ -143,7 +153,9 @@ void cf_aead_api_test(void) {
         }
     }
 
+#if ENABLE_TESTS_VERBOSE
     printf("[*] AEAD API smoke-test completed successfully.\n");
+#endif
 }
 
 #endif // ENABLE_TESTS
