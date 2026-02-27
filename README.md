@@ -108,7 +108,6 @@ However, **CryptoForge is not production-ready** at this stage:
 - Correctness and edge cases are currently verified using a combination of:
   - **Wycheproof test vectors**
   - **NIST KATs (Known Answer Tests)**
-  - **NIST MCTs (Monte Carlo tests)**
   - Other internal or synthetic test suites  
   These cover different usage patterns, boundary conditions, and input scenarios.
 - Side-channel resistance beyond basic constant-time logic
