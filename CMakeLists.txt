@@ -52,6 +52,16 @@ add_compile_definitions(
 )
 
 # -------------------------------
+# Optional user-specified compiler
+# -------------------------------
+# Use this to force a specific compiler, otherwise auto-detect
+set(CF_FORCE_C_COMPILER "" CACHE STRING "Optional: specify full path to C compiler")
+if(NOT CF_FORCE_C_COMPILER STREQUAL "")
+    set(CMAKE_C_COMPILER "${CF_FORCE_C_COMPILER}" CACHE STRING "C compiler" FORCE)
+    message(STATUS "Forcing C compiler to: ${CMAKE_C_COMPILER}")
+endif()
+
+# -------------------------------
 # Detect compiler
 # -------------------------------
 if(CMAKE_C_COMPILER_ID STREQUAL "MSVC")

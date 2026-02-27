@@ -107,6 +107,7 @@ This produces the library and test executable in the build folder.
 
 | Option                        | Default | Description |
 |-------------------------------|---------|-------------|
+| CF_FORCE_C_COMPILER           | ""      | Optional: specify the full path to a C compiler. If set, CMake will force this compiler instead of auto-detecting one. Example: -DCF_FORCE_C_COMPILER=C:/msys64/mingw64/bin/gcc.exe |
 | CF_LINK_SHARED                | OFF     | Build shared (.dll/.so) or static (.lib/.a) library |
 | CF_BUILD_TESTS                | ON      | Build test executable (`cf_tests`) |
 | ENABLE_CF_TESTS_VERBOSE       | OFF     | Enable verbose test output |
