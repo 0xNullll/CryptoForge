@@ -8,8 +8,6 @@ This document describes building and installing **CryptoForge** on supported ope
 - [Quick Build Guide](#quick-build-guide)
 - [Build Types](#build-types)
 - [Library Options](#library-options) 
-- [Test Executable](#test-executable)
-- [Optional Flags](#optional-flags)
 - [Output Directory](#output-directory)
 - [Build Commands](#build-commands)
 - [Recommended Workflow](#recommended-workflow)
