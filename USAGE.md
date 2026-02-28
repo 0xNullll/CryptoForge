@@ -1601,3 +1601,5 @@ clang main.c -IC:/path/to/CryptoForge/include -LC:/path/to/lib -lcryptoforge -o 
 ### Internal Security
 - All sensitive buffers and internal contexts are zeroed automatically.
 - Function pointers and internal descriptors are validated via the magic value before use, preventing tampered contexts from executing.
+
+---
