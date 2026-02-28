@@ -12,6 +12,7 @@ This document describes building and installing **CryptoForge** on supported ope
 - [Build Commands](#build-commands)
 - [Recommended Workflow](#recommended-workflow)
 - [Notes](#notes)
+- [Next Steps](#Next-Steps)
 
 ---
 
@@ -84,7 +85,7 @@ To build a Release version with shared library and verbose tests:
 ```bash
 $ cmake -S . -B build_release -DCMAKE_BUILD_TYPE=Release -DCF_LINK_SHARED=ON -DENABLE_CF_TESTS_VERBOSE=ON
 $ cmake --build build_release --config Release
-$ ctest --test-dir build_release --output-on-failure -C Release
+$ ctest --test-dir build_release -V -C Release
 ```
 This produces the library and test executable in the build folder.
 
@@ -139,7 +140,7 @@ $ cmake --build build --config <BuildType>
 
 ### Run Tests
 ```bash
-$ ctest --test-dir build --output-on-failure -C <BuildType>
+$ ctest --test-dir build -V -C <BuildType>
 ```
 
 ---
@@ -150,14 +151,14 @@ $ ctest --test-dir build --output-on-failure -C <BuildType>
 ```bash
 $ cmake -S . -B build
 $ cmake --build build
-$ ctest --test-dir build --output-on-failure
+$ ctest --test-dir build -V 
 ```
 
 ### Unified output folder (simpler for release)
 ```bash
 $ cmake -S . -B build_release -DOUTPUT_DIR=bin -DCMAKE_BUILD_TYPE=Release -DCF_LINK_SHARED=ON
 $ cmake --build build_release --config Release
-$ ctest --test-dir build_release --output-on-failure -C Release
+$ ctest --test-dir build_release -V -C Release
 ```
 
 ---
@@ -168,3 +169,9 @@ $ ctest --test-dir build_release --output-on-failure -C Release
 - Copying the DLL next to the test executable ensures runtime loading on Windows.
 - Library and test macros are isolated; the library does not see test macros.
 - If the build or CMake setup doesn’t work as expected, please be aware this project is new and experimental; feedback or corrections are welcome!
+
+---
+
+## Next Steps
+
+After building CryptoForge, see the [Usage Guide](USAGE.md) for minimal examples and API usage patterns.

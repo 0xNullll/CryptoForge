@@ -57,12 +57,18 @@ CF_API int CF_Compare(const uint8_t *a, const uint8_t *b, size_t len);
  */
 CF_API int CF_CompareLex(const uint8_t *a, const uint8_t *b, size_t len);
 
-/* 
+/*
  * CF_EntropyFromOS
  *
  * Fills a buffer with cryptographic-quality entropy from the operating system.
- * On Linux, uses getrandom() if available, falling back to /dev/urandom.
- * On Windows, uses BCryptGenRandom.
+ *
+ * On Linux:
+ *   - Uses getrandom() if available
+ *   - Falls back to /dev/urandom if getrandom() is unavailable
+ *
+ * On Windows:
+ *   - Uses BCryptGenRandom on MSVC (modern CNG API)
+ *   - Falls back to the older CryptoAPI (CryptGenRandom) on other Windows compilers
  *
  * Returns CF_SUCCESS on success, or a CF_ERR_* code on failure:
  *   CF_ERR_NULL_PTR - if buf is NULL or len is zero
