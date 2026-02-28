@@ -180,7 +180,10 @@ cd CryptoForge
 
 ### Installation Instructions
 
-After obtaining the source code, please refer to [INSTALL](INSTALL.md) for detailed instructions on building and installing CryptoForge.
+After obtaining the source code:
+
+- See [Build And Install](INSTALL.md) for build and install instructions.
+- See [Usage Guide](USAGE.md) for minimal examples and API usage patterns.
 
 ---
 
