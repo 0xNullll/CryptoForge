@@ -26,9 +26,6 @@ add_executable(cf_tests
     ${CF_RC_FILE}
 )
 
-# =========================================================
-# Link with library
-# =========================================================
 target_link_libraries(cf_tests PRIVATE cryptoforge)
 
 # =========================================================
@@ -43,14 +40,8 @@ if(CF_LINK_SHARED AND WIN32)
     )
 endif()
 
-# =========================================================
-# Include directories
-# =========================================================
 target_include_directories(cf_tests PRIVATE
     ${CMAKE_SOURCE_DIR}/vectors
 )
 
-# =========================================================
-# Register with CTest
-# =========================================================
 add_test(NAME CryptoForgeTests COMMAND cf_tests)

@@ -14,7 +14,6 @@
                 "MinGW Makefiles",
                 "-DCMAKE_BUILD_TYPE=Debug",
                 "-DCMAKE_C_COMPILER=C:/msys64/mingw64/bin/gcc.exe",
-                "-DENABLE_CF_TESTS_VERBOSE=ON",
                 "-DCF_BUILD_TESTS=ON"
             ],
             "group": "build",

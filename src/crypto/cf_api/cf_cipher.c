@@ -39,81 +39,101 @@
 //
 
 // AES-ECB
-static bool aes_ecb_enc_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, const CF_CIPHER_OPTS *opts) {
+static bool aes_ecb_enc_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, uint8_t *ctr_block, const CF_CIPHER_OPTS *opts) {
     UNUSED(out_len);
+    UNUSED(ctr_block);
     UNUSED(opts);
     return ll_AES_ECB_Encrypt((const ll_AES_KEY *)ctx->key_ctx, in, in_len, out);
 }
-static bool aes_ecb_dec_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, const CF_CIPHER_OPTS *opts) {
+static bool aes_ecb_dec_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, uint8_t *ctr_block, const CF_CIPHER_OPTS *opts) {
     UNUSED(out_len);
+    UNUSED(ctr_block);
     UNUSED(opts);
     return ll_AES_ECB_Decrypt((const ll_AES_KEY *)ctx->key_ctx, in, in_len, out);
 }
 
 // AES-CBC
-static bool aes_cbc_enc_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, const CF_CIPHER_OPTS *opts) {
+static bool aes_cbc_enc_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, uint8_t *ctr_block, const CF_CIPHER_OPTS *opts) {
     UNUSED(out_len);
+    UNUSED(ctr_block);
     return ll_AES_CBC_Encrypt((const ll_AES_KEY *)ctx->key_ctx, opts ? opts->iv : NULL, in, in_len, out);
 }
-static bool aes_cbc_dec_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, const CF_CIPHER_OPTS *opts) {
+static bool aes_cbc_dec_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, uint8_t *ctr_block, const CF_CIPHER_OPTS *opts) {
     UNUSED(out_len);
+    UNUSED(ctr_block);
     return ll_AES_CBC_Decrypt((const ll_AES_KEY *)ctx->key_ctx, opts ? opts->iv : NULL, in, in_len, out);
 }
 
 // AES-CBC-PKCS7
-static bool aes_cbc_pkcs7_enc_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, const CF_CIPHER_OPTS *opts) {
+static bool aes_cbc_pkcs7_enc_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, uint8_t *ctr_block, const CF_CIPHER_OPTS *opts) {
+    UNUSED(ctr_block);
     return ll_AES_CBC_Encrypt_PKCS7((const ll_AES_KEY *)ctx->key_ctx, opts ? opts->iv : NULL, in, in_len, out, out_len);
 }
-static bool aes_cbc_pkcs7_dec_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, const CF_CIPHER_OPTS *opts) {
+static bool aes_cbc_pkcs7_dec_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, uint8_t *ctr_block, const CF_CIPHER_OPTS *opts) {
+    UNUSED(ctr_block);
     return ll_AES_CBC_Decrypt_PKCS7((const ll_AES_KEY *)ctx->key_ctx, opts ? opts->iv : NULL, in, in_len, out, out_len);
 }
 
 // AES-OFB
-static bool aes_ofb_enc_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, const CF_CIPHER_OPTS *opts) {
+static bool aes_ofb_enc_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, uint8_t *ctr_block, const CF_CIPHER_OPTS *opts) {
+    UNUSED(ctr_block);
     UNUSED(out_len);
     return ll_AES_OFB_Encrypt((const ll_AES_KEY *)ctx->key_ctx, opts ? opts->iv : NULL, in, in_len, out);
 }
-static bool aes_ofb_dec_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, const CF_CIPHER_OPTS *opts) {
+static bool aes_ofb_dec_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, uint8_t *ctr_block, const CF_CIPHER_OPTS *opts) {
+    UNUSED(ctr_block);
     UNUSED(out_len);
     return ll_AES_OFB_Decrypt((const ll_AES_KEY *)ctx->key_ctx, opts ? opts->iv : NULL, in, in_len, out);
 }
 
 // AES-CFB8
-static bool aes_cfb8_enc_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, const CF_CIPHER_OPTS *opts) {
+static bool aes_cfb8_enc_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, uint8_t *ctr_block, const CF_CIPHER_OPTS *opts) {
     UNUSED(out_len);
+    UNUSED(ctr_block);
     return ll_AES_CFB8_Encrypt((const ll_AES_KEY *)ctx->key_ctx, opts ? opts->iv : NULL, in, in_len, out);
 }
-static bool aes_cfb8_dec_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, const CF_CIPHER_OPTS *opts) {
+static bool aes_cfb8_dec_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, uint8_t *ctr_block, const CF_CIPHER_OPTS *opts) {
     UNUSED(out_len);
+    UNUSED(ctr_block);
     return ll_AES_CFB8_Decrypt((const ll_AES_KEY *)ctx->key_ctx, opts ? opts->iv : NULL, in, in_len, out);
 }
 
 // AES-CFB128
-static bool aes_cfb128_enc_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, const CF_CIPHER_OPTS *opts) {
+static bool aes_cfb128_enc_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, uint8_t *ctr_block, const CF_CIPHER_OPTS *opts) {
     UNUSED(out_len);
+    UNUSED(ctr_block);
     return ll_AES_CFB128_Encrypt((const ll_AES_KEY *)ctx->key_ctx, opts ? opts->iv : NULL, in, in_len, out);
 }
-static bool aes_cfb128_dec_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, const CF_CIPHER_OPTS *opts) {
+static bool aes_cfb128_dec_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, uint8_t *ctr_block, const CF_CIPHER_OPTS *opts) {
     UNUSED(out_len);
+    UNUSED(ctr_block);
     return ll_AES_CFB128_Decrypt((const ll_AES_KEY *)ctx->key_ctx, opts ? opts->iv : NULL, in, in_len, out);
 }
 
 // AES-CTR
-static bool aes_ctr_enc_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, const CF_CIPHER_OPTS *opts) {
+//
+// NOTE:
+// CTR mode does not use opts->iv.
+// Caller must provide and manage ctr_block separately.
+// Counter is not preserved between calls.
+static bool aes_ctr_enc_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, uint8_t *ctr_block,const CF_CIPHER_OPTS *opts) {
     UNUSED(out_len);
-    return ll_AES_CTR_Encrypt((const ll_AES_KEY *)ctx->key_ctx, opts->ctr_block, in, in_len, out);
+    UNUSED(opts);
+    return ll_AES_CTR_Encrypt((const ll_AES_KEY *)ctx->key_ctx, ctr_block, in, in_len, out);
 }
-static bool aes_ctr_dec_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, const CF_CIPHER_OPTS *opts) {
+static bool aes_ctr_dec_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, uint8_t *ctr_block, const CF_CIPHER_OPTS *opts) {
     UNUSED(out_len);
-    return ll_AES_CTR_Decrypt((const ll_AES_KEY *)ctx->key_ctx, opts->ctr_block, in, in_len, out);
+    UNUSED(opts);
+    return ll_AES_CTR_Decrypt((const ll_AES_KEY *)ctx->key_ctx, ctr_block, in, in_len, out);
 }
 
 // ChaCha8
 static bool chacha8_init_wrapper(CF_CIPHER_CTX *ctx, CF_CIPHER_OPTS *opts) {
     return ll_CHACHA8_Init((ll_CHACHA8_CTX *)ctx->cipher_ctx, ctx->key, ctx->key_len, opts ? opts->iv : NULL, opts->chacha_counter);
 }
-static bool chacha8_cipher_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, const CF_CIPHER_OPTS *opts) {
+static bool chacha8_cipher_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, uint8_t *ctr_block, const CF_CIPHER_OPTS *opts) {
     UNUSED(out_len);
+    UNUSED(ctr_block);
     UNUSED(opts);
     return ll_CHACHA8_Cipher((ll_CHACHA8_CTX *)ctx->cipher_ctx, in, in_len, out);
 }
@@ -122,8 +142,9 @@ static bool chacha8_cipher_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, 
 static bool chacha12_init_wrapper(CF_CIPHER_CTX *ctx, CF_CIPHER_OPTS *opts) {
     return ll_CHACHA12_Init((ll_CHACHA12_CTX *)ctx->cipher_ctx, ctx->key, ctx->key_len, opts ? opts->iv : NULL, opts->chacha_counter);
 }
-static bool chacha12_cipher_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, const CF_CIPHER_OPTS *opts) {
+static bool chacha12_cipher_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, uint8_t *ctr_block, const CF_CIPHER_OPTS *opts) {
     UNUSED(out_len);
+    UNUSED(ctr_block);
     UNUSED(opts);
     return ll_CHACHA12_Cipher((ll_CHACHA12_CTX *)ctx->cipher_ctx, in, in_len, out);
 }
@@ -132,8 +153,9 @@ static bool chacha12_cipher_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in,
 static bool chacha20_init_wrapper(CF_CIPHER_CTX *ctx, CF_CIPHER_OPTS *opts) {
     return ll_CHACHA20_Init((ll_CHACHA20_CTX *)ctx->cipher_ctx, ctx->key, ctx->key_len, opts ? opts->iv : NULL, opts->chacha_counter);
 }
-static bool chacha20_cipher_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, const CF_CIPHER_OPTS *opts) {
+static bool chacha20_cipher_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, uint8_t *ctr_block, const CF_CIPHER_OPTS *opts) {
     UNUSED(out_len);
+    UNUSED(ctr_block);
     UNUSED(opts);
     return ll_CHACHA20_Cipher((ll_CHACHA20_CTX *)ctx->cipher_ctx, in, in_len, out);
 }
@@ -142,8 +164,9 @@ static bool chacha20_cipher_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in,
 static bool xchacha8_init_wrapper(CF_CIPHER_CTX *ctx, CF_CIPHER_OPTS *opts) {
     return ll_XCHACHA8_Init((ll_XCHACHA8_CTX *)ctx->cipher_ctx, ctx->key, opts ? opts->iv : NULL);
 }
-static bool xchacha8_cipher_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, const CF_CIPHER_OPTS *opts) {
+static bool xchacha8_cipher_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, uint8_t *ctr_block, const CF_CIPHER_OPTS *opts) {
     UNUSED(out_len);
+    UNUSED(ctr_block);
     UNUSED(opts);
     return ll_XCHACHA8_Cipher((ll_XCHACHA8_CTX *)ctx->cipher_ctx, in, in_len, out);
 }
@@ -152,8 +175,9 @@ static bool xchacha8_cipher_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in,
 static bool xchacha12_init_wrapper(CF_CIPHER_CTX *ctx, CF_CIPHER_OPTS *opts) {
     return ll_XCHACHA12_Init((ll_XCHACHA12_CTX *)ctx->cipher_ctx, ctx->key, opts ? opts->iv : NULL);
 }
-static bool xchacha12_cipher_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, const CF_CIPHER_OPTS *opts) {
+static bool xchacha12_cipher_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, uint8_t *ctr_block, const CF_CIPHER_OPTS *opts) {
     UNUSED(out_len);
+    UNUSED(ctr_block);
     UNUSED(opts);
     return ll_XCHACHA12_Cipher((ll_XCHACHA12_CTX *)ctx->cipher_ctx, in, in_len, out);
 }
@@ -163,8 +187,9 @@ static bool xchacha12_cipher_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in
 static bool xchacha20_init_wrapper(CF_CIPHER_CTX *ctx, CF_CIPHER_OPTS *opts) {
     return ll_XCHACHA20_Init((ll_XCHACHA20_CTX *)ctx->cipher_ctx, ctx->key, opts ? opts->iv : NULL);
 }
-static bool xchacha20_cipher_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, const CF_CIPHER_OPTS *opts) {
+static bool xchacha20_cipher_wrapper(const CF_CIPHER_CTX *ctx, const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, uint8_t *ctr_block, const CF_CIPHER_OPTS *opts) {
     UNUSED(out_len);
+    UNUSED(ctr_block);
     UNUSED(opts);
     return ll_XCHACHA20_Cipher((ll_XCHACHA20_CTX *)ctx->cipher_ctx, in, in_len, out);
 }
@@ -573,10 +598,10 @@ CF_API CF_STATUS CF_Cipher_Process(
     // Stream cipher: no block restriction
     if (block == 0) {
         if (ctx->operation == CF_OP_ENCRYPT) {
-            if (!ctx->cipher->cipher_enc_fn(ctx, in, in_len, out, out_len, ctx->opts))
+            if (!ctx->cipher->cipher_enc_fn(ctx, in, in_len, out, out_len, ctx->opts->ctr_block, ctx->opts))
                 return CF_ERR_CIPHER_ENCRYPT;
         } else if (ctx->operation == CF_OP_DECRYPT) {
-            if (!ctx->cipher->cipher_dec_fn(ctx, in, in_len, out, out_len, ctx->opts))
+            if (!ctx->cipher->cipher_dec_fn(ctx, in, in_len, out, out_len, ctx->opts->ctr_block, ctx->opts))
                 return CF_ERR_CIPHER_DECRYPT;
         } else {
             return CF_ERR_CTX_CORRUPT;
@@ -598,10 +623,10 @@ CF_API CF_STATUS CF_Cipher_Process(
 
     // Process full blocks
     if (ctx->operation == CF_OP_ENCRYPT) {
-        if (!ctx->cipher->cipher_enc_fn(ctx, in, full_blocks_len, out, out_len, ctx->opts))
+        if (!ctx->cipher->cipher_enc_fn(ctx, in, full_blocks_len, out, out_len, ctx->opts->ctr_block, ctx->opts))
             return CF_ERR_CIPHER_ENCRYPT;
     } else if (ctx->operation == CF_OP_DECRYPT) {
-        if (!ctx->cipher->cipher_dec_fn(ctx, in, full_blocks_len, out, out_len, ctx->opts))
+        if (!ctx->cipher->cipher_dec_fn(ctx, in, full_blocks_len, out, out_len, ctx->opts->ctr_block, ctx->opts))
             return CF_ERR_CIPHER_DECRYPT;
     } else {
         return CF_ERR_CTX_CORRUPT;
@@ -656,7 +681,7 @@ CF_API CF_STATUS CF_Cipher_Free(CF_CIPHER_CTX **p_ctx) {
     return CF_SUCCESS; 
 }
 
-static FORCE_INLINE CF_API CF_STATUS CF_Cipher_EncDec(
+static FORCE_INLINE CF_STATUS CF_Cipher_EncDec(
     const CF_CIPHER *cipher,
     const uint8_t *key, size_t key_len,
     const uint8_t *in, size_t in_len,

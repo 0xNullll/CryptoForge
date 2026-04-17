@@ -68,6 +68,7 @@ typedef struct _CF_CIPHER {
         size_t in_len,
         uint8_t *out,
         size_t *out_len,
+        uint8_t *ctr_block,
         const CF_CIPHER_OPTS *opts
     );
 
@@ -80,6 +81,7 @@ typedef struct _CF_CIPHER {
         size_t in_len,
         uint8_t *out,
         size_t *out_len,
+        uint8_t *ctr_block,
         const CF_CIPHER_OPTS *opts
     );
 

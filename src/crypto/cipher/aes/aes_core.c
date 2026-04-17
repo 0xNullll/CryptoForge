@@ -66,7 +66,7 @@ static const uint8_t rCon[11] = {
 static FORCE_INLINE uint8_t XtimeByte(uint8_t b) {
     // Create mask: 0x1b if high bit is set, 0x00 otherwise
     uint8_t mask = -(b >> 7);  // high bit: 1 -> 0xFF, 0 -> 0x00
-    return (b << 1) ^ (0x1b & mask);
+    return (uint8_t)((b << 1) ^ (0x1b & mask));
 }
 
 /*

@@ -612,7 +612,7 @@ CF_API bool CF_Enc_IsValidInput(uint32_t dec_flags, const char *src, size_t len)
     return true;
 }
 
-CF_API const CF_API char *CF_Enc_GetName(const CF_ENCODER_CTX *ctx) {
+CF_API const char *CF_Enc_GetName(const CF_ENCODER_CTX *ctx) {
     if (!ctx || !ctx->encoder)
         return NULL;
 

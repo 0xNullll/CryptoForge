@@ -1,8 +1,8 @@
 #include <winres.h>
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,2,0
- PRODUCTVERSION 1,0,2,0
+ FILEVERSION 1,0,3,0
+ PRODUCTVERSION 1,0,3,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -19,12 +19,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "0xNullll"
             VALUE "FileDescription", "CryptoForge Cryptography Library"
-            VALUE "FileVersion", "1.0.2.0"
+            VALUE "FileVersion", "1.0.3.0"
             VALUE "InternalName", "cryptoforge"
             VALUE "LegalCopyright", "Copyright (c) 2025-2026 0xNullll"
             VALUE "OriginalFilename", "cryptoforge.dll"
             VALUE "ProductName", "CryptoForge"
-            VALUE "ProductVersion", "1.0.2.0"
+            VALUE "ProductVersion", "1.0.3.0"
         END
     END
     BLOCK "VarFileInfo"

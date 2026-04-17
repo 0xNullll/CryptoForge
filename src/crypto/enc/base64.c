@@ -35,7 +35,7 @@ bool ll_BASE64_Encode(const uint8_t *data, size_t data_len, char *out, size_t *o
         uint8_t in1 = (i + 1 < data_len) ? data[i + 1] : 0;
         uint8_t in2 = (i + 2 < data_len) ? data[i + 2] : 0;
 
-        uint32_t buf = (in0 << 16) | (in1 << 8) | in2;
+        uint32_t buf = (uint32_t)((in0 << 16) | (in1 << 8) | in2);
         size_t rem = data_len - i;
 
         // Always write first two characters

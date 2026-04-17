@@ -527,6 +527,14 @@ CF_API CF_STATUS CF_AEAD_DecryptAppendTag(
     const size_t ciphertext_len = in_len - tag_len;
     const uint8_t *tag = in + ciphertext_len;
 
+    // Intentional const cast:
+    // CF_AEAD_EncDec expects mutable tag pointer, but in decrypt mode
+    // the tag is read-only and never modified.
+#if defined(__GNUC__) || defined(__clang__)
+#   pragma GCC diagnostic push
+#   pragma GCC diagnostic ignored "-Wcast-qual"
+#endif
+
     return CF_AEAD_EncDec(aead, key, key_len,
                            iv, iv_len,
                            aad, aad_len,
@@ -534,6 +542,10 @@ CF_API CF_STATUS CF_AEAD_DecryptAppendTag(
                            out, out_len,
                            (uint8_t*)tag, tag_len,
                            CF_OP_DECRYPT);
+
+#if defined(__GNUC__) || defined(__clang__)
+#   pragma GCC diagnostic pop
+#endif
 }
 
 CF_API CF_STATUS CF_AEAD_CloneCtx(CF_AEAD_CTX *dst, const CF_AEAD_CTX *src) {
