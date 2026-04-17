@@ -18,28 +18,12 @@
 #ifndef CF_HASH_H
 #define CF_HASH_H
 
-// #include "../utils/misc.h"
-// #include "../utils/mem.h"
-// #include "../utils/cf_status.h"
-
-// #include "../config/crypto_config.h"
-// #include "../config/libs.h"
-
 #include <CryptoForge/cf_flags.h>
 #include <CryptoForge/cf_defs.h>
 #include <CryptoForge/cf_status.h>
 #include <CryptoForge/cf_exports.h>
 
 #include <stdbool.h>
-
-// #include "../crypto/md5.h"
-// #include "../crypto/sha1.h"
-// #include "../crypto/sha256.h"
-// #include "../crypto/sha512.h"
-
-// #include "../crypto/keccak.h"
-// #include "../crypto/sha3.h"
-// #include "../crypto/shake.h"
 
 #ifdef __cplusplus
 extern "C" {

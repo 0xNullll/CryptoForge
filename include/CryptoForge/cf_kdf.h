@@ -17,24 +17,10 @@
 #ifndef CF_KDF_H
 #define CF_KDF_H
 
-// #include "../config/crypto_config.h"
-// #include "../config/libs.h"
-
-// #include "../utils/misc.h"
-// #include "../utils/mem.h"
-// #include "../utils/cf_status.h"
-
 #include <CryptoForge/cf_defs.h>
 #include <CryptoForge/cf_flags.h>
 #include <CryptoForge/cf_status.h>
 #include <CryptoForge/cf_exports.h>
-
-// #include "cf_defs.h"
-// #include "cf_flags.h"
-
-// #include "../crypto/hkdf.h"
-// #include "../crypto/pbkdf2.h"
-// #include "../crypto/kmac.h"
 
 #ifdef __cplusplus
 extern "C" {

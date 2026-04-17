@@ -20,9 +20,7 @@
 #include "../../internal/config/libs.h"
 #include "../../internal/utils/mem.h"
 
-// #include "../../include/cf_api/cf_utils.h"
-
-int CF_Compare(const uint8_t *a, const uint8_t *b, size_t len) {
+CF_API int CF_Compare(const uint8_t *a, const uint8_t *b, size_t len) {
     if (!a || !b)
         return CF_ERR_NULL_PTR;
         
@@ -33,7 +31,7 @@ int CF_Compare(const uint8_t *a, const uint8_t *b, size_t len) {
     return SECURE_MEM_EQUAL(a, b, len) ? 1 : 0;
 }
 
-int CF_CompareLex(const uint8_t *a, const uint8_t *b, size_t len) {
+CF_API int CF_CompareLex(const uint8_t *a, const uint8_t *b, size_t len) {
     if (!a || !b)
         return CF_ERR_NULL_PTR;
     if (len == 0)
@@ -43,7 +41,7 @@ int CF_CompareLex(const uint8_t *a, const uint8_t *b, size_t len) {
     return SECURE_MEM_CMP_LEX(a, b, len);
 }
 
-CF_STATUS CF_EntropyFromOS(uint8_t *buf, size_t len) {
+CF_API CF_STATUS CF_EntropyFromOS(uint8_t *buf, size_t len) {
     if (!buf || len == 0)
         return CF_ERR_NULL_PTR;
 
@@ -95,7 +93,7 @@ CF_STATUS CF_EntropyFromOS(uint8_t *buf, size_t len) {
 }
 
 // // not updated
-const char* CF_StatusToStr(CF_STATUS status) {
+CF_API const char* CF_StatusToStr(CF_STATUS status) {
     switch (status) {
         // --- Generic / common ---
         case CF_SUCCESS: return "CF_SUCCESS";

@@ -27,9 +27,6 @@
 #include "../../internal/crypto/pbkdf2.h"
 #include "../../internal/crypto/kmac.h"
 
-// #include "../../include/cf_api/cf_kdf.h"
-
-
 //
 // Wrappers for all kdfs
 //
@@ -150,7 +147,7 @@ static const CF_ALGO_ENTRY cf_kdf_table[] = {
     { CF_KMAC_XOF,  (const void* (*)(void))CF_get_kkdf_xof }
 };
 
-const CF_KDF *CF_KDF_GetByFlag(uint32_t algo_flag) {
+CF_API const CF_KDF *CF_KDF_GetByFlag(uint32_t algo_flag) {
     if (!CF_IS_KDF(algo_flag)) 
         return NULL;
 
@@ -163,7 +160,7 @@ const CF_KDF *CF_KDF_GetByFlag(uint32_t algo_flag) {
     return NULL;
 }
 
-CF_STATUS CF_KDF_Init(
+CF_API CF_STATUS CF_KDF_Init(
     CF_KDF_CTX *ctx, const CF_KDF *kdf, const CF_KDF_OPTS *opts,
     const uint8_t *ikm, size_t ikm_len, uint32_t subflags) {
     if (!ctx || !kdf || !ikm)
@@ -254,7 +251,7 @@ CF_STATUS CF_KDF_Init(
     return CF_SUCCESS;
 }
 
- CF_KDF_CTX* CF_KDF_InitAlloc(
+CF_API CF_KDF_CTX* CF_KDF_InitAlloc(
     const CF_KDF *kdf, const CF_KDF_OPTS *opts,
     const uint8_t *ikm, size_t ikm_len,
     uint32_t subflags, CF_STATUS *status) {
@@ -286,7 +283,7 @@ CF_STATUS CF_KDF_Init(
     return ctx;
 }
 
-CF_STATUS CF_KDF_Extract(CF_KDF_CTX *ctx, const uint8_t *salt, size_t salt_len) {
+CF_API CF_STATUS CF_KDF_Extract(CF_KDF_CTX *ctx, const uint8_t *salt, size_t salt_len) {
     if (!ctx)
         return CF_ERR_NULL_PTR;
 
@@ -322,7 +319,7 @@ CF_STATUS CF_KDF_Extract(CF_KDF_CTX *ctx, const uint8_t *salt, size_t salt_len) 
 }
 
 
-CF_STATUS CF_KDF_Expand(
+CF_API CF_STATUS CF_KDF_Expand(
     CF_KDF_CTX *ctx,
     uint8_t *derived_key, size_t derived_key_len) {
     if (!ctx || !derived_key)
@@ -347,7 +344,7 @@ CF_STATUS CF_KDF_Expand(
     return CF_SUCCESS;
 }
 
-CF_STATUS CF_KDF_Reset(CF_KDF_CTX *ctx) {
+CF_API CF_STATUS CF_KDF_Reset(CF_KDF_CTX *ctx) {
     if (!ctx)
         return CF_ERR_NULL_PTR;
 
@@ -387,7 +384,7 @@ CF_STATUS CF_KDF_Reset(CF_KDF_CTX *ctx) {
     return st;
 }
 
-CF_STATUS CF_KDF_Free(CF_KDF_CTX **p_ctx) {
+CF_API CF_STATUS CF_KDF_Free(CF_KDF_CTX **p_ctx) {
     if (!p_ctx || !*p_ctx)
         return CF_ERR_NULL_PTR;
 
@@ -403,7 +400,7 @@ CF_STATUS CF_KDF_Free(CF_KDF_CTX **p_ctx) {
     return CF_SUCCESS;
 }
 
-CF_STATUS CF_KDF_Compute(
+CF_API CF_STATUS CF_KDF_Compute(
     const CF_KDF *kdf,
     const uint8_t *ikm, size_t ikm_len,
     const uint8_t *salt, size_t salt_len,
@@ -447,7 +444,7 @@ cleanup:
     return st;        
 }
 
-CF_STATUS CF_KDF_CloneCtx(CF_KDF_CTX *dst, const CF_KDF_CTX *src) {
+CF_API CF_STATUS CF_KDF_CloneCtx(CF_KDF_CTX *dst, const CF_KDF_CTX *src) {
     if (!dst || !src)
         return CF_ERR_NULL_PTR;
 
@@ -498,7 +495,7 @@ cleanup:
     return st;
 }
 
-CF_KDF_CTX *CF_KDF_CloneCtxAlloc(const CF_KDF_CTX *src, CF_STATUS *status) {
+CF_API CF_KDF_CTX* CF_KDF_CloneCtxAlloc(const CF_KDF_CTX *src, CF_STATUS *status) {
     if (!src) {
         if (status) *status = CF_ERR_NULL_PTR;
         return NULL;
@@ -525,7 +522,7 @@ CF_KDF_CTX *CF_KDF_CloneCtxAlloc(const CF_KDF_CTX *src, CF_STATUS *status) {
     return dst;
 }
 
-CF_STATUS CF_KDF_ValidateCtx(const CF_KDF_CTX *ctx) {
+CF_API CF_STATUS CF_KDF_ValidateCtx(const CF_KDF_CTX *ctx) {
     if (!ctx)
         return CF_ERR_NULL_PTR;
 
@@ -536,7 +533,7 @@ CF_STATUS CF_KDF_ValidateCtx(const CF_KDF_CTX *ctx) {
     return CF_SUCCESS;
 }
 
-const char* CF_KDF_GetName(const CF_KDF *kdf) {
+CF_API const char* CF_KDF_GetName(const CF_KDF *kdf) {
     if (!kdf)
         return NULL;
 
@@ -550,7 +547,7 @@ const char* CF_KDF_GetName(const CF_KDF *kdf) {
     }
 }
 
-const char* CF_KDF_GetFullName(const CF_KDF_CTX *ctx) {
+CF_API const char* CF_KDF_GetFullName(const CF_KDF_CTX *ctx) {
     if (!ctx || !ctx->kdf)
         return NULL;
 
@@ -602,7 +599,7 @@ const char* CF_KDF_GetFullName(const CF_KDF_CTX *ctx) {
     }
 }
 
-CF_STATUS CF_KDFOpts_Init(
+CF_API CF_STATUS CF_KDFOpts_Init(
     CF_KDF_OPTS *opts,
     const uint8_t *info, size_t info_len,
     const uint8_t *custom, size_t custom_len,
@@ -626,7 +623,7 @@ CF_STATUS CF_KDFOpts_Init(
     return CF_SUCCESS;
 }
 
-CF_KDF_OPTS* CF_KDFOpts_InitAlloc(
+CF_API CF_KDF_OPTS* CF_KDFOpts_InitAlloc(
     const uint8_t *info, size_t info_len,
     const uint8_t *custom, size_t custom_len,
     size_t iterations, CF_STATUS *status) {
@@ -654,7 +651,7 @@ CF_KDF_OPTS* CF_KDFOpts_InitAlloc(
     return opts;
 }
 
-CF_STATUS CF_KDFOpts_SetNewInfo(CF_KDF_OPTS *opts, const uint8_t *new_info, size_t new_info_len) {
+CF_API CF_STATUS CF_KDFOpts_SetNewInfo(CF_KDF_OPTS *opts, const uint8_t *new_info, size_t new_info_len) {
     if (!opts)
         return CF_ERR_NULL_PTR;
 
@@ -667,7 +664,7 @@ CF_STATUS CF_KDFOpts_SetNewInfo(CF_KDF_OPTS *opts, const uint8_t *new_info, size
     return CF_SUCCESS;
 }
 
-CF_STATUS CF_KDFOpts_Reset(CF_KDF_OPTS *opts) {
+CF_API CF_STATUS CF_KDFOpts_Reset(CF_KDF_OPTS *opts) {
     if (!opts)
         return CF_ERR_NULL_PTR;
 
@@ -681,7 +678,7 @@ CF_STATUS CF_KDFOpts_Reset(CF_KDF_OPTS *opts) {
     return CF_SUCCESS;
 }
 
-CF_STATUS CF_KDFOpts_Free(CF_KDF_OPTS **p_opts) {
+CF_API CF_STATUS CF_KDFOpts_Free(CF_KDF_OPTS **p_opts) {
     if (!p_opts || !*p_opts)
         return CF_ERR_NULL_PTR;
 
@@ -699,7 +696,7 @@ CF_STATUS CF_KDFOpts_Free(CF_KDF_OPTS **p_opts) {
     return CF_SUCCESS;
 }
 
-CF_STATUS CF_KDFOpts_CloneCtx(CF_KDF_OPTS *dst, const CF_KDF_OPTS *src) {
+CF_API CF_STATUS CF_KDFOpts_CloneCtx(CF_KDF_OPTS *dst, const CF_KDF_OPTS *src) {
     if (!dst || !src)
         return CF_ERR_NULL_PTR;
 
@@ -724,7 +721,7 @@ CF_STATUS CF_KDFOpts_CloneCtx(CF_KDF_OPTS *dst, const CF_KDF_OPTS *src) {
     return CF_SUCCESS;
 }
 
-CF_KDF_OPTS* CF_KDFOpts_CloneCtxAlloc(const CF_KDF_OPTS *src, CF_STATUS *status) {
+CF_API CF_KDF_OPTS* CF_KDFOpts_CloneCtxAlloc(const CF_KDF_OPTS *src, CF_STATUS *status) {
     if (!src) {
         if (status) *status = CF_ERR_NULL_PTR;
         return NULL;

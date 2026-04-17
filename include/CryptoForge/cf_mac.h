@@ -18,28 +18,12 @@
 #ifndef CF_MAC_H
 #define CF_MAC_H
 
-// #include "../config/crypto_config.h"
-// #include "../config/libs.h"
-
 #include <CryptoForge/cf_flags.h>
 #include <CryptoForge/cf_defs.h>
 #include <CryptoForge/cf_status.h>
 #include <CryptoForge/cf_exports.h>
 
 #include <stdbool.h>
-
-// #include "../utils/misc.h"
-// #include "../utils/mem.h"
-// #include "../utils/cf_status.h"
-
-// #include "cf_defs.h"
-// #include "cf_flags.h"
-
-// #include "../crypto/hmac.h"
-// #include "../crypto/kmac.h"
-// #include "../crypto/cmac.h"
-// #include "../crypto/gmac.h"
-// #include "../crypto/poly1305.h"
 
 #ifdef __cplusplus
 extern "C" {

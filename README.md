@@ -28,19 +28,30 @@ CryptoForge is intended for **educational, experimental**. It has **not undergon
 │   │   └─ /cipher
 │   │       ├─ /aes           <-- AES core + standard modes (ECB, CBC, CFB, OFB, CTR)
 │   │       └─ /chacha        <-- ChaCha/XChaCha core and stream implementations
-│   ├─ /include
-│   │   ├─ /cf_api            <-- Public API headers (cf_*)
+│   │
+│   ├─ /internal              <-- Internal headers (Private)
+│   │   ├─ /config            <-- Build/runtime configuration
 │   │   ├─ /crypto            <-- Internal crypto headers
-│   │   ├─ /config            <-- Build/runtime configuration headers
-│   │   └─ /utils             <-- Utility headers (memory, helpers)
-│   ├─ /utils                 <-- Utility implementations
+│   │   └─ /utils             <-- Internal helpers
+│   │
+│   └─ /utils                 <-- Utility implementations
+│
+├─ /include
+│   └─ /CryptoForge           <-- Public API headers (installed)
+│
 ├─ /tests                     <-- Test programs and demos
-│   ├─ /smoke                 <-- Lightweight, fast internal smoke tests
+│   ├─ /smoke                 <-- Lightweight, fast internal tests
 │   └─ /thirdparty            <-- Tests using third-party vectors (Wycheproof, NIST KATs)
+│
 ├─ /vectors                   <-- Auto-generated test vector headers
 │   ├─ /NIST
-│   │   └─ /KAT               <-- NIST Known Answer Tests for AES, SHA, etc.
-│   └─ /wycheproof            <-- Wycheproof JSON vectors converted to headers for edge case testing
+│   │   └─ /KAT               <-- NIST Known Answer Tests
+│   └─ /wycheproof            <-- Edge-case crypto tests
+│
+├─ /resources                 <-- Windows resource files (.rc)
+│   ├─ CryptoForge.rc         <-- DLL version info
+│   └─ cf_tests.rc            <-- test executable version info
+│
 └─ LICENSE, README.md
 ```
 

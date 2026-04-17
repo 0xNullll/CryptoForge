@@ -24,9 +24,6 @@ extern "C" {
 
 #include <stdint.h>
 
-// #include "../config/libs.h"
-// #include "misc.h"
-
 typedef uint32_t CF_STATUS;
 
 typedef enum {

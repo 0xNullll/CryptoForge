@@ -18,25 +18,12 @@
 #ifndef CF_ENCODER_H
 #define CF_ENCODER_H
 
-// #include "../utils/mem.h"
-// #include "../utils/cf_status.h"
-// #include "../config/libs.h"
-
 #include <CryptoForge/cf_flags.h>
 #include <CryptoForge/cf_defs.h>
 #include <CryptoForge/cf_status.h>
 #include <CryptoForge/cf_exports.h>
 
 #include <stdbool.h>
-
-// #include "cf_flags.h"
-// #include "cf_defs.h"
-
-// #include "../crypto/base16.h"
-// #include "../crypto/base32.h"
-// #include "../crypto/base58.h"
-// #include "../crypto/base64.h"
-// #include "../crypto/base85.h"
 
 #ifdef __cplusplus
 extern "C" {

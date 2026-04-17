@@ -18,12 +18,11 @@
 #ifndef CF_UTILS_H
 #define CF_UTILS_H
 
-// #include "../utils/cf_status.h"
-#include <stdint.h>
-
 #include <CryptoForge/cf_exports.h>
 #include <CryptoForge/cf_status.h>
 #include <CryptoForge/cf_flags.h>
+
+#include <stdint.h>
 
 /* 
  * CF_Compare

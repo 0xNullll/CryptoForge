@@ -18,35 +18,12 @@
 #ifndef CF_CIPHER_H
 #define CF_CIPHER_H
 
-// #include "../config/crypto_config.h"
-// #include "../config/libs.h"
-
-// #include "../utils/misc.h"
-// #include "../utils/mem.h"
-
 #include <CryptoForge/cf_flags.h>
 #include <CryptoForge/cf_defs.h>
 #include <CryptoForge/cf_status.h>
 #include <CryptoForge/cf_exports.h>
 
 #include <stdbool.h>
-
-// #include "../utils/cf_status.h"
-
-// #include "cf_defs.h"
-// #include "cf_flags.h"
-// #include "cf_utils.h"
-
-// #include "../crypto/aes_core.h"
-// #include "../crypto/ecb_mode.h"
-// #include "../crypto/cbc_mode.h"
-// #include "../crypto/cfb_mode.h"
-// #include "../crypto/ofb_mode.h"
-// #include "../crypto/ctr_mode.h"
-// #include "../crypto/chacha_core.h"
-// #include "../crypto/chacha.h"
-// #include "../crypto/xchacha_core.h"
-// #include "../crypto/xchacha.h"
 
 #ifdef __cplusplus
 extern "C" {

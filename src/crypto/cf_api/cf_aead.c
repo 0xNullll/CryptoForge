@@ -28,8 +28,6 @@
 #include "../../internal/crypto/chacha20_poly1305.h"
 #include "../../internal/crypto/xchacha20_poly1305.h"
 
-// #include "../../include/cf_api/cf_aead.h"
-
 //
 // Wrappers for all hashes
 //
@@ -122,7 +120,7 @@ static const CF_ALGO_ENTRY cf_aead_table[] = {
     { CF_XCHACHA20_POLY1305,  (const void* (*)(void))CF_get_xchacha20_poly1305 }
 };
 
-const CF_AEAD *CF_AEAD_GetByFlag(uint32_t algo_flag) {
+CF_API const CF_AEAD *CF_AEAD_GetByFlag(uint32_t algo_flag) {
     if (!CF_IS_AEAD(algo_flag)) 
         return NULL;
 
@@ -135,7 +133,7 @@ const CF_AEAD *CF_AEAD_GetByFlag(uint32_t algo_flag) {
     return NULL;
 }
 
-CF_STATUS CF_AEAD_Init(
+CF_API CF_STATUS CF_AEAD_Init(
     CF_AEAD_CTX *ctx, const CF_AEAD *aead,
     const uint8_t *key, size_t key_len,
     const uint8_t *iv, size_t iv_len,
@@ -247,7 +245,7 @@ CF_STATUS CF_AEAD_Init(
     return CF_SUCCESS;
 }
 
-CF_AEAD_CTX* CF_AEAD_InitAlloc(
+CF_API CF_AEAD_CTX* CF_AEAD_InitAlloc(
     const CF_AEAD *aead,
     const uint8_t *key, size_t key_len,
     const uint8_t *iv, size_t iv_len,
@@ -289,7 +287,7 @@ CF_AEAD_CTX* CF_AEAD_InitAlloc(
     return ctx;
 }
 
-CF_STATUS CF_AEAD_Update(
+CF_API CF_STATUS CF_AEAD_Update(
     CF_AEAD_CTX *ctx,
     const uint8_t *in, size_t in_len,
     uint8_t *out, size_t *out_len) {
@@ -331,7 +329,7 @@ CF_STATUS CF_AEAD_Update(
     return CF_SUCCESS;
 }
 
-CF_STATUS CF_AEAD_Final(
+CF_API CF_STATUS CF_AEAD_Final(
     CF_AEAD_CTX *ctx,
     uint8_t *tag, size_t tag_len) {
     if (!ctx || !tag)
@@ -362,7 +360,7 @@ CF_STATUS CF_AEAD_Final(
     return CF_SUCCESS;
 }
 
-CF_STATUS CF_AEAD_Reset(CF_AEAD_CTX *ctx) {
+CF_API CF_STATUS CF_AEAD_Reset(CF_AEAD_CTX *ctx) {
     if (!ctx)
         return CF_ERR_NULL_PTR;
 
@@ -395,7 +393,7 @@ CF_STATUS CF_AEAD_Reset(CF_AEAD_CTX *ctx) {
     return CF_SUCCESS;
 }
 
-CF_STATUS CF_AEAD_Free(CF_AEAD_CTX **p_ctx) {
+CF_API CF_STATUS CF_AEAD_Free(CF_AEAD_CTX **p_ctx) {
     if (!p_ctx || !*p_ctx)
         return CF_ERR_NULL_PTR;
 
@@ -451,7 +449,7 @@ cleanup:
     return st;
 }
 
-CF_STATUS CF_AEAD_Encrypt(
+CF_API CF_STATUS CF_AEAD_Encrypt(
     const CF_AEAD *aead,
     const uint8_t *key, size_t key_len,
     const uint8_t *iv, size_t iv_len,
@@ -466,7 +464,7 @@ CF_STATUS CF_AEAD_Encrypt(
                           CF_OP_ENCRYPT);
 }
 
-CF_STATUS CF_AEAD_Decrypt(
+CF_API CF_STATUS CF_AEAD_Decrypt(
     const CF_AEAD *aead,
     const uint8_t *key, size_t key_len,
     const uint8_t *iv, size_t iv_len,
@@ -481,7 +479,7 @@ CF_STATUS CF_AEAD_Decrypt(
                           CF_OP_DECRYPT);
 }
 
-CF_STATUS CF_AEAD_EncryptAppendTag(
+CF_API CF_STATUS CF_AEAD_EncryptAppendTag(
     const CF_AEAD *aead,
     const uint8_t *key, size_t key_len,
     const uint8_t *iv, size_t iv_len,
@@ -512,7 +510,7 @@ CF_STATUS CF_AEAD_EncryptAppendTag(
     return CF_SUCCESS;
 }
 
-CF_STATUS CF_AEAD_DecryptAppendTag(
+CF_API CF_STATUS CF_AEAD_DecryptAppendTag(
     const CF_AEAD *aead,
     const uint8_t *key, size_t key_len,
     const uint8_t *iv, size_t iv_len,
@@ -538,7 +536,7 @@ CF_STATUS CF_AEAD_DecryptAppendTag(
                            CF_OP_DECRYPT);
 }
 
-CF_STATUS CF_AEAD_CloneCtx(CF_AEAD_CTX *dst, const CF_AEAD_CTX *src) {
+CF_API CF_STATUS CF_AEAD_CloneCtx(CF_AEAD_CTX *dst, const CF_AEAD_CTX *src) {
     if (!dst || !src)
         return CF_ERR_NULL_PTR;
 
@@ -606,7 +604,7 @@ cleanup:
     return st;
 }
 
-CF_AEAD_CTX* CF_AEAD_CloneCtxAlloc(const CF_AEAD_CTX *src, CF_STATUS *status) {
+CF_API CF_AEAD_CTX* CF_AEAD_CloneCtxAlloc(const CF_AEAD_CTX *src, CF_STATUS *status) {
     if (!src) {
         if (status) *status = CF_ERR_NULL_PTR;
         return NULL;
@@ -633,7 +631,7 @@ CF_AEAD_CTX* CF_AEAD_CloneCtxAlloc(const CF_AEAD_CTX *src, CF_STATUS *status) {
     return dst;
 }
 
-CF_STATUS CF_AEAD_ValidateCtx(const CF_AEAD_CTX *ctx) {
+CF_API CF_STATUS CF_AEAD_ValidateCtx(const CF_AEAD_CTX *ctx) {
     if (!ctx)
         return CF_ERR_NULL_PTR;
 
@@ -645,7 +643,7 @@ CF_STATUS CF_AEAD_ValidateCtx(const CF_AEAD_CTX *ctx) {
     return CF_SUCCESS;
 }
 
-const char* CF_AEAD_GetName(const CF_AEAD *aead) {
+CF_API const char* CF_AEAD_GetName(const CF_AEAD *aead) {
     if (!aead)
         return "NULL";
 
@@ -660,7 +658,7 @@ const char* CF_AEAD_GetName(const CF_AEAD *aead) {
     }
 }
 
-const char* CF_AEAD_GetFullName(const CF_AEAD_CTX *ctx) {
+CF_API const char* CF_AEAD_GetFullName(const CF_AEAD_CTX *ctx) {
     if (!ctx || !ctx->aead) return "NULL";
 
     switch (ctx->aead->id) {
@@ -677,7 +675,7 @@ const char* CF_AEAD_GetFullName(const CF_AEAD_CTX *ctx) {
     }
 }
 
-bool CF_AEAD_IsValidKeyLength(const CF_AEAD *aead, size_t key_len) {
+CF_API bool CF_AEAD_IsValidKeyLength(const CF_AEAD *aead, size_t key_len) {
     if (!aead)
         return false;
 
@@ -693,7 +691,7 @@ bool CF_AEAD_IsValidKeyLength(const CF_AEAD *aead, size_t key_len) {
     return false;
 }
 
-bool CF_AEAD_IsValidTagLength(const CF_AEAD *aead, size_t tag_len) {
+CF_API bool CF_AEAD_IsValidTagLength(const CF_AEAD *aead, size_t tag_len) {
     if (!aead)
         return false;
 
@@ -709,7 +707,7 @@ bool CF_AEAD_IsValidTagLength(const CF_AEAD *aead, size_t tag_len) {
     return false;
 }
 
-const size_t* CF_AEAD_GetValidKeySizes(const CF_AEAD *aead, size_t *count) {
+CF_API const size_t* CF_AEAD_GetValidKeySizes(const CF_AEAD *aead, size_t *count) {
     if (!aead || !count)
         return NULL;
 
@@ -728,7 +726,7 @@ const size_t* CF_AEAD_GetValidKeySizes(const CF_AEAD *aead, size_t *count) {
     return NULL;
 }
 
-const size_t* CF_AEAD_GetValidTagSizes(const CF_AEAD *aead, size_t *count) {
+CF_API const size_t* CF_AEAD_GetValidTagSizes(const CF_AEAD *aead, size_t *count) {
     if (!aead || !count)
         return NULL;
 
@@ -747,7 +745,7 @@ const size_t* CF_AEAD_GetValidTagSizes(const CF_AEAD *aead, size_t *count) {
     return NULL;
 }
 
-size_t CF_AEAD_GetMaxTagSize(const CF_AEAD *aead) {
+CF_API size_t CF_AEAD_GetMaxTagSize(const CF_AEAD *aead) {
     if (!aead)
         return 0;
 

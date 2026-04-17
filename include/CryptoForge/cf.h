@@ -106,12 +106,7 @@
 #include <CryptoForge/cf_enc.h>
 
 /* Utility headers */
-// #include "../utils/mem.h"
 #include <CryptoForge/cf_status.h>
 #include <CryptoForge/cf_defs.h>
-// #include "../utils/misc.h"
-
-/* Configuration header */
-// #include "../config/crypto_config.h"
 
 #endif // CF_H

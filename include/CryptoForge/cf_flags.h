@@ -1,10 +1,25 @@
+/*
+ * CryptoForge - cf_flags.h / High-level CryptoForge flags and definitions
+ * Copyright (C) 2026 0xNullll
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at:
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #ifndef CF_FLAGS_H
 #define CF_FLAGS_H
 
-// #include "../config/crypto_config.h"
 #include <stdint.h>
 #include <assert.h>
-// #include "../config/libs.h"
 
 _Static_assert(sizeof(uint32_t) == 4, "uint32_t must be 32-bit");
 

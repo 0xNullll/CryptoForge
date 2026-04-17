@@ -27,14 +27,6 @@ add_executable(cf_tests
 )
 
 # =========================================================
-# Compile definitions (tests only)
-# =========================================================
-target_compile_definitions(cf_tests PRIVATE
-    ENABLE_TESTS=1
-    ENABLE_TESTS_VERBOSE=$<BOOL:${ENABLE_CF_TESTS_VERBOSE}>
-)
-
-# =========================================================
 # Link with library
 # =========================================================
 target_link_libraries(cf_tests PRIVATE cryptoforge)
@@ -55,7 +47,6 @@ endif()
 # Include directories
 # =========================================================
 target_include_directories(cf_tests PRIVATE
-    ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/vectors
 )
 

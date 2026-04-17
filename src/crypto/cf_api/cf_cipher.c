@@ -34,9 +34,6 @@
 #include "../../internal/crypto/xchacha_core.h"
 #include "../../internal/crypto/xchacha.h"
 
-
-// #include "../../include/cf_api/cf_cipher.h"
-
 //
 // Wrappers for all hashes
 //
@@ -402,7 +399,7 @@ static const CF_ALGO_ENTRY cf_Cipher_table[] = {
     { CF_XCHACHA20,     (const void* (*)(void))CF_get_xchacha20   }
 };
 
-const CF_CIPHER *CF_Cipher_GetByFlag(uint32_t algo_flag) {
+CF_API const CF_CIPHER *CF_Cipher_GetByFlag(uint32_t algo_flag) {
     if (!CF_IS_CIPHER(algo_flag)) 
         return NULL;
 
@@ -415,7 +412,7 @@ const CF_CIPHER *CF_Cipher_GetByFlag(uint32_t algo_flag) {
     return NULL;
 }
 
-CF_STATUS CF_Cipher_Init(
+CF_API CF_STATUS CF_Cipher_Init(
     CF_CIPHER_CTX *ctx, const CF_CIPHER *cipher, CF_CIPHER_OPTS *opts,
     const uint8_t *key, size_t key_len, CF_OPERATION op) {
     if (!ctx || !cipher || !key)
@@ -515,7 +512,7 @@ CF_STATUS CF_Cipher_Init(
     return CF_SUCCESS;
 }
 
-CF_CIPHER_CTX* CF_Cipher_InitAlloc(
+CF_API CF_CIPHER_CTX* CF_Cipher_InitAlloc(
     const CF_CIPHER *cipher, CF_CIPHER_OPTS *opts,
     const uint8_t *key, size_t key_len, 
     CF_OPERATION op, CF_STATUS *status) {
@@ -555,7 +552,7 @@ CF_CIPHER_CTX* CF_Cipher_InitAlloc(
     return ctx;
 }
 
-CF_STATUS CF_Cipher_Process(
+CF_API CF_STATUS CF_Cipher_Process(
     CF_CIPHER_CTX *ctx,
     const uint8_t *in, size_t in_len,
     uint8_t *out, size_t *out_len ) {
@@ -614,7 +611,7 @@ CF_STATUS CF_Cipher_Process(
     return CF_SUCCESS;
 }
 
-CF_STATUS CF_Cipher_Reset(CF_CIPHER_CTX *ctx) {
+CF_API CF_STATUS CF_Cipher_Reset(CF_CIPHER_CTX *ctx) {
     if (!ctx)
         return CF_ERR_NULL_PTR;
 
@@ -643,7 +640,7 @@ CF_STATUS CF_Cipher_Reset(CF_CIPHER_CTX *ctx) {
     return CF_SUCCESS;
 }
 
-CF_STATUS CF_Cipher_Free(CF_CIPHER_CTX **p_ctx) {
+CF_API CF_STATUS CF_Cipher_Free(CF_CIPHER_CTX **p_ctx) {
     if (!p_ctx || !*p_ctx)
         return CF_ERR_NULL_PTR;
 
@@ -659,7 +656,7 @@ CF_STATUS CF_Cipher_Free(CF_CIPHER_CTX **p_ctx) {
     return CF_SUCCESS; 
 }
 
-static FORCE_INLINE CF_STATUS CF_Cipher_EncDec(
+static FORCE_INLINE CF_API CF_STATUS CF_Cipher_EncDec(
     const CF_CIPHER *cipher,
     const uint8_t *key, size_t key_len,
     const uint8_t *in, size_t in_len,
@@ -691,7 +688,7 @@ cleanup:
     return st;
 }
 
-CF_STATUS CF_Cipher_Encrypt(
+CF_API CF_STATUS CF_Cipher_Encrypt(
     const CF_CIPHER *cipher,
     const uint8_t *key, size_t key_len,
     const uint8_t *in, size_t in_len,
@@ -700,7 +697,7 @@ CF_STATUS CF_Cipher_Encrypt(
     return CF_Cipher_EncDec(cipher, key, key_len, in, in_len, out, out_len, opts, CF_OP_ENCRYPT);
 }
 
-CF_STATUS CF_Cipher_Decrypt(
+CF_API CF_STATUS CF_Cipher_Decrypt(
     const CF_CIPHER *cipher,
     const uint8_t *key, size_t key_len,
     const uint8_t *in, size_t in_len,
@@ -710,7 +707,7 @@ CF_STATUS CF_Cipher_Decrypt(
 }
 
 
-CF_STATUS CF_Cipher_CloneCtx(CF_CIPHER_CTX *dst, const CF_CIPHER_CTX *src) {
+CF_API CF_STATUS CF_Cipher_CloneCtx(CF_CIPHER_CTX *dst, const CF_CIPHER_CTX *src) {
     if (!dst || !src)
         return CF_ERR_NULL_PTR;
 
@@ -775,7 +772,7 @@ cleanup:
     return st;
 }
 
-CF_CIPHER_CTX* CF_Cipher_CloneCtxAlloc(const CF_CIPHER_CTX *src, CF_STATUS *status) {
+CF_API CF_CIPHER_CTX* CF_Cipher_CloneCtxAlloc(const CF_CIPHER_CTX *src, CF_STATUS *status) {
     if (!src) {
         if (status) *status = CF_ERR_NULL_PTR;
         return NULL;
@@ -802,7 +799,7 @@ CF_CIPHER_CTX* CF_Cipher_CloneCtxAlloc(const CF_CIPHER_CTX *src, CF_STATUS *stat
     return dst;
 }
 
-CF_STATUS CF_Cipher_ValidateCtx(const CF_CIPHER_CTX *ctx) {
+CF_API CF_STATUS CF_Cipher_ValidateCtx(const CF_CIPHER_CTX *ctx) {
     if (!ctx)
         return CF_ERR_NULL_PTR;
 
@@ -814,7 +811,7 @@ CF_STATUS CF_Cipher_ValidateCtx(const CF_CIPHER_CTX *ctx) {
     return CF_SUCCESS;
 }
 
-const char* CF_Cipher_GetName(const CF_CIPHER *cipher) {
+CF_API const char* CF_Cipher_GetName(const CF_CIPHER *cipher) {
     if (!cipher)
         return "NULL";
 
@@ -837,7 +834,7 @@ const char* CF_Cipher_GetName(const CF_CIPHER *cipher) {
     }
 }
 
-const char* CF_Cipher_GetFullName(const CF_CIPHER_CTX *ctx) {
+CF_API const char* CF_Cipher_GetFullName(const CF_CIPHER_CTX *ctx) {
     if (!ctx || !ctx->cipher)
         return "NULL";
 
@@ -931,7 +928,7 @@ const char* CF_Cipher_GetFullName(const CF_CIPHER_CTX *ctx) {
     }
 }
 
-bool CF_Cipher_IsValidKeyLength(const CF_CIPHER *cipher, size_t key_len) {
+CF_API bool CF_Cipher_IsValidKeyLength(const CF_CIPHER *cipher, size_t key_len) {
     if (!cipher)
         return false;
 
@@ -951,7 +948,7 @@ bool CF_Cipher_IsValidKeyLength(const CF_CIPHER *cipher, size_t key_len) {
     return false;
 }
 
-const size_t* CF_Cipher_GetValidKeySizes(const CF_CIPHER *cipher, size_t *count) {
+CF_API const size_t* CF_Cipher_GetValidKeySizes(const CF_CIPHER *cipher, size_t *count) {
     if (!cipher || !count)
         return NULL;
 
@@ -974,11 +971,11 @@ const size_t* CF_Cipher_GetValidKeySizes(const CF_CIPHER *cipher, size_t *count)
     return NULL;
 }
 
-size_t CF_Cipher_GetBlockSize(const CF_CIPHER_CTX *ctx) {
+CF_API size_t CF_Cipher_GetBlockSize(const CF_CIPHER_CTX *ctx) {
     return ctx ? (ctx->cipher ? ctx->cipher->block_size : 0) : 0;
 }
 
-size_t CF_Cipher_GetOutputLength(const CF_CIPHER_CTX *ctx, size_t in_len) {
+CF_API size_t CF_Cipher_GetOutputLength(const CF_CIPHER_CTX *ctx, size_t in_len) {
     if (!ctx || !ctx->cipher || in_len == 0)
         return 0;
 
@@ -994,7 +991,7 @@ size_t CF_Cipher_GetOutputLength(const CF_CIPHER_CTX *ctx, size_t in_len) {
     return in_len + (block - rem); // pad to next block
 }
 
-CF_STATUS CF_CipherOpts_Init(
+CF_API CF_STATUS CF_CipherOpts_Init(
     CF_CIPHER_OPTS *opts,
     const uint8_t *iv, size_t iv_len,
     const uint8_t ctr_block[AES_BLOCK_SIZE],
@@ -1026,7 +1023,7 @@ CF_STATUS CF_CipherOpts_Init(
     return CF_SUCCESS;
 }
 
-CF_CIPHER_OPTS* CF_CipherOpts_InitAlloc(
+CF_API CF_CIPHER_OPTS* CF_CipherOpts_InitAlloc(
     const uint8_t *iv, size_t iv_len,
     const uint8_t ctr_block[AES_BLOCK_SIZE], // optional, can be NULL
     uint32_t chacha_counter,                 // optional, pass 0 for default
@@ -1055,7 +1052,7 @@ CF_CIPHER_OPTS* CF_CipherOpts_InitAlloc(
     return opts;
 }
 
-CF_STATUS CF_CipherOpts_Reset(CF_CIPHER_OPTS *opts) {
+CF_API CF_STATUS CF_CipherOpts_Reset(CF_CIPHER_OPTS *opts) {
     if (opts)
         return CF_ERR_NULL_PTR;
 
@@ -1069,7 +1066,7 @@ CF_STATUS CF_CipherOpts_Reset(CF_CIPHER_OPTS *opts) {
     return CF_SUCCESS;;
 }
 
-CF_STATUS CF_CipherOpts_Free(CF_CIPHER_OPTS **p_opts) {
+CF_API CF_STATUS CF_CipherOpts_Free(CF_CIPHER_OPTS **p_opts) {
     if (!p_opts || !*p_opts)
         return CF_ERR_NULL_PTR;
 
@@ -1083,7 +1080,7 @@ CF_STATUS CF_CipherOpts_Free(CF_CIPHER_OPTS **p_opts) {
 
     return CF_SUCCESS;
 }
-CF_STATUS CF_CipherOpts_CloneCtx(CF_CIPHER_OPTS *dst, const CF_CIPHER_OPTS *src) {
+CF_API CF_STATUS CF_CipherOpts_CloneCtx(CF_CIPHER_OPTS *dst, const CF_CIPHER_OPTS *src) {
     if (!dst || !src)
         return CF_ERR_NULL_PTR;
 
@@ -1109,7 +1106,7 @@ CF_STATUS CF_CipherOpts_CloneCtx(CF_CIPHER_OPTS *dst, const CF_CIPHER_OPTS *src)
     return CF_SUCCESS;
 }
 
-CF_CIPHER_OPTS* CF_CipherOpts_CloneCtxAlloc(const CF_CIPHER_OPTS *src, CF_STATUS *status) {
+CF_API CF_CIPHER_OPTS* CF_CipherOpts_CloneCtxAlloc(const CF_CIPHER_OPTS *src, CF_STATUS *status) {
     if (!src) {
         if (status) *status = CF_ERR_NULL_PTR;
         return NULL;

@@ -3,7 +3,7 @@
 This document shows **minimal examples** and explains how to use the CryptoForge API in C programs.
 
 > **Note:** This guide provides minimal examples for getting started. For **detailed information** about return codes, error handling, optional parameters, and full API documentation, see the header files in:
-> `src/CryptoForge/include/cf_api/`
+> [include/CryptoForge/](include/CryptoForge/)
 > Each header contains a **detailed description** for all public functions.
 
 ---
@@ -42,7 +42,7 @@ To make examples clear, here is the following symbols and notation:
 **Example:**
 
 ```c
-#include <include/cf_hash.h>
+#include <CryptoForge/cf_hash.h>
 
 int main(void) {
     CF_HASH_CTX ctx;
@@ -83,8 +83,8 @@ The CryptoForge library organizes its headers to provide a clean and modular API
 - **`cf_status.h`** – Defines `CF_STATUS` return codes for all API functions.
 
   ```c
-  #include <cf_flags.h>
-  #include <cf_status.h>
+  #include <CryptoForge/cf_flags.h>
+  #include <CryptoForge/cf_status.h>
   ```
 
 > **Note:** Unlike normal API headers in `include/cf_api`, `cf_status.h` is in `include/utils` and handles status codes rather than API-specific flags.
@@ -94,7 +94,7 @@ The CryptoForge library organizes its headers to provide a clean and modular API
 - **`cf_hash.h`** – Provides the `CF_HASH` API for SHA, SHA3, XOF, and cSHAKE variants.
 
   ```c
-  #include <cf_hash.h>
+  #include <CryptoForge/cf_hash.h>
   ```
 
 ### 4. Message Authentication Codes (MACs)
@@ -102,7 +102,7 @@ The CryptoForge library organizes its headers to provide a clean and modular API
 - **`cf_mac.h`** – Provides the `CF_MAC` API for HMAC, KMAC, AES-CMAC, AES-GMAC, and Poly1305.
 
   ```c
-  #include <cf_mac.h>
+  #include <CryptoForge/cf_mac.h>
   ```
 
 ### 5. Key Derivation Functions (KDFs)
@@ -110,7 +110,7 @@ The CryptoForge library organizes its headers to provide a clean and modular API
 - **`cf_kdf.h`** – Provides the `CF_KDF` API for HKDF, PBKDF2, and KMAC-XOF based derivation.
 
   ```c
-  #include <cf_kdf.h>
+  #include <CryptoForge/cf_kdf.h>
   ```
 
 ### 6. Symmetric Ciphers
@@ -118,7 +118,7 @@ The CryptoForge library organizes its headers to provide a clean and modular API
 - **`cf_cipher.h`** – Provides the `CF_Cipher` API for AES, ChaCha, and XChaCha in block and stream modes.
 
   ```c
-  #include <cf_cipher.h>
+  #include <CryptoForge/cf_cipher.h>
   ```
 
 ### 7. AEAD Constructions
@@ -126,7 +126,7 @@ The CryptoForge library organizes its headers to provide a clean and modular API
 - **`cf_aead.h`** – Provides the `CF_AEAD` API for authenticated encryption modes like AES-GCM and ChaCha20-Poly1305.
 
   ```c
-  #include <cf_aead.h>
+  #include <CryptoForge/cf_aead.h>
   ```
 
 ### 8. Encoders / Decoders
@@ -134,7 +134,7 @@ The CryptoForge library organizes its headers to provide a clean and modular API
 - **`cf_enc.h`** – Provides the `CF_ENCODER` API for Base16, Base32, Base58, Base64, Base85, Z85, and ASCII85 encoding/decoding.
 
   ```c
-  #include <cf_enc.h>
+  #include <CryptoForge/cf_enc.h>
   ```
 
 ### 9. Utilities
@@ -142,16 +142,16 @@ The CryptoForge library organizes its headers to provide a clean and modular API
 - **`cf_util.h`** – Provides helper functions and utilities used across modules.
 
   ```c
-  #include <cf_util.h>
+  #include <CryptoForge/cf_util.h>
   ```
 
-> **Tip:** For detailed usage examples, context structures, and optional parameters, refer to each header in the `include/cf_api/` directory.
+> **Tip:** For detailed usage examples, context structures, and optional parameters, refer to each header in the [include/CryptoForge/](include/CryptoForge/) directory.
 
 ---
 
 ## Encoders
 
-This section provides a comprehensive reference for using the `CF_ENCODER` API. It focuses on practical usage, context management, encoding/decoding operations, and flag definitions, which are all defined in the [cf_enc.h](src/CryptoForge/include/cf_api/cf_enc.h) file.
+This section provides a comprehensive reference for using the `CF_ENCODER` API. It focuses on practical usage, context management, encoding/decoding operations, and flag definitions, which are all defined in the [cf_enc.h](include/CryptoForge/cf_enc.h) file.
 
 ---
 
@@ -333,7 +333,7 @@ bool valid = CF_Enc_IsValidInput(CF_BASE64_STD_DEC, encoded, strlen(encoded));
 | Z85 Decode | `CF_BASE85_Z85_DEC` | Decodes Z85 input |
 | Ignore Whitespace | `CF_BASE85_IGNORE_WS` | Skip spaces/newlines when decoding |
 
-> **Note:** All encoding/decoding flags shown above are defined in the [cf_flags.h](src/CryptoForge/include/cf_api/cf_flags.h) file (`CF_ENCODING_FLAGS`).
+> **Note:** All encoding/decoding flags shown above are defined in the [cf_flags.h](include/CryptoForge/cf_flags.h) file (`CF_ENCODING_FLAGS`).
 
 ---
 
@@ -366,7 +366,7 @@ CF_Enc_Free(&ctx);
 ---
 
 ## Hash Functions
-This section provides a practical guide for using the `CF_HASH` API, including context initialization, one-shot and streaming operations, and optional XOF/cSHAKE customization, which are all defined in the [cf_hash.h](src/CryptoForge/include/cf_api/cf_hash.h) file.
+This section provides a practical guide for using the `CF_HASH` API, including context initialization, one-shot and streaming operations, and optional XOF/cSHAKE customization, which are all defined in the [cf_hash.h](include/CryptoForge/cf_hash.h) file.
 
 ---
 
@@ -528,7 +528,7 @@ const char *name   = CF_Hash_GetName(CF_Hash_GetByFlag(CF_SHA256));
 
 \* Default digest size for XOFs; can be overridden in `CF_Hash_Final` or `CF_Hash_Compute`.
 
-> **Note:** For a complete reference of hash algorithm flags, digest sizes, and block sizes, see the [cf_flags.h](src/CryptoForge/include/cf_api/cf_flags.h) file.
+> **Note:** For a complete reference of hash algorithm flags, digest sizes, and block sizes, see the [cf_flags.h](include/CryptoForge/cf_flags.h) file.
 > Digest sizes are defined in `CF_DIGEST_SIZE` (or `CF_DIGEST_DEFAULT_SIZE` for XOFs), and block sizes are defined in `CF_HASH_BLOCK_SIZE`.
 
 ---
@@ -565,7 +565,7 @@ if (hash_ctx && status == CF_SUCCESS) {
 
 ## Message Authentication Codes (MACs)
 
-This section provides a comprehensive reference for using the `CF_MAC` API, including context initialization, one-shot and streaming operations, optional parameters, and flag definitions, as defined in the [cf_mac.h](src/CryptoForge/include/cf_api/cf_mac.h) file.
+This section provides a comprehensive reference for using the `CF_MAC` API, including context initialization, one-shot and streaming operations, optional parameters, and flag definitions, as defined in the [cf_mac.h](include/CryptoForge/cf_mac.h) file.
 
 ---
 
@@ -763,7 +763,7 @@ if (ctx && status == CF_SUCCESS) {
 
 ## Key Derivation Functions (KDFs)
 
-This section provides a comprehensive guide for using the `CF_KDF` API, including context initialization, one-shot and streaming operations, optional parameters, and flag definitions. All functions and structures are defined in the [cf_kdf.h](src/CryptoForge/include/cf_api/cf_kdf.h) file.
+This section provides a comprehensive guide for using the `CF_KDF` API, including context initialization, one-shot and streaming operations, optional parameters, and flag definitions. All functions and structures are defined in the [cf_kdf.h](include/CryptoForge/cf_kdf.h) file.
 
 ---
 
@@ -969,7 +969,7 @@ if (ctx && status == CF_SUCCESS) {
 
 ## Symmetric Ciphers
 
-This section provides a comprehensive guide for using the `CF_Cipher` API, including context initialization, one-shot and streaming operations, optional parameters, flag definitions, and block/stream cipher behavior. All functions and structures are defined in the [cf_cipher.h](src/CryptoForge/include/cf_api/cf_cipher.h) file.
+This section provides a comprehensive guide for using the `CF_Cipher` API, including context initialization, one-shot and streaming operations, optional parameters, flag definitions, and block/stream cipher behavior. All functions and structures are defined in the [cf_cipher.h](include/CryptoForge/cf_cipher.h) file.
 
 ---
 
@@ -1148,7 +1148,7 @@ CF_CIPHER_OPTS *clone_heap = CF_CipherOpts_CloneCtxAlloc(&src, &status);
 | XChaCha12         | `CF_XCHACHA12`     | 0          | Yes         | 24        | No  | Yes | Stream | 32 |
 | XChaCha20         | `CF_XCHACHA20`     | 0          | Yes         | 24        | No  | Yes | Stream | 32 |
 
-> **Note:** For a complete reference of cipher flags, block sizes, IV requirements, and counter usage, see the [cf_flags.h](src/CryptoForge/include/cf_api/cf_flags.h) file.
+> **Note:** For a complete reference of cipher flags, block sizes, IV requirements, and counter usage, see the [cf_flags.h](include/CryptoForge/cf_flags.h) file.
 > Key sizes are defined in the `CF_KEY_SIZE` enum, while cipher mode flags can be found in the `CF_AES_MODE_FLAGS` and `CF_CHACHA_MODE_FLAGS` enums.
 
 ---
@@ -1186,7 +1186,7 @@ if (ctx && status == CF_SUCCESS) {
 
 ## AEAD Constructions
 
-This section provides a comprehensive guide for using the `CF_AEAD` API, including context initialization, one-shot and streaming operations, optional parameters, flag definitions, tag/key behavior, and AEAD-specific utilities. All functions and structures are defined in the [cf_aead.h](src/CryptoForge/include/cf_api/cf_aead.h) file.
+This section provides a comprehensive guide for using the `CF_AEAD` API, including context initialization, one-shot and streaming operations, optional parameters, flag definitions, tag/key behavior, and AEAD-specific utilities. All functions and structures are defined in the [cf_aead.h](include/CryptoForge/cf_aead.h) file.
 
 ---
 
@@ -1385,7 +1385,7 @@ size_t max_tag = CF_AEAD_GetMaxTagSize(CF_AEAD_GetByFlag(CF_AES_GCM));
 | ChaCha20-Poly1305     | `CF_CHACHA20_POLY1305`  | 12              | 4, 8, 12, 16    | 32              |
 | XChaCha20-Poly1305    | `CF_XCHACHA20_POLY1305` | 24              | 4, 8, 12, 16    | 32              |
 
-> **Note:** For a complete reference of AEAD constructions, supported IVs, and counter usage, see the [cf_flags.h](src/CryptoForge/include/cf_api/cf_flags.h) file.  
+> **Note:** For a complete reference of AEAD constructions, supported IVs, and counter usage, see the [cf_flags.h](include/CryptoForge/cf_flags.h) file.  
 > Key sizes are defined in the `CF_KEY_SIZE` enum, AEAD-specific flags are in the `CF_AEAD_MODE_FLAGS` enum, and tag sizes are defined in the `CF_AEAD_TAG_SIZE` enum.
 
 ---
@@ -1424,7 +1424,7 @@ if (ctx && status == CF_SUCCESS) {
 
 ## Utilities
 
-This section provides a detailed guide for using the `CF_UTILS` API, including constant-time comparisons, lexicographical operations, entropy generation, and other utility functions. All functions are declared in the [cf_utils.h](src/CryptoForge/include/cf_api/cf_utils.h) file.
+This section provides a detailed guide for using the `CF_UTILS` API, including constant-time comparisons, lexicographical operations, entropy generation, and other utility functions. All functions are declared in the [cf_utils.h](include/CryptoForge/cf_utils.h) file.
 
 ---
 

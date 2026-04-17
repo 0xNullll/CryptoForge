@@ -6,15 +6,22 @@
             "type": "shell",
             "command": "cmake",
             "args": [
-                "-S", "${workspaceFolder}",
-                "-B", "${workspaceFolder}/build",
+                "-S",
+                "${workspaceFolder}",
+                "-B",
+                "${workspaceFolder}/build",
+                "-G",
+                "MinGW Makefiles",
                 "-DCMAKE_BUILD_TYPE=Debug",
-                "-DCF_BUILD_TESTS=ON",
-                "-G", "MinGW Makefiles",
-                "-DCF_FORCE_C_COMPILER=C:/msys64/mingw64/bin/gcc.exe"
+                "-DCMAKE_C_COMPILER=C:/msys64/mingw64/bin/gcc.exe",
+                "-DENABLE_CF_TESTS_VERBOSE=ON",
+                "-DCF_BUILD_TESTS=ON"
             ],
             "group": "build",
-            "problemMatcher": ["$msCompile", "$gcc"],
+            "problemMatcher": [
+                "$msCompile",
+                "$gcc"
+            ],
             "detail": "Configure CryptoForge with CMake using GCC"
         },
         {
@@ -22,15 +29,20 @@
             "type": "shell",
             "command": "cmake",
             "args": [
-                "--build", "${workspaceFolder}/build",
-                "--config", "Debug"
+                "--build",
+                "${workspaceFolder}/build",
+                "--config",
+                "Debug"
             ],
             "dependsOn": "CMake: Configure CryptoForge (GCC)",
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
-            "problemMatcher": ["$msCompile", "$gcc"],
+            "problemMatcher": [
+                "$msCompile",
+                "$gcc"
+            ],
             "detail": "Build CryptoForge using CMake"
         },
         {

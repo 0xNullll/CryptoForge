@@ -32,8 +32,6 @@
 #include "../../internal/crypto/sha3.h"
 #include "../../internal/crypto/shake.h"
 
-// #include "../../internal/cf_api/cf_hash.h"
-
 //
 // Wrappers for all hashes
 //
@@ -659,7 +657,7 @@ static const CF_ALGO_ENTRY cf_hash_table[] = {
     { CF_CSHAKE256,     (const void* (*)(void))CF_get_cshake256 }
 };
 
-const CF_HASH *CF_Hash_GetByFlag(uint32_t algo_flag) {
+CF_API const CF_HASH *CF_Hash_GetByFlag(uint32_t algo_flag) {
     size_t table_len = sizeof(cf_hash_table) / sizeof(cf_hash_table[0]);
     for (size_t i = 0; i < table_len; i++) {
         if (cf_hash_table[i].flag == algo_flag) {
@@ -669,7 +667,7 @@ const CF_HASH *CF_Hash_GetByFlag(uint32_t algo_flag) {
     return NULL;
 }
 
-CF_STATUS CF_Hash_Init(CF_HASH_CTX *ctx, const CF_HASH *hash, const CF_HASH_OPTS *opts) {
+CF_API CF_STATUS CF_Hash_Init(CF_HASH_CTX *ctx, const CF_HASH *hash, const CF_HASH_OPTS *opts) {
     if (!ctx || !hash) return CF_ERR_NULL_PTR;
 
     // Validate optional context options if provided
@@ -708,7 +706,7 @@ CF_STATUS CF_Hash_Init(CF_HASH_CTX *ctx, const CF_HASH *hash, const CF_HASH_OPTS
     return CF_SUCCESS;
 }
 
-CF_HASH_CTX* CF_Hash_InitAlloc(const CF_HASH *hash, const CF_HASH_OPTS *opts, CF_STATUS *status) {
+CF_API CF_HASH_CTX* CF_Hash_InitAlloc(const CF_HASH *hash, const CF_HASH_OPTS *opts, CF_STATUS *status) {
     if (!hash) {
         if (status) *status = CF_ERR_NULL_PTR;
         return NULL;
@@ -737,7 +735,7 @@ CF_HASH_CTX* CF_Hash_InitAlloc(const CF_HASH *hash, const CF_HASH_OPTS *opts, CF
     return ctx;
 }
 
-CF_STATUS CF_Hash_Update(CF_HASH_CTX *ctx, const uint8_t *data, size_t data_len) {
+CF_API CF_STATUS CF_Hash_Update(CF_HASH_CTX *ctx, const uint8_t *data, size_t data_len) {
     if (!ctx || !data)
         return CF_ERR_NULL_PTR;
 
@@ -761,7 +759,7 @@ CF_STATUS CF_Hash_Update(CF_HASH_CTX *ctx, const uint8_t *data, size_t data_len)
     return CF_SUCCESS;
 }
 
-CF_STATUS CF_Hash_Final(CF_HASH_CTX *ctx, uint8_t *digest, size_t digest_len) {
+CF_API CF_STATUS CF_Hash_Final(CF_HASH_CTX *ctx, uint8_t *digest, size_t digest_len) {
     if (!ctx || !digest)
         return CF_ERR_NULL_PTR;
 
@@ -816,7 +814,7 @@ CF_STATUS CF_Hash_Final(CF_HASH_CTX *ctx, uint8_t *digest, size_t digest_len) {
     return CF_SUCCESS;
 }
 
-CF_STATUS CF_Hash_Reset(CF_HASH_CTX *ctx) {
+CF_API CF_STATUS CF_Hash_Reset(CF_HASH_CTX *ctx) {
     if (!ctx)
         return CF_ERR_NULL_PTR;
 
@@ -843,7 +841,7 @@ CF_STATUS CF_Hash_Reset(CF_HASH_CTX *ctx) {
     return CF_SUCCESS;
 }
 
-CF_STATUS CF_Hash_Free(CF_HASH_CTX **p_ctx) {
+CF_API CF_STATUS CF_Hash_Free(CF_HASH_CTX **p_ctx) {
     if (!p_ctx || !*p_ctx)
         return CF_ERR_NULL_PTR;
 
@@ -859,7 +857,7 @@ CF_STATUS CF_Hash_Free(CF_HASH_CTX **p_ctx) {
     return CF_SUCCESS;
 }
 
-CF_STATUS CF_Hash_Compute(const CF_HASH *hash, const uint8_t *data, size_t data_len,
+CF_API CF_STATUS CF_Hash_Compute(const CF_HASH *hash, const uint8_t *data, size_t data_len,
                         uint8_t *digest, size_t digest_len, const CF_HASH_OPTS *opts) {
 
     if (!hash || !digest || !data)
@@ -897,7 +895,7 @@ cleanup:
     return st;
 }
 
-CF_STATUS CF_Hash_ComputeFixed(const CF_HASH *hash, const uint8_t *data, size_t data_len, uint8_t *digest) {
+CF_API CF_STATUS CF_Hash_ComputeFixed(const CF_HASH *hash, const uint8_t *data, size_t data_len, uint8_t *digest) {
     if (!hash || !digest || !data)
         return CF_ERR_NULL_PTR;
 
@@ -936,7 +934,7 @@ cleanup:
     return st;
 }
 
-CF_STATUS CF_Hash_CloneCtx(CF_HASH_CTX *dst, const CF_HASH_CTX *src) {
+CF_API CF_STATUS CF_Hash_CloneCtx(CF_HASH_CTX *dst, const CF_HASH_CTX *src) {
     if (!dst || !src)
         return CF_ERR_NULL_PTR;
 
@@ -982,7 +980,7 @@ cleanup:
     return CF_ERR_ALLOC_FAILED;
 }
 
-CF_HASH_CTX *CF_Hash_CloneCtxAlloc(const CF_HASH_CTX *src, CF_STATUS *status) {
+CF_API CF_HASH_CTX* CF_Hash_CloneCtxAlloc(const CF_HASH_CTX *src, CF_STATUS *status) {
     if (!src) {
         if (status) *status = CF_ERR_NULL_PTR;
         return NULL;
@@ -1009,7 +1007,7 @@ CF_HASH_CTX *CF_Hash_CloneCtxAlloc(const CF_HASH_CTX *src, CF_STATUS *status) {
     return dst;
 }
 
-CF_STATUS CF_Hash_ValidateCtx(const CF_HASH_CTX *ctx) {
+CF_API CF_STATUS CF_Hash_ValidateCtx(const CF_HASH_CTX *ctx) {
     if (!ctx)
         return CF_ERR_NULL_PTR;
 
@@ -1019,15 +1017,15 @@ CF_STATUS CF_Hash_ValidateCtx(const CF_HASH_CTX *ctx) {
     return CF_SUCCESS;
 }
 
-size_t CF_Hash_GetDigestSize(const CF_HASH *hash) {
+CF_API size_t CF_Hash_GetDigestSize(const CF_HASH *hash) {
     return hash ? hash->digest_size : 0;
 }
 
-size_t CF_Hash_GetBlockSize(const CF_HASH *hash) {
+CF_API size_t CF_Hash_GetBlockSize(const CF_HASH *hash) {
     return hash ? hash->block_size : 0;
 }
 
-const char* CF_Hash_GetName(const CF_HASH *hash) {
+CF_API const char* CF_Hash_GetName(const CF_HASH *hash) {
     if (!hash) return NULL;
 
     switch (hash->id) {
@@ -1053,7 +1051,7 @@ const char* CF_Hash_GetName(const CF_HASH *hash) {
     }
 }
 
-CF_STATUS CF_HashOpts_Init(CF_HASH_OPTS *opts,
+CF_API CF_STATUS CF_HashOpts_Init(CF_HASH_OPTS *opts,
                              const uint8_t *N, size_t N_len,
                              const uint8_t *S, size_t S_len) {
     if (!opts)
@@ -1080,7 +1078,7 @@ CF_STATUS CF_HashOpts_Init(CF_HASH_OPTS *opts,
     return CF_SUCCESS;
 }
 
-CF_HASH_OPTS* CF_HashOpts_InitAlloc(const uint8_t *N, size_t N_len,
+CF_API CF_HASH_OPTS* CF_HashOpts_InitAlloc(const uint8_t *N, size_t N_len,
                                     const uint8_t *S, size_t S_len, CF_STATUS *status) {
 
     CF_HASH_OPTS *opts = (CF_HASH_OPTS *)SECURE_ALLOC(sizeof(CF_HASH_OPTS));
@@ -1102,7 +1100,7 @@ CF_HASH_OPTS* CF_HashOpts_InitAlloc(const uint8_t *N, size_t N_len,
     return opts;
 }
 
-CF_STATUS CF_HashOpts_Reset(CF_HASH_OPTS *opts) {
+CF_API CF_STATUS CF_HashOpts_Reset(CF_HASH_OPTS *opts) {
     if (!opts)
         return CF_ERR_NULL_PTR;
 
@@ -1117,7 +1115,7 @@ CF_STATUS CF_HashOpts_Reset(CF_HASH_OPTS *opts) {
     return CF_SUCCESS;
 }
 
-CF_STATUS CF_HashOpts_Free(CF_HASH_OPTS **p_opts) {
+CF_API CF_STATUS CF_HashOpts_Free(CF_HASH_OPTS **p_opts) {
     if (!p_opts || !*p_opts)
         return CF_ERR_NULL_PTR;
 
@@ -1135,7 +1133,7 @@ CF_STATUS CF_HashOpts_Free(CF_HASH_OPTS **p_opts) {
     return CF_SUCCESS;
 }
 
-CF_STATUS CF_HashOpts_Clone(CF_HASH_OPTS *dst, const CF_HASH_OPTS *src) {
+CF_API CF_STATUS CF_HashOpts_Clone(CF_HASH_OPTS *dst, const CF_HASH_OPTS *src) {
     if (!dst || !src)
         return CF_ERR_NULL_PTR;
 
@@ -1161,7 +1159,7 @@ CF_STATUS CF_HashOpts_Clone(CF_HASH_OPTS *dst, const CF_HASH_OPTS *src) {
     return CF_SUCCESS;
 }
 
-CF_HASH_OPTS *CF_HashOpts_CloneAlloc(const CF_HASH_OPTS *src, CF_STATUS *status) {
+CF_API CF_HASH_OPTS* CF_HashOpts_CloneAlloc(const CF_HASH_OPTS *src, CF_STATUS *status) {
     if (!src) {
         if (status) *status = CF_ERR_NULL_PTR;
         return NULL;

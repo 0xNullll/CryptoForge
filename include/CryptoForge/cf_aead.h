@@ -18,27 +18,12 @@
 #ifndef CF_AEAD_H
 #define CF_AEAD_H
 
-// #include "../config/crypto_config.h"
-// #include "../config/libs.h"
-
-// #include "../utils/misc.h"
-// #include "../utils/mem.h"
-// #include "../utils/cf_status.h"
-
 #include <CryptoForge/cf_defs.h>
 #include <CryptoForge/cf_flags.h>
 #include <CryptoForge/cf_status.h>
 #include <CryptoForge/cf_exports.h>
 
 #include <stdbool.h>
-
-// #include "cf_defs.h"
-// #include "cf_flags.h"
-
-// #include "../crypto/aes_core.h"
-// #include "../crypto/aes_gcm.h"
-// #include "../crypto/chacha20_poly1305.h"
-// #include "../crypto/xchacha20_poly1305.h"
 
 #ifdef __cplusplus
 extern "C" {

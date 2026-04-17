@@ -46,11 +46,6 @@ else()
     add_library(cryptoforge STATIC ${CF_SRC} ${CF_RC_FILE})
 endif()
 
-# if(CF_LINK_SHARED)
-#     add_library(cryptoforge SHARED ${CF_SRC})
-# else()
-#     add_library(cryptoforge STATIC ${CF_SRC})
-# endif()
 
 set_target_properties(cryptoforge PROPERTIES OUTPUT_NAME "cryptoforge")
 
@@ -68,21 +63,22 @@ target_include_directories(cryptoforge
 target_compile_definitions(cryptoforge
     PUBLIC
         ENABLE_BARRIER=$<BOOL:${ENABLE_CF_BARRIER}>
+        ENABLE_TESTS=$<BOOL:${CF_BUILD_TESTS}>
+        ENABLE_TESTS_VERBOSE=$<BOOL:${ENABLE_CF_TESTS_VERBOSE}>
         BASE_TRUNCATE_ON_NULL=$<BOOL:${ENABLE_CF_BASE_TRUNC}>
         CF_DEBUG=$<BOOL:${ENABLE_CF_DEBUG}>
 )
 
-# DLL / Shared flags
+# =========================================================
+# Export / import macros
+# =========================================================
 if(CF_LINK_SHARED)
-    if(WIN32)
-        target_compile_definitions(cryptoforge PRIVATE BUILDING_CF_DLL=1)
-    else()
-        target_compile_definitions(cryptoforge PRIVATE BUILDING_CF_SHARED=1)
-    endif()
+    target_compile_definitions(cryptoforge
+        PRIVATE CF_BUILD_SHARED=1
+    )
 else()
-    target_compile_definitions(cryptoforge PRIVATE
-        BUILDING_CF_DLL=0
-        BUILDING_CF_SHARED=0
+    target_compile_definitions(cryptoforge
+        PUBLIC CF_STATIC=1
     )
 endif()
 

@@ -29,8 +29,6 @@
 #include "../../internal/crypto/gmac.h"
 #include "../../internal/crypto/poly1305.h"
 
-// #include "../../include/cf_api/cf_mac.h"
-
 //
 // Wrappers for all MACs
 //
@@ -271,7 +269,7 @@ static const CF_ALGO_ENTRY cf_mac_table[] = {
     { CF_POLY1305,  (const void* (*)(void))CF_get_poly1305 }
 };
 
-const CF_MAC *CF_MAC_GetByFlag(uint32_t algo_flag) {
+CF_API const CF_MAC *CF_MAC_GetByFlag(uint32_t algo_flag) {
     if (!CF_IS_MAC(algo_flag)) 
         return NULL;
 
@@ -284,7 +282,7 @@ const CF_MAC *CF_MAC_GetByFlag(uint32_t algo_flag) {
     return NULL;
 }
 
-CF_STATUS CF_MAC_Init(CF_MAC_CTX *ctx, const CF_MAC *mac, const CF_MAC_OPTS *opts,
+CF_API CF_STATUS CF_MAC_Init(CF_MAC_CTX *ctx, const CF_MAC *mac, const CF_MAC_OPTS *opts,
                       const uint8_t *key, size_t key_len, uint32_t subflags) {
     if (!ctx || !mac || !key)
         return CF_ERR_NULL_PTR;
@@ -445,7 +443,7 @@ CF_MAC_CTX* CF_MAC_InitAlloc(
 }
 
 
-CF_STATUS CF_MAC_Update(CF_MAC_CTX *ctx, const uint8_t *data, size_t data_len) {
+CF_API CF_STATUS CF_MAC_Update(CF_MAC_CTX *ctx, const uint8_t *data, size_t data_len) {
     if (!ctx)
         return CF_ERR_NULL_PTR;
 
@@ -466,7 +464,7 @@ CF_STATUS CF_MAC_Update(CF_MAC_CTX *ctx, const uint8_t *data, size_t data_len) {
     return ctx->mac->mac_update_fn(ctx, data, data_len);
 }
 
-CF_STATUS CF_MAC_Final(CF_MAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
+CF_API CF_STATUS CF_MAC_Final(CF_MAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
     if (!ctx || !tag)
         return CF_ERR_NULL_PTR;
 
@@ -535,7 +533,7 @@ CF_STATUS CF_MAC_Final(CF_MAC_CTX *ctx, uint8_t *tag, size_t tag_len) {
     return CF_SUCCESS;
 }
 
-CF_STATUS CF_MAC_Reset(CF_MAC_CTX *ctx) {
+CF_API CF_STATUS CF_MAC_Reset(CF_MAC_CTX *ctx) {
     if (!ctx)
         return CF_ERR_NULL_PTR;
 
@@ -578,7 +576,7 @@ CF_STATUS CF_MAC_Reset(CF_MAC_CTX *ctx) {
     return st;
 }
 
-CF_STATUS CF_MAC_Free(CF_MAC_CTX **p_ctx) {
+CF_API CF_STATUS CF_MAC_Free(CF_MAC_CTX **p_ctx) {
     if (!p_ctx || !*p_ctx)
         return CF_ERR_NULL_PTR;
 
@@ -594,7 +592,7 @@ CF_STATUS CF_MAC_Free(CF_MAC_CTX **p_ctx) {
     return CF_SUCCESS;
 }
 
-CF_STATUS CF_MAC_Verify(const CF_MAC *mac,
+CF_API CF_STATUS CF_MAC_Verify(const CF_MAC *mac,
                         const uint8_t *key, size_t key_len,
                         const uint8_t *data, size_t data_len,
                         const uint8_t *expected_mac, size_t expected_mac_len,
@@ -620,7 +618,7 @@ CF_STATUS CF_MAC_Verify(const CF_MAC *mac,
     return st;
 }
 
-CF_STATUS CF_MAC_Compute(const CF_MAC *mac,
+CF_API CF_STATUS CF_MAC_Compute(const CF_MAC *mac,
                          const uint8_t *key, size_t key_len,
                          const uint8_t *data, size_t data_len,
                          uint8_t *tag, size_t tag_len,
@@ -660,7 +658,7 @@ cleanup:
     return st;
 }
 
-CF_STATUS CF_MAC_CloneCtx(CF_MAC_CTX *dst, const CF_MAC_CTX *src) {
+CF_API CF_STATUS CF_MAC_CloneCtx(CF_MAC_CTX *dst, const CF_MAC_CTX *src) {
     if (!dst || !src)
         return CF_ERR_NULL_PTR;
 
@@ -729,7 +727,7 @@ cleanup:
     return st;
 }
 
-CF_MAC_CTX *CF_MAC_CloneCtxAlloc(const CF_MAC_CTX *src, CF_STATUS *status) {
+CF_API CF_MAC_CTX* CF_MAC_CloneCtxAlloc(const CF_MAC_CTX *src, CF_STATUS *status) {
     if (!src) {
         if (status) *status = CF_ERR_NULL_PTR;
         return NULL;
@@ -756,7 +754,7 @@ CF_MAC_CTX *CF_MAC_CloneCtxAlloc(const CF_MAC_CTX *src, CF_STATUS *status) {
     return dst;
 }
 
-CF_STATUS CF_MAC_ValidateCtx(const CF_MAC_CTX *ctx) {
+CF_API CF_STATUS CF_MAC_ValidateCtx(const CF_MAC_CTX *ctx) {
     if (!ctx)
         return CF_ERR_NULL_PTR;
 
@@ -767,7 +765,7 @@ CF_STATUS CF_MAC_ValidateCtx(const CF_MAC_CTX *ctx) {
     return CF_SUCCESS;
 }
 
-const char* CF_MAC_GetName(const CF_MAC *ctx) {
+CF_API const char* CF_MAC_GetName(const CF_MAC *ctx) {
     if (!ctx)
         return NULL;
 
@@ -783,7 +781,7 @@ const char* CF_MAC_GetName(const CF_MAC *ctx) {
     }
 }
 
-const char* CF_MAC_GetFullName(const CF_MAC_CTX *ctx) {
+CF_API const char* CF_MAC_GetFullName(const CF_MAC_CTX *ctx) {
     if (!ctx || !ctx->mac)
         return NULL;
 
@@ -837,7 +835,7 @@ const char* CF_MAC_GetFullName(const CF_MAC_CTX *ctx) {
     }
 }
 
-bool CF_MAC_IsValidKeyLength(const CF_MAC *mac, size_t key_len) {
+CF_API bool CF_MAC_IsValidKeyLength(const CF_MAC *mac, size_t key_len) {
     if (!mac || key_len == 0)
         return false;
 
@@ -854,7 +852,7 @@ bool CF_MAC_IsValidKeyLength(const CF_MAC *mac, size_t key_len) {
     return false;
 }
 
-bool CF_MAC_IsValidTagLength(const CF_MAC *mac, size_t tag_len) {
+CF_API bool CF_MAC_IsValidTagLength(const CF_MAC *mac, size_t tag_len) {
     if (!mac || tag_len == 0)
         return false;
 
@@ -874,7 +872,7 @@ bool CF_MAC_IsValidTagLength(const CF_MAC *mac, size_t tag_len) {
     return false;
 }
 
-const size_t* CF_MAC_GetValidKeySizes(const CF_MAC *mac, size_t *count) {
+CF_API const size_t* CF_MAC_GetValidKeySizes(const CF_MAC *mac, size_t *count) {
     if (!mac || !count)
         return NULL;
 
@@ -896,7 +894,7 @@ const size_t* CF_MAC_GetValidKeySizes(const CF_MAC *mac, size_t *count) {
     return NULL;
 }
 
-const size_t* CF_MAC_GetValidTagSizes(const CF_MAC *mac, size_t *count) {
+CF_API const size_t* CF_MAC_GetValidTagSizes(const CF_MAC *mac, size_t *count) {
     if (!mac || !count)
         return NULL;
 
@@ -922,7 +920,7 @@ const size_t* CF_MAC_GetValidTagSizes(const CF_MAC *mac, size_t *count) {
     return NULL;
 }
 
-CF_STATUS CF_MACOpts_Init(CF_MAC_OPTS *opts,
+CF_API CF_STATUS CF_MACOpts_Init(CF_MAC_OPTS *opts,
                           const uint8_t *iv, size_t iv_len,
                           const uint8_t *custom, size_t custom_len) {
     if (!opts)
@@ -948,7 +946,7 @@ CF_STATUS CF_MACOpts_Init(CF_MAC_OPTS *opts,
     return CF_SUCCESS;
 }
 
-CF_MAC_OPTS* CF_MACOpts_InitAlloc(const uint8_t *iv, size_t iv_len,
+CF_API CF_MAC_OPTS* CF_MACOpts_InitAlloc(const uint8_t *iv, size_t iv_len,
                                   const uint8_t *custom, size_t custom_len,
                                   CF_STATUS *status) {
     if (iv_len > AES_BLOCK_SIZE) {
@@ -975,7 +973,7 @@ CF_MAC_OPTS* CF_MACOpts_InitAlloc(const uint8_t *iv, size_t iv_len,
     return opts;
 }
 
-CF_STATUS CF_MACOpts_Reset(CF_MAC_OPTS *opts) {
+CF_API CF_STATUS CF_MACOpts_Reset(CF_MAC_OPTS *opts) {
     if (!opts)
         return CF_ERR_NULL_PTR;
 
@@ -989,7 +987,7 @@ CF_STATUS CF_MACOpts_Reset(CF_MAC_OPTS *opts) {
     return CF_SUCCESS;
 }
 
-CF_STATUS CF_MACOpts_Free(CF_MAC_OPTS **p_opts) {
+CF_API CF_STATUS CF_MACOpts_Free(CF_MAC_OPTS **p_opts) {
     if (!p_opts || !*p_opts)
         return CF_ERR_NULL_PTR;
 
@@ -1007,7 +1005,7 @@ CF_STATUS CF_MACOpts_Free(CF_MAC_OPTS **p_opts) {
     return CF_SUCCESS;
 }
 
-CF_STATUS CF_MACOpts_CloneCtx(CF_MAC_OPTS *dst, const CF_MAC_OPTS *src) {
+CF_API CF_STATUS CF_MACOpts_CloneCtx(CF_MAC_OPTS *dst, const CF_MAC_OPTS *src) {
     if (!dst || !src)
         return CF_ERR_NULL_PTR;
 
@@ -1033,7 +1031,7 @@ CF_STATUS CF_MACOpts_CloneCtx(CF_MAC_OPTS *dst, const CF_MAC_OPTS *src) {
     return CF_SUCCESS;
 }
 
-CF_MAC_OPTS* CF_MACOpts_CloneCtxAlloc(const CF_MAC_OPTS *src, CF_STATUS *status) {
+CF_API CF_MAC_OPTS* CF_MACOpts_CloneCtxAlloc(const CF_MAC_OPTS *src, CF_STATUS *status) {
     if (!src) {
         if (status) *status = CF_ERR_NULL_PTR;
         return NULL;
