@@ -1,10 +1,10 @@
-#include "../src/CryptoForge/include/config/test_config.h"
+#include "../src/internal/config/test_config.h"
 
 int main(void) {
 
 #if ENABLE_TESTS
     printf("------------------------------------------------------------\n");
-    printf("CryptoForge Version 0.1.0 Test Suite\n");
+    printf("CryptoForge Version %s Test Suite\n", CRYPTOFORGE_VERSION_STR);
     printf("------------------------------------------------------------\n");
 
     /* Run bulk tests */
@@ -72,9 +72,9 @@ int main(void) {
     cf_aead_api_test();
     putchar('\n');
 
-    /* Print missing bulk tests */
+    /* Print missing in bulk tests */
     printf("------------------------------------------------------------\n");
-    printf("Algorithms working but missing dedicated bulk tests:\n");
+    printf("Algorithms working but missing dedicated in bulk tests:\n");
 
     /* Hashes */
     printf(" * MD5\n");
