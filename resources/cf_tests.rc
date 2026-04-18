@@ -1,8 +1,8 @@
 #include <winres.h>
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,3,0
- PRODUCTVERSION 1,0,3,0
+ FILEVERSION 1,0,4,0
+ PRODUCTVERSION 1,0,4,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -19,12 +19,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "0xNullll"
             VALUE "FileDescription", "CryptoForge Test Suite"
-            VALUE "FileVersion", "1.0.3.0"
+            VALUE "FileVersion", "1.0.4.0"
             VALUE "InternalName", "cf_tests"
             VALUE "LegalCopyright", "Copyright (c) 2025-2026 0xNullll"
             VALUE "OriginalFilename", "cf_tests.exe"
             VALUE "ProductName", "CryptoForge Tests"
-            VALUE "ProductVersion", "1.0.3.0"
+            VALUE "ProductVersion", "1.0.4.0"
         END
     END
     BLOCK "VarFileInfo"
