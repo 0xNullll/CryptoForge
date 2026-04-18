@@ -118,12 +118,6 @@ elseif(MSVC)
 
 endif()
 
-if(WIN32 AND CF_LINK_SHARED)
-    set_target_properties(cryptoforge PROPERTIES
-        WINDOWS_EXPORT_ALL_SYMBOLS ON
-    )
-endif()
-
 if(OUTPUT_DIR)
     foreach(cfg IN ITEMS Debug RelWithDebInfo Release MaxOptRelease)
         string(TOUPPER "${cfg}" CFG_UPPER)

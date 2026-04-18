@@ -1,26 +1,17 @@
 cmake_minimum_required(VERSION 3.24)
 
-# =========================================================
-# Collect all test sources
-# =========================================================
 file(GLOB_RECURSE TEST_SRC
     "cf_tests.c"
     "smoke/*.c"
     "thirdparty/*.c"
 )
 
-# =========================================================
-# Version info
-# =========================================================
 if(WIN32)
     set(CF_RC_FILE "${CMAKE_SOURCE_DIR}/resources/cf_tests.rc")
 else()
     set(CF_RC_FILE "")
 endif()
 
-# =========================================================
-# Create test executable
-# =========================================================
 add_executable(cf_tests
     ${TEST_SRC}
     ${CF_RC_FILE}
@@ -28,9 +19,6 @@ add_executable(cf_tests
 
 target_link_libraries(cf_tests PRIVATE cryptoforge)
 
-# =========================================================
-# Windows DLL copy (for shared builds)
-# =========================================================
 if(CF_LINK_SHARED AND WIN32)
     add_custom_command(TARGET cf_tests POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
